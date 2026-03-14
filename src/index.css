@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 216 33% 97%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 66% 22%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 197 72% 60%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 66% 22%;
+    --radius: 0.625rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 217 66% 22%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217 66% 22%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-kat-background text-kat-text font-sans antialiased;
+  }
+}
+
+@layer components {
+  .gradient-primary {
+    background: linear-gradient(135deg, #132B5E 0%, #1E5FAF 50%, #4DB3E6 100%);
+  }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, #132B5E 0%, #1E5FAF 50%, #4DB3E6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .btn-primary {
+    @apply px-6 py-3 bg-kat-navy text-white font-medium rounded-lg transition-all duration-200;
+  }
+  
+  .btn-primary:hover {
+    @apply bg-kat-blue shadow-kat;
+  }
+  
+  .btn-gradient {
+    @apply px-6 py-3 text-white font-medium rounded-lg transition-all duration-200;
+    background: linear-gradient(135deg, #132B5E 0%, #1E5FAF 100%);
+  }
+  
+  .btn-gradient:hover {
+    background: linear-gradient(135deg, #1E5FAF 0%, #4DB3E6 100%);
+    @apply shadow-kat-lg;
+  }
+  
+  .card-kat {
+    @apply bg-white rounded-xl border border-kat-border shadow-sm transition-all duration-200;
+  }
+  
+  .card-kat:hover {
+    @apply shadow-kat border-kat-light/30;
+  }
+  
+  .section-padding {
+    @apply px-4 sm:px-6 lg:px-8 xl:px-16 2xl:px-24;
+  }
+  
+  .heading-xl {
+    @apply text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight;
+  }
+  
+  .heading-lg {
+    @apply text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight;
+  }
+  
+  .heading-md {
+    @apply text-xl sm:text-2xl lg:text-3xl font-semibold;
+  }
+  
+  .body-lg {
+    @apply text-base sm:text-lg text-kat-text-secondary leading-relaxed;
+  }
+  
+  .body-md {
+    @apply text-sm sm:text-base text-kat-text-secondary leading-relaxed;
+  }
+  
+  .gate-pending {
+    @apply bg-amber-50 text-amber-700 border-amber-200;
+  }
+  
+  .gate-passed {
+    @apply bg-emerald-50 text-emerald-700 border-emerald-200;
+  }
+  
+  .gate-locked {
+    @apply bg-slate-50 text-slate-400 border-slate-200;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
