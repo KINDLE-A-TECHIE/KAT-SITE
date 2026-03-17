@@ -4,7 +4,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CertificatesPanel } from "@/components/dashboard/certificates-panel";
 
-export const metadata: Metadata = { title: "Certificates | KAT Academy" };
+export const metadata: Metadata = { title: "Certificates | KAT Learning" };
 
 export default async function CertificatesPage() {
   const session = await getServerAuthSession();

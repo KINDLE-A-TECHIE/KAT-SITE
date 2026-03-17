@@ -3,6 +3,7 @@ import { z } from "zod";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { getPlatformAnalytics, getUserAnalytics, trackEvent } from "@/lib/analytics";
+import { prisma } from "@/lib/prisma";
 
 const eventSchema = z.object({
   eventType: z.string().trim().min(1).max(80),
@@ -34,28 +35,33 @@ export async function GET(request: Request) {
 
   const isAdmin = session.user.role === UserRole.SUPER_ADMIN || session.user.role === UserRole.ADMIN;
 
-  if (isAdmin && session.user.organizationId) {
+  try {
+    // Resolve organizationId — session JWT may be stale for admin users
+    let orgId = session.user.organizationId ?? null;
+    if (isAdmin && !orgId) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { organizationId: true },
+      });
+      orgId = dbUser?.organizationId ?? null;
+    }
+
+    // All roles get user-level analytics; admins additionally get platform analytics
     const [userAnalytics, platformAnalytics] = await Promise.all([
       getUserAnalytics(session.user.id, rangeDays),
-      getPlatformAnalytics(session.user.organizationId, rangeDays),
+      isAdmin && orgId ? getPlatformAnalytics(orgId, rangeDays) : Promise.resolve(undefined),
     ]);
+
     return ok({
-      scope: "platform",
+      scope: isAdmin && orgId ? "platform" : "user",
       range,
       viewerRole: session.user.role,
       userAnalytics,
-      platformAnalytics,
+      ...(platformAnalytics ? { platformAnalytics } : {}),
     });
+  } catch (error) {
+    return fail("Failed to load analytics.", 500, error instanceof Error ? error.message : String(error));
   }
-
-  const userAnalytics = await getUserAnalytics(session.user.id, rangeDays);
-
-  return ok({
-    scope: "user",
-    range,
-    viewerRole: session.user.role,
-    userAnalytics,
-  });
 }
 
 export async function POST(request: Request) {

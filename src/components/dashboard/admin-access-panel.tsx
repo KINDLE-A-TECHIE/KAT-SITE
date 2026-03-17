@@ -308,7 +308,7 @@ export function AdminAccessPanel() {
       <section className="kat-card">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
+            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
               Zoho Session Infrastructure
             </h3>
             <p className="text-sm text-slate-600">
@@ -362,7 +362,7 @@ export function AdminAccessPanel() {
       <section className="kat-card">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
+            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
               Invite Admin or Instructor
             </h3>
             <p className="text-sm text-slate-600">
@@ -425,7 +425,7 @@ export function AdminAccessPanel() {
       </section>
 
       <section className="kat-card">
-        <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold text-slate-900">Staff Invite History</h3>
+        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900">Staff Invite History</h3>
         <div className="mt-3 space-y-3">
           {loadingInvites ? (
             <>
@@ -497,7 +497,7 @@ export function AdminAccessPanel() {
       <section className="kat-card">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
+            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
               Staff Access Controls
             </h3>
             <p className="text-sm text-slate-600">

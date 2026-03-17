@@ -6,7 +6,7 @@ import { createModuleSchema } from "@/lib/validators";
 
 interface Params { params: Promise<{ versionId: string }> }
 
-const CREATOR_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
+const CREATOR_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
 
 export async function GET(_req: Request, { params }: Params) {
   const session = await getServerAuthSession();

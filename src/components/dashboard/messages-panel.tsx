@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
-import { Check, ChevronDown, MessageSquare, MoreHorizontal, Pencil, Pin, PinOff, Search, SendHorizontal, Smile, Trash2, Users, X } from "lucide-react";
+import { Check, ChevronDown, ExternalLink, MapPin, MessageSquare, MoreHorizontal, Pencil, Pin, PinOff, Search, SendHorizontal, Smile, Trash2, Users, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfilePreviewCard, type ProfilePreviewContact } from "@/components/dashboard/profile-preview-card";
 import type { UserRoleValue } from "@/lib/enums";
+import { MESSAGE_EDIT_DELETE_WINDOW_MS } from "@/lib/validators";
 import emojiData from "@emoji-mart/data";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -160,6 +161,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
   const [pinningMessageId, setPinningMessageId] = useState<string | null>(null);
   const [groupMemberPickerId, setGroupMemberPickerId] = useState("");
   const [newGroupOpen, setNewGroupOpen] = useState(false);
+  const [previewContact, setPreviewContact] = useState<ProfilePreviewContact | null>(null);
   const selectedThreadIdRef = useRef<string>("");
   const selectedRecipientIdRef = useRef<string>("");
   const groupMemberIdsRef = useRef<string[]>([]);
@@ -183,7 +185,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
   );
 
   const pinnedMessage = useMemo(
-    () => messages.find((m) => m.pinnedAt !== null && m.pinnedAt !== undefined) ?? null,
+    () => messages.find((m) => m.pinnedAt !== null && m.pinnedAt !== undefined && !m.deletedAt) ?? null,
     [messages],
   );
 
@@ -424,11 +426,15 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
           if (payload.type === "message_deleted") {
             setMessages((prev) =>
               prev.map((m) =>
-                m.id === payload.messageId ? { ...m, deletedAt: payload.deletedAt } : m,
+                m.id === payload.messageId
+                  ? { ...m, deletedAt: payload.deletedAt, pinnedAt: null, pinnedById: null }
+                  : m,
               ),
             );
             messagesRef.current = messagesRef.current.map((m) =>
-              m.id === payload.messageId ? { ...m, deletedAt: payload.deletedAt } : m,
+              m.id === payload.messageId
+                ? { ...m, deletedAt: payload.deletedAt, pinnedAt: null, pinnedById: null }
+                : m,
             );
             return;
           }
@@ -905,7 +911,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
       <aside className="kat-card flex h-[72dvh] min-h-[420px] max-h-[880px] min-w-0 flex-col overflow-hidden max-[360px]:h-[68dvh] max-[360px]:min-h-[360px] sm:h-[74dvh] md:h-[78dvh]">
         {/* ── Fixed header ── */}
         <div className="mb-3 flex shrink-0 items-center justify-between">
-          <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Conversations</h3>
+          <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Conversations</h3>
           {threads.length > 0 && (
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
               {threads.length}
@@ -1157,17 +1163,33 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                     <Users className="size-4 text-slate-600" />
                   </div>
                 ) : selectedContact ? (
-                  <Avatar className="size-9 shrink-0 border border-slate-200">
-                    <AvatarImage src={selectedContact.avatarUrl ?? undefined} alt={`${selectedContact.firstName} ${selectedContact.lastName}`} />
-                    <AvatarFallback className="bg-slate-100 text-[10px] font-semibold text-slate-700">
-                      {initials(selectedContact.firstName, selectedContact.lastName)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <button
+                    type="button"
+                    className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    onClick={() => setPreviewContact(selectedContact)}
+                  >
+                    <Avatar className="size-9 border border-slate-200">
+                      <AvatarImage src={selectedContact.avatarUrl ?? undefined} alt={`${selectedContact.firstName} ${selectedContact.lastName}`} />
+                      <AvatarFallback className="bg-slate-100 text-[10px] font-semibold text-slate-700">
+                        {initials(selectedContact.firstName, selectedContact.lastName)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
                 ) : null}
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-slate-900 [font-family:var(--font-space-grotesk)]">
-                    {threadDisplayLabel(activeThread)}
-                  </p>
+                  {activeThread.type !== "GROUP" && selectedContact ? (
+                    <button
+                      type="button"
+                      className="truncate font-semibold text-slate-900 hover:underline [font-family:var(--font-space-grotesk)] focus-visible:outline-none"
+                      onClick={() => setPreviewContact(selectedContact)}
+                    >
+                      {threadDisplayLabel(activeThread)}
+                    </button>
+                  ) : (
+                    <p className="truncate font-semibold text-slate-900 [font-family:var(--font-space-grotesk)]">
+                      {threadDisplayLabel(activeThread)}
+                    </p>
+                  )}
                   {activeThread.type !== "GROUP" && selectedContact?.profile.headline ? (
                     <p className="truncate text-xs text-slate-500">{selectedContact.profile.headline}</p>
                   ) : activeThread.type === "GROUP" ? (
@@ -1177,16 +1199,26 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
               </>
             ) : selectedContact ? (
               <>
-                <Avatar className="size-9 shrink-0 border border-slate-200">
-                  <AvatarImage src={selectedContact.avatarUrl ?? undefined} alt={`${selectedContact.firstName} ${selectedContact.lastName}`} />
-                  <AvatarFallback className="bg-slate-100 text-[10px] font-semibold text-slate-700">
-                    {initials(selectedContact.firstName, selectedContact.lastName)}
-                  </AvatarFallback>
-                </Avatar>
+                <button
+                  type="button"
+                  className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  onClick={() => setPreviewContact(selectedContact)}
+                >
+                  <Avatar className="size-9 border border-slate-200">
+                    <AvatarImage src={selectedContact.avatarUrl ?? undefined} alt={`${selectedContact.firstName} ${selectedContact.lastName}`} />
+                    <AvatarFallback className="bg-slate-100 text-[10px] font-semibold text-slate-700">
+                      {initials(selectedContact.firstName, selectedContact.lastName)}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-slate-900 [font-family:var(--font-space-grotesk)]">
+                  <button
+                    type="button"
+                    className="truncate font-semibold text-slate-900 hover:underline [font-family:var(--font-space-grotesk)] focus-visible:outline-none"
+                    onClick={() => setPreviewContact(selectedContact)}
+                  >
                     {selectedContact.firstName} {selectedContact.lastName}
-                  </p>
+                  </button>
                   {selectedContact.profile.headline ? (
                     <p className="truncate text-xs text-slate-500">{selectedContact.profile.headline}</p>
                   ) : null}
@@ -1393,8 +1425,9 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
               const mine = message.senderId === currentUserId;
               const isAdmin = currentUserRole === "SUPER_ADMIN" || currentUserRole === "ADMIN";
               const isSuperAdmin = currentUserRole === "SUPER_ADMIN";
-              const canEdit = mine && !message.deletedAt;
-              const canDelete = (mine || isAdmin) && !message.deletedAt;
+              const withinEditWindow = Date.now() - new Date(message.createdAt).getTime() <= MESSAGE_EDIT_DELETE_WINDOW_MS;
+              const canEdit = mine && !message.deletedAt && withinEditWindow;
+              const canDelete = (mine || isAdmin) && !message.deletedAt && (isAdmin || withinEditWindow);
               const canPin = isSuperAdmin && activeThread?.type === "GROUP" && !message.deletedAt;
               const isPinned = Boolean(message.pinnedAt);
               const isEditing = editingMessageId === message.id;
@@ -1462,17 +1495,33 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                   }`}>
                     {showGroupSenderMeta && !message.deletedAt ? (
                       <div className={`mb-1 flex items-center gap-1.5 ${mine ? "justify-end" : ""}`}>
-                        <Avatar className={`size-5 border ${mine ? "border-blue-300" : "border-slate-200"}`}>
-                          <AvatarImage src={senderAvatarUrl} alt={senderDisplayName} />
-                          <AvatarFallback
-                            className={`text-[9px] font-semibold ${mine ? "bg-blue-500 text-blue-100" : "bg-slate-100 text-slate-700"}`}
-                          >
-                            {initials(message.sender.firstName, message.sender.lastName)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className={`text-[11px] font-medium ${mine ? "text-blue-100" : "text-slate-600"}`}>
+                        <button
+                          type="button"
+                          className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-400"
+                          onClick={() => {
+                            const c = contactsById.get(message.senderId);
+                            if (c) setPreviewContact(c);
+                          }}
+                        >
+                          <Avatar className={`size-5 border ${mine ? "border-blue-300" : "border-slate-200"}`}>
+                            <AvatarImage src={senderAvatarUrl} alt={senderDisplayName} />
+                            <AvatarFallback
+                              className={`text-[9px] font-semibold ${mine ? "bg-blue-500 text-blue-100" : "bg-slate-100 text-slate-700"}`}
+                            >
+                              {initials(message.sender.firstName, message.sender.lastName)}
+                            </AvatarFallback>
+                          </Avatar>
+                        </button>
+                        <button
+                          type="button"
+                          className={`text-[11px] font-medium hover:underline focus-visible:outline-none ${mine ? "text-blue-100" : "text-slate-600"}`}
+                          onClick={() => {
+                            const c = contactsById.get(message.senderId);
+                            if (c) setPreviewContact(c);
+                          }}
+                        >
                           {senderDisplayName}
-                        </span>
+                        </button>
                       </div>
                     ) : null}
 
@@ -1585,6 +1634,89 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
           </div>
         </div>
       </div>
+      {/* ── Profile preview dialog ─────────────────────────────────────────── */}
+      <Dialog open={previewContact !== null} onOpenChange={(open) => { if (!open) setPreviewContact(null); }}>
+        <DialogContent className="max-w-xl">
+          {previewContact && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3">
+                  <Avatar className="size-12 border border-slate-200">
+                    <AvatarImage src={previewContact.avatarUrl ?? undefined} alt={`${previewContact.firstName} ${previewContact.lastName}`} />
+                    <AvatarFallback className="bg-slate-100 text-sm font-semibold text-slate-700">
+                      {initials(previewContact.firstName, previewContact.lastName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <DialogTitle>{previewContact.firstName} {previewContact.lastName}</DialogTitle>
+                    <DialogDescription className="text-xs uppercase tracking-wide">{previewContact.role}</DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-3">
+                {previewContact.profile.headline ? (
+                  <p className="text-sm text-slate-700">{previewContact.profile.headline}</p>
+                ) : null}
+                {previewContact.profile.location ? (
+                  <p className="inline-flex items-center gap-1 text-xs text-slate-500">
+                    <MapPin className="size-3" />
+                    {previewContact.profile.location}
+                  </p>
+                ) : null}
+                {previewContact.profile.bio ? (
+                  <p className="text-sm text-slate-600">{previewContact.profile.bio}</p>
+                ) : null}
+                {previewContact.profile.skills.length > 0 ? (
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Skills</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {previewContact.profile.skills.map((skill) => (
+                        <span key={skill} className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-900">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                {previewContact.profile.experience.length > 0 ? (
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Experience</p>
+                    <div className="space-y-1 text-sm text-slate-600">
+                      {previewContact.profile.experience.map((item) => (
+                        <p key={`${item.company}-${item.title}`}>
+                          {item.title} @ {item.company}{item.isCurrent ? " (Current)" : ""}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                {previewContact.profile.education.length > 0 ? (
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Education</p>
+                    <div className="space-y-1 text-sm text-slate-600">
+                      {previewContact.profile.education.map((item) => (
+                        <p key={`${item.school}-${item.degree}`}>
+                          {item.degree} — {item.school}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                {(() => {
+                  const links = previewContact.profile.links;
+                  const link = links?.websiteUrl ?? links?.linkedinUrl ?? links?.githubUrl ?? links?.twitterUrl ?? null;
+                  return link ? (
+                    <a href={link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-medium text-blue-700 hover:underline">
+                      View link <ExternalLink className="size-3" />
+                    </a>
+                  ) : null;
+                })()}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

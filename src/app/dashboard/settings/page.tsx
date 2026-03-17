@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { SettingsPanel } from "@/components/dashboard/settings-panel";
 import type { UserRoleValue } from "@/lib/enums";
 
-export const metadata: Metadata = { title: "Settings · KAT Academy" };
+export const metadata: Metadata = { title: "Settings · KAT Learning" };
 
 export default async function SettingsPage() {
   const session = await getServerAuthSession();

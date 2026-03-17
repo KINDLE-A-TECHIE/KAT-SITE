@@ -129,7 +129,7 @@ export function SuperAdminInvitesPanel() {
       <section className="kat-card">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
+            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
               Create Super Admin Invite
             </h3>
             <p className="text-sm text-slate-600">
@@ -188,7 +188,7 @@ export function SuperAdminInvitesPanel() {
       </section>
 
       <section className="kat-card">
-        <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
+        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
           Invite History
         </h3>
         <div className="mt-3 space-y-3">

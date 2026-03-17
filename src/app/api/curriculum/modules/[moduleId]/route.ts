@@ -11,7 +11,7 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!session?.user?.id) return fail("Unauthorized", 401);
 
   const role = session.user.role as UserRole;
-  const canEdit = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR].includes(role);
+  const canEdit = ([UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR] as UserRole[]).includes(role);
   if (!canEdit) return fail("Forbidden", 403);
 
   const { moduleId } = await params;
@@ -37,7 +37,7 @@ export async function DELETE(_req: Request, { params }: Params) {
   if (!session?.user?.id) return fail("Unauthorized", 401);
 
   const role = session.user.role as UserRole;
-  if (![UserRole.SUPER_ADMIN, UserRole.ADMIN].includes(role)) return fail("Forbidden", 403);
+  if (!([UserRole.SUPER_ADMIN, UserRole.ADMIN] as UserRole[]).includes(role)) return fail("Forbidden", 403);
 
   const { moduleId } = await params;
   await prisma.module.delete({ where: { id: moduleId } });

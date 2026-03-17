@@ -6,7 +6,7 @@ import { updateLessonSchema } from "@/lib/validators";
 
 interface Params { params: Promise<{ lessonId: string }> }
 
-const LEARNER_ROLES = [UserRole.STUDENT, UserRole.FELLOW];
+const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW];
 
 export async function GET(_req: Request, { params }: Params) {
   const session = await getServerAuthSession();
@@ -57,7 +57,7 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!session?.user?.id) return fail("Unauthorized", 401);
 
   const role = session.user.role as UserRole;
-  if (![UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR].includes(role)) {
+  if (!([UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR] as UserRole[]).includes(role)) {
     return fail("Forbidden", 403);
   }
 
@@ -82,7 +82,7 @@ export async function DELETE(_req: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
 
-  if (![UserRole.SUPER_ADMIN, UserRole.ADMIN].includes(session.user.role as UserRole)) {
+  if (!([UserRole.SUPER_ADMIN, UserRole.ADMIN] as UserRole[]).includes(session.user.role as UserRole)) {
     return fail("Forbidden", 403);
   }
 

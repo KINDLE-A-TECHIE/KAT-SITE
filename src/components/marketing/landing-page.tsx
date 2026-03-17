@@ -6,6 +6,7 @@ import { StatsBar } from "./sections/stats-bar";
 import { FeaturesSection } from "./sections/features-section";
 import { HowItWorksSection } from "./sections/how-it-works-section";
 import { TracksSection } from "./sections/tracks-section";
+import { FellowshipSection } from "./sections/fellowship-section";
 import { TestimonialsSection } from "./sections/testimonials-section";
 import { PricingSection } from "./sections/pricing-section";
 import { ScheduleWaitlistSection } from "./sections/schedule-waitlist-section";
@@ -13,12 +14,25 @@ import { FaqSection } from "./sections/faq-section";
 import { CtaSection } from "./sections/cta-section";
 import { SiteFooter } from "@/components/site-footer";
 
+type OpenCohort = {
+  id: string;
+  name: string;
+  startsAt: string;
+  endsAt: string;
+  applicationClosesAt: string | null;
+  externalApplicationFee: number | null;
+  capacity: number | null;
+  applicationCount: number;
+  program: { id: string; name: string; level: string; description: string | null };
+};
+
 type LandingPageProps = {
   enrollments: number;
   passRate: number;
+  openCohorts: OpenCohort[];
 };
 
-export function LandingPage({ enrollments, passRate }: LandingPageProps) {
+export function LandingPage({ enrollments, passRate, openCohorts }: LandingPageProps) {
   return (
     <main style={DESIGN_TOKENS as CSSProperties} className="relative overflow-x-clip">
       {/* Background blobs */}
@@ -35,6 +49,7 @@ export function LandingPage({ enrollments, passRate }: LandingPageProps) {
       <FeaturesSection />
       <HowItWorksSection />
       <TracksSection />
+      <FellowshipSection cohorts={openCohorts} />
       <TestimonialsSection />
       <PricingSection />
       <ScheduleWaitlistSection />

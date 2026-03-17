@@ -73,15 +73,15 @@ function formatTimestamp(value: string) {
 
 function typeLabelClass(type: NotificationTypeValue) {
   if (type === "SUCCESS") {
-    return "bg-emerald-100 text-emerald-800";
+    return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400";
   }
   if (type === "WARNING") {
-    return "bg-amber-100 text-amber-800";
+    return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400";
   }
   if (type === "ERROR") {
-    return "bg-rose-100 text-rose-800";
+    return "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-400";
   }
-  return "bg-slate-100 text-slate-700";
+  return "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300";
 }
 
 export function NotificationsPopover() {
@@ -267,7 +267,7 @@ export function NotificationsPopover() {
         <button
           type="button"
           aria-label="Open notifications"
-          className="relative rounded-full border border-slate-200 bg-white p-2 text-slate-600 transition-colors hover:bg-slate-50 max-[360px]:p-1.5"
+          className="relative rounded-full border border-slate-200 bg-white p-2 text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 max-[360px]:p-1.5"
         >
           <Bell className="size-4" />
           {unreadCount > 0 ? (
@@ -278,10 +278,10 @@ export function NotificationsPopover() {
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={8} collisionPadding={12} className="w-[min(96vw,360px)] max-h-[70vh] overflow-hidden p-0">
-        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 max-[360px]:px-3">
+        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-700 max-[360px]:px-3">
           <div>
-            <p className="text-sm font-semibold text-slate-900">Notifications</p>
-            <p className="text-xs text-slate-500">{unreadCount} unread</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Notifications</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{unreadCount} unread</p>
           </div>
           <Button
             type="button"
@@ -297,21 +297,21 @@ export function NotificationsPopover() {
         <div className="max-h-[calc(70vh-57px)] overflow-y-auto overscroll-contain">
           {loading ? (
             <div className="space-y-2 p-4">
-              <div className="h-16 animate-pulse rounded-md bg-slate-100" />
-              <div className="h-16 animate-pulse rounded-md bg-slate-100" />
-              <div className="h-16 animate-pulse rounded-md bg-slate-100" />
+              <div className="h-16 animate-pulse rounded-md bg-slate-100 dark:bg-slate-700" />
+              <div className="h-16 animate-pulse rounded-md bg-slate-100 dark:bg-slate-700" />
+              <div className="h-16 animate-pulse rounded-md bg-slate-100 dark:bg-slate-700" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="p-6 text-center text-sm text-slate-500">No notifications yet.</div>
+            <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">No notifications yet.</div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-100 dark:divide-slate-700">
               {notifications.map((notification) => (
                 <button
                   type="button"
                   key={notification.id}
                   className={cn(
-                    "w-full px-4 py-3 text-left transition-colors hover:bg-slate-50 max-[360px]:px-3",
-                    !notification.readAt ? "bg-cyan-50/40" : "bg-white",
+                    "w-full px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50 max-[360px]:px-3",
+                    !notification.readAt ? "bg-cyan-50/40 dark:bg-cyan-900/20" : "bg-white dark:bg-transparent",
                   )}
                   onClick={() => void handleNotificationClick(notification)}
                   disabled={busy}
@@ -321,15 +321,15 @@ export function NotificationsPopover() {
                     return (
                       <>
                         <div className="flex items-center justify-between gap-2">
-                          <p className="line-clamp-1 text-sm font-medium text-slate-900">{notification.title}</p>
+                          <p className="line-clamp-1 text-sm font-medium text-slate-900 dark:text-slate-100">{notification.title}</p>
                           <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold", typeLabelClass(notification.type))}>
                             {notification.type}
                           </span>
                         </div>
-                        <p className="mt-1 line-clamp-2 text-xs text-slate-600">{parsed.text}</p>
+                        <p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-400">{parsed.text}</p>
                         <div className="mt-2 flex items-center justify-between">
-                          <p className="text-[11px] text-slate-500">{formatTimestamp(notification.createdAt)}</p>
-                          <span className="text-[11px] font-medium text-cyan-700">New</span>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-500">{formatTimestamp(notification.createdAt)}</p>
+                          <span className="text-[11px] font-medium text-cyan-700 dark:text-cyan-400">New</span>
                         </div>
                       </>
                     );

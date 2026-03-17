@@ -50,10 +50,11 @@ export class PaystackGateway implements PaymentGateway {
   }
 
   async verify(reference: string) {
-    const response = await fetch(`${PAYSTACK_API_BASE}/transaction/verify/${reference}`, {
+    const response = await fetch(`${PAYSTACK_API_BASE}/transaction/verify/${encodeURIComponent(reference)}`, {
       headers: {
         Authorization: `Bearer ${getSecretKey()}`,
       },
+      cache: "no-store",
     });
 
     const payload = (await response.json()) as {

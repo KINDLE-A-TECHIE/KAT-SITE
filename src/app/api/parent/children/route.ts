@@ -39,7 +39,6 @@ export async function GET() {
           enrollments: {
             include: {
               program: { select: { id: true, name: true, monthlyFee: true } },
-              cohort: { select: { id: true, name: true } },
             },
             where: { status: "ACTIVE" },
           },

@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
   if (!cert) return { title: "Certificate Not Found" };
   return {
-    title: `${cert.user.firstName} ${cert.user.lastName} — ${cert.program.name} | KAT Academy`,
+    title: `${cert.user.firstName} ${cert.user.lastName} — ${cert.program.name} | KAT Learning`,
     description: `Verified certificate of completion for ${cert.program.name}.`,
   };
 }

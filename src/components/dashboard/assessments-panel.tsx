@@ -639,7 +639,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
     <div className="space-y-4">
       {roleCanCreate ? (
         <section className="kat-card flex max-h-[78dvh] min-h-0 flex-col">
-          <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold">Create Assessment</h3>
+          <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Create Assessment</h3>
           <div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <Select value={programId || undefined} onValueChange={(value) => setProgramId(value)}>
@@ -934,7 +934,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
       ) : null}
 
       <section className="kat-card flex max-h-[70dvh] min-h-0 flex-col">
-        <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold">Assessments</h3>
+        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Assessments</h3>
         <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1">
           {loading ? (
             <div className="space-y-2">
@@ -1035,7 +1035,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
 
       {roleCanVerify ? (
         <section className="kat-card flex max-h-[70dvh] min-h-0 flex-col">
-          <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold">Assessment Verification Queue</h3>
+          <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Assessment Verification Queue</h3>
           <p className="text-sm text-slate-600">
             {verificationQueue.length} assessment(s) require super-admin review before learners can access them.
           </p>
@@ -1163,7 +1163,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
 
       {roleCanCreate ? (
         <section className="kat-card flex max-h-[70dvh] min-h-0 flex-col">
-          <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold">Manual Grading Queue</h3>
+          <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Manual Grading Queue</h3>
           <p className="text-sm text-slate-600">{pendingManual.length} submission(s) awaiting manual review.</p>
           <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1">
             <div className="space-y-3">

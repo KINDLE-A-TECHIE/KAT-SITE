@@ -165,6 +165,7 @@ export const MAX_MESSAGE_LENGTH = 4000;
 export const MAX_GROUP_SIZE = 50;
 export const MESSAGE_RATE_LIMIT_WINDOW_MS = 10_000;
 export const MESSAGE_RATE_LIMIT_MAX = 10;
+export const MESSAGE_EDIT_DELETE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 export const messageSchema = z
   .object({
@@ -224,7 +225,7 @@ export const assessmentQuestionSchema = z.object({
 
 export const createAssessmentSchema = z.object({
   programId: z.string().cuid(),
-  cohortId: z.string().cuid().optional(),
+  moduleId: z.string().cuid().optional(),
   title: z.string().trim().min(4).max(200),
   description: z.string().trim().max(2000).optional(),
   type: z.enum(ASSESSMENT_TYPES),
@@ -258,15 +259,19 @@ export const manualGradeSchema = z.object({
 });
 
 export const initializePaymentSchema = z.object({
-  programId:    z.string().cuid(),
-  enrollmentId: z.string().cuid().optional(),
-  wardId:       z.string().cuid().optional(), // Parent paying on behalf of a child
-  provider:     z.enum(PAYMENT_PROVIDERS).default("PAYSTACK"),
-  amount:       z.number().positive(),
-  currency:     z.string().length(3).default("NGN"),
-  billingMonth: z.string().datetime(),
-  discountCode: z.string().trim().toUpperCase().optional(),
-});
+  programId:            z.string().cuid().optional(),
+  fellowApplicationId:  z.string().cuid().optional(),
+  enrollmentId:         z.string().cuid().optional(),
+  wardId:               z.string().cuid().optional(),
+  provider:             z.enum(PAYMENT_PROVIDERS).default("PAYSTACK"),
+  amount:               z.number().positive(),
+  currency:             z.string().length(3).default("NGN"),
+  billingMonth:         z.string().datetime().optional(),
+  discountCode:         z.string().trim().toUpperCase().optional(),
+}).refine(
+  (d) => d.programId || d.fellowApplicationId,
+  { message: "Either programId or fellowApplicationId is required.", path: ["programId"] },
+);
 
 export const verifyPaymentSchema = z.object({
   reference: z.string().trim().min(6).max(120),

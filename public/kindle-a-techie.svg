@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="146 115 220 220" width="512" height="512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" width="220" height="220">
   <defs>
     <!-- Orange gradient for top flame -->
     <linearGradient id="orangeFlame" x1="50%" y1="100%" x2="50%" y2="0%">
@@ -22,7 +22,7 @@
     </linearGradient>
   </defs>
 
-  <g transform="translate(256, 260)">
+  <g transform="translate(110, 145)">
 
     <!-- Outer blue wing/petal shapes (bottom left and right) -->
     <!-- Left petal -->

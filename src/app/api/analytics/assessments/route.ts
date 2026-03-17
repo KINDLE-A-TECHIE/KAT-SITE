@@ -3,7 +3,7 @@ import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const ADMIN_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN];
+const ADMIN_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN];
 
 function roundToOneDecimal(value: number) {
   return Math.round(value * 10) / 10;

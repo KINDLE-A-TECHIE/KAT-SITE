@@ -6,8 +6,7 @@ import { createCurriculumVersionSchema } from "@/lib/validators";
 
 interface Params { params: Promise<{ programId: string }> }
 
-const CREATOR_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
-const LEARNER_ROLES = [UserRole.STUDENT, UserRole.FELLOW];
+const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW];
 
 export async function GET(_req: Request, { params }: Params) {
   const session = await getServerAuthSession();

@@ -37,7 +37,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
         include: {
           program: { select: { id: true, name: true } },
-          cohort: { select: { id: true, name: true } },
+          module: { select: { id: true, title: true } },
           questions: {
             select: {
               id: true,
@@ -67,33 +67,44 @@ export async function GET() {
     return ok({ assessments: [] });
   }
 
+  // Fellows see assessments for programs in their cohort (via FellowApplication).
+  // Students see assessments for programs they are enrolled in.
+  let programIdFilter: { in: string[] } | undefined;
+  if (role === UserRole.FELLOW) {
+    const approvedApps = await prisma.fellowApplication.findMany({
+      where: {
+        applicantId: session.user.id,
+        status: "APPROVED",
+        cohortId: { not: null },
+      },
+      select: { cohort: { select: { programId: true } } },
+    });
+    const ids = approvedApps.flatMap((a) => (a.cohort?.programId ? [a.cohort.programId] : []));
+    // Also include any programs they are directly enrolled in (pre-fellowship enrolment).
+    const enrolledPrograms = await prisma.enrollment.findMany({
+      where: { userId: session.user.id },
+      select: { programId: true },
+    });
+    const allIds = Array.from(new Set([...ids, ...enrolledPrograms.map((e) => e.programId)]));
+    programIdFilter = { in: allIds.length ? allIds : ["__none__"] };
+  }
+
   const assessments = await prisma.assessment.findMany({
     where: {
       published: true,
       verificationStatus: AssessmentVerificationStatus.APPROVED,
-      OR: [
-        { cohortId: null },
-        {
-          cohort: {
-            enrollments: {
-              some: {
-                userId: session.user.id,
-              },
+      ...(role === UserRole.FELLOW
+        ? { programId: programIdFilter }
+        : {
+            program: {
+              enrollments: { some: { userId: session.user.id } },
             },
-          },
-        },
-      ],
-      program: {
-        enrollments: {
-          some: {
-            userId: session.user.id,
-          },
-        },
-      },
+          }),
     },
     orderBy: { createdAt: "desc" },
     include: {
       program: { select: { id: true, name: true } },
+      module: { select: { id: true, title: true } },
       questions: {
         select: {
           id: true,
@@ -152,16 +163,16 @@ export async function POST(request: Request) {
       return fail("Forbidden", 403);
     }
 
-    if (parsed.data.cohortId) {
-      const cohort = await prisma.cohort.findFirst({
+    if (parsed.data.moduleId) {
+      const module = await prisma.module.findFirst({
         where: {
-          id: parsed.data.cohortId,
-          programId: parsed.data.programId,
+          id: parsed.data.moduleId,
+          version: { curriculum: { programId: parsed.data.programId } },
         },
         select: { id: true },
       });
-      if (!cohort) {
-        return fail("Cohort does not belong to the selected program.", 400);
+      if (!module) {
+        return fail("Module does not belong to the selected program.", 400);
       }
     }
 
@@ -170,7 +181,7 @@ export async function POST(request: Request) {
     const assessment = await prisma.assessment.create({
       data: {
         programId: parsed.data.programId,
-        cohortId: parsed.data.cohortId,
+        moduleId: parsed.data.moduleId,
         title: parsed.data.title,
         description: parsed.data.description,
         type: parsed.data.type,
@@ -274,7 +285,7 @@ export async function PATCH(request: Request) {
       },
       include: {
         program: { select: { id: true, name: true } },
-        cohort: { select: { id: true, name: true } },
+        module: { select: { id: true, title: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true, role: true } },
         verifiedBy: { select: { id: true, firstName: true, lastName: true, role: true } },
         questions: { select: { id: true } },

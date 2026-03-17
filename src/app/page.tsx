@@ -7,7 +7,7 @@ const BASE = process.env.NEXTAUTH_URL ?? "https://kat.africa";
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "KAT Academy",
+  name: "KAT Learning",
   url: BASE,
   logo: `${BASE}/kindle-a-techie.svg`,
   email: "support@kindleatechie.com",
@@ -28,7 +28,7 @@ const courseSchemas = [
     name: "Junior Explorers",
     description: "Block coding, animations, and early web design for children aged 8–11.",
     url: `${BASE}/#tracks`,
-    provider: { "@type": "Organization", name: "KAT Academy", sameAs: BASE },
+    provider: { "@type": "Organization", name: "KAT Learning", sameAs: BASE },
     courseMode: "online",
     educationalLevel: "Beginner",
     typicalAgeRange: "8-11",
@@ -40,7 +40,7 @@ const courseSchemas = [
     name: "Teen Builders",
     description: "HTML, CSS, JavaScript, and Python for teens aged 12–15. Portfolio-focused.",
     url: `${BASE}/#tracks`,
-    provider: { "@type": "Organization", name: "KAT Academy", sameAs: BASE },
+    provider: { "@type": "Organization", name: "KAT Learning", sameAs: BASE },
     courseMode: "online",
     educationalLevel: "Intermediate",
     typicalAgeRange: "12-15",
@@ -53,7 +53,7 @@ const courseSchemas = [
     description:
       "Fullstack engineering, leadership, and mentorship for teens aged 16–19.",
     url: `${BASE}/#tracks`,
-    provider: { "@type": "Organization", name: "KAT Academy", sameAs: BASE },
+    provider: { "@type": "Organization", name: "KAT Learning", sameAs: BASE },
     courseMode: "online",
     educationalLevel: "Advanced",
     typicalAgeRange: "16-19",
@@ -64,11 +64,50 @@ const courseSchemas = [
 // Revalidate stats every hour
 export const revalidate = 3600;
 
+async function getOpenCohorts() {
+  try {
+    const now = new Date();
+    const cohorts = await prisma.cohort.findMany({
+      where: {
+        applicationOpen: true,
+        OR: [{ applicationClosesAt: null }, { applicationClosesAt: { gt: now } }],
+      },
+      select: {
+        id: true,
+        name: true,
+        startsAt: true,
+        endsAt: true,
+        applicationClosesAt: true,
+        externalApplicationFee: true,
+        capacity: true,
+        program: { select: { id: true, name: true, level: true, description: true } },
+        _count: { select: { fellowApplications: true } },
+      },
+      orderBy: { startsAt: "asc" },
+    });
+    return cohorts
+      .filter((c) => c.program !== null)
+      .map((c) => ({
+        ...c,
+        program: c.program!,
+        startsAt: c.startsAt.toISOString(),
+        endsAt: c.endsAt.toISOString(),
+        applicationClosesAt: c.applicationClosesAt?.toISOString() ?? null,
+        externalApplicationFee: c.externalApplicationFee
+          ? Number(c.externalApplicationFee)
+          : null,
+        applicationCount: c._count.fellowApplications,
+      }));
+  } catch {
+    return [];
+  }
+}
+
 async function getLiveStats() {
   try {
     const [enrollmentCount, gradedCount] = await Promise.all([
       prisma.enrollment.count({
-        where: { status: { not: EnrollmentStatus.CANCELLED } },
+        where: { status: { not: EnrollmentStatus.DROPPED } },
       }),
       prisma.assessmentSubmission.count({ where: { gradedAt: { not: null } } }),
     ]);
@@ -97,7 +136,7 @@ async function getLiveStats() {
 }
 
 export default async function HomePage() {
-  const stats = await getLiveStats();
+  const [stats, openCohorts] = await Promise.all([getLiveStats(), getOpenCohorts()]);
   return (
     <>
       <script
@@ -111,7 +150,11 @@ export default async function HomePage() {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
         />
       ))}
-      <LandingPage enrollments={stats.enrollments} passRate={stats.passRate} />
+      <LandingPage
+        enrollments={stats.enrollments}
+        passRate={stats.passRate}
+        openCohorts={openCohorts}
+      />
     </>
   );
 }

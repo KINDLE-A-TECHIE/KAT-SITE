@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(xargs ls -la)",
-      "Bash(npx prisma generate)"
+      "Bash(npx prisma generate)",
+      "Bash(npx eslint:*)",
+      "Bash(grep -v \"^$\")",
+      "Bash(grep -n \"CREATOR_ROLES\" src/app/api/programs/[programId]/curriculum/route.ts)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next:*)"
     ]
   }
 }

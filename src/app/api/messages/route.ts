@@ -10,6 +10,7 @@ import {
   MAX_GROUP_SIZE,
   MESSAGE_RATE_LIMIT_WINDOW_MS,
   MESSAGE_RATE_LIMIT_MAX,
+  MESSAGE_EDIT_DELETE_WINDOW_MS,
 } from "@/lib/validators";
 import { canMessageUser } from "@/lib/rbac";
 import { trackEvent } from "@/lib/analytics";
@@ -657,7 +658,7 @@ export async function PUT(request: Request) {
 
     const message = await prisma.message.findUnique({
       where: { id: parsed.data.messageId },
-      select: { id: true, threadId: true, senderId: true, deletedAt: true },
+      select: { id: true, threadId: true, senderId: true, deletedAt: true, createdAt: true },
     });
 
     if (!message) {
@@ -668,6 +669,9 @@ export async function PUT(request: Request) {
     }
     if (message.deletedAt) {
       return fail("Cannot edit a deleted message.", 400);
+    }
+    if (Date.now() - message.createdAt.getTime() > MESSAGE_EDIT_DELETE_WINDOW_MS) {
+      return fail("Messages can only be edited within 15 minutes of sending.", 403);
     }
 
     const now = new Date();
@@ -717,7 +721,7 @@ export async function DELETE(request: Request) {
 
     const message = await prisma.message.findUnique({
       where: { id: parsed.data.messageId },
-      select: { id: true, threadId: true, senderId: true, deletedAt: true },
+      select: { id: true, threadId: true, senderId: true, deletedAt: true, createdAt: true },
     });
 
     if (!message) {
@@ -732,6 +736,9 @@ export async function DELETE(request: Request) {
     }
     if (message.deletedAt) {
       return fail("Message already deleted.", 400);
+    }
+    if (!isAdmin && Date.now() - message.createdAt.getTime() > MESSAGE_EDIT_DELETE_WINDOW_MS) {
+      return fail("Messages can only be deleted within 15 minutes of sending.", 403);
     }
 
     const now = new Date();

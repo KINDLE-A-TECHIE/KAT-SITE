@@ -9,7 +9,7 @@ type PageHeaderProps = {
 
 export function PageHeader({ badge, title, subtitle, action }: PageHeaderProps) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-[#0D1F45] px-6 py-7 text-white">
+    <div className="relative overflow-hidden rounded-2xl bg-[#0D1F45] px-6 py-7 text-white print:hidden">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-blue-500/20 blur-3xl" />
         <div className="absolute -bottom-12 left-8 h-40 w-40 rounded-full bg-indigo-600/10 blur-2xl" />

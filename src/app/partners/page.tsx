@@ -7,9 +7,9 @@ import { PartnerForm } from "./partner-form";
 import { School, Building2, Landmark, Handshake } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Partner with KAT Academy — Schools, Corporates & Government",
+  title: "Partner with KAT Learning — Schools, Corporates & Government",
   description:
-    "Bring world-class tech education to your students or workforce. KAT Academy partners with schools, corporate organisations, and government bodies across Africa.",
+    "Bring world-class tech education to your students or workforce. KAT Learning partners with schools, corporate organisations, and government bodies across Africa.",
 };
 
 type PartnerCard = {
@@ -76,7 +76,7 @@ export default function PartnersPage() {
           </span>
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-slate-500">
-          KAT Academy partners with schools, corporate organisations, and government bodies to bring
+          KAT Learning partners with schools, corporate organisations, and government bodies to bring
           structured, mentor-led tech education to children and teens across Africa. Tell us about
           your goals and we&apos;ll design a programme that fits.
         </p>

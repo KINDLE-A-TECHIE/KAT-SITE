@@ -223,7 +223,7 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
                 className="flex cursor-pointer items-center gap-2 bg-slate-50 px-4 py-3 hover:bg-slate-100"
                 onClick={() => setExpandedModules((prev) => {
                   const next = new Set(prev);
-                  expanded ? next.delete(mod.id) : next.add(mod.id);
+                  if (expanded) { next.delete(mod.id); } else { next.add(mod.id); }
                   return next;
                 })}
               >

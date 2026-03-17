@@ -30,9 +30,80 @@ export async function POST(request: Request) {
       select: { id: true, email: true, organizationId: true, role: true },
     });
 
-    if (!user) {
-      return fail("User not found.", 404);
+    if (!user) return fail("User not found.", 404);
+
+    // ── Application fee path (external fellow applicants only) ─────────────────
+    if (parsed.data.fellowApplicationId) {
+      const application = await prisma.fellowApplication.findUnique({
+        where: { id: parsed.data.fellowApplicationId },
+        include: { cohort: { select: { programId: true } } },
+      });
+      if (!application) return fail("Application not found.", 404);
+      if (application.applicantId !== session.user.id) return fail("Forbidden", 403);
+      if (!application.isExternalApplicant) {
+        return fail("Internal students do not pay an application fee.", 400);
+      }
+
+      const existingFee = await prisma.payment.findUnique({
+        where: { fellowApplicationId: parsed.data.fellowApplicationId },
+        select: { id: true, status: true },
+      });
+      if (existingFee?.status === PaymentStatus.SUCCESS) {
+        return fail("Application fee already paid.", 409);
+      }
+
+      const billingMonth = new Date();
+      billingMonth.setDate(1);
+      billingMonth.setHours(0, 0, 0, 0);
+
+      const reference = generatePaymentReference();
+      const callbackUrl = `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/dashboard/payments?reference=${reference}`;
+
+      const payment = await prisma.payment.create({
+        data: {
+          userId: session.user.id,
+          fellowApplicationId: application.id,
+          programId: application.cohort?.programId ?? null,
+          provider: parsed.data.provider,
+          status: PaymentStatus.PENDING,
+          amount: parsed.data.amount,
+          currency: parsed.data.currency,
+          reference,
+          billingMonth,
+          metadata: { type: "application_fee", applicationId: application.id },
+        },
+      });
+
+      let authorizationUrl = `${callbackUrl}&mock=true`;
+      let accessCode: string | undefined;
+
+      if (parsed.data.provider === "PAYSTACK" && process.env.PAYSTACK_SECRET_KEY) {
+        const gateway = getPaymentGateway(parsed.data.provider);
+        const initialized = await gateway.initialize({
+          email: user.email,
+          amount: parsed.data.amount,
+          currency: parsed.data.currency,
+          reference,
+          callbackUrl,
+        });
+        authorizationUrl = initialized.authorizationUrl;
+        accessCode = initialized.accessCode;
+      }
+
+      await trackEvent({
+        userId: session.user.id,
+        organizationId: user.organizationId,
+        eventType: "payment",
+        eventName: "application_fee_initialized",
+        payload: { reference, applicationId: application.id },
+      });
+
+      return ok({ payment: { id: payment.id, reference, status: payment.status, amount: Number(payment.amount), currency: payment.currency, provider: payment.provider }, authorizationUrl, accessCode }, 201);
     }
+
+    // ── Standard enrollment payment path ───────────────────────────────────────
+    if (!parsed.data.programId) return fail("programId is required for enrollment payments.", 400);
+    if (!parsed.data.billingMonth) return fail("billingMonth is required for enrollment payments.", 400);
 
     // Parents can pay on behalf of a ward (child). Resolve the billing target.
     let targetUserId = session.user.id;
@@ -182,7 +253,7 @@ export async function POST(request: Request) {
       const gateway = getPaymentGateway(parsed.data.provider);
       const initialized = await gateway.initialize({
         email: user.email,
-        amount: parsed.data.amount,
+        amount: finalAmount,
         currency: parsed.data.currency,
         reference,
         callbackUrl,

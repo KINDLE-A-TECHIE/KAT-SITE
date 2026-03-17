@@ -29,6 +29,7 @@ enum EnrollmentStatus {
   COMPLETED
   PAUSED
   DROPPED
+  SUSPENDED
 }
 
 enum AssessmentType {
@@ -219,6 +220,7 @@ model User {
   lessonContentsReviewed    LessonContent[]    @relation("LessonContentReviewer")
   certificatesEarned   Certificate[]        @relation("CertificateRecipient")
   certificatesIssued   Certificate[]        @relation("CertificateIssuer")
+  passwordResetTokens  PasswordResetToken[]
 }
 
 model SuperAdminInvite {
@@ -399,41 +401,41 @@ model Program {
 model Cohort {
   id             String       @id @default(cuid())
   organizationId String
-  programId      String
+  programId      String?
   name           String
   startsAt       DateTime
   endsAt         DateTime
-  capacity       Int?
+  capacity               Int?
+  applicationOpen        Boolean   @default(false)
+  applicationClosesAt    DateTime?
+  externalApplicationFee Decimal?  @db.Decimal(10, 2)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  program            Program             @relation(fields: [programId], references: [id], onDelete: Cascade)
-  enrollments        Enrollment[]
-  assessments        Assessment[]
+  program            Program?            @relation(fields: [programId], references: [id], onDelete: SetNull)
   meetings           Meeting[]
   fellowApplications FellowApplication[]
 
-  @@index([organizationId, programId])
+  @@index([organizationId])
 }
 
 model Enrollment {
-  id          String           @id @default(cuid())
-  userId      String
-  programId   String
-  cohortId    String?
-  status      EnrollmentStatus @default(ACTIVE)
-  enrolledAt  DateTime         @default(now())
-  completedAt DateTime?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id                String           @id @default(cuid())
+  userId            String
+  programId         String
+  status            EnrollmentStatus @default(ACTIVE)
+  enrolledAt        DateTime         @default(now())
+  completedAt       DateTime?
+  currentPeriodEnd  DateTime?        // null = no billing cycle set yet; set on each verified payment
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   program     Program          @relation(fields: [programId], references: [id], onDelete: Cascade)
-  cohort      Cohort?          @relation(fields: [cohortId], references: [id], onDelete: SetNull)
   payments    Payment[]
   submissions AssessmentSubmission[]
 
   @@unique([userId, programId])
-  @@index([programId, cohortId])
+  @@index([programId])
 }
 
 model Mentorship {
@@ -454,7 +456,7 @@ model Mentorship {
 model Assessment {
   id                 String                       @id @default(cuid())
   programId          String
-  cohortId           String?
+  moduleId           String?
   title              String
   description        String?                      @db.Text
   type               AssessmentType
@@ -470,13 +472,13 @@ model Assessment {
   createdAt          DateTime                     @default(now())
   updatedAt          DateTime                     @updatedAt
   program            Program                      @relation(fields: [programId], references: [id], onDelete: Cascade)
-  cohort             Cohort?                      @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  module             Module?                      @relation(fields: [moduleId], references: [id], onDelete: SetNull)
   createdBy          User                         @relation("AssessmentCreator", fields: [createdById], references: [id], onDelete: Cascade)
   verifiedBy         User?                        @relation("AssessmentVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
   questions          AssessmentQuestion[]
   submissions        AssessmentSubmission[]
 
-  @@index([programId, cohortId, published, verificationStatus])
+  @@index([programId, moduleId, published, verificationStatus])
   @@index([verificationStatus, verifiedAt])
 }
 
@@ -629,9 +631,10 @@ model MessageReadReceipt {
 model Payment {
   id          String          @id @default(cuid())
   userId      String
-  enrollmentId String?
-  programId   String?
-  provider    PaymentProvider
+  enrollmentId        String?
+  programId           String?
+  fellowApplicationId String?  @unique
+  provider            PaymentProvider
   status      PaymentStatus   @default(PENDING)
   amount      Decimal         @db.Decimal(10, 2)
   currency    String          @default("NGN")
@@ -642,12 +645,13 @@ model Payment {
   channel     String?
   metadata    Json?
   discountCodeId String?
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  enrollment     Enrollment?     @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
-  program        Program?        @relation(fields: [programId], references: [id], onDelete: SetNull)
-  discountCode   DiscountCode?   @relation(fields: [discountCodeId], references: [id], onDelete: SetNull)
-  receipt        PaymentReceipt?
-  redemption     DiscountCodeRedemption?
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollment         Enrollment?       @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  program            Program?          @relation(fields: [programId], references: [id], onDelete: SetNull)
+  fellowApplication  FellowApplication? @relation("ApplicationFeePayment", fields: [fellowApplicationId], references: [id], onDelete: SetNull)
+  discountCode       DiscountCode?     @relation(fields: [discountCodeId], references: [id], onDelete: SetNull)
+  receipt            PaymentReceipt?
+  redemption         DiscountCodeRedemption?
 
   @@index([userId, billingMonth])
   @@index([status, provider])
@@ -794,21 +798,29 @@ model MonthlyAnalytics {
 }
 
 model FellowApplication {
-  id           String            @id @default(cuid())
-  applicantId  String
-  cohortId     String?
-  status       ApplicationStatus @default(PENDING)
-  motivation   String            @db.Text
-  experience   String?           @db.Text
-  submittedAt  DateTime          @default(now())
-  reviewedAt   DateTime?
-  reviewedById String?
-  reviewNotes  String?           @db.Text
-  applicant    User              @relation("FellowApplicant", fields: [applicantId], references: [id], onDelete: Cascade)
-  cohort       Cohort?           @relation(fields: [cohortId], references: [id], onDelete: SetNull)
-  reviewedBy   User?             @relation("FellowApplicationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  id                  String            @id @default(cuid())
+  applicantId         String?           // null for guest applicants until approved
+  cohortId            String?
+  status              ApplicationStatus @default(PENDING)
+  isExternalApplicant Boolean           @default(false)
+  motivation          String            @db.Text
+  experience          String?           @db.Text
+  submittedAt         DateTime          @default(now())
+  reviewedAt          DateTime?
+  reviewedById        String?
+  reviewNotes         String?           @db.Text
+  // Guest fields — present only while pending; cleared on approval, deleted on rejection
+  guestFirstName      String?
+  guestLastName       String?
+  guestEmail          String?
+  guestPhone          String?
+  applicant           User?             @relation("FellowApplicant", fields: [applicantId], references: [id], onDelete: Cascade)
+  cohort              Cohort?           @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  reviewedBy          User?             @relation("FellowApplicationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  applicationFee      Payment?          @relation("ApplicationFeePayment")
 
   @@unique([applicantId, cohortId])
+  @@unique([guestEmail, cohortId])
   @@index([status])
   @@index([cohortId])
 }
@@ -857,6 +869,7 @@ model Module {
   updatedAt     DateTime          @updatedAt
   version       CurriculumVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
   lessons       Lesson[]
+  assessments   Assessment[]
 
   @@index([versionId, sortOrder])
 }
@@ -940,4 +953,17 @@ model Certificate {
   @@unique([userId, programId])
   @@index([userId])
   @@index([programId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  token     String    @unique @default(cuid())
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
 }

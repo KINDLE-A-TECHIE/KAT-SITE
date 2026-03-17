@@ -54,7 +54,7 @@ type CohortLeaderboardItem = {
   cohortId: string;
   name: string;
   programName: string;
-  enrollments: number;
+  enrollments: number; // approved fellows in this cohort
   completionRate: number;
   meetingAttendanceRate: number;
   revenue: number;
@@ -271,67 +271,49 @@ export async function getUserAnalytics(userId: string, rangeDays = 30) {
               })
               .then((rows) => rows.map((row) => row.submittedAt));
 
-  const [logins, activityCount, unreadMessages, upcomingMeetings, loginEventsInRange, activityEventsInRange, messagesInRange, meetingsInRange] =
-    await Promise.all([
-      prisma.analyticsEvent.count({
-        where: {
-          userId,
-          eventType: "auth",
-          eventName: "login",
-          occurredAt: { gte: thirtyDaysAgo },
-        },
-      }),
-      activityCountPromise,
-      prisma.message.count({
-        where: {
-          thread: {
-            participants: { some: { userId } },
-          },
-          senderId: { not: userId },
-          receipts: {
-            none: { userId },
-          },
-        },
-      }),
-      prisma.meetingParticipant.count({
-        where: {
-          userId,
-          meeting: { startTime: { gte: new Date() } },
-        },
-      }),
-      prisma.analyticsEvent.findMany({
-        where: {
-          userId,
-          eventType: "auth",
-          eventName: "login",
-          occurredAt: { gte: trendStart },
-        },
-        select: { occurredAt: true },
-      }),
-      activityEventsInRangePromise,
-      prisma.message.findMany({
-        where: {
-          senderId: { not: userId },
-          createdAt: { gte: trendStart },
-          thread: {
-            participants: {
-              some: {
-                userId,
-                leftAt: null,
-              },
-            },
-          },
-        },
-        select: { createdAt: true },
-      }),
-      prisma.meetingParticipant.findMany({
-        where: {
-          userId,
-          joinedAt: { gte: trendStart },
-        },
-        select: { joinedAt: true },
-      }),
-    ]);
+  // Batch 1: counts (4 queries)
+  const [logins, activityCount, unreadMessages, upcomingMeetings] = await Promise.all([
+    prisma.analyticsEvent.count({
+      where: {
+        userId,
+        eventType: "auth",
+        eventName: "login",
+        occurredAt: { gte: thirtyDaysAgo },
+      },
+    }),
+    activityCountPromise,
+    prisma.message.count({
+      where: {
+        thread: { participants: { some: { userId } } },
+        senderId: { not: userId },
+        receipts: { none: { userId } },
+      },
+    }),
+    prisma.meetingParticipant.count({
+      where: { userId, meeting: { startTime: { gte: new Date() } } },
+    }),
+  ]);
+
+  // Batch 2: trend data (4 queries)
+  const [loginEventsInRange, activityEventsInRange, messagesInRange, meetingsInRange] = await Promise.all([
+    prisma.analyticsEvent.findMany({
+      where: { userId, eventType: "auth", eventName: "login", occurredAt: { gte: trendStart } },
+      select: { occurredAt: true },
+    }),
+    activityEventsInRangePromise,
+    prisma.message.findMany({
+      where: {
+        senderId: { not: userId },
+        createdAt: { gte: trendStart },
+        thread: { participants: { some: { userId, leftAt: null } } },
+      },
+      select: { createdAt: true },
+    }),
+    prisma.meetingParticipant.findMany({
+      where: { userId, joinedAt: { gte: trendStart } },
+      select: { joinedAt: true },
+    }),
+  ]);
 
   const pointsByDate = new Map<string, UserTrendPoint>(
     keys.map((key) => [
@@ -398,180 +380,127 @@ export async function getUserAnalytics(userId: string, rangeDays = 30) {
 export async function getPlatformAnalytics(organizationId: string, rangeDays = 30) {
   const trend = buildDateRange(rangeDays);
 
-  const [
-    users,
-    enrollments,
-    successfulPayments,
-    recentEvents,
-    enrollmentsInRange,
-    successfulPaymentsInRange,
-    activityEventsInRange,
-    messagesInRange,
-    monitoredUsers,
-    cohorts,
-    programs,
-    cohortRevenueRows,
-    programRevenueRows,
-    programAssessmentRows,
-    gradingBacklog,
-  ] = await Promise.all([
+  // Batch 1: core counts and summary data (5 queries)
+  const [users, enrollments, successfulPayments, recentEvents, monitoredUsers] = await Promise.all([
     prisma.user.groupBy({
       by: ["role"],
       where: { organizationId },
       _count: { _all: true },
     }),
     prisma.enrollment.count({
-      where: {
-        program: { organizationId },
-      },
+      where: { program: { organizationId } },
     }),
     prisma.payment.findMany({
-      where: {
-        status: PaymentStatus.SUCCESS,
-        user: { organizationId },
-      },
+      where: { status: PaymentStatus.SUCCESS, user: { organizationId } },
       select: { amount: true, billingMonth: true },
     }),
     prisma.analyticsEvent.count({
       where: {
         organizationId,
-        occurredAt: {
-          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        },
+        occurredAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
       },
-    }),
-    prisma.enrollment.findMany({
-      where: {
-        program: { organizationId },
-        createdAt: { gte: trend.start },
-      },
-      select: { createdAt: true },
-    }),
-    prisma.payment.findMany({
-      where: {
-        status: PaymentStatus.SUCCESS,
-        user: { organizationId },
-        initializedAt: { gte: trend.start },
-      },
-      select: { amount: true, initializedAt: true },
-    }),
-    prisma.analyticsEvent.findMany({
-      where: {
-        organizationId,
-        occurredAt: { gte: trend.start },
-      },
-      select: { occurredAt: true },
-    }),
-    prisma.message.findMany({
-      where: {
-        createdAt: { gte: trend.start },
-        thread: {
-          participants: {
-            some: {
-              user: { organizationId },
-            },
-          },
-        },
-      },
-      select: { createdAt: true },
     }),
     prisma.user.findMany({
       where: {
         organizationId,
         role: { in: [UserRole.STUDENT, UserRole.FELLOW, UserRole.INSTRUCTOR] },
       },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-      },
+      select: { id: true, firstName: true, lastName: true, role: true },
       take: 80,
     }),
-    prisma.cohort.findMany({
-      where: { organizationId },
-      select: {
-        id: true,
-        name: true,
-        program: { select: { name: true } },
-        enrollments: { select: { status: true } },
-        meetings: {
-          select: {
-            participants: {
-              select: { joinedAt: true },
-            },
-          },
-        },
-      },
-      take: 50,
-    }),
-    prisma.program.findMany({
-      where: { organizationId },
-      select: {
-        id: true,
-        name: true,
-        enrollments: { select: { status: true } },
-      },
-      take: 50,
-    }),
-    prisma.payment.findMany({
-      where: {
-        status: PaymentStatus.SUCCESS,
-        user: { organizationId },
-        enrollment: { cohortId: { not: null } },
-      },
-      select: {
-        amount: true,
-        enrollment: {
-          select: {
-            cohortId: true,
-          },
-        },
-      },
-    }),
-    prisma.payment.findMany({
-      where: {
-        status: PaymentStatus.SUCCESS,
-        user: { organizationId },
-        programId: { not: null },
-      },
-      select: {
-        amount: true,
-        programId: true,
-      },
-    }),
-    // Assessment analytics: per-program stats
-    prisma.program.findMany({
-      where: { organizationId },
-      select: {
-        id: true,
-        name: true,
-        assessments: {
-          where: { published: true },
-          select: {
-            passScore: true,
-            totalPoints: true,
-            submissions: {
-              select: {
-                totalScore: true,
-                status: true,
-                gradedAt: true,
-              },
-            },
-          },
-        },
-      },
-      take: 20,
-    }),
-    // Grading backlog: submitted but not yet graded
-    prisma.assessmentSubmission.count({
-      where: {
-        assessment: { program: { organizationId }, published: true },
-        status: AttemptStatus.SUBMITTED,
-        gradedAt: null,
-      },
-    }),
   ]);
+
+  // Batch 2: trend data (5 queries)
+  const [enrollmentsInRange, successfulPaymentsInRange, activityEventsInRange, messagesInRange, cohorts] =
+    await Promise.all([
+      prisma.enrollment.findMany({
+        where: { program: { organizationId }, createdAt: { gte: trend.start } },
+        select: { createdAt: true },
+      }),
+      prisma.payment.findMany({
+        where: {
+          status: PaymentStatus.SUCCESS,
+          user: { organizationId },
+          initializedAt: { gte: trend.start },
+        },
+        select: { amount: true, initializedAt: true },
+      }),
+      prisma.analyticsEvent.findMany({
+        where: { organizationId, occurredAt: { gte: trend.start } },
+        select: { occurredAt: true },
+      }),
+      prisma.message.findMany({
+        where: {
+          createdAt: { gte: trend.start },
+          thread: { participants: { some: { user: { organizationId } } } },
+        },
+        select: { createdAt: true },
+      }),
+      prisma.cohort.findMany({
+        where: { organizationId },
+        select: {
+          id: true,
+          name: true,
+          program: { select: { name: true } },
+          fellowApplications: { where: { status: "APPROVED" }, select: { id: true } },
+          meetings: { select: { participants: { select: { joinedAt: true } } } },
+        },
+        take: 50,
+      }),
+    ]);
+
+  // Batch 3: program and payment breakdown (5 queries)
+  const [programs, cohortRevenueRows, programRevenueRows, programAssessmentRows, gradingBacklog] =
+    await Promise.all([
+      prisma.program.findMany({
+        where: { organizationId },
+        select: { id: true, name: true, enrollments: { select: { status: true } } },
+        take: 50,
+      }),
+      // Application fee payments (external fellow applicants only).
+      prisma.payment.findMany({
+        where: {
+          status: PaymentStatus.SUCCESS,
+          fellowApplicationId: { not: null },
+          user: { organizationId },
+        },
+        select: { amount: true, fellowApplication: { select: { cohortId: true } } },
+      }),
+      // Enrollment payments (students paying monthly fees).
+      prisma.payment.findMany({
+        where: {
+          status: PaymentStatus.SUCCESS,
+          enrollmentId: { not: null },
+          user: { organizationId },
+        },
+        select: { amount: true, programId: true },
+      }),
+      // Assessment analytics: per-program stats
+      prisma.program.findMany({
+        where: { organizationId },
+        select: {
+          id: true,
+          name: true,
+          assessments: {
+            where: { published: true },
+            select: {
+              passScore: true,
+              totalPoints: true,
+              submissions: { select: { totalScore: true, status: true, gradedAt: true } },
+            },
+          },
+        },
+        take: 20,
+      }),
+      // Grading backlog: submitted but not yet graded
+      prisma.assessmentSubmission.count({
+        where: {
+          assessment: { program: { organizationId }, published: true },
+          status: AttemptStatus.SUBMITTED,
+          gradedAt: null,
+        },
+      }),
+    ]);
 
   const roleBreakdown = users.reduce<Record<UserRole, number>>(
     (acc, row) => {
@@ -763,23 +692,17 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
     .sort((a, b) => b.riskScore - a.riskScore || b.unreadMessages - a.unreadMessages)
     .slice(0, 8);
 
+  // Revenue by cohort = application fees from external applicants.
   const revenueByCohortId = new Map<string, number>();
   for (const row of cohortRevenueRows) {
-    const cohortId = row.enrollment?.cohortId;
-    if (!cohortId) {
-      continue;
-    }
+    const cohortId = row.fellowApplication?.cohortId;
+    if (!cohortId) continue;
     revenueByCohortId.set(cohortId, (revenueByCohortId.get(cohortId) ?? 0) + Number(row.amount));
   }
 
   const cohortLeaderboard: CohortLeaderboardItem[] = cohorts
     .map((cohort) => {
-      const enrollmentCount = cohort.enrollments.length;
-      const completed = cohort.enrollments.filter(
-        (enrollment) => enrollment.status === EnrollmentStatus.COMPLETED,
-      ).length;
-      const completionRate =
-        enrollmentCount === 0 ? 0 : roundToOneDecimal((completed / enrollmentCount) * 100);
+      const fellowCount = cohort.fellowApplications.length;
 
       const participantTotal = cohort.meetings.reduce((sum, meeting) => sum + meeting.participants.length, 0);
       const participantJoined = cohort.meetings.reduce(
@@ -792,17 +715,17 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
       return {
         cohortId: cohort.id,
         name: cohort.name,
-        programName: cohort.program.name,
-        enrollments: enrollmentCount,
-        completionRate,
+        programName: cohort.program?.name ?? "—",
+        enrollments: fellowCount,
+        completionRate: 0,
         meetingAttendanceRate,
         revenue: Number(revenueByCohortId.get(cohort.id) ?? 0),
       };
     })
     .sort(
       (a, b) =>
-        b.completionRate - a.completionRate ||
         b.meetingAttendanceRate - a.meetingAttendanceRate ||
+        b.enrollments - a.enrollments ||
         b.revenue - a.revenue,
     )
     .slice(0, 8);

@@ -180,15 +180,15 @@ function TrendMiniCard<TPoint extends { label: string }>(props: TrendMiniCardPro
   );
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-sm font-medium text-slate-900">{props.title}</p>
-          <p className="text-xs text-slate-500">{props.subtitle}</p>
+          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{props.title}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{props.subtitle}</p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] uppercase tracking-wide text-slate-500">Total</p>
-          <p className="text-xs font-semibold text-slate-900">
+          <p className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Total</p>
+          <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
             {props.formatValue ? props.formatValue(total) : total}
           </p>
         </div>
@@ -209,7 +209,7 @@ function TrendMiniCard<TPoint extends { label: string }>(props: TrendMiniCardPro
           );
         })}
       </div>
-      <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
+      <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
         <span>{props.points[0]?.label ?? ""}</span>
         <span>{props.points[Math.floor(props.points.length / 2)]?.label ?? ""}</span>
         <span>{props.points[props.points.length - 1]?.label ?? ""}</span>
@@ -234,7 +234,7 @@ function formatLastLogin(value: number | null) {
 function PercentageBar({ value, colorClass }: { value: number; colorClass: string }) {
   const width = Math.max(0, Math.min(100, value));
   return (
-    <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+    <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
       <div className={cn("h-full rounded-full", colorClass)} style={{ width: `${width}%` }} />
     </div>
   );
@@ -242,22 +242,22 @@ function PercentageBar({ value, colorClass }: { value: number; colorClass: strin
 
 function riskBadgeClass(score: number) {
   if (score >= 8) {
-    return "bg-rose-100 text-rose-700";
+    return "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-400";
   }
   if (score >= 5) {
-    return "bg-amber-100 text-amber-700";
+    return "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400";
   }
-  return "bg-sky-100 text-sky-700";
+  return "bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400";
 }
 
 function recommendationToneClass(tone: RecommendationTone) {
   if (tone === "critical") {
-    return "border-rose-200 bg-rose-50/60";
+    return "border-rose-200 dark:border-rose-800 bg-rose-50/60 dark:bg-rose-900/30";
   }
   if (tone === "opportunity") {
-    return "border-emerald-200 bg-emerald-50/60";
+    return "border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-900/30";
   }
-  return "border-sky-200 bg-sky-50/60";
+  return "border-sky-200 dark:border-sky-800 bg-sky-50/60 dark:bg-sky-900/30";
 }
 
 export function AnalyticsPanel() {
@@ -961,11 +961,11 @@ export function AnalyticsPanel() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.12),transparent_40%)]" />
         <div className="relative flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-900">Analytics Focus</p>
-          <p className="text-xs text-slate-500">Switch analysis window to compare short-term vs long-term behavior.</p>
+          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Analytics Focus</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Switch analysis window to compare short-term vs long-term behavior.</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {headlineSignals.map((signal) => (
-              <span key={signal} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-700">
+              <span key={signal} className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-[11px] text-slate-700 dark:text-slate-300">
                 {signal}
               </span>
             ))}
@@ -974,7 +974,7 @@ export function AnalyticsPanel() {
           <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
             <Select value={range} onValueChange={(value) => setRange(value as RangeValue)}
             >
-              <SelectTrigger className="h-10 w-full rounded-xl border border-slate-300 bg-slate-50/70 px-3 text-sm text-slate-700 focus-visible:ring-2 focus-visible:ring-sky-200 sm:w-40">
+              <SelectTrigger className="h-10 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-800 px-3 text-sm text-slate-700 dark:text-slate-200 focus-visible:ring-2 focus-visible:ring-sky-200 sm:w-40">
                 <SelectValue placeholder="Select range" />
               </SelectTrigger>
               <SelectContent className="max-h-56 overflow-y-auto" position="popper" side="bottom" align="start" sideOffset={6}>
@@ -1010,12 +1010,12 @@ export function AnalyticsPanel() {
       </section>
 
       <section className="kat-card">
-        <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold">Top 3 Recommendations</h3>
-        <p className="mt-1 text-sm text-slate-600">Priority actions auto-generated from current analytics signals.</p>
+        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Top 3 Recommendations</h3>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Priority actions auto-generated from current analytics signals.</p>
         <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-3">
           {loading || !analytics
             ? Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="rounded-xl border border-slate-200 bg-white p-3">
+                <div key={index} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
                   <Skeleton className="h-4 w-36" />
                   <Skeleton className="mt-2 h-3 w-full" />
                   <Skeleton className="mt-1 h-3 w-[90%]" />
@@ -1024,9 +1024,9 @@ export function AnalyticsPanel() {
               ))
             : topRecommendations.map((item) => (
                 <div key={item.title} className={cn("rounded-xl border p-3", recommendationToneClass(item.tone))}>
-                  <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                  <p className="mt-1 text-xs text-slate-700">{item.detail}</p>
-                  <p className="mt-2 text-xs font-medium text-slate-800">{item.action}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
+                  <p className="mt-1 text-xs text-slate-700 dark:text-slate-300">{item.detail}</p>
+                  <p className="mt-2 text-xs font-medium text-slate-800 dark:text-slate-200">{item.action}</p>
                 </div>
               ))}
         </div>
@@ -1048,13 +1048,13 @@ export function AnalyticsPanel() {
             ].map((item, index) => (
               <motion.div
                 key={item.label}
-                className="kat-card bg-gradient-to-br from-white via-white to-slate-50"
+                className="kat-card bg-gradient-to-br from-white via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800/60"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.04 }}
               >
-                <p className="text-sm text-slate-600">{item.label}</p>
-                <p className="mt-2 font-[var(--font-space-grotesk)] text-3xl font-semibold text-slate-900">
+                <p className="text-sm text-slate-600 dark:text-slate-400">{item.label}</p>
+                <p className="mt-2 [font-family:var(--font-space-grotesk)] text-3xl font-semibold text-slate-900 dark:text-slate-100">
                   {item.value}
                 </p>
               </motion.div>
@@ -1062,8 +1062,8 @@ export function AnalyticsPanel() {
       </section>
 
       <section className="kat-card">
-        <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold">My Activity Trend</h3>
-        <p className="mt-1 text-sm text-slate-600">Daily movement across communication, learning, and attendance.</p>
+        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">My Activity Trend</h3>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Daily movement across communication, learning, and attendance.</p>
         {loading || !analytics ? (
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
@@ -1107,40 +1107,40 @@ export function AnalyticsPanel() {
       {analytics?.platformAnalytics ? (
         <>
           <section className="kat-card">
-            <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold">Platform Metrics</h3>
+            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Platform Metrics</h3>
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-sm text-slate-600">Total Enrollments</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
+                <p className="text-sm text-slate-600 dark:text-slate-400">Total Enrollments</p>
+                <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">
                   {analytics.platformAnalytics.enrollmentCount}
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-sm text-slate-600">Revenue</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
+                <p className="text-sm text-slate-600 dark:text-slate-400">Revenue</p>
+                <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">
                   NGN {Number(analytics.platformAnalytics.totalRevenue).toLocaleString()}
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-sm text-slate-600">Activity Events (7d)</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
+                <p className="text-sm text-slate-600 dark:text-slate-400">Activity Events (7d)</p>
+                <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">
                   {analytics.platformAnalytics.activityEvents7d}
                 </p>
               </div>
             </div>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {Object.entries(analytics.platformAnalytics.roleBreakdown).map(([role, count]) => (
-                <div key={role} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">{role}</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">{count}</p>
+                <div key={role} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{role}</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{count}</p>
                 </div>
               ))}
             </div>
           </section>
 
           <section className="kat-card">
-            <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold">Organization Trend</h3>
-            <p className="mt-1 text-sm text-slate-600">Daily pulse for growth, revenue, and communication output.</p>
+            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Organization Trend</h3>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Daily pulse for growth, revenue, and communication output.</p>
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
               <TrendMiniCard
                 title="New Enrollments"
@@ -1178,24 +1178,24 @@ export function AnalyticsPanel() {
             <section className="kat-card">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Assessment Performance</h3>
-                  <p className="mt-1 text-sm text-slate-600 max-[360px]:text-xs">
+                  <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Assessment Performance</h3>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400 max-[360px]:text-xs">
                     Pass rates and submission activity per program.
                   </p>
                 </div>
                 {analytics.platformAnalytics.assessmentAnalytics.gradingBacklog > 0 && (
-                  <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
-                    <span className="text-sm font-semibold text-amber-700">
+                  <div className="flex items-center gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/30 px-3 py-2">
+                    <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
                       {analytics.platformAnalytics.assessmentAnalytics.gradingBacklog} pending grading
                     </span>
-                    <span className="text-xs text-amber-600">across all programs</span>
+                    <span className="text-xs text-amber-600 dark:text-amber-400">across all programs</span>
                   </div>
                 )}
               </div>
               <div className="mt-3 overflow-x-auto overflow-y-auto pb-1">
                 <table className="min-w-[720px] w-full text-sm max-[360px]:text-xs">
                   <thead>
-                    <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       <th className="pb-2">Program</th>
                       <th className="pb-2">Assessments</th>
                       <th className="pb-2">Submissions</th>
@@ -1204,10 +1204,10 @@ export function AnalyticsPanel() {
                       <th className="pb-2">Pending Grading</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {analytics.platformAnalytics.assessmentAnalytics.programStats.length === 0 ? (
                       <tr>
-                        <td className="py-3 text-slate-600" colSpan={6}>No assessment data yet.</td>
+                        <td className="py-3 text-slate-600 dark:text-slate-400" colSpan={6}>No assessment data yet.</td>
                       </tr>
                     ) : (
                       analytics.platformAnalytics.assessmentAnalytics.programStats.map((prog) => (
@@ -1217,7 +1217,7 @@ export function AnalyticsPanel() {
                           <td className="py-3">{prog.totalSubmissions}</td>
                           <td className="py-3">
                             {prog.passRate === null ? (
-                              <span className="text-slate-400">—</span>
+                              <span className="text-slate-400 dark:text-slate-500">—</span>
                             ) : (
                               <div className="flex min-w-[110px] items-center gap-2">
                                 <div className="flex-1">
@@ -1226,22 +1226,22 @@ export function AnalyticsPanel() {
                                     colorClass={prog.passRate >= 75 ? "bg-emerald-500" : prog.passRate >= 60 ? "bg-amber-500" : "bg-rose-500"}
                                   />
                                 </div>
-                                <span className={cn("text-xs font-semibold", prog.passRate >= 75 ? "text-emerald-700" : prog.passRate >= 60 ? "text-amber-700" : "text-rose-700")}>
+                                <span className={cn("text-xs font-semibold", prog.passRate >= 75 ? "text-emerald-700 dark:text-emerald-400" : prog.passRate >= 60 ? "text-amber-700 dark:text-amber-400" : "text-rose-700 dark:text-rose-400")}>
                                   {prog.passRate}%
                                 </span>
                               </div>
                             )}
                           </td>
                           <td className="py-3">
-                            {prog.avgScore === null ? <span className="text-slate-400">—</span> : prog.avgScore}
+                            {prog.avgScore === null ? <span className="text-slate-400 dark:text-slate-500">—</span> : prog.avgScore}
                           </td>
                           <td className="py-3">
                             {prog.pendingGrading > 0 ? (
-                              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                              <span className="rounded-full bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
                                 {prog.pendingGrading}
                               </span>
                             ) : (
-                              <span className="text-emerald-600 text-xs">All graded</span>
+                              <span className="text-emerald-600 dark:text-emerald-400 text-xs">All graded</span>
                             )}
                           </td>
                         </tr>
@@ -1257,8 +1257,8 @@ export function AnalyticsPanel() {
             <div className="kat-card">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Risk & Attention Queue</h3>
-                  <p className="mt-1 text-sm text-slate-600 max-[360px]:text-xs">
+                  <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Risk & Attention Queue</h3>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400 max-[360px]:text-xs">
                     Learners/instructors likely needing intervention based on unread load and inactivity.
                   </p>
                 </div>
@@ -1276,7 +1276,7 @@ export function AnalyticsPanel() {
               <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
                 <table className="min-w-[900px] w-full text-sm max-[360px]:text-xs">
                   <thead>
-                    <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       <th className="pb-2 max-[360px]:pb-1.5">Name</th>
                       <th className="pb-2 max-[360px]:pb-1.5">Role</th>
                       <th className="pb-2 max-[360px]:pb-1.5">Unread</th>
@@ -1287,10 +1287,10 @@ export function AnalyticsPanel() {
                       <th className="pb-2 max-[360px]:pb-1.5">Risk</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {analytics.platformAnalytics.riskAlerts.length === 0 ? (
                       <tr>
-                        <td className="py-3 text-slate-600 max-[360px]:py-2" colSpan={8}>
+                        <td className="py-3 text-slate-600 dark:text-slate-400 max-[360px]:py-2" colSpan={8}>
                           No urgent attention signals right now.
                         </td>
                       </tr>
@@ -1298,30 +1298,30 @@ export function AnalyticsPanel() {
                       analytics.platformAnalytics.riskAlerts.map((alert) => (
                         <tr key={alert.userId}>
                           <td className="py-3 max-[360px]:py-2">{alert.name}</td>
-                          <td className="py-3 text-xs uppercase text-slate-600 max-[360px]:py-2 max-[360px]:text-[10px]">{alert.role}</td>
+                          <td className="py-3 text-xs uppercase text-slate-600 dark:text-slate-400 max-[360px]:py-2 max-[360px]:text-[10px]">{alert.role}</td>
                           <td className="py-3 max-[360px]:py-2">{alert.unreadMessages}</td>
                           <td className="py-3 max-[360px]:py-2">{formatLastLogin(alert.lastLoginDaysAgo)}</td>
                           <td className="py-3 max-[360px]:py-2">
                             {alert.overdueAssessments > 0 ? (
-                              <span className="font-semibold text-rose-600">{alert.overdueAssessments}</span>
+                              <span className="font-semibold text-rose-600 dark:text-rose-400">{alert.overdueAssessments}</span>
                             ) : (
-                              <span className="text-slate-400">—</span>
+                              <span className="text-slate-400 dark:text-slate-500">—</span>
                             )}
                           </td>
                           <td className="py-3 max-[360px]:py-2">
                             {alert.passRate === null ? (
-                              <span className="text-slate-400">—</span>
+                              <span className="text-slate-400 dark:text-slate-500">—</span>
                             ) : (
-                              <span className={cn("font-semibold", alert.passRate < 60 ? "text-rose-600" : alert.passRate < 75 ? "text-amber-600" : "text-emerald-600")}>
+                              <span className={cn("font-semibold", alert.passRate < 60 ? "text-rose-600 dark:text-rose-400" : alert.passRate < 75 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400")}>
                                 {alert.passRate}%
                               </span>
                             )}
                           </td>
                           <td className="py-3 max-[360px]:py-2">
                             {alert.daysSinceLastSubmission === null ? (
-                              <span className="text-slate-400">—</span>
+                              <span className="text-slate-400 dark:text-slate-500">—</span>
                             ) : (
-                              <span className={alert.daysSinceLastSubmission >= 14 ? "text-amber-600" : "text-slate-700"}>
+                              <span className={alert.daysSinceLastSubmission >= 14 ? "text-amber-600 dark:text-amber-400" : "text-slate-700 dark:text-slate-300"}>
                                 {alert.daysSinceLastSubmission === 0 ? "Today" : `${alert.daysSinceLastSubmission}d ago`}
                               </span>
                             )}
@@ -1342,8 +1342,8 @@ export function AnalyticsPanel() {
             <div className="kat-card">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Cohort Leaderboard</h3>
-                  <p className="mt-1 text-sm text-slate-600 max-[360px]:text-xs">Completion + attendance quality ranked across cohorts.</p>
+                  <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Cohort Leaderboard</h3>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400 max-[360px]:text-xs">Completion + attendance quality ranked across cohorts.</p>
                 </div>
                 <Button
                   type="button"
@@ -1359,7 +1359,7 @@ export function AnalyticsPanel() {
               <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
                 <table className="min-w-[760px] w-full text-sm max-[360px]:text-xs">
                   <thead>
-                    <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       <th className="pb-2 max-[360px]:pb-1.5">Cohort</th>
                       <th className="pb-2 max-[360px]:pb-1.5">Program</th>
                       <th className="pb-2 max-[360px]:pb-1.5">Complete %</th>
@@ -1367,10 +1367,10 @@ export function AnalyticsPanel() {
                       <th className="pb-2 max-[360px]:pb-1.5">Revenue</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {analytics.platformAnalytics.cohortLeaderboard.length === 0 ? (
                       <tr>
-                        <td className="py-3 text-slate-600 max-[360px]:py-2" colSpan={5}>
+                        <td className="py-3 text-slate-600 dark:text-slate-400 max-[360px]:py-2" colSpan={5}>
                           No cohort analytics yet.
                         </td>
                       </tr>
@@ -1384,7 +1384,7 @@ export function AnalyticsPanel() {
                               <div className="flex-1">
                                 <PercentageBar value={cohort.completionRate} colorClass="bg-emerald-500" />
                               </div>
-                              <span className="text-xs text-slate-600">{cohort.completionRate}%</span>
+                              <span className="text-xs text-slate-600 dark:text-slate-400">{cohort.completionRate}%</span>
                             </div>
                           </td>
                           <td className="py-3 max-[360px]:py-2">
@@ -1392,7 +1392,7 @@ export function AnalyticsPanel() {
                               <div className="flex-1">
                                 <PercentageBar value={cohort.meetingAttendanceRate} colorClass="bg-sky-500" />
                               </div>
-                              <span className="text-xs text-slate-600">{cohort.meetingAttendanceRate}%</span>
+                              <span className="text-xs text-slate-600 dark:text-slate-400">{cohort.meetingAttendanceRate}%</span>
                             </div>
                           </td>
                           <td className="py-3 max-[360px]:py-2">NGN {cohort.revenue.toLocaleString()}</td>
@@ -1408,8 +1408,8 @@ export function AnalyticsPanel() {
           <section className="kat-card">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Program Leaderboard</h3>
-                <p className="mt-1 text-sm text-slate-600 max-[360px]:text-xs">Program outcomes ranked by completion quality and revenue.</p>
+                <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Program Leaderboard</h3>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400 max-[360px]:text-xs">Program outcomes ranked by completion quality and revenue.</p>
               </div>
               <Button
                 type="button"
@@ -1425,7 +1425,7 @@ export function AnalyticsPanel() {
             <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
               <table className="min-w-[760px] w-full text-sm max-[360px]:text-xs">
                 <thead>
-                  <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     <th className="pb-2 max-[360px]:pb-1.5">Program</th>
                     <th className="pb-2 max-[360px]:pb-1.5">Enrollments</th>
                     <th className="pb-2 max-[360px]:pb-1.5">Completed</th>
@@ -1433,10 +1433,10 @@ export function AnalyticsPanel() {
                     <th className="pb-2 max-[360px]:pb-1.5">Revenue</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {analytics.platformAnalytics.programLeaderboard.length === 0 ? (
                     <tr>
-                      <td className="py-3 text-slate-600 max-[360px]:py-2" colSpan={5}>
+                      <td className="py-3 text-slate-600 dark:text-slate-400 max-[360px]:py-2" colSpan={5}>
                         No program analytics yet.
                       </td>
                     </tr>
@@ -1451,7 +1451,7 @@ export function AnalyticsPanel() {
                             <div className="flex-1">
                               <PercentageBar value={program.completionRate} colorClass="bg-indigo-500" />
                             </div>
-                            <span className="text-xs text-slate-600">{program.completionRate}%</span>
+                            <span className="text-xs text-slate-600 dark:text-slate-400">{program.completionRate}%</span>
                           </div>
                         </td>
                         <td className="py-3 max-[360px]:py-2">NGN {program.revenue.toLocaleString()}</td>
@@ -1469,8 +1469,8 @@ export function AnalyticsPanel() {
         <section className="kat-card">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Instructor Scorecard</h3>
-              <p className="mt-1 text-sm text-slate-600 max-[360px]:text-xs">
+              <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Instructor Scorecard</h3>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400 max-[360px]:text-xs">
                 Grading performance, feedback quality, and learner pass rates per instructor/fellow.
               </p>
             </div>
@@ -1488,7 +1488,7 @@ export function AnalyticsPanel() {
           <div className="mt-3 overflow-x-auto overflow-y-auto pb-1">
             <table className="min-w-[760px] w-full text-sm max-[360px]:text-xs">
               <thead>
-                <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   <th className="pb-2 max-[360px]:pb-1.5">Instructor</th>
                   <th className="pb-2 max-[360px]:pb-1.5">Role</th>
                   <th className="pb-2 max-[360px]:pb-1.5">Created</th>
@@ -1498,18 +1498,18 @@ export function AnalyticsPanel() {
                   <th className="pb-2 max-[360px]:pb-1.5">Pass Rate</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {scorecards.map((s) => (
                   <tr key={s.instructorId}>
-                    <td className="py-3 font-medium text-slate-900 max-[360px]:py-2">{s.name}</td>
-                    <td className="py-3 text-xs uppercase text-slate-600 max-[360px]:py-2 max-[360px]:text-[10px]">{s.role}</td>
+                    <td className="py-3 font-medium text-slate-900 dark:text-slate-100 max-[360px]:py-2">{s.name}</td>
+                    <td className="py-3 text-xs uppercase text-slate-600 dark:text-slate-400 max-[360px]:py-2 max-[360px]:text-[10px]">{s.role}</td>
                     <td className="py-3 max-[360px]:py-2">{s.assessmentsCreated}</td>
                     <td className="py-3 max-[360px]:py-2">{s.submissionsGraded}</td>
                     <td className="py-3 max-[360px]:py-2">
                       {s.avgTurnaroundHours === null ? (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-slate-400 dark:text-slate-500">—</span>
                       ) : (
-                        <span className={cn("font-semibold", s.avgTurnaroundHours <= 24 ? "text-emerald-700" : s.avgTurnaroundHours <= 72 ? "text-amber-700" : "text-rose-700")}>
+                        <span className={cn("font-semibold", s.avgTurnaroundHours <= 24 ? "text-emerald-700 dark:text-emerald-400" : s.avgTurnaroundHours <= 72 ? "text-amber-700 dark:text-amber-400" : "text-rose-700 dark:text-rose-400")}>
                           {s.avgTurnaroundHours < 24
                             ? `${s.avgTurnaroundHours}h`
                             : `${round1(s.avgTurnaroundHours / 24)}d`}
@@ -1518,16 +1518,16 @@ export function AnalyticsPanel() {
                     </td>
                     <td className="py-3 max-[360px]:py-2">
                       {s.avgFeedbackLength === null ? (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-slate-400 dark:text-slate-500">—</span>
                       ) : (
-                        <span className={cn("font-semibold", s.avgFeedbackLength >= 100 ? "text-emerald-700" : s.avgFeedbackLength >= 40 ? "text-amber-700" : "text-rose-700")}>
+                        <span className={cn("font-semibold", s.avgFeedbackLength >= 100 ? "text-emerald-700 dark:text-emerald-400" : s.avgFeedbackLength >= 40 ? "text-amber-700 dark:text-amber-400" : "text-rose-700 dark:text-rose-400")}>
                           {s.avgFeedbackLength} chars
                         </span>
                       )}
                     </td>
                     <td className="py-3 max-[360px]:py-2">
                       {s.studentPassRate === null ? (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-slate-400 dark:text-slate-500">—</span>
                       ) : (
                         <div className="flex min-w-[110px] items-center gap-2">
                           <div className="flex-1">
@@ -1536,7 +1536,7 @@ export function AnalyticsPanel() {
                               colorClass={s.studentPassRate >= 75 ? "bg-emerald-500" : s.studentPassRate >= 60 ? "bg-amber-500" : "bg-rose-500"}
                             />
                           </div>
-                          <span className={cn("text-xs font-semibold", s.studentPassRate >= 75 ? "text-emerald-700" : s.studentPassRate >= 60 ? "text-amber-700" : "text-rose-700")}>
+                          <span className={cn("text-xs font-semibold", s.studentPassRate >= 75 ? "text-emerald-700 dark:text-emerald-400" : s.studentPassRate >= 60 ? "text-amber-700 dark:text-amber-400" : "text-rose-700 dark:text-rose-400")}>
                             {s.studentPassRate}%
                           </span>
                         </div>
@@ -1552,7 +1552,7 @@ export function AnalyticsPanel() {
 
       <section className="kat-card">
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Monthly Revenue Tracking</h3>
+          <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Monthly Revenue Tracking</h3>
           <Button
             type="button"
             size="sm"
@@ -1567,17 +1567,17 @@ export function AnalyticsPanel() {
         <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[34dvh]">
           <table className="min-w-[620px] w-full text-sm max-[360px]:text-xs">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+              <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 <th className="pb-2 max-[360px]:pb-1.5">Month</th>
                 <th className="pb-2 max-[360px]:pb-1.5">Total</th>
                 <th className="pb-2 max-[360px]:pb-1.5">Successful</th>
                 <th className="pb-2 max-[360px]:pb-1.5">Failed</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {paymentRows.length === 0 ? (
                 <tr>
-                  <td className="py-3 text-slate-600 max-[360px]:py-2" colSpan={4}>
+                  <td className="py-3 text-slate-600 dark:text-slate-400 max-[360px]:py-2" colSpan={4}>
                     No payment analytics yet.
                   </td>
                 </tr>
@@ -1586,8 +1586,8 @@ export function AnalyticsPanel() {
                   <tr key={month}>
                     <td className="py-3 max-[360px]:py-2">{month}</td>
                     <td className="py-3 max-[360px]:py-2">NGN {value.total.toLocaleString()}</td>
-                    <td className="py-3 text-emerald-700 max-[360px]:py-2">NGN {value.successful.toLocaleString()}</td>
-                    <td className="py-3 text-rose-700 max-[360px]:py-2">NGN {value.failed.toLocaleString()}</td>
+                    <td className="py-3 text-emerald-700 dark:text-emerald-400 max-[360px]:py-2">NGN {value.successful.toLocaleString()}</td>
+                    <td className="py-3 text-rose-700 dark:text-rose-400 max-[360px]:py-2">NGN {value.failed.toLocaleString()}</td>
                   </tr>
                 ))
               )}

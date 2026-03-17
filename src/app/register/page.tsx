@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,6 +38,8 @@ const roleOptions: { label: string; value: UserRoleValue; description: string }[
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") ?? "/dashboard";
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -57,7 +59,7 @@ export default function RegisterPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role: watchedRole }),
     });
-    await signIn("google", { callbackUrl: "/dashboard" });
+    await signIn("google", { callbackUrl: redirectTo });
     // Page will redirect
   };
 
@@ -84,12 +86,12 @@ export default function RegisterPage() {
     setLoading(false);
     if (signedIn?.error) {
       toast.success("Account created. Please sign in.");
-      router.push("/login");
+      router.push(redirectTo !== "/dashboard" ? `/login?redirect=${encodeURIComponent(redirectTo)}` : "/login");
       return;
     }
 
     toast.success("Account created successfully.");
-    router.push("/dashboard");
+    router.push(redirectTo);
     router.refresh();
   });
 
@@ -106,14 +108,14 @@ export default function RegisterPage() {
           <div className="relative flex items-center gap-3">
             <Image src="/kindle-a-techie.svg" alt="KAT logo" width={40} height={40} className="shrink-0" />
             <span className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-white">
-              KAT Academy
+              KAT Learning
             </span>
           </div>
 
           <div className="relative space-y-6">
             <div>
               <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-blue-400">
-                Join KAT Academy
+                Join KAT Learning
               </p>
               <h1 className="[font-family:var(--font-space-grotesk)] text-4xl font-bold leading-tight text-white">
                 Start your
@@ -159,7 +161,7 @@ export default function RegisterPage() {
             <div className="mb-8 flex items-center gap-2 lg:hidden">
               <Image src="/kindle-a-techie.svg" alt="KAT logo" width={36} height={36} className="shrink-0" />
               <span className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-900">
-                KAT Academy
+                KAT Learning
               </span>
             </div>
 

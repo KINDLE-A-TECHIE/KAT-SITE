@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "KAT Academy",
+    name: "KAT Learning",
     short_name: "KAT",
     description:
       "KAT helps kids and teens learn coding through guided lessons, projects, mentorship, and live classes.",
@@ -37,7 +37,7 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: "1080x1920",
         type: "image/png",
         form_factor: "narrow",
-        label: "KAT Academy — Home",
+        label: "KAT Learning — Home",
       },
       {
         src: "/screenshots/dashboard.png",

@@ -193,9 +193,9 @@ function GenericOverview({ role }: { role: UserRoleValue }) {
     const load = async () => {
       setLoading(true);
       const response = await fetch("/api/analytics");
-      const payload = await response.json();
+      const payload = await response.json().catch(() => null);
       if (!active) return;
-      if (response.ok) setAnalytics(payload);
+      if (response.ok && payload) setAnalytics(payload);
       setLoading(false);
     };
     void load();

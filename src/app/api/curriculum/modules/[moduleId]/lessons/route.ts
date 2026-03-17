@@ -6,8 +6,8 @@ import { createLessonSchema } from "@/lib/validators";
 
 interface Params { params: Promise<{ moduleId: string }> }
 
-const CREATOR_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
-const LEARNER_ROLES = [UserRole.STUDENT, UserRole.FELLOW];
+const CREATOR_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
+const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW];
 
 export async function GET(_req: Request, { params }: Params) {
   const session = await getServerAuthSession();
@@ -40,8 +40,8 @@ export async function POST(request: Request, { params }: Params) {
 
   const { moduleId } = await params;
 
-  const module = await prisma.module.findUnique({ where: { id: moduleId }, select: { id: true } });
-  if (!module) return fail("Module not found.", 404);
+  const mod = await prisma.module.findUnique({ where: { id: moduleId }, select: { id: true } });
+  if (!mod) return fail("Module not found.", 404);
 
   const body = await request.json();
   const parsed = createLessonSchema.safeParse(body);

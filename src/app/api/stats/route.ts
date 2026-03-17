@@ -10,7 +10,7 @@ export const revalidate = 3600;
 export async function GET() {
   const [enrollmentCount, submissionStats] = await Promise.all([
     prisma.enrollment.count({
-      where: { status: { not: EnrollmentStatus.CANCELLED } },
+      where: { status: { not: EnrollmentStatus.DROPPED } },
     }),
     prisma.assessmentSubmission.aggregate({
       _count: { id: true },

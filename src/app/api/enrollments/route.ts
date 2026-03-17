@@ -8,7 +8,6 @@ import { trackEvent } from "@/lib/analytics";
 const createEnrollmentSchema = z.object({
   userId: z.string().cuid().optional(),
   programId: z.string().cuid(),
-  cohortId: z.string().cuid().optional(),
 });
 
 const updateEnrollmentSchema = z.object({
@@ -45,9 +44,6 @@ export async function GET(request: Request) {
       },
       program: {
         select: { id: true, name: true, monthlyFee: true, level: true },
-      },
-      cohort: {
-        select: { id: true, name: true, startsAt: true, endsAt: true },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -98,13 +94,11 @@ export async function POST(request: Request) {
         },
       },
       update: {
-        cohortId: parsed.data.cohortId,
         status: EnrollmentStatus.ACTIVE,
       },
       create: {
         userId: targetUserId,
         programId: parsed.data.programId,
-        cohortId: parsed.data.cohortId,
       },
       include: {
         user: { select: { id: true, firstName: true, lastName: true } },

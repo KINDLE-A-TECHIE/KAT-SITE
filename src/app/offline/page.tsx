@@ -9,7 +9,7 @@ export default function OfflinePage() {
     <main className="kat-page flex min-h-[70vh] items-center py-10">
       <div className="kat-card mx-auto w-full max-w-lg text-center">
         <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Offline Mode</p>
-        <h1 className="mt-2 font-[var(--font-space-grotesk)] text-2xl font-semibold text-slate-900">
+        <h1 className="mt-2 [font-family:var(--font-space-grotesk)] text-2xl font-semibold text-slate-900">
           You are currently offline
         </h1>
         <p className="mt-2 text-sm text-slate-600">

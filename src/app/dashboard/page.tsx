@@ -9,7 +9,7 @@ const ROLE_META: Record<
   SUPER_ADMIN: {
     label: "Super Admin",
     greeting: "Platform Overview",
-    sub: "Monitor health, revenue, and access across the entire KAT Academy platform.",
+    sub: "Monitor health, revenue, and access across the entire KAT Learning platform.",
   },
   ADMIN: {
     label: "Admin",

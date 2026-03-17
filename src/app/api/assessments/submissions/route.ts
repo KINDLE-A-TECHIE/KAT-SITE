@@ -98,7 +98,7 @@ export async function POST(request: Request) {
         program: {
           select: {
             id: true,
-            enrollments: { where: { userId: session.user.id }, select: { id: true, cohortId: true } },
+            enrollments: { where: { userId: session.user.id }, select: { id: true } },
           },
         },
         questions: {
@@ -119,9 +119,7 @@ export async function POST(request: Request) {
     if (!enrollment) {
       return fail("You are not enrolled in this program.", 403);
     }
-    if (assessment.cohortId && enrollment.cohortId !== assessment.cohortId) {
-      return fail("This assessment is scoped to a different cohort.", 403);
-    }
+
 
     const answersMap = new Map(parsed.data.answers.map((answer) => [answer.questionId, answer]));
     let autoScore = 0;

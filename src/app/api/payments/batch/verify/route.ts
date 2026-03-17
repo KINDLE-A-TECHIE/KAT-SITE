@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = verifyBatchPaymentSchema.safeParse(body);
     if (!parsed.success) {
-      return fail("Invalid verification payload.", 400, parsed.error.flatten());
+      return fail("Invalid verification payload.", 400, parsed.error.issues);
     }
 
     // Find all payments belonging to this batch
@@ -71,8 +71,13 @@ export async function POST(request: Request) {
     if (parsed.data.provider === "PAYSTACK" && !process.env.PAYSTACK_SECRET_KEY) {
       verification = { success: true, status: "success", paidAt: new Date(), channel: "mock" };
     } else {
-      const gateway = getPaymentGateway(parsed.data.provider);
-      verification = await gateway.verify(parsed.data.batchReference);
+      try {
+        const gateway = getPaymentGateway(parsed.data.provider);
+        verification = await gateway.verify(parsed.data.batchReference);
+      } catch (gatewayError) {
+        const msg = gatewayError instanceof Error ? gatewayError.message : "Gateway error";
+        return fail(`Payment gateway error: ${msg}`, 502);
+      }
     }
 
     const status = verification.success ? PaymentStatus.SUCCESS : PaymentStatus.FAILED;

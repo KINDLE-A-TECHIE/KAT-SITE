@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "KAT Academy — Tech Education for African Kids and Teens";
+export const alt = "KAT Learning — Tech Education for African Kids and Teens";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -69,7 +69,7 @@ export default function OgImage() {
             }}
           />
           <span style={{ color: "#93c5fd", fontSize: 16, fontWeight: 600, letterSpacing: "0.1em" }}>
-            KAT ACADEMY · KAT.AFRICA
+            KAT ACADEMY · KINDLEATECHIE.COM
           </span>
         </div>
 

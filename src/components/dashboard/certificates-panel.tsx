@@ -30,10 +30,10 @@ const LEVEL_LABEL: Record<string, string> = {
 };
 
 const LEVEL_COLOUR: Record<string, string> = {
-  BEGINNER: "bg-emerald-100 text-emerald-700",
-  INTERMEDIATE: "bg-blue-100 text-blue-700",
-  ADVANCED: "bg-violet-100 text-violet-700",
-  FELLOWSHIP: "bg-amber-100 text-amber-700",
+  BEGINNER: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
+  INTERMEDIATE: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
+  ADVANCED: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400",
+  FELLOWSHIP: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
 };
 
 function formatDate(iso: string) {
@@ -190,7 +190,6 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
               <div className="flex shrink-0 items-center gap-1">
                 <Link
                   href={`/certificate/${cert.credentialId}`}
-                  target="_blank"
                   className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                 >
                   <ExternalLink className="size-3" />

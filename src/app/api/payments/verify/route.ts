@@ -25,15 +25,14 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = verifyPaymentSchema.safeParse(body);
     if (!parsed.success) {
-      return fail("Invalid verification payload.", 400, parsed.error.flatten());
+      return fail("Invalid verification payload.", 400, parsed.error.issues);
     }
 
     const payment = await prisma.payment.findUnique({
       where: { reference: parsed.data.reference },
       include: {
-        user: {
-          select: { id: true, organizationId: true },
-        },
+        user: { select: { id: true, organizationId: true } },
+        enrollment: { select: { currentPeriodEnd: true } },
       },
     });
 
@@ -41,13 +40,49 @@ export async function POST(request: Request) {
       return fail("Payment not found.", 404);
     }
 
-    const canVerify =
-      payment.userId === session.user.id ||
+    const isAdmin =
       session.user.role === UserRole.SUPER_ADMIN ||
       session.user.role === UserRole.ADMIN;
 
+    // Direct owner or admin can always verify
+    let canVerify = payment.userId === session.user.id || isAdmin;
+
+    // Parents can verify payments they initiated for their children
+    if (!canVerify && session.user.role === UserRole.PARENT) {
+      const meta = typeof payment.metadata === "object" && payment.metadata !== null
+        ? (payment.metadata as Record<string, unknown>)
+        : {};
+      // Check metadata first (fast path)
+      if (meta.paidByParentId === session.user.id) {
+        canVerify = true;
+      } else {
+        // Fallback: check the parent-child link in DB
+        const link = await prisma.parentStudent.findUnique({
+          where: {
+            parentId_childId: { parentId: session.user.id, childId: payment.userId },
+          },
+          select: { childId: true },
+        });
+        canVerify = !!link;
+      }
+    }
+
     if (!canVerify) {
       return fail("Forbidden", 403);
+    }
+
+    // Skip re-verifying already-successful payments
+    if (payment.status === PaymentStatus.SUCCESS) {
+      return ok({
+        payment: {
+          id: payment.id,
+          reference: payment.reference,
+          status: payment.status,
+          amount: Number(payment.amount),
+          currency: payment.currency,
+        },
+        verification: { success: true, status: "success", alreadyVerified: true },
+      });
     }
 
     let verification: {
@@ -58,6 +93,7 @@ export async function POST(request: Request) {
       amount?: number;
       currency?: string;
       raw?: unknown;
+      gatewayMessage?: string;
     };
 
     if (parsed.data.provider === "PAYSTACK" && !process.env.PAYSTACK_SECRET_KEY) {
@@ -70,8 +106,13 @@ export async function POST(request: Request) {
         channel: "mock",
       };
     } else {
-      const gateway = getPaymentGateway(parsed.data.provider);
-      verification = await gateway.verify(parsed.data.reference);
+      try {
+        const gateway = getPaymentGateway(parsed.data.provider);
+        verification = await gateway.verify(parsed.data.reference);
+      } catch (gatewayError) {
+        const msg = gatewayError instanceof Error ? gatewayError.message : "Gateway error";
+        return fail(`Payment gateway error: ${msg}`, 502);
+      }
     }
 
     const status = verification.success ? PaymentStatus.SUCCESS : PaymentStatus.FAILED;
@@ -94,21 +135,30 @@ export async function POST(request: Request) {
         where: { paymentId: payment.id },
         update: {
           issuedToId: payment.userId,
-          issuedById:
-            session.user.role === UserRole.SUPER_ADMIN || session.user.role === UserRole.ADMIN
-              ? session.user.id
-              : null,
+          issuedById: isAdmin ? session.user.id : null,
         },
         create: {
           paymentId: payment.id,
           receiptNumber: generateReceiptNumber(),
           issuedToId: payment.userId,
-          issuedById:
-            session.user.role === UserRole.SUPER_ADMIN || session.user.role === UserRole.ADMIN
-              ? session.user.id
-              : null,
+          issuedById: isAdmin ? session.user.id : null,
         },
       });
+
+      // Advance the enrollment billing period by 30 days and restore ACTIVE status.
+      // If the current period hasn't ended yet (early payment), extend from the
+      // existing period end so the student doesn't lose their remaining days.
+      if (payment.enrollmentId) {
+        const now = verification.paidAt ?? new Date();
+        const existingEnd = payment.enrollment?.currentPeriodEnd;
+        const baseDate = existingEnd && existingEnd > now ? existingEnd : now;
+        const periodEnd = new Date(baseDate);
+        periodEnd.setDate(periodEnd.getDate() + 30);
+        await prisma.enrollment.update({
+          where: { id: payment.enrollmentId },
+          data: { currentPeriodEnd: periodEnd, status: "ACTIVE" },
+        });
+      }
     }
 
     await trackEvent({

@@ -236,7 +236,7 @@ export const PRICING_TIERS: PricingTier[] = [
 
 export const FAQ_ITEMS = [
   {
-    question: "What age groups does KAT Academy accept?",
+    question: "What age groups does KAT Learning accept?",
     answer:
       "KAT welcomes students aged 8 to 19. We have three tracks: Junior Explorers (8–11), Teen Builders (12–15), and Future Innovators (16–19). Each track is designed around the developmental stage and attention span of that age group.",
   },

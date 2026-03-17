@@ -6,7 +6,7 @@ import { updateLessonContentSchema } from "@/lib/validators";
 
 interface Params { params: Promise<{ contentId: string }> }
 
-const CREATOR_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
+const CREATOR_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
 
 export async function PATCH(request: Request, { params }: Params) {
   const session = await getServerAuthSession();

@@ -259,7 +259,7 @@ function AppearanceTab() {
     <div className="space-y-6">
       <div>
         <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Appearance</h3>
-        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Choose how KAT Academy looks for you.</p>
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Choose how KAT Learning looks for you.</p>
       </div>
       <div className="grid grid-cols-3 gap-3 max-w-sm">
         {options.map(({ value, label, icon: Icon }) => {

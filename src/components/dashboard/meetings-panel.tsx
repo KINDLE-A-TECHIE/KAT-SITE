@@ -48,17 +48,17 @@ const COLUMN_META = {
   live: {
     label: "Live",
     tone: "from-emerald-500 to-teal-400",
-    chip: "bg-emerald-100 text-emerald-800",
+    chip: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
   },
   upcoming: {
     label: "Upcoming",
     tone: "from-blue-600 to-cyan-500",
-    chip: "bg-blue-100 text-blue-800",
+    chip: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
   },
   ended: {
     label: "Ended",
     tone: "from-slate-600 to-slate-500",
-    chip: "bg-slate-200 text-slate-700",
+    chip: "bg-slate-200 text-slate-700 dark:bg-slate-600 dark:text-slate-300",
   },
 } as const;
 
@@ -363,7 +363,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
               <CalendarClock className="size-5" />
             </div>
             <div>
-              <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
+              <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
                 Schedule a Learning Session
               </h3>
               <p className="text-sm text-slate-600">
@@ -528,7 +528,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                   >
                     <Icon className="size-4" />
                   </div>
-                  <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
+                  <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
                     {COLUMN_META[key].label}
                   </h3>
                 </div>
@@ -650,7 +650,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
         <section className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.5)] sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold text-slate-900">Recording Library</h3>
+              <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900">Recording Library</h3>
               <p className="text-sm text-slate-600">
                 Super admin view of organization-wide ended sessions and available recordings.
               </p>

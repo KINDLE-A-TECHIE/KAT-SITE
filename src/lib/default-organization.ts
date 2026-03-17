@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 
 const DEFAULT_ORGANIZATION_CODE = process.env.DEFAULT_ORGANIZATION_CODE?.trim() || "KAT-ORG";
-const DEFAULT_ORGANIZATION_NAME = process.env.DEFAULT_ORGANIZATION_NAME?.trim() || "KAT Academy";
+const DEFAULT_ORGANIZATION_NAME = process.env.DEFAULT_ORGANIZATION_NAME?.trim() || "KAT Learning";
 const DEFAULT_ORGANIZATION_DOMAIN = process.env.DEFAULT_ORGANIZATION_DOMAIN?.trim();
 
 export async function ensureDefaultOrganization() {

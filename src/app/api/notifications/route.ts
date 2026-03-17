@@ -103,7 +103,7 @@ export async function GET() {
   }
 
   const notifications = await prisma.notification.findMany({
-    where: { recipientId },
+    where: { recipientId, readAt: null },
     orderBy: { createdAt: "desc" },
     take: 100,
   });

@@ -23,6 +23,7 @@ import {
   ShieldAlert,
   UserCircle,
   Users,
+  UsersRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -62,6 +63,7 @@ function getNavItems(role: UserRoleValue) {
         { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
         { href: "/dashboard/analytics", label: "Analytics", icon: LineChart },
         { href: "/dashboard/fellows/applications", label: "Applications", icon: FileText },
+        { href: "/dashboard/cohorts", label: "Cohorts", icon: UsersRound },
         { href: "/dashboard/super-admin-invites", label: "Access", icon: ShieldAlert },
       ];
     case "ADMIN":
@@ -154,12 +156,12 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
       <div className="kat-page grid grid-cols-1 gap-4 py-4 max-[360px]:gap-3 max-[360px]:py-3 sm:gap-6 sm:py-6 lg:grid-cols-[256px_1fr]">
 
         {/* ── Sidebar ─────────────────────────────────────────────── */}
-        <aside className="h-fit overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <aside className="h-fit overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 print:hidden">
           {/* Brand */}
           <div className="flex items-center gap-2.5 border-b border-slate-100 px-4 py-4 dark:border-slate-800">
             <Image src="/kindle-a-techie.svg" alt="KAT logo" width={30} height={30} className="shrink-0" />
             <span className="[font-family:var(--font-space-grotesk)] text-sm font-semibold text-slate-900 dark:text-slate-100">
-              KAT Academy
+              KAT Learning
             </span>
           </div>
 
@@ -239,9 +241,9 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
         {/* ── Main content ─────────────────────────────────────────── */}
         <div className="min-w-0 space-y-4 max-[360px]:space-y-3">
           {/* Top bar */}
-          <header className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <header className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 print:hidden">
             <div className="flex items-center gap-2 text-sm">
-              <span className="font-semibold text-slate-900 dark:text-slate-100">KAT Academy</span>
+              <span className="font-semibold text-slate-900 dark:text-slate-100">KAT Learning</span>
               <span className="text-slate-300 dark:text-slate-600">/</span>
               <span className="text-slate-500 dark:text-slate-400">{ROLE_LABEL[user.role]}</span>
             </div>

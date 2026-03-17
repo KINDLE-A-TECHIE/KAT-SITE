@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
+import { BackButton, PrintButton } from "./print-button";
 
 interface Props {
   params: Promise<{ receiptId: string }>;
@@ -20,7 +21,6 @@ export default async function ReceiptPage({ params }: Props) {
       payment: {
         include: {
           program: { select: { name: true } },
-          enrollment: { select: { cohort: { select: { name: true } } } },
         },
       },
       issuedTo: { select: { id: true, firstName: true, lastName: true, email: true } },
@@ -90,7 +90,7 @@ export default async function ReceiptPage({ params }: Props) {
         <div className="flex items-start justify-between border-b border-slate-100 px-8 py-7">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-              KAT Academy
+              KAT Learning
             </p>
             <h1 className="mt-1 text-2xl font-bold text-slate-900">Payment Receipt</h1>
             <p className="mt-0.5 text-sm text-slate-500">#{receipt.receiptNumber}</p>
@@ -134,14 +134,6 @@ export default async function ReceiptPage({ params }: Props) {
                     {payment.program?.name ?? "—"}
                   </td>
                 </tr>
-                {receipt.payment.enrollment?.cohort && (
-                  <tr>
-                    <td className="px-4 py-3 text-slate-500">Cohort</td>
-                    <td className="px-4 py-3 text-right font-medium text-slate-800">
-                      {receipt.payment.enrollment.cohort.name}
-                    </td>
-                  </tr>
-                )}
                 <tr>
                   <td className="px-4 py-3 text-slate-500">Billing Month</td>
                   <td className="px-4 py-3 text-right font-medium text-slate-800">
@@ -192,7 +184,7 @@ export default async function ReceiptPage({ params }: Props) {
 
         {/* Footer */}
         <div className="border-t border-slate-100 px-8 py-5 text-center text-xs text-slate-400 print:hidden">
-          <p>This is an official payment receipt from KAT Academy.</p>
+          <p>This is an official payment receipt from KAT Learning.</p>
           <p className="mt-1">
             Use your browser&apos;s Print function (Ctrl+P / ⌘P) to save as PDF.
           </p>
@@ -201,18 +193,8 @@ export default async function ReceiptPage({ params }: Props) {
 
       {/* Print / Back buttons */}
       <div className="mx-auto mt-5 flex max-w-2xl justify-between print:hidden">
-        <a
-          href="/dashboard/payments"
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
-        >
-          ← Back to Payments
-        </a>
-        <button
-          onClick={() => window.print()}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
-        >
-          Print / Save PDF
-        </button>
+        <BackButton />
+        <PrintButton />
       </div>
     </div>
   );

@@ -10,7 +10,6 @@ async function getEnrollmentsForUser(userId: string) {
     where: { userId },
     orderBy: { enrolledAt: "desc" },
     include: {
-      cohort: { select: { id: true, name: true, startsAt: true, endsAt: true } },
       program: {
         select: {
           id: true,

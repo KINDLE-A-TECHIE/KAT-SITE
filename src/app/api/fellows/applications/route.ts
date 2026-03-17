@@ -1,3 +1,5 @@
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { z } from "zod";
 import { ApplicationStatus, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
@@ -8,7 +10,11 @@ import {
   sendEmail,
   buildFellowApprovalEmail,
   buildFellowRejectionEmail,
+  buildPasswordResetEmail,
 } from "@/lib/email";
+
+const BASE_URL = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+const SETUP_TOKEN_TTL_MS = 72 * 60 * 60 * 1000;
 
 const ADMIN_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN];
 
@@ -56,7 +62,18 @@ export async function GET(request: Request) {
     orderBy: { submittedAt: "desc" },
   });
 
-  return ok({ applications });
+  // For admin views, merge guest fields into a normalised applicant shape.
+  const normalised = applications.map((app) => ({
+    ...app,
+    applicant: app.applicant ?? (app.guestEmail ? {
+      id: null,
+      firstName: app.guestFirstName ?? "",
+      lastName: app.guestLastName ?? "",
+      email: app.guestEmail,
+    } : null),
+  }));
+
+  return ok({ applications: normalised });
 }
 
 // POST — student submits an application.
@@ -109,12 +126,17 @@ export async function POST(request: Request) {
       return ok({ application: updated });
     }
 
+    // External applicants (no prior enrolment) pay an application fee; students apply free.
+    const enrollmentCount = await prisma.enrollment.count({ where: { userId: session.user.id } });
+    const isExternalApplicant = enrollmentCount === 0;
+
     const application = await prisma.fellowApplication.create({
       data: {
         applicantId: session.user.id,
         cohortId: parsed.data.cohortId,
         motivation: parsed.data.motivation,
         experience: parsed.data.experience,
+        isExternalApplicant,
       },
     });
 
@@ -123,17 +145,22 @@ export async function POST(request: Request) {
       organizationId: session.user.organizationId,
       eventType: "fellow",
       eventName: "application_submitted",
-      payload: { applicationId: application.id, cohortId: parsed.data.cohortId },
+      payload: { applicationId: application.id, cohortId: parsed.data.cohortId, isExternalApplicant },
     });
 
-    return ok({ application }, 201);
+    return ok({ application, requiresPayment: isExternalApplicant }, 201);
   } catch (error) {
     return fail("Could not submit application.", 500, error instanceof Error ? error.message : error);
   }
 }
 
 // PATCH — admin approves or rejects an application.
-// Approval automatically promotes the user's role to FELLOW.
+// Guest (external) applications:
+//   APPROVED → create user account, promote to FELLOW, send setup email, clear guest fields.
+//   REJECTED → delete the application entirely (no personal data retained).
+// Authenticated (student) applications:
+//   APPROVED → promote existing user to FELLOW.
+//   REJECTED → mark status REJECTED (user account already exists; they can re-apply).
 export async function PATCH(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -152,10 +179,8 @@ export async function PATCH(request: Request) {
     const application = await prisma.fellowApplication.findUnique({
       where: { id: parsed.data.applicationId },
       include: {
-        applicant: {
-          select: { id: true, firstName: true, email: true, organizationId: true },
-        },
-        cohort: { select: { name: true } },
+        applicant: { select: { id: true, firstName: true, email: true, organizationId: true } },
+        cohort: { select: { name: true, program: { select: { organizationId: true } } } },
       },
     });
 
@@ -164,61 +189,159 @@ export async function PATCH(request: Request) {
       return fail("This application has already been reviewed.", 400);
     }
 
-    const updatedApplication = await prisma.fellowApplication.update({
-      where: { id: application.id },
-      data: {
-        status: parsed.data.status as ApplicationStatus,
-        reviewedAt: new Date(),
-        reviewedById: session.user.id,
-        reviewNotes: parsed.data.reviewNotes,
-      },
-    });
+    const isGuest = !application.applicantId && !!application.guestEmail;
 
-    // Promote to FELLOW on approval.
-    if (parsed.data.status === "APPROVED") {
-      await prisma.user.update({
-        where: { id: application.applicantId },
-        data: { role: UserRole.FELLOW },
+    // ── REJECTION ────────────────────────────────────────────────────────────
+    if (parsed.data.status === "REJECTED") {
+      if (isGuest) {
+        // Delete entirely — no personal data retained for rejected guest applicants.
+        await prisma.fellowApplication.delete({ where: { id: application.id } });
+
+        sendEmail({
+          to: application.guestEmail!,
+          subject: "KAT Fellowship Application Update",
+          ...buildFellowRejectionEmail({
+            firstName: application.guestFirstName ?? "Applicant",
+            reviewNotes: parsed.data.reviewNotes,
+          }),
+        }).catch((err: unknown) => console.error("[fellows/applications] Email send failed:", err));
+      } else {
+        // Authenticated student — mark rejected so they can re-apply later.
+        await prisma.fellowApplication.update({
+          where: { id: application.id },
+          data: {
+            status: ApplicationStatus.REJECTED,
+            reviewedAt: new Date(),
+            reviewedById: session.user.id,
+            reviewNotes: parsed.data.reviewNotes,
+          },
+        });
+
+        sendEmail({
+          to: application.applicant!.email,
+          subject: "KAT Fellowship Application Update",
+          ...buildFellowRejectionEmail({
+            firstName: application.applicant!.firstName,
+            reviewNotes: parsed.data.reviewNotes,
+          }),
+        }).catch((err: unknown) => console.error("[fellows/applications] Email send failed:", err));
+      }
+
+      await trackEvent({
+        userId: session.user.id,
+        organizationId: session.user.organizationId,
+        eventType: "fellow",
+        eventName: "application_rejected",
+        payload: { applicationId: application.id },
       });
+
+      return ok({ status: "REJECTED" });
     }
 
-    // Send notification email (fire-and-forget — don't fail the request if email fails).
-    const { html, text } =
-      parsed.data.status === "APPROVED"
-        ? buildFellowApprovalEmail({
-            firstName: application.applicant.firstName,
-            cohortName: application.cohort?.name,
-            reviewNotes: parsed.data.reviewNotes,
-          })
-        : buildFellowRejectionEmail({
-            firstName: application.applicant.firstName,
-            reviewNotes: parsed.data.reviewNotes,
-          });
+    // ── APPROVAL ─────────────────────────────────────────────────────────────
+    let fellowUserId: string;
+    let fellowFirstName: string;
+    let fellowEmail: string;
 
-    sendEmail({
-      to: application.applicant.email,
-      subject:
-        parsed.data.status === "APPROVED"
-          ? "🎉 Your KAT Fellowship Application Was Approved!"
-          : "KAT Fellowship Application Update",
-      html,
-      text,
-    }).catch((err: unknown) => {
-      console.error("[fellows/applications] Email send failed:", err);
-    });
+    if (isGuest) {
+      // Create the user account now that the application is approved.
+      const orgId =
+        application.cohort?.program?.organizationId ?? session.user.organizationId ?? undefined;
+
+      const randomPassword = crypto.randomBytes(24).toString("base64");
+      const passwordHash = await bcrypt.hash(randomPassword, 12);
+
+      const newUser = await prisma.user.create({
+        data: {
+          email: application.guestEmail!,
+          firstName: application.guestFirstName!,
+          lastName: application.guestLastName!,
+          passwordHash,
+          role: UserRole.FELLOW,
+          organizationId: orgId,
+          profile: {
+            create: { phone: application.guestPhone ?? null },
+          },
+        },
+        select: { id: true },
+      });
+
+      fellowUserId = newUser.id;
+      fellowFirstName = application.guestFirstName!;
+      fellowEmail = application.guestEmail!;
+
+      // Link application to the new user and clear guest fields.
+      await prisma.fellowApplication.update({
+        where: { id: application.id },
+        data: {
+          applicantId: newUser.id,
+          status: ApplicationStatus.APPROVED,
+          reviewedAt: new Date(),
+          reviewedById: session.user.id,
+          reviewNotes: parsed.data.reviewNotes,
+          guestFirstName: null,
+          guestLastName: null,
+          guestEmail: null,
+          guestPhone: null,
+        },
+      });
+
+      // Send account setup link (reuse password-reset flow, 72 h TTL).
+      const setupToken = await prisma.passwordResetToken.create({
+        data: { userId: newUser.id, expiresAt: new Date(Date.now() + SETUP_TOKEN_TTL_MS) },
+      });
+      const setupUrl = `${BASE_URL}/reset-password?token=${setupToken.token}`;
+
+      sendEmail({
+        to: fellowEmail,
+        subject: "🎉 Your KAT Fellowship Application Was Approved!",
+        html: buildPasswordResetEmail({ firstName: fellowFirstName, resetUrl: setupUrl }).replace(
+          "Reset your password",
+          "Your fellowship application was approved! Set up your account to get started.",
+        ),
+      }).catch((err: unknown) => console.error("[fellows/applications] Email send failed:", err));
+    } else {
+      // Authenticated student — promote existing user.
+      fellowUserId = application.applicant!.id;
+      fellowFirstName = application.applicant!.firstName;
+      fellowEmail = application.applicant!.email;
+
+      await prisma.$transaction([
+        prisma.fellowApplication.update({
+          where: { id: application.id },
+          data: {
+            status: ApplicationStatus.APPROVED,
+            reviewedAt: new Date(),
+            reviewedById: session.user.id,
+            reviewNotes: parsed.data.reviewNotes,
+          },
+        }),
+        prisma.user.update({
+          where: { id: fellowUserId },
+          data: { role: UserRole.FELLOW },
+        }),
+      ]);
+
+      sendEmail({
+        to: fellowEmail,
+        subject: "🎉 Your KAT Fellowship Application Was Approved!",
+        ...buildFellowApprovalEmail({
+          firstName: fellowFirstName,
+          cohortName: application.cohort?.name,
+          reviewNotes: parsed.data.reviewNotes,
+        }),
+      }).catch((err: unknown) => console.error("[fellows/applications] Email send failed:", err));
+    }
 
     await trackEvent({
       userId: session.user.id,
       organizationId: session.user.organizationId,
       eventType: "fellow",
-      eventName: parsed.data.status === "APPROVED" ? "application_approved" : "application_rejected",
-      payload: {
-        applicationId: application.id,
-        applicantId: application.applicantId,
-      },
+      eventName: "application_approved",
+      payload: { applicationId: application.id, applicantId: fellowUserId },
     });
 
-    return ok({ application: updatedApplication });
+    return ok({ status: "APPROVED" });
   } catch (error) {
     return fail("Could not review application.", 500, error instanceof Error ? error.message : error);
   }

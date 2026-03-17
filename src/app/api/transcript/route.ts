@@ -3,8 +3,8 @@ import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const ADMIN_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN];
-const LEARNER_ROLES = [UserRole.STUDENT, UserRole.FELLOW];
+const ADMIN_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN];
+const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW];
 
 async function loadTranscript(userId: string) {
   const user = await prisma.user.findUnique({
@@ -22,7 +22,6 @@ async function loadTranscript(userId: string) {
           id: true,
           status: true,
           enrolledAt: true,
-          cohort: { select: { id: true, name: true, startsAt: true, endsAt: true } },
           program: {
             select: {
               id: true,

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,12 +45,14 @@ type LoginValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") ?? "/dashboard";
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
-    await signIn("google", { callbackUrl: "/dashboard" });
+    await signIn("google", { callbackUrl: redirectTo });
     // Page will redirect — no need to setGoogleLoading(false)
   };
 
@@ -74,7 +76,7 @@ export default function LoginPage() {
     }
 
     toast.success("Welcome back.");
-    router.push("/dashboard");
+    router.push(redirectTo);
     router.refresh();
   });
 
@@ -92,7 +94,7 @@ export default function LoginPage() {
           <div className="relative flex items-center gap-3">
             <Image src="/kindle-a-techie.svg" alt="KAT logo" width={40} height={40} className="shrink-0" />
             <span className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-white">
-              KAT Academy
+              KAT Learning
             </span>
           </div>
 
@@ -130,7 +132,7 @@ export default function LoginPage() {
             <div className="mb-8 flex items-center gap-2 lg:hidden">
               <Image src="/kindle-a-techie.svg" alt="KAT logo" width={36} height={36} className="shrink-0" />
               <span className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-900">
-                KAT Academy
+                KAT Learning
               </span>
             </div>
 
@@ -164,9 +166,17 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-sm font-medium text-slate-700">
-                  Password
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-sm font-medium text-slate-700">
+                    Password
+                  </Label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs font-medium text-[#1E5FAF] hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
                 <div className="relative">
                   <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <Input
@@ -222,7 +232,10 @@ export default function LoginPage() {
 
             <p className="mt-6 text-center text-sm text-slate-500">
               Don&apos;t have an account?{" "}
-              <Link href="/register" className="font-semibold text-[#1E5FAF] hover:underline">
+              <Link
+                href={redirectTo !== "/dashboard" ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}
+                className="font-semibold text-[#1E5FAF] hover:underline"
+              >
                 Create one
               </Link>
             </p>

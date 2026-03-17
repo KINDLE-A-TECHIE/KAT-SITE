@@ -246,7 +246,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
       }
     } else {
       toast.success(`Redirecting to Paystack for ${cart.length} payment${cart.length !== 1 ? "s" : ""}…`);
-      window.open(authUrl, "_blank", "noopener,noreferrer");
+      window.location.href = authUrl;
     }
     onSuccess();
   };
@@ -478,8 +478,7 @@ function useOrgUsers(roles = "STUDENT,FELLOW,PARENT") {
     const timer = setTimeout(async () => {
       const q = query.trim() ? `&q=${encodeURIComponent(query.trim())}` : "";
       const res = await fetch(`/api/org-users?role=${roles}${q}`);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (res.ok) { const p = await res.json(); setUsers(p.users ?? []); }
+      if (res.ok) { const p = await res.json() as { users?: OrgUser[] }; setUsers(p.users ?? []); }
       setLoading(false);
     }, 300);
     return () => clearTimeout(timer);
@@ -550,7 +549,7 @@ function AdminPayForStudentForm({ onSuccess }: { onSuccess: () => void }) {
       }
     } else {
       toast.success(`Redirecting to Paystack for ${selectedUser.firstName}…`);
-      window.open(authUrl, "_blank", "noopener,noreferrer");
+      window.location.href = authUrl;
     }
     onSuccess();
   };
@@ -685,9 +684,8 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
     try {
       const res = await fetch(`/api/enrollments?userId=${u.id}`);
       if (res.ok) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const p = await res.json();
-        const enrolledIds: string[] = (p.enrollments ?? []).map((e: any) => e.program.id as string);
+        const p = await res.json() as { enrollments?: { program: { id: string } }[] };
+        const enrolledIds: string[] = (p.enrollments ?? []).map((e) => e.program.id);
         if (enrolledIds.length > 0) {
           setSelectedProgramIds((prev) => {
             const next = new Set(prev);
@@ -891,8 +889,7 @@ function EnrollmentsManager() {
     setLoading(true);
     const res = await fetch("/api/enrollments");
     if (res.ok) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const p = await res.json();
+      const p = await res.json() as { enrollments?: EnrollmentRecord[] };
       setEnrollments(p.enrollments ?? []);
     }
     setLoading(false);
@@ -1173,6 +1170,7 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
                   <label className="mb-1.5 block text-xs font-medium text-slate-600">Expires</label>
                   <Input
                     type="date"
+                    className="kat-date-input"
                     value={form.expiresAt}
                     onChange={(e) => setForm((f) => ({ ...f, expiresAt: e.target.value }))}
                   />
@@ -1285,7 +1283,7 @@ export function PaymentsPanel({ role }: { role: string }) {
     setLoading(false);
   };
 
-  useEffect(() => { void loadPayments(0); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void loadPayments(0); }, []);
 
   useEffect(() => {
     if (isSA) {
@@ -1329,7 +1327,7 @@ export function PaymentsPanel({ role }: { role: string }) {
       }
       await loadPayments(0);
     })();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const verifyPayment = async () => {
     if (!referenceToVerify.trim()) { toast.error("Enter a payment reference."); return; }
@@ -1453,7 +1451,7 @@ export function PaymentsPanel({ role }: { role: string }) {
                     </td>
                     <td className="py-3">
                       {payment.receipt ? (
-                        <a href={`/dashboard/payments/receipt/${payment.receipt.id}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-sky-600 hover:underline">
+                        <a href={`/dashboard/payments/receipt/${payment.receipt.id}`} className="text-xs font-medium text-sky-600 hover:underline">
                           {payment.receipt.receiptNumber}
                         </a>
                       ) : <span className="text-slate-400">—</span>}

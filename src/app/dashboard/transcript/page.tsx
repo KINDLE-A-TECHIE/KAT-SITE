@@ -151,9 +151,9 @@ export default function TranscriptPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              KAT Academy — Academic Transcript
+              KAT Learning — Academic Transcript
             </p>
-            <h2 className="mt-1 font-[var(--font-space-grotesk)] text-2xl font-bold text-slate-900">
+            <h2 className="mt-1 [font-family:var(--font-space-grotesk)] text-2xl font-bold text-slate-900">
               {transcript.firstName} {transcript.lastName}
             </h2>
             <p className="text-sm text-slate-600">{transcript.email}</p>
@@ -203,7 +203,7 @@ export default function TranscriptPage() {
             <div key={enrollment.id} className="kat-card print:shadow-none">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-[var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
+                  <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
                     {enrollment.program.name}
                   </h3>
                   {enrollment.cohort && (
@@ -306,7 +306,7 @@ export default function TranscriptPage() {
       )}
 
       <div className="kat-card print:block hidden text-center text-xs text-slate-500">
-        Generated {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} · KAT Academy · kat.africa
+        Generated {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} · KAT Learning · kat.africa
       </div>
     </div>
   );
