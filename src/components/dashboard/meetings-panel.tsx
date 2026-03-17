@@ -336,7 +336,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
           return (
             <div
               key={key}
-              className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.55)]"
+              className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.55)] dark:border-slate-700 dark:bg-slate-800/90"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -345,7 +345,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                   >
                     <Icon className="size-4" />
                   </div>
-                  <p className="text-sm font-medium text-slate-700">{COLUMN_META[key].label}</p>
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{COLUMN_META[key].label}</p>
                 </div>
                 <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${COLUMN_META[key].chip}`}>
                   {grouped[key].length}
@@ -357,16 +357,16 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
       </section>
 
       {canHost ? (
-        <section className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.5)] sm:p-5">
+        <section className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.5)] sm:p-5 dark:border-slate-700 dark:bg-slate-900/95">
           <div className="mb-4 flex items-center gap-3">
-            <div className="inline-flex size-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+            <div className="inline-flex size-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
               <CalendarClock className="size-5" />
             </div>
             <div>
-              <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
+              <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">
                 Schedule a Learning Session
               </h3>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
                 Set the title, date/time, participants, and recording policy for your next class.
               </p>
             </div>
@@ -374,9 +374,9 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
 
           <div className="grid grid-cols-1 gap-3">
             <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Session Title</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Session Title</p>
               <Input
-                className="h-11 border-slate-300 bg-slate-50"
+                className="h-11 border-slate-300 bg-slate-50 dark:border-slate-600 dark:bg-slate-800"
                 placeholder="e.g. Python Mission Lab"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
@@ -385,7 +385,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
 
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="space-y-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Start Date and Time</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Start Date and Time</p>
                 <Input
                   className="kat-date-input"
                   type="datetime-local"
@@ -394,7 +394,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                 />
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">End Date and Time</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">End Date and Time</p>
                 <Input
                   className="kat-date-input"
                   type="datetime-local"
@@ -405,9 +405,9 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
             </div>
 
             <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Description (Optional)</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Description (Optional)</p>
               <Input
-                className="h-11 border-slate-300 bg-slate-50"
+                className="h-11 border-slate-300 bg-slate-50 dark:border-slate-600 dark:bg-slate-800"
                 placeholder="Add context for participants"
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
@@ -417,11 +417,11 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
 
           {canDiscoverBySkill ? (
             <div className="mt-4 space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Participant Discovery</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Participant Discovery</p>
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <Input
-                  className="border-slate-300 bg-slate-50 pl-9"
+                  className="border-slate-300 bg-slate-50 pl-9 dark:border-slate-600 dark:bg-slate-800"
                   placeholder="Search contacts by skill"
                   value={skillQuery}
                   onChange={(event) => setSkillQuery(event.target.value)}
@@ -439,7 +439,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                 setParticipantPickerId("");
               }}
             >
-              <SelectTrigger className="h-10 w-full rounded-xl border border-slate-300 bg-slate-50/70 px-3 text-sm text-slate-700 focus-visible:ring-2 focus-visible:ring-sky-200">
+              <SelectTrigger className="h-10 w-full rounded-xl border border-slate-300 bg-slate-50/70 px-3 text-sm text-slate-700 focus-visible:ring-2 focus-visible:ring-sky-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
                 <SelectValue placeholder="Add participants" />
               </SelectTrigger>
               <SelectContent className="max-h-56 overflow-y-auto" position="popper" side="bottom" align="start" sideOffset={6}>
@@ -454,14 +454,14 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
 
           {canDiscoverBySkill ? (
             <div className="mt-4 space-y-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Quick Add Participants</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Quick Add Participants</p>
               {contactsLoading ? (
                 <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
                   <Skeleton className="h-28 w-full rounded-xl" />
                   <Skeleton className="h-28 w-full rounded-xl" />
                 </div>
               ) : participantOptions.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+                <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
                   No available contacts match this skill.
                 </p>
               ) : (
@@ -490,7 +490,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                 <button
                   key={participantId}
                   type="button"
-                  className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200"
+                  className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
                   onClick={() => removeParticipant(participantId)}
                 >
                   {participant ? `${participant.firstName} ${participant.lastName}` : participantId} x
@@ -500,7 +500,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               {requiresAutoRecording
                 ? "This meeting is marked AUTO_REQUIRED. Ensure Zoho host settings have automatic recording enabled (or start recording manually at session start)."
                 : "This meeting will use manual recording mode."}
@@ -519,7 +519,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
           return (
             <div
               key={key}
-              className="flex flex-col rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.5)]"
+              className="flex flex-col rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.5)] dark:border-slate-700 dark:bg-slate-900/95"
             >
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -528,7 +528,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                   >
                     <Icon className="size-4" />
                   </div>
-                  <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900">
+                  <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">
                     {COLUMN_META[key].label}
                   </h3>
                 </div>
@@ -544,7 +544,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                     <Skeleton className="h-24 w-full rounded-xl" />
                   </>
                 ) : columnMeetings.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
                     No {key} meetings.
                   </div>
                 ) : (
@@ -557,33 +557,33 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.04 }}
-                        className="rounded-xl border border-slate-200 bg-slate-50/70 p-3"
+                        className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/70"
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <p className="break-words font-medium text-slate-900">{meeting.title}</p>
-                          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
+                          <p className="break-words font-medium text-slate-900 dark:text-slate-100">{meeting.title}</p>
+                          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
                             {meeting.status}
                           </span>
                         </div>
-                        <p className="mt-2 break-words text-xs text-slate-600">
+                        <p className="mt-2 break-words text-xs text-slate-600 dark:text-slate-400">
                           {new Date(meeting.startTime).toLocaleString()} - {new Date(meeting.endTime).toLocaleString()}
                         </p>
-                        <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500">
+                        <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                           <Users className="size-3.5" />
                           {meeting.participants.length} participant(s)
                         </p>
 
                         <div className="mt-2 flex flex-wrap gap-2">
-                          <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-700">
+                          <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-700 dark:bg-slate-700 dark:text-slate-300">
                             {recordingModeLabel(meeting.recordingMode)}
                           </span>
                           <span
                             className={
                               meeting.recordingStatus === "AVAILABLE"
-                                ? "rounded-full bg-emerald-100 px-2 py-1 text-[11px] text-emerald-700"
+                                ? "rounded-full bg-emerald-100 px-2 py-1 text-[11px] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
                                 : meeting.recordingStatus === "FAILED"
-                                  ? "rounded-full bg-rose-100 px-2 py-1 text-[11px] text-rose-700"
-                                  : "rounded-full bg-amber-100 px-2 py-1 text-[11px] text-amber-700"
+                                  ? "rounded-full bg-rose-100 px-2 py-1 text-[11px] text-rose-700 dark:bg-rose-900/40 dark:text-rose-400"
+                                  : "rounded-full bg-amber-100 px-2 py-1 text-[11px] text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
                             }
                           >
                             {recordingStatusLabel(meeting.recordingStatus)}
@@ -593,8 +593,8 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                           <span
                             className={
                               meeting.host.id === userId
-                                ? "inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-[11px] font-medium text-blue-800"
-                                : "inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-medium text-emerald-800"
+                                ? "inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-[11px] font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
+                                : "inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
                             }
                           >
                             {meeting.host.id === userId ? "Joining as host" : "Joining as attendee"}
@@ -647,11 +647,11 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
       </section>
 
       {canViewRecordingLibrary ? (
-        <section className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.5)] sm:p-5">
+        <section className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.5)] sm:p-5 dark:border-slate-700 dark:bg-slate-900/95">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900">Recording Library</h3>
-              <p className="text-sm text-slate-600">
+              <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">Recording Library</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
                 Super admin view of organization-wide ended sessions and available recordings.
               </p>
             </div>
@@ -675,40 +675,40 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                 <Skeleton className="h-24 w-full rounded-xl" />
               </>
             ) : recordingLibrary.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
                 No ended meetings with recording mode found yet.
               </div>
             ) : (
               recordingLibrary.map((meeting) => {
                 const recordingUrl = meeting.recordingPlayUrl ?? meeting.recordingDownloadUrl;
                 return (
-                  <div key={`recording-${meeting.id}`} className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                  <div key={`recording-${meeting.id}`} className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/70">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <p className="font-medium text-slate-900">{meeting.title}</p>
-                        <p className="text-xs text-slate-600">
+                        <p className="font-medium text-slate-900 dark:text-slate-100">{meeting.title}</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400">
                           Host: {meeting.host.firstName} {meeting.host.lastName}
                         </p>
-                        <p className="mt-1 text-xs text-slate-600">
+                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
                           {new Date(meeting.startTime).toLocaleString()} - {new Date(meeting.endTime).toLocaleString()}
                         </p>
                       </div>
-                      <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
+                      <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
                         {meeting.status}
                       </span>
                     </div>
 
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-700">
+                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-700 dark:bg-slate-700 dark:text-slate-300">
                         {recordingModeLabel(meeting.recordingMode)}
                       </span>
                       <span
                         className={
                           meeting.recordingStatus === "AVAILABLE"
-                            ? "rounded-full bg-emerald-100 px-2 py-1 text-[11px] text-emerald-700"
+                            ? "rounded-full bg-emerald-100 px-2 py-1 text-[11px] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
                             : meeting.recordingStatus === "FAILED"
-                              ? "rounded-full bg-rose-100 px-2 py-1 text-[11px] text-rose-700"
-                              : "rounded-full bg-amber-100 px-2 py-1 text-[11px] text-amber-700"
+                              ? "rounded-full bg-rose-100 px-2 py-1 text-[11px] text-rose-700 dark:bg-rose-900/40 dark:text-rose-400"
+                              : "rounded-full bg-amber-100 px-2 py-1 text-[11px] text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
                         }
                       >
                         {recordingStatusLabel(meeting.recordingStatus)}
@@ -719,8 +719,8 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                       <span
                         className={
                           meeting.host.id === userId
-                            ? "inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-[11px] font-medium text-blue-800"
-                            : "inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-medium text-emerald-800"
+                            ? "inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-[11px] font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
+                            : "inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
                         }
                       >
                         {meeting.host.id === userId ? "Joining as host" : "Joining as attendee"}

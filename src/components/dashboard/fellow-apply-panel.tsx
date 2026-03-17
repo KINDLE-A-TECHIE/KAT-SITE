@@ -18,9 +18,9 @@ type Application = {
 };
 
 const STATUS_STYLES: Record<string, string> = {
-  PENDING: "bg-amber-100 text-amber-700",
-  APPROVED: "bg-emerald-100 text-emerald-700",
-  REJECTED: "bg-rose-100 text-rose-700",
+  PENDING: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+  APPROVED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
+  REJECTED: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400",
 };
 
 export function FellowApplyPanel({ cohorts }: { cohorts: Cohort[] }) {
@@ -75,17 +75,17 @@ export function FellowApplyPanel({ cohorts }: { cohorts: Cohort[] }) {
       {/* Application form — hide if already approved or pending */}
       {!hasApproved && !hasPending && (
         <div className="kat-card space-y-4">
-          <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-800">
+          <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-800 dark:text-slate-200">
             New Application
           </h3>
 
           {cohorts.length > 0 && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
-                Target Cohort <span className="text-slate-400">(optional)</span>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Target Cohort <span className="text-slate-400 dark:text-slate-500">(optional)</span>
               </label>
               <Select value={cohortId || undefined} onValueChange={setCohortId}>
-                <SelectTrigger className="h-10 w-full rounded-xl border border-slate-300 bg-slate-50/70 px-3 text-sm">
+                <SelectTrigger className="h-10 w-full rounded-xl border border-slate-300 bg-slate-50/70 px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
                   <SelectValue placeholder="Any open cohort" />
                 </SelectTrigger>
                 <SelectContent position="popper" side="bottom" align="start" sideOffset={6}>
@@ -100,24 +100,24 @@ export function FellowApplyPanel({ cohorts }: { cohorts: Cohort[] }) {
           )}
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Why do you want to be a fellow? <span className="text-rose-500">*</span>
             </label>
             <textarea
-              className="w-full rounded-xl border border-slate-300 bg-slate-50/70 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-200 min-h-[120px]"
+              className="w-full rounded-xl border border-slate-300 bg-slate-50/70 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-200 min-h-[120px] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
               placeholder="Tell us about your passion for mentoring, what you've learned so far, and why you'd be a great fellow… (min 50 characters)"
               value={motivation}
               onChange={(e) => setMotivation(e.target.value)}
             />
-            <p className="mt-1 text-right text-xs text-slate-400">{motivation.length} / 3000</p>
+            <p className="mt-1 text-right text-xs text-slate-400 dark:text-slate-500">{motivation.length} / 3000</p>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              Relevant experience <span className="text-slate-400">(optional)</span>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Relevant experience <span className="text-slate-400 dark:text-slate-500">(optional)</span>
             </label>
             <textarea
-              className="w-full rounded-xl border border-slate-300 bg-slate-50/70 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-200 min-h-[80px]"
+              className="w-full rounded-xl border border-slate-300 bg-slate-50/70 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-200 min-h-[80px] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
               placeholder="Projects, leadership roles, tutoring experience, etc."
               value={experience}
               onChange={(e) => setExperience(e.target.value)}
@@ -131,20 +131,20 @@ export function FellowApplyPanel({ cohorts }: { cohorts: Cohort[] }) {
       )}
 
       {hasPending && (
-        <div className="kat-card rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="kat-card rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/40 dark:text-amber-400">
           Your application is under review. You will be notified once a decision is made.
         </div>
       )}
 
       {hasApproved && (
-        <div className="kat-card rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+        <div className="kat-card rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400">
           Congratulations! Your fellowship application was approved. Your role has been updated.
         </div>
       )}
 
       {/* Application history */}
       <div className="kat-card">
-        <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-800">
+        <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-800 dark:text-slate-200">
           My Applications
         </h3>
         <div className="mt-4 space-y-3">
@@ -154,7 +154,7 @@ export function FellowApplyPanel({ cohorts }: { cohorts: Cohort[] }) {
               <Skeleton className="h-16 w-full" />
             </>
           ) : applications.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-400">No applications yet.</p>
+            <p className="py-6 text-center text-sm text-slate-400 dark:text-slate-500">No applications yet.</p>
           ) : (
             applications.map((app, i) => (
               <motion.div
@@ -162,23 +162,23 @@ export function FellowApplyPanel({ cohorts }: { cohorts: Cohort[] }) {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="rounded-xl border border-slate-100 bg-slate-50 p-4"
+                className="rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-sm font-medium text-slate-800">
+                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
                       {app.cohort ? app.cohort.name : "Open Fellowship"}
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
                       Submitted {new Date(app.submittedAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[app.status] ?? "bg-slate-100 text-slate-600"}`}>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[app.status] ?? "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400"}`}>
                     {app.status}
                   </span>
                 </div>
                 {app.reviewNotes && (
-                  <p className="mt-2 text-xs text-slate-600 italic">
+                  <p className="mt-2 text-xs text-slate-600 italic dark:text-slate-400">
                     Reviewer note: {app.reviewNotes}
                   </p>
                 )}

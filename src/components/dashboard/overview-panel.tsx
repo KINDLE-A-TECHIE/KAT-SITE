@@ -67,21 +67,21 @@ const ACTIONS: Record<UserRoleValue, ActionCard[]> = {
       description: "Platform performance, risk, and revenue.",
       href: "/dashboard/analytics",
       icon: <BarChart3 className="size-4" />,
-      color: "bg-blue-50 text-blue-600",
+      color: "bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
     },
     {
       label: "Access Control",
       description: "Manage invites and account status.",
       href: "/dashboard/super-admin-invites",
       icon: <ShieldCheck className="size-4" />,
-      color: "bg-violet-50 text-violet-600",
+      color: "bg-violet-50 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400",
     },
     {
       label: "Broadcast Messages",
       description: "Send updates to teams and roles.",
       href: "/dashboard/messages",
       icon: <Megaphone className="size-4" />,
-      color: "bg-orange-50 text-orange-600",
+      color: "bg-orange-50 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400",
     },
   ],
   ADMIN: [
@@ -90,21 +90,21 @@ const ACTIONS: Record<UserRoleValue, ActionCard[]> = {
       description: "Monitor cohorts and learner progress.",
       href: "/dashboard/analytics",
       icon: <BookOpen className="size-4" />,
-      color: "bg-blue-50 text-blue-600",
+      color: "bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
     },
     {
       label: "Payment Review",
       description: "Verify payments and receipts.",
       href: "/dashboard/payments",
       icon: <Receipt className="size-4" />,
-      color: "bg-emerald-50 text-emerald-600",
+      color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
     },
     {
       label: "Messages",
       description: "Chat with staff, fellows, learners, and parents.",
       href: "/dashboard/messages",
       icon: <MessageCircle className="size-4" />,
-      color: "bg-sky-50 text-sky-600",
+      color: "bg-sky-50 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400",
     },
   ],
   INSTRUCTOR: [
@@ -113,21 +113,21 @@ const ACTIONS: Record<UserRoleValue, ActionCard[]> = {
       description: "Review submissions and score manually.",
       href: "/dashboard/assessments",
       icon: <ClipboardCheck className="size-4" />,
-      color: "bg-blue-50 text-blue-600",
+      color: "bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
     },
     {
       label: "Run Live Sessions",
       description: "Schedule sessions with Zoho Meeting.",
       href: "/dashboard/meetings",
       icon: <Video className="size-4" />,
-      color: "bg-violet-50 text-violet-600",
+      color: "bg-violet-50 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400",
     },
     {
       label: "Mentor Chat",
       description: "Stay in touch with fellows, learners, and admins.",
       href: "/dashboard/messages",
       icon: <MessageCircle className="size-4" />,
-      color: "bg-sky-50 text-sky-600",
+      color: "bg-sky-50 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400",
     },
   ],
   FELLOW: [],
@@ -137,21 +137,21 @@ const ACTIONS: Record<UserRoleValue, ActionCard[]> = {
       description: "Submit work and track your scores.",
       href: "/dashboard/assessments",
       icon: <ClipboardList className="size-4" />,
-      color: "bg-blue-50 text-blue-600",
+      color: "bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
     },
     {
       label: "Live Classes",
       description: "Join scheduled learning and mentorship sessions.",
       href: "/dashboard/meetings",
       icon: <Video className="size-4" />,
-      color: "bg-violet-50 text-violet-600",
+      color: "bg-violet-50 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400",
     },
     {
       label: "Payment Records",
       description: "View family billing history and receipts.",
       href: "/dashboard/payments",
       icon: <Receipt className="size-4" />,
-      color: "bg-emerald-50 text-emerald-600",
+      color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
     },
   ],
   PARENT: [
@@ -160,21 +160,21 @@ const ACTIONS: Record<UserRoleValue, ActionCard[]> = {
       description: "Invoices, transactions, and receipts.",
       href: "/dashboard/payments",
       icon: <CreditCard className="size-4" />,
-      color: "bg-emerald-50 text-emerald-600",
+      color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
     },
     {
       label: "Contact Staff",
       description: "Reach admins and instructors directly.",
       href: "/dashboard/messages",
       icon: <MessageCircle className="size-4" />,
-      color: "bg-sky-50 text-sky-600",
+      color: "bg-sky-50 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400",
     },
     {
       label: "Student Progress",
       description: "Monitor learner activity and outcomes.",
       href: "/dashboard/analytics",
       icon: <TrendingUp className="size-4" />,
-      color: "bg-blue-50 text-blue-600",
+      color: "bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
     },
   ],
 };
@@ -209,26 +209,26 @@ function GenericOverview({ role }: { role: UserRoleValue }) {
         label: "Logins (30d)",
         value: analytics.userAnalytics.loginStats30d,
         icon: <Activity className="size-4" />,
-        accent: "bg-blue-50 text-blue-600",
+        accent: "bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
       },
       {
         label: "Assessments",
         value: analytics.userAnalytics.assessmentsSubmitted,
         icon: <ClipboardCheck className="size-4" />,
-        accent: "bg-violet-50 text-violet-600",
+        accent: "bg-violet-50 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400",
       },
       {
         label: "Unread Messages",
         value: analytics.userAnalytics.unreadMessages,
         icon: <MessageSquare className="size-4" />,
-        accent: "bg-sky-50 text-sky-600",
+        accent: "bg-sky-50 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400",
         href: "/dashboard/messages",
       },
       {
         label: "Upcoming Meetings",
         value: analytics.userAnalytics.upcomingMeetings,
         icon: <CalendarDays className="size-4" />,
-        accent: "bg-indigo-50 text-indigo-600",
+        accent: "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400",
         href: "/dashboard/meetings",
       },
     ];
@@ -238,13 +238,13 @@ function GenericOverview({ role }: { role: UserRoleValue }) {
           label: "Enrollments",
           value: analytics.platformAnalytics.enrollmentCount,
           icon: <Users className="size-4" />,
-          accent: "bg-emerald-50 text-emerald-600",
+          accent: "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
         },
         {
           label: "Revenue",
           value: `₦${analytics.platformAnalytics.totalRevenue.toLocaleString("en-NG")}`,
           icon: <Banknote className="size-4" />,
-          accent: "bg-amber-50 text-amber-600",
+          accent: "bg-amber-50 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",
         },
       );
     }
@@ -259,7 +259,7 @@ function GenericOverview({ role }: { role: UserRoleValue }) {
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="rounded-2xl border border-slate-200 bg-white p-5">
+              <div key={i} className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
                 <Skeleton className="mb-3 h-8 w-8 rounded-lg" />
                 <Skeleton className="mb-2 h-7 w-16" />
                 <Skeleton className="h-3 w-24" />
@@ -267,14 +267,14 @@ function GenericOverview({ role }: { role: UserRoleValue }) {
             ))
           : stats.map((stat, i) => {
               const inner = (
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-slate-300 hover:shadow-sm">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-slate-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600">
                   <div className={`mb-3 inline-flex h-8 w-8 items-center justify-center rounded-lg ${stat.accent}`}>
                     {stat.icon}
                   </div>
-                  <p className="[font-family:var(--font-space-grotesk)] text-2xl font-bold text-slate-900">
+                  <p className="[font-family:var(--font-space-grotesk)] text-2xl font-bold text-slate-900 dark:text-slate-100">
                     {stat.value}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-500">{stat.label}</p>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
                 </div>
               );
               return (
@@ -293,7 +293,7 @@ function GenericOverview({ role }: { role: UserRoleValue }) {
       {/* Quick actions */}
       {actions.length > 0 && (
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">
             Quick Access
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -306,17 +306,17 @@ function GenericOverview({ role }: { role: UserRoleValue }) {
               >
                 <Link
                   href={action.href}
-                  className="group flex items-start gap-3.5 rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-slate-300 hover:shadow-sm"
+                  className="group flex items-start gap-3.5 rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-slate-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600"
                 >
                   <div className={`mt-0.5 shrink-0 rounded-lg p-2 ${action.color}`}>
                     {action.icon}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-900">{action.label}</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{action.label}</p>
                       <ArrowUpRight className="size-3.5 shrink-0 text-slate-300 transition group-hover:text-slate-600" />
                     </div>
-                    <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{action.description}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{action.description}</p>
                   </div>
                 </Link>
               </motion.div>

@@ -106,15 +106,15 @@ export function ContentCreateForm({
   return (
     <div className="space-y-4">
       {/* Type tabs */}
-      <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+      <div className="flex gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-1">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
               tab === t.id
-                ? "bg-white text-[#1E5FAF] shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-white dark:bg-slate-900 text-[#1E5FAF] shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
             }`}
           >
             {t.icon}
@@ -147,7 +147,7 @@ export function ContentCreateForm({
             rows={8}
             className="font-mono text-sm"
           />
-          <p className="text-xs text-slate-400">Basic HTML is supported. Script tags will be stripped.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Basic HTML is supported. Script tags will be stripped.</p>
         </div>
       )}
 
@@ -161,7 +161,7 @@ export function ContentCreateForm({
             placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
             className="text-sm"
           />
-          <p className="text-xs text-slate-400">Paste any YouTube watch or share URL.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Paste any YouTube watch or share URL.</p>
         </div>
       )}
 
@@ -175,7 +175,7 @@ export function ContentCreateForm({
             placeholder="https://example.com/video.mp4"
             className="text-sm"
           />
-          <p className="text-xs text-slate-400">Direct link to an .mp4 or other browser-supported video file.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Direct link to an .mp4 or other browser-supported video file.</p>
         </div>
       )}
 
@@ -189,7 +189,7 @@ export function ContentCreateForm({
             placeholder="https://drive.google.com/... or https://docs.google.com/..."
             className="text-sm"
           />
-          <p className="text-xs text-slate-400">Link to a Google Doc, PDF, Notion page, or any public document URL.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Link to a Google Doc, PDF, Notion page, or any public document URL.</p>
         </div>
       )}
 
@@ -201,7 +201,7 @@ export function ContentCreateForm({
               id="code-language"
               value={language}
               onChange={(e) => handleLanguageChange(e.target.value)}
-              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-[#1E5FAF] focus:outline-none focus:ring-1 focus:ring-[#1E5FAF]"
+              className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:border-[#1E5FAF] focus:outline-none focus:ring-1 focus:ring-[#1E5FAF]"
             >
               {SUPPORTED_LANGUAGES.map((l) => (
                 <option key={l.value} value={l.value}>{l.label}</option>
@@ -210,7 +210,7 @@ export function ContentCreateForm({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="starter-code" className="text-sm">
-              Starter Code <span className="font-normal text-slate-400">(learners will see this as their starting point)</span>
+              Starter Code <span className="font-normal text-slate-400 dark:text-slate-500">(learners will see this as their starting point)</span>
             </Label>
             <Textarea
               id="starter-code"
@@ -220,7 +220,7 @@ export function ContentCreateForm({
               className="font-mono text-sm"
               spellCheck={false}
             />
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-400 dark:text-slate-500">
               Learners can edit this code freely in their Monaco editor and run it directly.
             </p>
           </div>

@@ -84,7 +84,7 @@ export function CodePlaygroundBlock({
   const success = result && result.exitCode === 0 && !result.stderr;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200">
+    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-[#1e1e1e] px-4 py-2">
         <div className="flex items-center gap-2">

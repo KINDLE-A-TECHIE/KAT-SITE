@@ -170,7 +170,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {cert.program.name}
                   </p>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${LEVEL_COLOUR[cert.program.level] ?? "bg-slate-100 text-slate-600"}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${LEVEL_COLOUR[cert.program.level] ?? "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
                     {LEVEL_LABEL[cert.program.level] ?? cert.program.level}
                   </span>
                 </div>

@@ -627,12 +627,12 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
 
   const verificationBadgeClass = (status: AssessmentVerificationStatusValue) => {
     if (status === "APPROVED") {
-      return "bg-emerald-100 text-emerald-700";
+      return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400";
     }
     if (status === "REJECTED") {
-      return "bg-rose-100 text-rose-700";
+      return "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400";
     }
-    return "bg-amber-100 text-amber-800";
+    return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400";
   };
 
   return (
@@ -675,14 +675,14 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
               value={dueDate}
               onChange={(event) => setDueDate(event.target.value)}
             />
-            <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+            <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
               <input type="checkbox" checked={published} onChange={(event) => setPublished(event.target.checked)} />
               Publish now (visible to learners only after super-admin verification)
             </label>
             </div>
-            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-700 dark:bg-slate-800">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-slate-900">Question Builder</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Question Builder</p>
               <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                 <Button
                   type="button"
@@ -717,7 +717,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                 </Button>
               </div>
             </div>
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               {questionDrafts.length} question(s), {draftTotalPoints} total point(s).
             </p>
 
@@ -728,17 +728,17 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     key={question.id}
                     onDragOver={(event) => onQuestionDragOver(event, question.id)}
                     onDrop={() => onQuestionDrop(question.id)}
-                    className={`rounded-lg border bg-white p-3 transition ${
+                    className={`rounded-lg border bg-white p-3 transition dark:bg-slate-900 ${
                       dragOverQuestionId === question.id && draggingQuestionId !== question.id
                         ? "border-cyan-300 shadow-sm"
-                        : "border-slate-200"
+                        : "border-slate-200 dark:border-slate-700"
                     } ${draggingQuestionId === question.id ? "opacity-80" : ""}`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          className="inline-flex size-8 cursor-grab items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-500 active:cursor-grabbing"
+                          className="inline-flex size-8 cursor-grab items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-500 active:cursor-grabbing dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                           draggable
                           onDragStart={() => onQuestionDragStart(question.id)}
                           onDragEnd={onQuestionDragEnd}
@@ -746,7 +746,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                         >
                           <GripVertical className="size-4" />
                         </button>
-                        <p className="text-sm font-semibold text-slate-900">Question {index + 1}</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Question {index + 1}</p>
                       </div>
                       <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
                         <Button
@@ -808,7 +808,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     </div>
 
                     <textarea
-                      className="mt-3 min-h-[80px] w-full rounded-md border border-slate-200 bg-white p-2 text-sm"
+                      className="mt-3 min-h-[80px] w-full rounded-md border border-slate-200 bg-white p-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                       placeholder="Question prompt"
                       value={question.prompt}
                       onChange={(event) =>
@@ -817,18 +817,18 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     />
 
                     {question.type === "OPEN_ENDED" ? (
-                      <p className="mt-2 text-xs text-slate-600">
+                      <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
                         Open-ended questions are graded manually.
                       </p>
                     ) : (
                       <div className="mt-3 space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Options</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Options</p>
                         {question.options.map((option) => (
                           <div
                             key={option.id}
-                            className="grid grid-cols-1 gap-2 rounded-md border border-slate-200 p-2 sm:grid-cols-[auto_1fr_1fr_auto]"
+                            className="grid grid-cols-1 gap-2 rounded-md border border-slate-200 p-2 sm:grid-cols-[auto_1fr_1fr_auto] dark:border-slate-700"
                           >
-                            <label className="flex items-center gap-2 text-xs text-slate-600">
+                            <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
                               <input
                                 type="radio"
                                 name={`correct-${question.id}`}
@@ -885,30 +885,30 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                 ))}
               </div>
             ) : (
-              <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
-                <p className="text-xs text-slate-600">
+              <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                <p className="text-xs text-slate-600 dark:text-slate-400">
                   Preview uses your current draft settings and question order.
                 </p>
                 {questionDrafts.map((question, index) => (
-                  <div key={question.id} className="rounded-lg border border-slate-100 p-3">
+                  <div key={question.id} className="rounded-lg border border-slate-100 p-3 dark:border-slate-800">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-slate-900">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {index + 1}. {question.prompt.trim() || "Untitled question"}
                       </p>
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
                         {question.points || "0"} pt - {question.type}
                       </span>
                     </div>
                     {question.type === "OPEN_ENDED" ? (
                       <textarea
-                        className="mt-2 min-h-[80px] w-full rounded-md border border-slate-200 bg-slate-50 p-2 text-sm"
+                        className="mt-2 min-h-[80px] w-full rounded-md border border-slate-200 bg-slate-50 p-2 text-sm dark:border-slate-700 dark:bg-slate-800"
                         placeholder="Student response..."
                         disabled
                       />
                     ) : (
                       <div className="mt-2 space-y-1">
                         {question.options.map((option) => (
-                          <label key={option.id} className="flex items-center gap-2 text-sm text-slate-700">
+                          <label key={option.id} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                             <input type="radio" disabled />
                             {option.label || option.value || "Untitled option"}
                           </label>
@@ -921,7 +921,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
             )}
             </div>
             <textarea
-              className="min-h-[80px] w-full rounded-md border border-slate-200 bg-white p-3 text-sm"
+              className="min-h-[80px] w-full rounded-md border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
               placeholder="Description (optional)"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
@@ -949,17 +949,17 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.03 }}
-                  className="rounded-xl border border-slate-200 bg-white p-4"
+                  className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
                 >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="font-medium text-slate-900">{assessment.title}</p>
-                    <p className="text-xs text-slate-600">
+                    <p className="font-medium text-slate-900 dark:text-slate-100">{assessment.title}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
                       {assessment.program?.name} - Pass score: {assessment.passScore}/{assessment.totalPoints}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                    <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-300">
                       {assessment.type}
                     </span>
                     <span
@@ -969,7 +969,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     </span>
                     <span
                       className={`rounded-full px-2 py-1 text-xs font-medium ${
-                        assessment.published ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"
+                        assessment.published ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400" : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400"
                       }`}
                     >
                       {assessment.published ? "Published" : "Draft"}
@@ -978,13 +978,13 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                 </div>
 
                 {roleCanSubmit ? (
-                  <div className="mt-3 space-y-3 border-t border-slate-100 pt-3">
+                  <div className="mt-3 space-y-3 border-t border-slate-100 pt-3 dark:border-slate-800">
                     {assessment.questions.map((question) => (
-                      <div key={question.id} className="rounded-lg border border-slate-100 p-3">
-                        <p className="text-sm font-medium text-slate-900">{question.prompt}</p>
+                      <div key={question.id} className="rounded-lg border border-slate-100 p-3 dark:border-slate-800">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{question.prompt}</p>
                         {question.type === "OPEN_ENDED" ? (
                           <textarea
-                            className="mt-2 min-h-[80px] w-full rounded-md border border-slate-200 p-2 text-sm"
+                            className="mt-2 min-h-[80px] w-full rounded-md border border-slate-200 p-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                             onChange={(event) =>
                               updateAnswerDraft(assessment.id, question.id, { responseText: event.target.value })
                             }
@@ -992,7 +992,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                         ) : (
                           <div className="mt-2 space-y-1">
                             {question.options.map((option) => (
-                              <label key={option.id} className="flex items-center gap-2 text-sm text-slate-700">
+                              <label key={option.id} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                                 <input
                                   type="radio"
                                   name={`${assessment.id}-${question.id}`}
@@ -1015,7 +1015,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                 ) : null}
 
                 {roleCanCreate ? (
-                  <div className="mt-2 space-y-1 text-xs text-slate-500">
+                  <div className="mt-2 space-y-1 text-xs text-slate-500 dark:text-slate-400">
                     <p>Submissions: {assessment.submissions?.length ?? 0}</p>
                     <p>
                       Verification: {assessment.verificationStatus}
@@ -1036,26 +1036,26 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
       {roleCanVerify ? (
         <section className="kat-card flex max-h-[70dvh] min-h-0 flex-col">
           <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Assessment Verification Queue</h3>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             {verificationQueue.length} assessment(s) require super-admin review before learners can access them.
           </p>
           <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1">
             <div className="space-y-3">
               {verificationQueue.length === 0 ? (
-                <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
                   No pending verification tasks.
                 </div>
               ) : (
                 verificationQueue.map((assessment) => (
-                  <div key={assessment.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                  <div key={assessment.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <p className="font-medium text-slate-900">{assessment.title}</p>
-                      <p className="text-xs text-slate-600">
+                      <p className="font-medium text-slate-900 dark:text-slate-100">{assessment.title}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">
                         {assessment.program?.name} - {assessment.type} - {assessment.passScore}/{assessment.totalPoints}
                       </p>
                       {assessment.createdBy ? (
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
                           Created by {assessment.createdBy.firstName} {assessment.createdBy.lastName} ({assessment.createdBy.role})
                         </p>
                       ) : null}
@@ -1075,27 +1075,27 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     </Button>
                   </div>
                   {expandedVerificationAssessmentIds.includes(assessment.id) ? (
-                    <div className="mt-3 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      {assessment.description ? <p className="text-sm text-slate-700">{assessment.description}</p> : null}
-                      <p className="text-xs text-slate-500">
+                    <div className="mt-3 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+                      {assessment.description ? <p className="text-sm text-slate-700 dark:text-slate-300">{assessment.description}</p> : null}
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         Due: {assessment.dueDate ? new Date(assessment.dueDate).toLocaleString() : "No due date"}
                       </p>
                       <div className="space-y-2">
                         {assessment.questions.length === 0 ? (
-                          <p className="text-xs text-slate-500">No questions found on this assessment.</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">No questions found on this assessment.</p>
                         ) : (
                           assessment.questions.map((question, index) => (
-                            <div key={question.id} className="rounded-lg border border-slate-200 bg-white p-3">
+                            <div key={question.id} className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
                               <div className="flex flex-wrap items-center justify-between gap-2">
-                                <p className="text-sm font-medium text-slate-900">
+                                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                                   {index + 1}. {question.prompt}
                                 </p>
-                                <span className="text-xs text-slate-500">
+                                <span className="text-xs text-slate-500 dark:text-slate-400">
                                   {question.type} - {question.points} point(s)
                                 </span>
                               </div>
                               {question.type === "OPEN_ENDED" ? (
-                                <p className="mt-2 text-xs text-slate-600">
+                                <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
                                   Manual grading required.
                                   {question.answerKey ? ` Suggested key: ${question.answerKey}` : ""}
                                 </p>
@@ -1106,8 +1106,8 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                                       key={option.id}
                                       className={`flex items-center justify-between rounded-md border px-2 py-1 text-xs ${
                                         option.isCorrect
-                                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                          : "border-slate-200 bg-white text-slate-700"
+                                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400"
+                                          : "border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                                       }`}
                                     >
                                       <span>{option.label}</span>
@@ -1146,7 +1146,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                       type="button"
                       size="sm"
                       variant="outline"
-                      className="border-rose-200 text-rose-700 hover:bg-rose-50"
+                      className="border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-900/30"
                       disabled={verifyingAssessmentId === assessment.id}
                       onClick={() => void verifyAssessment(assessment.id, "REJECT")}
                     >
@@ -1164,12 +1164,12 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
       {roleCanCreate ? (
         <section className="kat-card flex max-h-[70dvh] min-h-0 flex-col">
           <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Manual Grading Queue</h3>
-          <p className="text-sm text-slate-600">{pendingManual.length} submission(s) awaiting manual review.</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">{pendingManual.length} submission(s) awaiting manual review.</p>
           <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1">
             <div className="space-y-3">
               {pendingManual.map((submission) => (
-                <div key={submission.id} className="rounded-xl border border-slate-200 bg-white p-4">
-                <p className="font-medium text-slate-900">
+                <div key={submission.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+                <p className="font-medium text-slate-900 dark:text-slate-100">
                   {submission.assessment.title}
                   {submission.student ? ` - ${submission.student.firstName} ${submission.student.lastName}` : ""}
                 </p>
@@ -1177,9 +1177,9 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                   {submission.answers
                     .filter((answer) => answer.question.type === "OPEN_ENDED")
                     .map((answer) => (
-                      <div key={answer.id} className="rounded-lg border border-slate-100 p-3">
-                        <p className="text-sm font-medium">{answer.question.prompt}</p>
-                        <p className="mt-1 text-sm text-slate-700">{answer.responseText || "No response provided."}</p>
+                      <div key={answer.id} className="rounded-lg border border-slate-100 p-3 dark:border-slate-800">
+                        <p className="text-sm font-medium dark:text-slate-100">{answer.question.prompt}</p>
+                        <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{answer.responseText || "No response provided."}</p>
                         <Input
                           className="mt-2"
                           type="number"

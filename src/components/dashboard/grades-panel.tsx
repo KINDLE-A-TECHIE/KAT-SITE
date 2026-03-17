@@ -71,17 +71,17 @@ type Child = { id: string; firstName: string; lastName: string; email: string };
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const ASSESSMENT_TYPE_STYLES: Record<string, string> = {
-  QUIZ:       "bg-sky-100 text-sky-700",
-  EXAM:       "bg-violet-100 text-violet-700",
-  ASSIGNMENT: "bg-amber-100 text-amber-700",
-  PROJECT:    "bg-emerald-100 text-emerald-700",
+  QUIZ:       "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400",
+  EXAM:       "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400",
+  ASSIGNMENT: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+  PROJECT:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
 };
 
 const ENROLLMENT_STATUS_STYLES: Record<string, string> = {
-  ACTIVE:    "bg-emerald-100 text-emerald-700",
-  COMPLETED: "bg-blue-100 text-blue-700",
-  PAUSED:    "bg-amber-100 text-amber-700",
-  DROPPED:   "bg-rose-100 text-rose-700",
+  ACTIVE:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
+  COMPLETED: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
+  PAUSED:    "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+  DROPPED:   "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400",
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -94,20 +94,20 @@ const ROLE_LABEL: Record<string, string> = {
 function SubmissionStatusBadge({ status }: { status: string }) {
   if (status === "GRADED") {
     return (
-      <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+      <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
         <CheckCircle2 className="h-3 w-3" /> Graded
       </span>
     );
   }
   if (status === "IN_REVIEW") {
     return (
-      <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+      <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
         <Clock className="h-3 w-3" /> In Review
       </span>
     );
   }
   return (
-    <span className="flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">
+    <span className="flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-900/40 dark:text-sky-400">
       <Clock className="h-3 w-3" /> Submitted
     </span>
   );
@@ -124,9 +124,9 @@ function SummaryCard({ label, value, sub, icon: Icon, color }: {
         <Icon className="h-5 w-5" />
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-slate-500">{label}</p>
-        <p className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900">{value}</p>
-        {sub && <p className="text-xs text-slate-400">{sub}</p>}
+        <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
+        <p className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900 dark:text-slate-100">{value}</p>
+        {sub && <p className="text-xs text-slate-400 dark:text-slate-500">{sub}</p>}
       </div>
     </div>
   );
@@ -141,34 +141,34 @@ function FeedbackSection({ submission, isParent }: { submission: Submission; isP
   if (!hasSubmissionFeedback && answerFeedbacks.length === 0) return null;
 
   return (
-    <div className="mt-3 space-y-2 rounded-xl border border-blue-100 bg-blue-50 p-3">
+    <div className="mt-3 space-y-2 rounded-xl border border-blue-100 bg-blue-50 p-3 dark:border-blue-900/50 dark:bg-blue-900/20">
       <div className="flex items-center gap-1.5">
         <MessageSquare className="h-3.5 w-3.5 text-blue-500" />
-        <span className="text-xs font-semibold text-blue-700">
+        <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">
           {isParent ? "Instructor Comments & Feedback" : "Feedback"}
         </span>
       </div>
 
       {hasSubmissionFeedback && (
         <div>
-          <p className="text-xs font-medium text-slate-600">Overall</p>
-          <p className="mt-0.5 text-sm text-slate-700">{submission.feedback}</p>
+          <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Overall</p>
+          <p className="mt-0.5 text-sm text-slate-700 dark:text-slate-300">{submission.feedback}</p>
         </div>
       )}
 
       {answerFeedbacks.map((a) => (
-        <div key={a.id} className="border-t border-blue-100 pt-2">
+        <div key={a.id} className="border-t border-blue-100 pt-2 dark:border-blue-900/50">
           <div className="flex flex-wrap items-center justify-between gap-1">
-            <p className="text-xs font-medium text-slate-600 line-clamp-1">{a.question.prompt}</p>
+            <p className="text-xs font-medium text-slate-600 line-clamp-1 dark:text-slate-400">{a.question.prompt}</p>
             {a.gradedBy && (
-              <span className="text-[10px] text-slate-400">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500">
                 {ROLE_LABEL[a.gradedBy.role] ?? a.gradedBy.role}: {a.gradedBy.firstName} {a.gradedBy.lastName}
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-sm text-slate-700">{a.feedback}</p>
+          <p className="mt-0.5 text-sm text-slate-700 dark:text-slate-300">{a.feedback}</p>
           {a.manualScore !== null && (
-            <p className="mt-0.5 text-xs text-slate-400">Score: {a.manualScore} pts</p>
+            <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">Score: {a.manualScore} pts</p>
           )}
         </div>
       ))}
@@ -188,17 +188,17 @@ function AssessmentRow({ assessment, isParent }: { assessment: Assessment; isPar
   const passed = pct !== null && pct >= passPct;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         {/* Left: assessment info */}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-slate-800">{assessment.title}</span>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ASSESSMENT_TYPE_STYLES[assessment.type] ?? "bg-slate-100 text-slate-600"}`}>
+            <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{assessment.title}</span>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ASSESSMENT_TYPE_STYLES[assessment.type] ?? "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400"}`}>
               {assessment.type}
             </span>
           </div>
-          <p className="mt-0.5 text-xs text-slate-400">
+          <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
             Pass mark: {assessment.passScore}/{assessment.totalPoints} pts
             {assessment.dueDate && ` · Due ${new Date(assessment.dueDate).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}`}
           </p>
@@ -207,7 +207,7 @@ function AssessmentRow({ assessment, isParent }: { assessment: Assessment; isPar
         {/* Right: score / status */}
         <div className="shrink-0">
           {!submission ? (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">Not submitted</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 dark:bg-slate-700 dark:text-slate-400">Not submitted</span>
           ) : (
             <div className="flex flex-wrap items-center gap-2">
               <SubmissionStatusBadge status={submission.status} />
@@ -216,12 +216,12 @@ function AssessmentRow({ assessment, isParent }: { assessment: Assessment; isPar
                   <span className={`[font-family:var(--font-space-grotesk)] text-base font-bold ${passed ? "text-emerald-600" : "text-rose-600"}`}>
                     {pct}%
                   </span>
-                  <span className="text-xs text-slate-400">({submission.totalScore}/{assessment.totalPoints})</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">({submission.totalScore}/{assessment.totalPoints})</span>
                   {passed ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <XCircle className="h-4 w-4 text-rose-500" />}
                 </>
               )}
               {submission.status !== "GRADED" && (
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-400 dark:text-slate-500">
                   Submitted {new Date(submission.submittedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}
                 </span>
               )}
@@ -243,8 +243,8 @@ function GradesContent({ enrollments, isParent }: { enrollments: Enrollment[]; i
     return (
       <div className="kat-card py-16 text-center">
         <BookOpen className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-        <p className="text-sm font-medium text-slate-500">No enrollments yet</p>
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No enrollments yet</p>
+        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
           {isParent ? "Your child is not enrolled in any programs yet." : "Enroll in a program to start tracking your grades and progress."}
         </p>
       </div>
@@ -272,10 +272,10 @@ function GradesContent({ enrollments, isParent }: { enrollments: Enrollment[]; i
     <div className="space-y-4">
       {/* Summary */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <SummaryCard label="Programs Enrolled" value={enrollments.length} icon={BookOpen} color="bg-blue-100 text-blue-600" />
-        <SummaryCard label="Assessments Taken" value={submitted.length} sub={`of ${allAssessments.length} total`} icon={FileText} color="bg-violet-100 text-violet-600" />
-        <SummaryCard label="Passed" value={`${passed.length}/${graded.length}`} sub="graded assessments" icon={Award} color="bg-emerald-100 text-emerald-600" />
-        <SummaryCard label="Average Score" value={avgPct !== null ? `${avgPct}%` : "—"} sub="across graded work" icon={TrendingUp} color="bg-amber-100 text-amber-600" />
+        <SummaryCard label="Programs Enrolled" value={enrollments.length} icon={BookOpen} color="bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400" />
+        <SummaryCard label="Assessments Taken" value={submitted.length} sub={`of ${allAssessments.length} total`} icon={FileText} color="bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400" />
+        <SummaryCard label="Passed" value={`${passed.length}/${graded.length}`} sub="graded assessments" icon={Award} color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400" />
+        <SummaryCard label="Average Score" value={avgPct !== null ? `${avgPct}%` : "—"} sub="across graded work" icon={TrendingUp} color="bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400" />
       </div>
 
       {/* Per-program */}
@@ -288,9 +288,9 @@ function GradesContent({ enrollments, isParent }: { enrollments: Enrollment[]; i
           <motion.div key={enrollment.id} className="kat-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <h3 className="[font-family:var(--font-space-grotesk)] text-base font-semibold text-slate-900">{program.name}</h3>
+                <h3 className="[font-family:var(--font-space-grotesk)] text-base font-semibold text-slate-900 dark:text-slate-100">{program.name}</h3>
                 {cohort && (
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                     {cohort.name}
                     {cohort.startsAt && ` · ${new Date(cohort.startsAt).toLocaleDateString("en-NG", { month: "short", year: "numeric" })}`}
                     {cohort.endsAt && ` – ${new Date(cohort.endsAt).toLocaleDateString("en-NG", { month: "short", year: "numeric" })}`}
@@ -298,16 +298,16 @@ function GradesContent({ enrollments, isParent }: { enrollments: Enrollment[]; i
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${ENROLLMENT_STATUS_STYLES[enrollment.status] ?? "bg-slate-100 text-slate-600"}`}>
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${ENROLLMENT_STATUS_STYLES[enrollment.status] ?? "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400"}`}>
                   {enrollment.status}
                 </span>
-                <span className="text-xs text-slate-400">{progSubmitted}/{progTotal} submitted</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">{progSubmitted}/{progTotal} submitted</span>
               </div>
             </div>
 
             {progTotal > 0 && (
               <div className="mt-3">
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
                   <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${Math.round((progSubmitted / progTotal) * 100)}%` }} />
                 </div>
               </div>
@@ -315,8 +315,8 @@ function GradesContent({ enrollments, isParent }: { enrollments: Enrollment[]; i
 
             <div className="mt-4 space-y-2">
               {program.assessments.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-slate-200 py-6 text-center">
-                  <p className="text-sm text-slate-400">No published assessments for this program yet.</p>
+                <div className="rounded-xl border border-dashed border-slate-200 py-6 text-center dark:border-slate-700">
+                  <p className="text-sm text-slate-400 dark:text-slate-500">No published assessments for this program yet.</p>
                 </div>
               ) : (
                 program.assessments.map((assessment) => (
@@ -370,9 +370,9 @@ export function GradesPanel({ children, isParent }: { children?: Child[]; isPare
       <div className="space-y-4">
         {/* Child picker */}
         <div className="kat-card">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Viewing grades for</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3 dark:text-slate-400">Viewing grades for</p>
           {childList.length === 0 ? (
-            <p className="text-sm text-slate-400">No linked children. Go to My Children to register or link a child.</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500">No linked children. Go to My Children to register or link a child.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {childList.map((child) => (
@@ -382,11 +382,11 @@ export function GradesPanel({ children, isParent }: { children?: Child[]; isPare
                   onClick={() => setSelectedChild(child)}
                   className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all ${
                     selectedChild?.id === child.id
-                      ? "border-[#1E5FAF] bg-blue-50 text-[#1E5FAF] ring-1 ring-[#1E5FAF]/30"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                      ? "border-[#1E5FAF] bg-blue-50 text-[#1E5FAF] ring-1 ring-[#1E5FAF]/30 dark:bg-blue-900/30 dark:text-blue-400"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600"
                   }`}
                 >
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">
                     {child.firstName[0]}{child.lastName[0]}
                   </div>
                   {child.firstName} {child.lastName}

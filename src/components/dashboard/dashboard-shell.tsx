@@ -201,7 +201,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
                     )}
                   >
-                    <Icon className={cn("size-4 shrink-0", active ? "text-blue-300" : "text-slate-400")} />
+                    <Icon className={cn("size-4 shrink-0", active ? "text-blue-300" : "text-slate-400 dark:text-slate-500")} />
                     <span>{item.label}</span>
                   </Link>
                 </motion.div>
@@ -223,7 +223,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
                   )}
                 >
-                  <Settings className={cn("size-4 shrink-0", active ? "text-blue-300" : "text-slate-400")} />
+                  <Settings className={cn("size-4 shrink-0", active ? "text-blue-300" : "text-slate-400 dark:text-slate-500")} />
                   Settings
                 </Link>
               );
@@ -232,7 +232,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
               onClick={() => signOut({ callbackUrl: "/login" })}
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
-              <LogOut className="size-4 shrink-0 text-slate-400" />
+              <LogOut className="size-4 shrink-0 text-slate-400 dark:text-slate-500" />
               Sign out
             </button>
           </div>

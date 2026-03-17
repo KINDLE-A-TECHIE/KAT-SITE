@@ -113,10 +113,10 @@ export function ChildrenPanel() {
       {/* Register form */}
       {mode === "register" && (
         <div className="kat-card space-y-4">
-          <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-800">
+          <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-800 dark:text-slate-200">
             Register a Student Account
           </h3>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Creates a new student login for your child. They can use these credentials to log in
             themselves.
           </p>
@@ -138,10 +138,10 @@ export function ChildrenPanel() {
       {/* Link form */}
       {mode === "link" && (
         <div className="kat-card space-y-4">
-          <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-800">
+          <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-800 dark:text-slate-200">
             Link an Existing Student Account
           </h3>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             If your child already has a KAT account, enter their email address to link it to yours.
           </p>
           <Input
@@ -161,7 +161,7 @@ export function ChildrenPanel() {
 
       {/* Children list */}
       <div className="kat-card">
-        <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-800">
+        <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-800 dark:text-slate-200">
           Linked Children
         </h3>
         <div className="mt-4 space-y-3">
@@ -171,7 +171,7 @@ export function ChildrenPanel() {
               <Skeleton className="h-20 w-full" />
             </>
           ) : children.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-400">
+            <p className="py-6 text-center text-sm text-slate-400 dark:text-slate-500">
               No children linked yet. Register or link an account above.
             </p>
           ) : (
@@ -181,18 +181,18 @@ export function ChildrenPanel() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="rounded-xl border border-slate-100 bg-slate-50 p-4"
+                className="rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-4"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-medium text-slate-800">
+                    <p className="font-medium text-slate-800 dark:text-slate-200">
                       {child.firstName} {child.lastName}
                     </p>
-                    <p className="text-xs text-slate-500">{child.email}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{child.email}</p>
                   </div>
                   <a
                     href={`/dashboard/payments`}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-sky-600 hover:bg-sky-50"
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30"
                   >
                     Pay for child
                   </a>
@@ -202,7 +202,7 @@ export function ChildrenPanel() {
                     {child.enrollments.map((e) => (
                       <span
                         key={e.id}
-                        className="rounded-full bg-blue-50 px-2.5 py-1 text-xs text-blue-700"
+                        className="rounded-full bg-blue-50 dark:bg-blue-900/40 px-2.5 py-1 text-xs text-blue-700 dark:text-blue-400"
                       >
                         {e.program.name}
                         {e.cohort ? ` · ${e.cohort.name}` : ""}
@@ -211,7 +211,7 @@ export function ChildrenPanel() {
                   </div>
                 )}
                 {child.enrollments.length === 0 && (
-                  <p className="mt-2 text-xs text-slate-400">No active enrollments.</p>
+                  <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">No active enrollments.</p>
                 )}
               </motion.div>
             ))

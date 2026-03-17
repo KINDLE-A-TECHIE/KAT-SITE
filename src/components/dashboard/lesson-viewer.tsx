@@ -45,9 +45,9 @@ type LessonData = {
 };
 
 const REVIEW_STYLES = {
-  PENDING_REVIEW: "bg-amber-100 text-amber-700",
-  PUBLISHED: "bg-emerald-100 text-emerald-700",
-  REJECTED: "bg-rose-100 text-rose-700",
+  PENDING_REVIEW: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400",
+  PUBLISHED: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400",
+  REJECTED: "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-400",
 };
 
 const CREATOR_ROLES = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR"];
@@ -90,16 +90,16 @@ function ContentBlock({
   };
 
   return (
-    <div className={`overflow-hidden rounded-xl border ${content.reviewStatus === "REJECTED" ? "border-rose-200" : "border-slate-200"}`}>
+    <div className={`overflow-hidden rounded-xl border ${content.reviewStatus === "REJECTED" ? "border-rose-200 dark:border-rose-800" : "border-slate-200 dark:border-slate-700"}`}>
       {/* Content header */}
-      <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2.5">
+      <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-4 py-2.5">
         <div className="flex items-center gap-2">
           {content.type === "RICH_TEXT" && <FileText className="h-4 w-4 text-slate-500" />}
           {content.type === "YOUTUBE_EMBED" && <Youtube className="h-4 w-4 text-red-500" />}
           {content.type === "EXTERNAL_VIDEO" && <Video className="h-4 w-4 text-blue-500" />}
           {content.type === "DOCUMENT_LINK" && <LinkIcon className="h-4 w-4 text-violet-500" />}
           {content.type === "CODE_PLAYGROUND" && <Terminal className="h-4 w-4 text-emerald-500" />}
-          <span className="text-sm font-medium text-slate-700">{content.title}</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{content.title}</span>
         </div>
         {isCreator && (
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${REVIEW_STYLES[content.reviewStatus]}`}>
@@ -112,7 +112,7 @@ function ContentBlock({
       <div className="p-4">
         {content.type === "RICH_TEXT" && content.body && (
           <div
-            className="prose prose-sm max-w-none text-slate-700"
+            className="prose prose-sm dark:prose-invert max-w-none text-slate-700 dark:text-slate-300"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.body) }}
           />
         )}
@@ -147,12 +147,12 @@ function ContentBlock({
             href={content.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 rounded-xl border border-slate-200 p-4 hover:bg-slate-50"
+            className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             <FileText className="h-8 w-8 shrink-0 text-violet-400" />
             <div className="min-w-0">
-              <p className="truncate font-medium text-slate-800">{content.title}</p>
-              <p className="truncate text-xs text-slate-500">{content.url}</p>
+              <p className="truncate font-medium text-slate-800 dark:text-slate-200">{content.title}</p>
+              <p className="truncate text-xs text-slate-500 dark:text-slate-400">{content.url}</p>
             </div>
             <ExternalLink className="ml-auto h-4 w-4 shrink-0 text-slate-400" />
           </a>
@@ -168,7 +168,7 @@ function ContentBlock({
 
       {/* SA review controls */}
       {isSA && content.reviewStatus === "PENDING_REVIEW" && (
-        <div className="border-t border-slate-100 px-4 py-3">
+        <div className="border-t border-slate-100 dark:border-slate-800 px-4 py-3">
           {!showReject ? (
             <div className="flex gap-2">
               <Button size="sm" disabled={busy} onClick={() => void review("PUBLISH")}
@@ -202,7 +202,7 @@ function ContentBlock({
       )}
 
       {content.reviewNote && content.reviewStatus === "REJECTED" && (
-        <div className="border-t border-rose-100 bg-rose-50 px-4 py-2.5 text-xs text-rose-700">
+        <div className="border-t border-rose-100 dark:border-rose-900 bg-rose-50 dark:bg-rose-900/40 px-4 py-2.5 text-xs text-rose-700 dark:text-rose-400">
           <strong>Rejection note:</strong> {content.reviewNote}
         </div>
       )}
@@ -256,7 +256,7 @@ export function LessonViewer({ lessonId, programId, role }: { lessonId: string; 
   if (!lesson) {
     return (
       <div className="kat-card py-12 text-center">
-        <p className="text-slate-500">Lesson not found or you don&apos;t have access.</p>
+        <p className="text-slate-500 dark:text-slate-400">Lesson not found or you don&apos;t have access.</p>
         <Link href={`/dashboard/curriculum/${programId}`} className="mt-3 inline-block text-sm text-[#1E5FAF] hover:underline">
           ← Back to curriculum
         </Link>
@@ -270,17 +270,17 @@ export function LessonViewer({ lessonId, programId, role }: { lessonId: string; 
     <div className="space-y-4">
       {/* Breadcrumb + header */}
       <div className="kat-card">
-        <nav className="mb-2 flex flex-wrap items-center gap-1 text-xs text-slate-400">
-          <Link href="/dashboard/curriculum" className="hover:text-slate-600">Programs</Link>
+        <nav className="mb-2 flex flex-wrap items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+          <Link href="/dashboard/curriculum" className="hover:text-slate-600 dark:hover:text-slate-300">Programs</Link>
           <span>/</span>
-          <Link href={`/dashboard/curriculum/${program.id}`} className="hover:text-slate-600">{program.name}</Link>
+          <Link href={`/dashboard/curriculum/${program.id}`} className="hover:text-slate-600 dark:hover:text-slate-300">{program.name}</Link>
           <span>/</span>
-          <span className="text-slate-600">{lesson.module.title}</span>
+          <span className="text-slate-600 dark:text-slate-400">{lesson.module.title}</span>
           <span>/</span>
-          <span className="font-medium text-slate-700">{lesson.title}</span>
+          <span className="font-medium text-slate-700 dark:text-slate-300">{lesson.title}</span>
         </nav>
-        <h2 className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900">{lesson.title}</h2>
-        {lesson.description && <p className="mt-1 text-sm text-slate-500">{lesson.description}</p>}
+        <h2 className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900 dark:text-slate-100">{lesson.title}</h2>
+        {lesson.description && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{lesson.description}</p>}
       </div>
 
       {/* Content items */}
@@ -288,7 +288,7 @@ export function LessonViewer({ lessonId, programId, role }: { lessonId: string; 
         {lesson.contents.length === 0 && !showAddContent && (
           <div className="kat-card py-12 text-center">
             <FileText className="mx-auto mb-3 h-8 w-8 text-slate-300" />
-            <p className="text-slate-500">{isCreator ? "No content yet. Add some below." : "No content published yet."}</p>
+            <p className="text-slate-500 dark:text-slate-400">{isCreator ? "No content yet. Add some below." : "No content published yet."}</p>
           </div>
         )}
         {lesson.contents.map((content, i) => (
@@ -311,8 +311,8 @@ export function LessonViewer({ lessonId, programId, role }: { lessonId: string; 
                 className="kat-card border border-[#1E5FAF]/30 bg-blue-50/20"
               >
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-semibold text-slate-800">Add Content</h3>
-                  <button onClick={() => setShowAddContent(false)} className="text-xs text-slate-400 hover:text-slate-600">Cancel</button>
+                  <h3 className="font-semibold text-slate-800 dark:text-slate-200">Add Content</h3>
+                  <button onClick={() => setShowAddContent(false)} className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">Cancel</button>
                 </div>
                 <ContentCreateForm
                   lessonId={lessonId}

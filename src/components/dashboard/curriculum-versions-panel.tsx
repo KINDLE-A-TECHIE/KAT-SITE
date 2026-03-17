@@ -84,9 +84,9 @@ export function CurriculumVersionsPanel({ programId, role }: { programId: string
     <div className="space-y-4">
       <div className="kat-card flex items-center justify-between">
         <div>
-          <Link href={`/dashboard/curriculum/${programId}`} className="text-xs text-slate-400 hover:text-slate-600">← Back to Curriculum</Link>
-          <h2 className="mt-0.5 [font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900">Curriculum Versions</h2>
-          <p className="text-sm text-slate-500">Manage and activate curriculum versions for this program.</p>
+          <Link href={`/dashboard/curriculum/${programId}`} className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">← Back to Curriculum</Link>
+          <h2 className="mt-0.5 [font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900 dark:text-slate-100">Curriculum Versions</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Manage and activate curriculum versions for this program.</p>
         </div>
         {isSA && (
           <Button size="sm" onClick={() => setCreating(true)} className="gap-1.5 bg-[#1E5FAF] hover:bg-[#1a52a0]">
@@ -96,14 +96,14 @@ export function CurriculumVersionsPanel({ programId, role }: { programId: string
       </div>
 
       {creating && (
-        <div className="kat-card space-y-3 border border-[#1E5FAF]/30 bg-blue-50/30">
-          <h3 className="font-semibold text-slate-800">New Curriculum Version</h3>
+        <div className="kat-card space-y-3 border border-[#1E5FAF]/30 bg-blue-50/30 dark:bg-blue-950/20">
+          <h3 className="font-semibold text-slate-800 dark:text-slate-200">New Curriculum Version</h3>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">Label *</label>
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Label *</label>
             <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder='e.g. "v2", "Spring 2025 Update"' />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">Changelog (optional)</label>
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Changelog (optional)</label>
             <Textarea value={changelog} onChange={(e) => setChangelog(e.target.value)} placeholder="What changed in this version…" rows={3} />
           </div>
           <div className="flex gap-2">
@@ -120,8 +120,8 @@ export function CurriculumVersionsPanel({ programId, role }: { programId: string
       {versions.length === 0 && !creating && (
         <div className="kat-card py-12 text-center">
           <Clock className="mx-auto mb-3 h-8 w-8 text-slate-300" />
-          <p className="font-medium text-slate-600">No versions yet.</p>
-          {isSA && <p className="mt-1 text-sm text-slate-400">Create your first curriculum version to get started.</p>}
+          <p className="font-medium text-slate-600 dark:text-slate-400">No versions yet.</p>
+          {isSA && <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">Create your first curriculum version to get started.</p>}
         </div>
       )}
 
@@ -132,21 +132,21 @@ export function CurriculumVersionsPanel({ programId, role }: { programId: string
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.04 }}
-            className={`kat-card ${v.isActive ? "border-emerald-200 bg-emerald-50/30" : ""}`}
+            className={`kat-card ${v.isActive ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-950/20" : ""}`}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-400">v{v.versionNumber}</span>
-                  <h3 className="font-semibold text-slate-900">{v.label}</h3>
+                  <span className="text-xs font-bold text-slate-400 dark:text-slate-500">v{v.versionNumber}</span>
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100">{v.label}</h3>
                   {v.isActive && (
-                    <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                    <span className="flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                       <CheckCircle2 className="h-3 w-3" />Active
                     </span>
                   )}
                 </div>
-                {v.changelog && <p className="mt-1 text-sm text-slate-500">{v.changelog}</p>}
-                <p className="mt-1.5 text-xs text-slate-400">
+                {v.changelog && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{v.changelog}</p>}
+                <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
                   Created by {v.createdBy.firstName} {v.createdBy.lastName} ·{" "}
                   {new Date(v.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                   {v.publishedAt && (
@@ -157,7 +157,7 @@ export function CurriculumVersionsPanel({ programId, role }: { programId: string
               <div className="flex shrink-0 gap-2">
                 <Link
                   href={`/dashboard/curriculum/${programId}`}
-                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   View
                 </Link>

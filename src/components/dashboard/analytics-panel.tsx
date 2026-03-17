@@ -1010,7 +1010,7 @@ export function AnalyticsPanel() {
       </section>
 
       <section className="kat-card">
-        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Top 3 Recommendations</h3>
+        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">Top 3 Recommendations</h3>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Priority actions auto-generated from current analytics signals.</p>
         <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-3">
           {loading || !analytics
@@ -1062,7 +1062,7 @@ export function AnalyticsPanel() {
       </section>
 
       <section className="kat-card">
-        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">My Activity Trend</h3>
+        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">My Activity Trend</h3>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Daily movement across communication, learning, and attendance.</p>
         {loading || !analytics ? (
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -1107,7 +1107,7 @@ export function AnalyticsPanel() {
       {analytics?.platformAnalytics ? (
         <>
           <section className="kat-card">
-            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Platform Metrics</h3>
+            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">Platform Metrics</h3>
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
                 <p className="text-sm text-slate-600 dark:text-slate-400">Total Enrollments</p>
@@ -1139,7 +1139,7 @@ export function AnalyticsPanel() {
           </section>
 
           <section className="kat-card">
-            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Organization Trend</h3>
+            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">Organization Trend</h3>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Daily pulse for growth, revenue, and communication output.</p>
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
               <TrendMiniCard
@@ -1552,7 +1552,7 @@ export function AnalyticsPanel() {
 
       <section className="kat-card">
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Monthly Revenue Tracking</h3>
+          <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100 max-[360px]:text-base">Monthly Revenue Tracking</h3>
           <Button
             type="button"
             size="sm"

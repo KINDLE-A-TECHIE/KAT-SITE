@@ -149,11 +149,11 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
     return (
       <div className="space-y-4">
         <div className="kat-card flex items-center gap-3">
-          <Link href={`/dashboard/curriculum`} className="text-sm text-slate-500 hover:text-slate-800">← Programs</Link>
+          <Link href={`/dashboard/curriculum`} className="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">← Programs</Link>
         </div>
         <div className="kat-card py-16 text-center">
-          <GraduationCap className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-          <p className="font-medium text-slate-600">No active curriculum version yet.</p>
+          <GraduationCap className="mx-auto mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
+          <p className="font-medium text-slate-600 dark:text-slate-400">No active curriculum version yet.</p>
           {(role === "SUPER_ADMIN" || role === "ADMIN") && (
             <Link href={`/dashboard/curriculum/${programId}/versions`} className="mt-3 inline-block text-sm font-medium text-[#1E5FAF] hover:underline">
               Create a version →
@@ -170,19 +170,19 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
       <div className="kat-card">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <Link href="/dashboard/curriculum" className="text-xs text-slate-400 hover:text-slate-600">← All Programs</Link>
-            <h2 className="mt-0.5 [font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900">Curriculum</h2>
-            <p className="text-sm text-slate-500">
+            <Link href="/dashboard/curriculum" className="text-xs text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">← All Programs</Link>
+            <h2 className="mt-0.5 [font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900 dark:text-slate-100">Curriculum</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               v{activeVersion.versionNumber} — {activeVersion.label}
               {activeVersion.publishedAt && (
-                <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">Active</span>
+                <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">Active</span>
               )}
             </p>
           </div>
           {isSA && (
             <Link
               href={`/dashboard/curriculum/${programId}/versions`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
             >
               <Settings className="h-3.5 w-3.5" />
               Manage Versions
@@ -194,7 +194,7 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
       {/* Modules */}
       <div className="kat-card space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-slate-800">Modules ({activeVersion.modules.length})</h3>
+          <h3 className="font-semibold text-slate-800 dark:text-slate-200">Modules ({activeVersion.modules.length})</h3>
           {isCreator && !addingModule && (
             <Button size="sm" variant="outline" onClick={() => setAddingModule(true)} className="gap-1.5">
               <Plus className="h-3.5 w-3.5" />Add Module
@@ -211,32 +211,32 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
         </AnimatePresence>
 
         {activeVersion.modules.length === 0 && !addingModule && (
-          <p className="py-6 text-center text-sm text-slate-400">No modules yet. {isCreator && "Add one above."}</p>
+          <p className="py-6 text-center text-sm text-slate-400 dark:text-slate-500">No modules yet. {isCreator && "Add one above."}</p>
         )}
 
         {activeVersion.modules.map((mod) => {
           const expanded = expandedModules.has(mod.id);
           return (
-            <div key={mod.id} className="overflow-hidden rounded-xl border border-slate-200">
+            <div key={mod.id} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
               {/* Module header */}
               <div
-                className="flex cursor-pointer items-center gap-2 bg-slate-50 px-4 py-3 hover:bg-slate-100"
+                className="flex cursor-pointer items-center gap-2 bg-slate-50 px-4 py-3 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-700"
                 onClick={() => setExpandedModules((prev) => {
                   const next = new Set(prev);
                   if (expanded) { next.delete(mod.id); } else { next.add(mod.id); }
                   return next;
                 })}
               >
-                {expanded ? <ChevronDown className="h-4 w-4 text-slate-400" /> : <ChevronRight className="h-4 w-4 text-slate-400" />}
-                <BookOpen className="h-4 w-4 text-[#1E5FAF]" />
-                <span className="flex-1 font-medium text-slate-800">{mod.title}</span>
-                <span className="text-xs text-slate-400">{mod.lessons.length} lesson{mod.lessons.length !== 1 ? "s" : ""}</span>
+                {expanded ? <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />}
+                <BookOpen className="h-4 w-4 text-[#1E5FAF] dark:text-blue-400" />
+                <span className="flex-1 font-medium text-slate-800 dark:text-slate-200">{mod.title}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">{mod.lessons.length} lesson{mod.lessons.length !== 1 ? "s" : ""}</span>
                 {isSA && (
                   <button
                     type="button"
                     disabled={busy}
                     onClick={(e) => { e.stopPropagation(); void deleteModule(mod.id); }}
-                    className="ml-2 rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-500"
+                    className="ml-2 rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-500 dark:text-slate-500 dark:hover:bg-rose-900/30 dark:hover:text-rose-400"
                     aria-label="Delete module"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -248,24 +248,24 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
               <AnimatePresence>
                 {expanded && (
                   <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden">
-                    <div className="divide-y divide-slate-100">
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
                       {mod.lessons.map((lesson) => (
                         <div key={lesson.id} className="flex items-center gap-3 px-6 py-2.5">
                           <div className="flex-1 min-w-0">
                             <Link
                               href={`/dashboard/curriculum/${programId}/lessons/${lesson.id}`}
-                              className="text-sm font-medium text-slate-700 hover:text-[#1E5FAF] hover:underline"
+                              className="text-sm font-medium text-slate-700 hover:text-[#1E5FAF] hover:underline dark:text-slate-300 dark:hover:text-blue-400"
                             >
                               {lesson.title}
                             </Link>
                           </div>
-                          <span className="text-xs text-slate-400">{lesson.contents.length} item{lesson.contents.length !== 1 ? "s" : ""}</span>
+                          <span className="text-xs text-slate-400 dark:text-slate-500">{lesson.contents.length} item{lesson.contents.length !== 1 ? "s" : ""}</span>
                           {isSA && (
                             <button
                               type="button"
                               disabled={busy}
                               onClick={() => void deleteLesson(lesson.id)}
-                              className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-500"
+                              className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-500 dark:text-slate-500 dark:hover:bg-rose-900/30 dark:hover:text-rose-400"
                               aria-label="Delete lesson"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -287,7 +287,7 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
                             <button
                               type="button"
                               onClick={() => setAddingLessonFor(mod.id)}
-                              className="flex items-center gap-1 text-xs text-slate-400 hover:text-[#1E5FAF]"
+                              className="flex items-center gap-1 text-xs text-slate-400 hover:text-[#1E5FAF] dark:text-slate-500 dark:hover:text-blue-400"
                             >
                               <Plus className="h-3 w-3" /> Add lesson
                             </button>
