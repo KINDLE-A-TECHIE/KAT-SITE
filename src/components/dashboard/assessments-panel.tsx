@@ -151,17 +151,14 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
   const [passScore, setPassScore] = useState("10");
   const [dueDate, setDueDate] = useState("");
   const [published, setPublished] = useState(true);
-  const [questionDrafts, setQuestionDrafts] = useState<QuestionDraft[]>([
-    {
-      ...createQuestionDraft("MULTIPLE_CHOICE"),
-      prompt: "What is React used for?",
-    },
-    {
-      ...createQuestionDraft("OPEN_ENDED"),
-      prompt: "Explain one use-case for context in React.",
-      points: "10",
-    },
-  ]);
+  const [questionDrafts, setQuestionDrafts] = useState<QuestionDraft[]>([]);
+
+  useEffect(() => {
+    setQuestionDrafts([
+      { ...createQuestionDraft("MULTIPLE_CHOICE"), prompt: "What is React used for?" },
+      { ...createQuestionDraft("OPEN_ENDED"), prompt: "Explain one use-case for context in React.", points: "10" },
+    ]);
+  }, []);
   const [builderView, setBuilderView] = useState<"EDIT" | "PREVIEW">("EDIT");
   const [draggingQuestionId, setDraggingQuestionId] = useState<string | null>(null);
   const [dragOverQuestionId, setDragOverQuestionId] = useState<string | null>(null);

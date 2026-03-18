@@ -13,7 +13,6 @@ import {
   Sun,
   Trash2,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -243,11 +242,20 @@ function NotifRow({
 }
 
 function AppearanceTab() {
-  const { theme, setTheme } = useTheme();
+  const [theme, setThemeState] = useState<"light" | "dark" | "system">("light");
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setThemeState((localStorage.getItem("theme") as "light" | "dark" | "system") ?? "light");
+    setMounted(true);
+  }, []);
   if (!mounted) return null;
+
+  function setTheme(value: "light" | "dark" | "system") {
+    localStorage.setItem("theme", value);
+    setThemeState(value);
+    window.dispatchEvent(new Event("kat-theme-changed"));
+  }
 
   const options = [
     { value: "light", label: "Light", icon: Sun },

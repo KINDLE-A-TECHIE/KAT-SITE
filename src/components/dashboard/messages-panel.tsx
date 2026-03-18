@@ -1371,29 +1371,31 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
 
         {/* ── Pinned message banner ── */}
         {pinnedMessage && activeThread?.type === "GROUP" ? (
-          <button
-            type="button"
+          <div
+            role="button"
+            tabIndex={0}
             onClick={() => scrollToMessage(pinnedMessage.id)}
-            className="mt-2 flex w-full items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-left transition hover:bg-amber-100"
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") scrollToMessage(pinnedMessage.id); }}
+            className="mt-2 flex w-full cursor-pointer items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-left transition hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-900/20 dark:hover:bg-amber-900/30"
           >
             <Pin className="size-3.5 shrink-0 text-amber-500" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium text-amber-800">
+              <p className="truncate text-xs font-medium text-amber-800 dark:text-amber-300">
                 {pinnedMessage.sender.firstName} {pinnedMessage.sender.lastName}
               </p>
-              <p className="truncate text-xs text-amber-700">{pinnedMessage.body}</p>
+              <p className="truncate text-xs text-amber-700 dark:text-amber-400">{pinnedMessage.body}</p>
             </div>
             {currentUserRole === "SUPER_ADMIN" ? (
               <button
                 type="button"
                 title="Unpin"
                 onClick={(e) => { e.stopPropagation(); void pinMessage(pinnedMessage.id, true); }}
-                className="shrink-0 rounded p-0.5 text-amber-500 hover:bg-amber-200 hover:text-amber-700"
+                className="shrink-0 rounded p-0.5 text-amber-500 hover:bg-amber-200 hover:text-amber-700 dark:hover:bg-amber-800"
               >
                 <X className="size-3" />
               </button>
             ) : null}
-          </button>
+          </div>
         ) : null}
 
         <div ref={scrollContainerRef} className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3">

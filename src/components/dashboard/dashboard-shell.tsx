@@ -116,11 +116,19 @@ function getInitials(firstName: string, lastName: string) {
   return `${firstName.trim().charAt(0)}${lastName.trim().charAt(0)}`.toUpperCase() || "KA";
 }
 
+function resolveIsDark(): boolean {
+  const stored = localStorage.getItem("theme") ?? "light";
+  if (stored === "dark") return true;
+  if (stored === "system") return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return false;
+}
+
 export function DashboardShell({ user, children }: DashboardShellProps) {
   const pathname = usePathname();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user.avatarUrl ?? null);
   const [displayFirstName, setDisplayFirstName] = useState(user.firstName);
   const [displayLastName, setDisplayLastName] = useState(user.lastName);
+  const [isDark, setIsDark] = useState(false);
   const navItems = getNavItems(user.role);
   const initials = getInitials(displayFirstName, displayLastName);
 
@@ -151,8 +159,29 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
     return () => window.removeEventListener("kat-profile-updated", handler as EventListener);
   }, []);
 
+  useEffect(() => {
+    function apply() {
+      const dark = resolveIsDark();
+      setIsDark(dark);
+      document.documentElement.classList.toggle("dark", dark);
+    }
+    apply();
+    const onTheme = () => apply();
+    const onStorage = (e: StorageEvent) => { if (e.key === "theme") apply(); };
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    window.addEventListener("kat-theme-changed", onTheme);
+    window.addEventListener("storage", onStorage);
+    mq.addEventListener("change", onTheme);
+    return () => {
+      window.removeEventListener("kat-theme-changed", onTheme);
+      window.removeEventListener("storage", onStorage);
+      mq.removeEventListener("change", onTheme);
+      document.documentElement.classList.remove("dark");
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen">
+    <div className={cn("min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))]", isDark && "dark")}>
       <div className="kat-page grid grid-cols-1 gap-4 py-4 max-[360px]:gap-3 max-[360px]:py-3 sm:gap-6 sm:py-6 lg:grid-cols-[256px_1fr]">
 
         {/* ── Sidebar ─────────────────────────────────────────────── */}

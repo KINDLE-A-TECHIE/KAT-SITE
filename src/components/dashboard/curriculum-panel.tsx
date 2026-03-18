@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 
 type Program = {
@@ -160,7 +160,9 @@ export function CurriculumPanel({ role }: { role: string }) {
   const [showInactive, setShowInactive] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit" | null>(null);
   const [editTarget, setEditTarget] = useState<Program | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<Program | null>(null);
   const [busy, setBusy] = useState(false);
+  const [archiveBusy, setArchiveBusy] = useState(false);
 
   const isCreator = CREATOR_ROLES.includes(role);
   const isSA = role === "SUPER_ADMIN";
@@ -241,19 +243,23 @@ export function CurriculumPanel({ role }: { role: string }) {
     }
   };
 
-  const handleArchive = async (program: Program) => {
-    const action = program.isActive ? "archive" : "restore";
-    if (!confirm(`${action === "archive" ? "Archive" : "Restore"} "${program.name}"?`)) return;
+  const confirmArchive = async () => {
+    if (!archiveTarget) return;
+    const action = archiveTarget.isActive ? "archive" : "restore";
+    setArchiveBusy(true);
     try {
-      const res = await fetch(`/api/programs/${program.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/programs/${archiveTarget.id}`, { method: "DELETE" });
       if (res.ok) {
         toast.success(`Program ${action === "archive" ? "archived" : "restored"}.`);
+        setArchiveTarget(null);
         await load();
       } else {
         toast.error(`Failed to ${action} program.`);
       }
     } catch {
       toast.error("Network error.");
+    } finally {
+      setArchiveBusy(false);
     }
   };
 
@@ -370,7 +376,7 @@ export function CurriculumPanel({ role }: { role: string }) {
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
-                          onClick={() => void handleArchive(program)}
+                          onClick={() => setArchiveTarget(program)}
                           title={program.isActive ? "Archive program" : "Restore program"}
                           className="rounded p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300"
                         >
@@ -411,6 +417,42 @@ export function CurriculumPanel({ role }: { role: string }) {
           </div>
         )}
       </div>
+
+      {/* Archive / Restore confirmation dialog */}
+      <Dialog open={archiveTarget !== null} onOpenChange={(open) => { if (!open && !archiveBusy) setArchiveTarget(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {archiveTarget?.isActive ? "Archive program?" : "Restore program?"}
+            </DialogTitle>
+            <DialogDescription>
+              {archiveTarget?.isActive
+                ? <>Archiving <span className="font-medium text-slate-700 dark:text-slate-300">{archiveTarget?.name}</span> will hide it from learners and stop new enrollments. Existing data is preserved.</>
+                : <>Restoring <span className="font-medium text-slate-700 dark:text-slate-300">{archiveTarget?.name}</span> will make it visible to learners again.</>
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" size="sm" disabled={archiveBusy} onClick={() => setArchiveTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={archiveBusy}
+              onClick={() => void confirmArchive()}
+              className={archiveTarget?.isActive
+                ? "bg-rose-600 hover:bg-rose-700 text-white"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+              }
+            >
+              {archiveBusy
+                ? (archiveTarget?.isActive ? "Archiving…" : "Restoring…")
+                : (archiveTarget?.isActive ? "Archive" : "Restore")
+              }
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add / Edit dialog */}
       <Dialog open={dialogMode !== null} onOpenChange={(open) => { if (!open) closeDialog(); }}>

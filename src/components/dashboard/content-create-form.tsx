@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Code2, FileText, Link as LinkIcon, Video, Youtube } from "lucide-react";
+import { Code2, FileText, Link as LinkIcon, Video, Youtube, Plus, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,22 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "CODE_PLAYGROUND", label: "Code",      icon: <Code2 className="h-3.5 w-3.5" /> },
 ];
 
+const TAB_ICON: Record<Tab, React.ReactNode> = {
+  RICH_TEXT:       <FileText className="h-3.5 w-3.5" />,
+  YOUTUBE_EMBED:   <Youtube className="h-3.5 w-3.5" />,
+  EXTERNAL_VIDEO:  <Video className="h-3.5 w-3.5" />,
+  DOCUMENT_LINK:   <LinkIcon className="h-3.5 w-3.5" />,
+  CODE_PLAYGROUND: <Code2 className="h-3.5 w-3.5" />,
+};
+
+const TAB_LABEL: Record<Tab, string> = {
+  RICH_TEXT:       "Rich Text",
+  YOUTUBE_EMBED:   "YouTube",
+  EXTERNAL_VIDEO:  "Video URL",
+  DOCUMENT_LINK:   "Document",
+  CODE_PLAYGROUND: "Code",
+};
+
 const STARTER_CODE: Record<string, string> = {
   python:     "# Write your Python code here\nprint(\"Hello, World!\")\n",
   javascript: "// Write your JavaScript code here\nconsole.log(\"Hello, World!\");\n",
@@ -31,6 +47,16 @@ const STARTER_CODE: Record<string, string> = {
   php:        "<?php\necho \"Hello, World!\\n\";\n",
   ruby:       "puts \"Hello, World!\"\n",
   csharp:     "using System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine(\"Hello, World!\");\n    }\n}\n",
+};
+
+type QueuedBlock = {
+  localId: string;
+  type: Tab;
+  title: string;
+  body: string;
+  url: string;
+  language: string;
+  starterCode: string;
 };
 
 export function ContentCreateForm({
@@ -46,9 +72,10 @@ export function ContentCreateForm({
   const [url, setUrl] = useState("");
   const [language, setLanguage] = useState<string>(SUPPORTED_LANGUAGES[0].value);
   const [starterCode, setStarterCode] = useState(STARTER_CODE[SUPPORTED_LANGUAGES[0].value] ?? "");
+  const [queue, setQueue] = useState<QueuedBlock[]>([]);
   const [busy, setBusy] = useState(false);
 
-  const reset = () => {
+  const resetForm = () => {
     setTitle("");
     setBody("");
     setUrl("");
@@ -62,40 +89,50 @@ export function ContentCreateForm({
     setStarterCode(STARTER_CODE[lang] ?? "");
   };
 
-  const submit = async () => {
+  const addBlock = () => {
     if (!title.trim()) { toast.error("Title is required."); return; }
-
-    if (tab === "RICH_TEXT" && !body.trim()) {
-      toast.error("Content body is required for rich text."); return;
-    }
+    if (tab === "RICH_TEXT" && !body.trim()) { toast.error("Content body is required."); return; }
     if ((tab === "YOUTUBE_EMBED" || tab === "EXTERNAL_VIDEO" || tab === "DOCUMENT_LINK") && !url.trim()) {
       toast.error("URL is required."); return;
     }
-    if (tab === "CODE_PLAYGROUND" && !starterCode.trim()) {
-      toast.error("Starter code is required."); return;
-    }
+    if (tab === "CODE_PLAYGROUND" && !starterCode.trim()) { toast.error("Starter code is required."); return; }
 
+    setQueue((prev) => [
+      ...prev,
+      { localId: `${Date.now()}-${Math.random()}`, type: tab, title: title.trim(), body, url: url.trim(), language, starterCode },
+    ]);
+    resetForm();
+  };
+
+  const removeBlock = (localId: string) => {
+    setQueue((prev) => prev.filter((b) => b.localId !== localId));
+  };
+
+  const submitAll = async () => {
+    if (queue.length === 0) { toast.error("Add at least one content block first."); return; }
     setBusy(true);
     try {
-      const payload: Record<string, unknown> = { type: tab, title: title.trim() };
-      if (tab === "RICH_TEXT")         payload.body = body;
-      else if (tab === "CODE_PLAYGROUND") { payload.body = starterCode; payload.language = language; }
-      else                              payload.url = url.trim();
+      for (const block of queue) {
+        const payload: Record<string, unknown> = { type: block.type, title: block.title };
+        if (block.type === "RICH_TEXT")         payload.body = block.body;
+        else if (block.type === "CODE_PLAYGROUND") { payload.body = block.starterCode; payload.language = block.language; }
+        else                                    payload.url = block.url;
 
-      const res = await fetch(`/api/curriculum/lessons/${lessonId}/contents`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+        const res = await fetch(`/api/curriculum/lessons/${lessonId}/contents`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
-      if (res.ok) {
-        toast.success("Content submitted for review.");
-        reset();
-        await onSuccess();
-      } else {
-        const data = await res.json() as { error?: string };
-        toast.error(data.error ?? "Failed to create content.");
+        if (!res.ok) {
+          const data = await res.json() as { error?: string };
+          toast.error(`Failed to submit "${block.title}": ${data.error ?? "Unknown error"}`);
+          return;
+        }
       }
+      toast.success(`${queue.length} block${queue.length > 1 ? "s" : ""} submitted for review.`);
+      setQueue([]);
+      await onSuccess();
     } catch {
       toast.error("Network error.");
     } finally {
@@ -227,15 +264,63 @@ export function ContentCreateForm({
         </div>
       )}
 
+      {/* Add Block button */}
       <div className="flex justify-end">
         <Button
-          onClick={() => void submit()}
-          disabled={busy}
-          className="bg-[#1E5FAF] text-sm hover:bg-[#1a4f8f]"
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addBlock}
+          className="gap-1.5"
         >
-          {busy ? "Submitting…" : "Submit for Review"}
+          <Plus className="h-3.5 w-3.5" />
+          Add Block
         </Button>
       </div>
+
+      {/* Queued blocks */}
+      {queue.length > 0 && (
+        <div className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3">
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+            {queue.length} block{queue.length > 1 ? "s" : ""} ready to submit
+          </p>
+          <div className="space-y-1.5">
+            {queue.map((block, i) => (
+              <div
+                key={block.localId}
+                className="flex items-center gap-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2"
+              >
+                <span className="flex size-5 shrink-0 items-center justify-center text-slate-400 dark:text-slate-500">
+                  {TAB_ICON[block.type]}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-medium text-slate-700 dark:text-slate-200">{block.title}</span>
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500">{TAB_LABEL[block.type]}</span>
+                </span>
+                <span className="shrink-0 text-[11px] text-slate-300 dark:text-slate-600">#{i + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => removeBlock(block.localId)}
+                  className="shrink-0 rounded p-0.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-rose-500"
+                  title="Remove block"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end pt-1">
+            <Button
+              onClick={() => void submitAll()}
+              disabled={busy}
+              className="gap-1.5 bg-[#1E5FAF] text-sm hover:bg-[#1a4f8f]"
+            >
+              <Send className="h-3.5 w-3.5" />
+              {busy ? "Submitting…" : `Submit ${queue.length} Block${queue.length > 1 ? "s" : ""} for Review`}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
