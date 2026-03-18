@@ -33,6 +33,7 @@ function canMessageSync(
   recipientRole: UserRole,
   recipientId: string,
   mentorshipTargetIds: Set<string> | null,
+  senderIsEnrolled = true,
 ): boolean {
   if (senderRole === UserRole.SUPER_ADMIN) return true;
   if (ADMIN_ROLES.includes(senderRole)) return true;
@@ -42,6 +43,7 @@ function canMessageSync(
       return ADMIN_ROLES.includes(recipientRole);
 
     case UserRole.STUDENT:
+      if (!senderIsEnrolled) return ADMIN_ROLES.includes(recipientRole);
       if (recipientRole === UserRole.INSTRUCTOR || ADMIN_ROLES.includes(recipientRole)) return true;
       if (recipientRole === UserRole.FELLOW) return mentorshipTargetIds?.has(recipientId) ?? false;
       return false;
@@ -85,24 +87,33 @@ export async function GET(request: Request) {
   // STUDENT: needs fellowIds they are mentored by
   // FELLOW: needs studentIds they are mentoring
   let mentorshipTargetIds: Set<string> | null = null;
+  let senderIsEnrolled = true;
   if (senderRole === UserRole.STUDENT || senderRole === UserRole.FELLOW) {
-    const mentorships = await prisma.mentorship.findMany({
-      where: {
-        active: true,
-        ...(senderRole === UserRole.STUDENT
-          ? { studentId: session.user.id }
-          : { fellowId: session.user.id }),
-      },
-      select: {
-        fellowId: true,
-        studentId: true,
-      },
-    });
+    const [mentorships, enrollmentCount] = await Promise.all([
+      prisma.mentorship.findMany({
+        where: {
+          active: true,
+          ...(senderRole === UserRole.STUDENT
+            ? { studentId: session.user.id }
+            : { fellowId: session.user.id }),
+        },
+        select: {
+          fellowId: true,
+          studentId: true,
+        },
+      }),
+      senderRole === UserRole.STUDENT
+        ? prisma.enrollment.count({
+            where: { userId: session.user.id, status: { in: ["ACTIVE", "COMPLETED"] } },
+          })
+        : Promise.resolve(1),
+    ]);
     mentorshipTargetIds = new Set(
       mentorships.map((m) =>
         senderRole === UserRole.STUDENT ? m.fellowId : m.studentId,
       ),
     );
+    if (senderRole === UserRole.STUDENT) senderIsEnrolled = enrollmentCount > 0;
   }
 
   const users = await prisma.user.findMany({
@@ -152,7 +163,7 @@ export async function GET(request: Request) {
 
   // Permission filtering — fully synchronous, zero extra DB queries
   const allowedUsers = users.filter((user) =>
-    canMessageSync(senderRole, user.role, user.id, mentorshipTargetIds),
+    canMessageSync(senderRole, user.role, user.id, mentorshipTargetIds, senderIsEnrolled),
   );
 
   // Skill filter (applied before pagination)

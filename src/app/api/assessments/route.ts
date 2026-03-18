@@ -117,6 +117,7 @@ export async function GET() {
       },
       submissions: {
         where: { studentId: session.user.id },
+        orderBy: { attemptNumber: "desc" },
         select: {
           id: true,
           status: true,
@@ -125,7 +126,12 @@ export async function GET() {
           autoScore: true,
           manualScore: true,
           gradedAt: true,
+          attemptNumber: true,
         },
+      },
+      retakeGrants: {
+        where: { studentId: session.user.id, usedAt: null },
+        select: { id: true },
       },
     },
   });

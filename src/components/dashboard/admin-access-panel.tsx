@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Copy, Link2, RefreshCcw, ShieldPlus, Unplug, UserCheck, UserMinus, UserX } from "lucide-react";
+import { Copy, Link2, RefreshCcw, RotateCcw, ShieldPlus, Unplug, UserCheck, UserMinus, UserX } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ type AdminAccountRecord = {
   lastName: string;
   role: "ADMIN" | "INSTRUCTOR";
   isActive: boolean;
+  canGrantRetakes: boolean;
   createdAt: string;
   invitedBy: {
     id: string;
@@ -212,7 +213,7 @@ export function AdminAccessPanel() {
     await loadInvites();
   };
 
-  const updateAdminStatus = async (adminId: string, action: "hold" | "activate") => {
+  const updateAdminStatus = async (adminId: string, action: "hold" | "activate" | "enable-retakes" | "disable-retakes") => {
     setBusy(true);
     const response = await fetch("/api/super-admin/admin-accounts", {
       method: "PATCH",
@@ -230,7 +231,10 @@ export function AdminAccessPanel() {
       return;
     }
 
-    toast.success(action === "hold" ? "Account placed on hold." : "Account reactivated.");
+    if (action === "hold") toast.success("Account placed on hold.");
+    else if (action === "activate") toast.success("Account reactivated.");
+    else if (action === "enable-retakes") toast.success("Retake permission enabled.");
+    else toast.success("Retake permission disabled.");
     await loadAdmins();
   };
 
@@ -543,13 +547,22 @@ export function AdminAccessPanel() {
                       </p>
                     ) : null}
                   </div>
-                  <span
-                    className={`rounded-full px-2 py-1 text-xs font-medium ${
-                      admin.isActive ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
-                    }`}
-                  >
-                    {admin.isActive ? "ACTIVE" : "ON HOLD"}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs font-medium ${
+                        admin.isActive ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                      }`}
+                    >
+                      {admin.isActive ? "ACTIVE" : "ON HOLD"}
+                    </span>
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs font-medium ${
+                        admin.canGrantRetakes ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400" : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+                      }`}
+                    >
+                      {admin.canGrantRetakes ? "Retakes ON" : "Retakes OFF"}
+                    </span>
+                  </div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {admin.isActive ? (
@@ -571,6 +584,15 @@ export function AdminAccessPanel() {
                       Reactivate
                     </Button>
                   )}
+                  <Button
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => void updateAdminStatus(admin.id, admin.canGrantRetakes ? "disable-retakes" : "enable-retakes")}
+                    title={admin.canGrantRetakes ? "Revoke retake permission" : "Grant retake permission"}
+                  >
+                    <RotateCcw className="size-4" />
+                    {admin.canGrantRetakes ? "Disable Retakes" : "Enable Retakes"}
+                  </Button>
                   <Button
                     variant="outline"
                     disabled={busy}

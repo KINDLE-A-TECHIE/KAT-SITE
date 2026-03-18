@@ -8,6 +8,7 @@ import { trackEvent } from "@/lib/analytics";
 const createEnrollmentSchema = z.object({
   userId: z.string().cuid().optional(),
   programId: z.string().cuid(),
+  billingType: z.enum(["WAIVED", "BILLABLE"]).optional(),
 });
 
 const updateEnrollmentSchema = z.object({
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
         select: { id: true, firstName: true, lastName: true, role: true },
       },
       program: {
-        select: { id: true, name: true, monthlyFee: true, level: true },
+        select: { id: true, name: true, monthlyFee: true, level: true, isActive: true },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -86,6 +87,14 @@ export async function POST(request: Request) {
       }
     }
 
+    // billingType is only honoured when a staff member enrolls someone else
+    const isManualByStaff = actingAsAnotherUser;
+    const billingType = parsed.data.billingType ?? "WAIVED"; // default waived for manual
+    const isBillingWaived = !isManualByStaff ? false : billingType === "WAIVED";
+    const billingPeriodEnd = isManualByStaff && billingType === "BILLABLE"
+      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      : undefined;
+
     const enrollment = await prisma.enrollment.upsert({
       where: {
         userId_programId: {
@@ -95,10 +104,16 @@ export async function POST(request: Request) {
       },
       update: {
         status: EnrollmentStatus.ACTIVE,
+        ...(isManualByStaff && {
+          isBillingWaived,
+          currentPeriodEnd: billingType === "BILLABLE" ? billingPeriodEnd : null,
+        }),
       },
       create: {
         userId: targetUserId,
         programId: parsed.data.programId,
+        isBillingWaived,
+        currentPeriodEnd: billingPeriodEnd,
       },
       include: {
         user: { select: { id: true, firstName: true, lastName: true } },

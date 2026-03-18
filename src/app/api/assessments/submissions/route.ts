@@ -4,6 +4,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { manualGradeSchema, submitAssessmentSchema } from "@/lib/validators";
 import { trackEvent } from "@/lib/analytics";
+import { tryAwardModuleBadge } from "@/lib/badges";
 
 const GRADER_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
 const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW];
@@ -120,6 +121,31 @@ export async function POST(request: Request) {
       return fail("You are not enrolled in this program.", 403);
     }
 
+    // Check for existing submission — assessments close after being taken
+    const existingSubmissions = await prisma.assessmentSubmission.findMany({
+      where: { assessmentId: assessment.id, studentId: session.user.id },
+      orderBy: { attemptNumber: "desc" },
+      take: 1,
+      select: { id: true, attemptNumber: true },
+    });
+
+    let attemptNumber = 1;
+    if (existingSubmissions.length > 0) {
+      // Has a previous submission — require an unused retake grant
+      const grant = await prisma.retakeGrant.findFirst({
+        where: { assessmentId: assessment.id, studentId: session.user.id, usedAt: null },
+        select: { id: true },
+      });
+      if (!grant) {
+        return fail("This assessment has already been submitted.", 403);
+      }
+      // Consume the grant and set attempt number
+      await prisma.retakeGrant.update({
+        where: { id: grant.id },
+        data: { usedAt: new Date() },
+      });
+      attemptNumber = existingSubmissions[0]!.attemptNumber + 1;
+    }
 
     const answersMap = new Map(parsed.data.answers.map((answer) => [answer.questionId, answer]));
     let autoScore = 0;
@@ -172,6 +198,7 @@ export async function POST(request: Request) {
         assessmentId: assessment.id,
         studentId: session.user.id,
         enrollmentId: enrollment.id,
+        attemptNumber,
         status,
         autoScore,
         totalScore: autoScore,
@@ -192,6 +219,11 @@ export async function POST(request: Request) {
       eventName: "assessment_submitted",
       payload: { assessmentId: assessment.id, submissionId: submission.id },
     });
+
+    // If auto-graded and passed, try to award module badge
+    if (status === AttemptStatus.GRADED) {
+      await tryAwardModuleBadge(session.user.id, assessment.id);
+    }
 
     return ok({ submission }, 201);
   } catch (error) {
@@ -294,6 +326,9 @@ export async function PATCH(request: Request) {
       eventName: "manual_grade_submitted",
       payload: { submissionId: submission.id },
     });
+
+    // Try to award module badge to the student now that manual grading is done
+    await tryAwardModuleBadge(submission.studentId, submission.assessmentId);
 
     return ok({ submission: updated });
   } catch (error) {

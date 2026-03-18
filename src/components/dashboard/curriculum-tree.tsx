@@ -164,6 +164,115 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
     );
   }
 
+  /* ── Learner view ── */
+  if (!isCreator) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-4">
+        <div className="kat-card">
+          <Link href="/dashboard/curriculum" className="text-xs text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">
+            ← My Courses
+          </Link>
+          <h2 className="mt-1 [font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900 dark:text-slate-100">
+            Course Outline
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {activeVersion.modules.length} module{activeVersion.modules.length !== 1 ? "s" : ""}
+            {" · "}
+            {activeVersion.modules.reduce((sum, m) => sum + m.lessons.length, 0)} lesson{activeVersion.modules.reduce((sum, m) => sum + m.lessons.length, 0) !== 1 ? "s" : ""}
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {activeVersion.modules.length === 0 && (
+            <div className="kat-card py-12 text-center">
+              <BookOpen className="mx-auto mb-3 h-8 w-8 text-slate-300 dark:text-slate-600" />
+              <p className="text-sm text-slate-400 dark:text-slate-500">No lessons available yet.</p>
+            </div>
+          )}
+
+          {activeVersion.modules.map((mod, modIndex) => {
+            const expanded = expandedModules.has(mod.id);
+            return (
+              <motion.div
+                key={mod.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: modIndex * 0.05 }}
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+              >
+                {/* Module header */}
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                  onClick={() => setExpandedModules((prev) => {
+                    const next = new Set(prev);
+                    if (expanded) { next.delete(mod.id); } else { next.add(mod.id); }
+                    return next;
+                  })}
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1E5FAF]/10 text-sm font-bold text-[#1E5FAF] dark:bg-blue-900/30 dark:text-blue-400">
+                    {modIndex + 1}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">{mod.title}</p>
+                    {mod.description && (
+                      <p className="mt-0.5 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">{mod.description}</p>
+                    )}
+                    <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                      {mod.lessons.length} lesson{mod.lessons.length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-slate-400 dark:text-slate-500">
+                    {expanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                  </div>
+                </button>
+
+                {/* Lessons */}
+                <AnimatePresence>
+                  {expanded && (
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: "auto" }}
+                      exit={{ height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="border-t border-slate-100 dark:border-slate-800">
+                        {mod.lessons.length === 0 && (
+                          <p className="px-6 py-4 text-sm text-slate-400 dark:text-slate-500">No lessons in this module yet.</p>
+                        )}
+                        {mod.lessons.map((lesson, lessonIndex) => (
+                          <Link
+                            key={lesson.id}
+                            href={`/dashboard/curriculum/${programId}/lessons/${lesson.id}`}
+                            className="flex items-center gap-4 border-b border-slate-50 px-5 py-3.5 transition-colors last:border-0 hover:bg-slate-50 dark:border-slate-800/60 dark:hover:bg-slate-800/40"
+                          >
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                              {lessonIndex + 1}
+                            </span>
+                            <span className="min-w-0 flex-1 text-sm font-medium text-slate-700 dark:text-slate-300">
+                              {lesson.title}
+                            </span>
+                            {lesson.contents.length > 0 && (
+                              <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                {lesson.contents.length} item{lesson.contents.length !== 1 ? "s" : ""}
+                              </span>
+                            )}
+                            <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 dark:text-slate-600" />
+                          </Link>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Creator / Admin view ── */
   return (
     <div className="space-y-4">
       {/* Header */}

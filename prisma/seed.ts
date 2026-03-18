@@ -91,11 +91,11 @@ async function main() {
     create: { name: "Full Stack Innovators", slug: "full-stack-innovators", description: "Advanced track focused on full-stack application development.", level: ProgramLevel.ADVANCED, durationWeeks: 16, monthlyFee: 120000, organizationId: org.id },
   });
 
-  const cohort = await prisma.cohort.upsert({
-    where: { id: "cohort-innovators-2026" },
-    update: { name: "Innovators 2026 Cohort", startsAt: new Date("2026-01-10T08:00:00Z"), endsAt: new Date("2026-05-31T18:00:00Z"), programId: program.id, organizationId: org.id, applicationOpen: true, externalApplicationFee: 5000 },
-    create: { id: "cohort-innovators-2026", name: "Innovators 2026 Cohort", startsAt: new Date("2026-01-10T08:00:00Z"), endsAt: new Date("2026-05-31T18:00:00Z"), programId: program.id, organizationId: org.id, capacity: 100, applicationOpen: true, externalApplicationFee: 5000 },
-  });
+  const cohortData = { name: "Innovators 2026 Cohort", startsAt: new Date("2026-01-10T08:00:00Z"), endsAt: new Date("2026-05-31T18:00:00Z"), programId: program.id, organizationId: org.id, applicationOpen: true, externalApplicationFee: 5000 };
+  const existingCohort = await prisma.cohort.findFirst({ where: { name: cohortData.name, organizationId: org.id } });
+  const cohort = existingCohort
+    ? await prisma.cohort.update({ where: { id: existingCohort.id }, data: cohortData })
+    : await prisma.cohort.create({ data: { ...cohortData, capacity: 100 } });
 
   const enrollment = await prisma.enrollment.upsert({
     where: { userId_programId: { userId: student.id, programId: program.id } },
@@ -125,66 +125,116 @@ async function main() {
     create: { userId: fellow.id, programId: program.id },
   });
 
-  // ── Assessment (idempotent via fixed id) ─────────────────────────────────────
-  await prisma.assessment.upsert({
-    where: { id: "assess-react-fundamentals" },
-    update: {
-      verificationStatus: AssessmentVerificationStatus.APPROVED,
-      verifiedById: superAdmin.id,
-      verifiedAt: new Date("2026-03-01T10:00:00Z"),
-    },
-    create: {
-      id: "assess-react-fundamentals",
-      title: "React Fundamentals Checkpoint",
-      description: "Objective + open-ended assessment for the React module.",
-      type: AssessmentType.QUIZ,
-      totalPoints: 20,
-      passScore: 12,
-      published: true,
-      verificationStatus: AssessmentVerificationStatus.APPROVED,
-      verifiedById: superAdmin.id,
-      verifiedAt: new Date("2026-03-01T10:00:00Z"),
-      dueDate: new Date("2026-06-01T12:00:00Z"),
-      programId: program.id,
-      createdById: instructor.id,
-      questions: {
-        create: [
-          {
-            prompt: "React is mainly used for ____.",
-            type: QuestionType.MULTIPLE_CHOICE,
-            points: 5,
-            sortOrder: 1,
-            options: {
-              create: [
-                { label: "Building user interfaces", value: "ui",     isCorrect: true  },
-                { label: "Managing servers",          value: "server", isCorrect: false },
-                { label: "Relational databases",      value: "db",     isCorrect: false },
-              ],
-            },
-          },
-          {
-            prompt: "The Virtual DOM improves rendering performance.",
-            type: QuestionType.TRUE_FALSE,
-            points: 5,
-            answerKey: "true",
-            sortOrder: 2,
-            options: {
-              create: [
-                { label: "True",  value: "true",  isCorrect: true  },
-                { label: "False", value: "false", isCorrect: false },
-              ],
-            },
-          },
-          {
-            prompt: "Explain when you would choose context over prop drilling in a React app.",
-            type: QuestionType.OPEN_ENDED,
-            points: 10,
-            sortOrder: 3,
-          },
-        ],
-      },
-    },
+  // ── Curriculum → Version → Module ───────────────────────────────────────────
+  const curriculum = await prisma.curriculum.upsert({
+    where: { programId: program.id },
+    update: {},
+    create: { programId: program.id, organizationId: org.id },
   });
+
+  const existingVersion = await prisma.curriculumVersion.findFirst({
+    where: { curriculumId: curriculum.id },
+    select: { id: true },
+  });
+  const curriculumVersion = existingVersion
+    ? await prisma.curriculumVersion.findUniqueOrThrow({ where: { id: existingVersion.id } })
+    : await prisma.curriculumVersion.create({
+        data: {
+          curriculumId: curriculum.id,
+          versionNumber: 1,
+          label: "v1.0",
+          changelog: "Initial curriculum version.",
+          createdById: superAdmin.id,
+          isActive: true,
+        },
+      });
+
+  const existingModule = await prisma.module.findFirst({
+    where: { versionId: curriculumVersion.id, title: "React Fundamentals" },
+    select: { id: true },
+  });
+  const reactModule = existingModule
+    ? await prisma.module.findUniqueOrThrow({ where: { id: existingModule.id } })
+    : await prisma.module.create({
+        data: {
+          versionId: curriculumVersion.id,
+          title: "React Fundamentals",
+          description: "Core concepts of React including components, state, and hooks.",
+          sortOrder: 0,
+          badge: { create: { name: "React Fundamentals", icon: "⚛️", color: "#61DAFB" } },
+        },
+      });
+
+  // ── Assessment (idempotent via title + program) ──────────────────────────────
+  const existingAssessment = await prisma.assessment.findFirst({
+    where: { title: "React Fundamentals Checkpoint", programId: program.id },
+    select: { id: true },
+  });
+  if (existingAssessment) {
+    await prisma.assessment.update({
+      where: { id: existingAssessment.id },
+      data: {
+        moduleId: reactModule.id,
+        verificationStatus: AssessmentVerificationStatus.APPROVED,
+        verifiedById: superAdmin.id,
+        verifiedAt: new Date("2026-03-01T10:00:00Z"),
+      },
+    });
+  } else {
+    await prisma.assessment.create({
+      data: {
+        title: "React Fundamentals Checkpoint",
+        description: "Objective + open-ended assessment for the React module.",
+        type: AssessmentType.QUIZ,
+        totalPoints: 20,
+        passScore: 12,
+        published: true,
+        verificationStatus: AssessmentVerificationStatus.APPROVED,
+        verifiedById: superAdmin.id,
+        verifiedAt: new Date("2026-03-01T10:00:00Z"),
+        dueDate: new Date("2026-06-01T12:00:00Z"),
+        programId: program.id,
+        moduleId: reactModule.id,
+        createdById: instructor.id,
+        questions: {
+          create: [
+            {
+              prompt: "React is mainly used for ____.",
+              type: QuestionType.MULTIPLE_CHOICE,
+              points: 5,
+              sortOrder: 1,
+              options: {
+                create: [
+                  { label: "Building user interfaces", value: "ui",     isCorrect: true  },
+                  { label: "Managing servers",          value: "server", isCorrect: false },
+                  { label: "Relational databases",      value: "db",     isCorrect: false },
+                ],
+              },
+            },
+            {
+              prompt: "The Virtual DOM improves rendering performance.",
+              type: QuestionType.TRUE_FALSE,
+              points: 5,
+              answerKey: "true",
+              sortOrder: 2,
+              options: {
+                create: [
+                  { label: "True",  value: "true",  isCorrect: true  },
+                  { label: "False", value: "false", isCorrect: false },
+                ],
+              },
+            },
+            {
+              prompt: "Explain when you would choose context over prop drilling in a React app.",
+              type: QuestionType.OPEN_ENDED,
+              points: 10,
+              sortOrder: 3,
+            },
+          ],
+        },
+      },
+    });
+  }
 
   // ── Payment + Receipt ────────────────────────────────────────────────────────
   const payment = await prisma.payment.upsert({
@@ -229,22 +279,25 @@ async function main() {
   });
 
   // ── Meeting ──────────────────────────────────────────────────────────────────
-  const meeting = await prisma.meeting.upsert({
-    where: { id: "meeting-mentorship-march" },
-    update: {},
-    create: {
-      id: "meeting-mentorship-march",
-      title: "March Mentorship Review",
-      hostId: fellow.id,
-      organizationId: org.id,
-      cohortId: cohort.id,
-      startTime: new Date("2026-03-08T16:00:00Z"),
-      endTime: new Date("2026-03-08T16:45:00Z"),
-      dailyRoomName: "kat-mentorship-march-review",
-      dailyRoomUrl: "https://meet.zoho.com/kat-mentorship-march-review",
-      status: MeetingStatus.UPCOMING,
-    },
+  const existingMeeting = await prisma.meeting.findFirst({
+    where: { title: "March Mentorship Review", organizationId: org.id },
+    select: { id: true },
   });
+  const meeting = existingMeeting
+    ? await prisma.meeting.findUniqueOrThrow({ where: { id: existingMeeting.id } })
+    : await prisma.meeting.create({
+        data: {
+          title: "March Mentorship Review",
+          hostId: fellow.id,
+          organizationId: org.id,
+          cohortId: cohort.id,
+          startTime: new Date("2026-03-08T16:00:00Z"),
+          endTime: new Date("2026-03-08T16:45:00Z"),
+          dailyRoomName: "kat-mentorship-march-review",
+          dailyRoomUrl: "https://meet.zoho.com/kat-mentorship-march-review",
+          status: MeetingStatus.UPCOMING,
+        },
+      });
 
   for (const [userId, isHost] of [[fellow.id, true], [student.id, false]] as const) {
     await prisma.meetingParticipant.upsert({

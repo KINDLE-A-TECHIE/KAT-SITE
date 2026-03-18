@@ -36,14 +36,18 @@ export async function POST(request: Request) {
   // otherwise fall back to the secret key (same value Paystack uses by default).
   const secret = process.env.PAYSTACK_WEBHOOK_SECRET ?? process.env.PAYSTACK_SECRET_KEY;
 
-  if (secret) {
-    if (!signature) {
-      return new Response("Missing signature", { status: 401 });
-    }
-    const expected = crypto.createHmac("sha512", secret).update(rawBody).digest("hex");
-    if (signature !== expected) {
-      return new Response("Invalid signature", { status: 401 });
-    }
+  if (!secret) {
+    console.error("[webhook] PAYSTACK_WEBHOOK_SECRET is not configured.");
+    return new Response("Webhook secret not configured", { status: 500 });
+  }
+
+  if (!signature) {
+    return new Response("Missing signature", { status: 401 });
+  }
+
+  const expected = crypto.createHmac("sha512", secret).update(rawBody).digest("hex");
+  if (signature !== expected) {
+    return new Response("Invalid signature", { status: 401 });
   }
 
   let event: PaystackChargeEvent;

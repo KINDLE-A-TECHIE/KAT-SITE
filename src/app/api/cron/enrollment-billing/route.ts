@@ -43,11 +43,12 @@ export async function POST(request: Request) {
   const now = new Date();
   let warned3day = 0, warnedGrace = 0, suspended = 0;
 
-  // Fetch all active/suspended enrollments that have a billing period set
+  // Fetch all active/suspended enrollments that have a billing period set and are not waived
   const enrollments = await prisma.enrollment.findMany({
     where: {
       status: { in: ["ACTIVE", "SUSPENDED"] },
       currentPeriodEnd: { not: null },
+      isBillingWaived: false,
     },
     select: {
       id: true,

@@ -16,13 +16,29 @@ export async function GET(_req: Request, { params }: Params) {
   const role = session.user.role as UserRole;
   const isLearner = LEARNER_ROLES.includes(role);
 
-  // Learners must be enrolled
+  // Learners must be enrolled (or fellows with an approved fellowship application for this program)
   if (isLearner) {
     const enrollment = await prisma.enrollment.findUnique({
       where: { userId_programId: { userId: session.user.id, programId } },
       select: { id: true },
     });
-    if (!enrollment) return fail("You are not enrolled in this program.", 403);
+
+    if (!enrollment) {
+      // Fellows may access via an approved FellowApplication linked to a cohort with this program
+      if (role === UserRole.FELLOW) {
+        const fellowAccess = await prisma.fellowApplication.findFirst({
+          where: {
+            applicantId: session.user.id,
+            status: "APPROVED",
+            cohort: { programId },
+          },
+          select: { id: true },
+        });
+        if (!fellowAccess) return fail("You are not enrolled in this program.", 403);
+      } else {
+        return fail("You are not enrolled in this program.", 403);
+      }
+    }
   }
 
   const curriculum = await prisma.curriculum.findUnique({

@@ -30,7 +30,7 @@ export default async function CertificatePage({ params }: Props) {
     },
   });
 
-  if (!cert) notFound();
+  if (!cert || cert.status !== "APPROVED") notFound();
 
   const LEVEL_LABEL: Record<string, string> = {
     BEGINNER: "Beginner",

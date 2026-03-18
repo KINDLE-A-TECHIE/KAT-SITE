@@ -15,6 +15,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ credent
   });
 
   if (!cert) return fail("Certificate not found", 404);
+  if (cert.status !== "APPROVED") return fail("Certificate not found", 404);
 
   return ok({
     valid: true,

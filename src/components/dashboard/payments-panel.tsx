@@ -665,6 +665,7 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
   const { users, query, setQuery, loading: usersLoading } = useOrgUsers("STUDENT,FELLOW");
   const [selectedUsers, setSelectedUsers] = useState<OrgUser[]>([]);
   const [selectedProgramIds, setSelectedProgramIds] = useState<Set<string>>(new Set());
+  const [billingType, setBillingType] = useState<"WAIVED" | "BILLABLE">("WAIVED");
   const [showDropdown, setShowDropdown] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -716,7 +717,7 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
           const res = await fetch("/api/enrollments", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: user.id, programId }),
+            body: JSON.stringify({ userId: user.id, programId, billingType }),
           });
           const p = await res.json();
           if (res.ok || res.status === 201) {
@@ -841,10 +842,49 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
         </div>
       )}
 
+      {/* Billing type */}
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">
+          Billing
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {(["WAIVED", "BILLABLE"] as const).map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => setBillingType(type)}
+              className={`rounded-xl border px-3 py-2.5 text-left transition-all ${
+                billingType === type
+                  ? type === "WAIVED"
+                    ? "border-emerald-400 bg-emerald-50 ring-1 ring-emerald-400/30 dark:bg-emerald-950/40"
+                    : "border-amber-400 bg-amber-50 ring-1 ring-amber-400/30 dark:bg-amber-950/40"
+                  : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900"
+              }`}
+            >
+              <p className={`text-sm font-semibold ${
+                billingType === type
+                  ? type === "WAIVED" ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"
+                  : "text-slate-700 dark:text-slate-300"
+              }`}>
+                {type === "WAIVED" ? "Waived" : "Billable"}
+              </p>
+              <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
+                {type === "WAIVED"
+                  ? "No payment required — scholarship or admin grant"
+                  : "Billing starts today — 30-day cycle"}
+              </p>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {totalEnrollments > 0 && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
           This will create <strong>{totalEnrollments}</strong> enrollment{totalEnrollments !== 1 ? "s" : ""}{" "}
-          ({selectedUsers.length} student{selectedUsers.length !== 1 ? "s" : ""} × {selectedProgramIds.size} program{selectedProgramIds.size !== 1 ? "s" : ""}).
+          ({selectedUsers.length} student{selectedUsers.length !== 1 ? "s" : ""} × {selectedProgramIds.size} program{selectedProgramIds.size !== 1 ? "s" : ""}){" "}
+          — <span className={billingType === "WAIVED" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}>
+            {billingType === "WAIVED" ? "billing waived" : "first payment due in 30 days"}
+          </span>.
         </p>
       )}
 
@@ -866,6 +906,8 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
 type EnrollmentRecord = {
   id: string;
   status: string;
+  isBillingWaived: boolean;
+  currentPeriodEnd: string | null;
   createdAt: string;
   user: { id: string; firstName: string; lastName: string; role: string } | null;
   program: { id: string; name: string } | null;
@@ -985,6 +1027,11 @@ function EnrollmentsManager() {
                     {e.program?.name ?? "—"}
                     {e.cohort ? ` · ${e.cohort.name}` : ""}
                     {" · "}Enrolled {new Date(e.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
+                    {e.isBillingWaived
+                      ? <span className="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">Waived</span>
+                      : e.currentPeriodEnd
+                        ? <span className="ml-1.5 text-slate-400"> · Due {new Date(e.currentPeriodEnd).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}</span>
+                        : null}
                   </p>
                 </div>
 
@@ -1261,29 +1308,34 @@ export function PaymentsPanel({ role }: { role: string }) {
   const isSA     = role === "SUPER_ADMIN";
   const canVerify = isAdmin;
 
-  const [loading, setLoading]         = useState(true);
-  const [payments, setPayments]       = useState<PaymentRecord[]>([]);
-  const [programs, setPrograms]       = useState<Program[]>([]);
-  const [total, setTotal]             = useState(0);
-  const [offset, setOffset]           = useState(0);
+  const [loading, setLoading]             = useState(true);
+  const [payments, setPayments]           = useState<PaymentRecord[]>([]);
+  const [programs, setPrograms]           = useState<Program[]>([]);
+  const [total, setTotal]                 = useState(0);
+  const [nextCursor, setNextCursor]       = useState<string | null>(null);
+  const [cursorStack, setCursorStack]     = useState<string[]>([]);
+  const [hasMore, setHasMore]             = useState(false);
   const [referenceToVerify, setReferenceToVerify] = useState("");
-  const [busy, setBusy]               = useState(false);
+  const [busy, setBusy]                   = useState(false);
   const autoVerifyRan = useRef(false);
 
-  const loadPayments = async (pageOffset = 0) => {
+  const loadPayments = async (cursor?: string) => {
     setLoading(true);
-    const res = await fetch(`/api/payments?limit=${PAGE_SIZE}&offset=${pageOffset}`);
+    const params = new URLSearchParams({ limit: String(PAGE_SIZE) });
+    if (cursor) params.set("cursor", cursor);
+    const res = await fetch(`/api/payments?${params.toString()}`);
     if (res.ok) {
       const payload = await res.json();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setPayments((payload.payments ?? []).map((p: any) => ({ ...p, amount: Number(p.amount) })));
       setTotal(payload.meta?.total ?? 0);
-      setOffset(pageOffset);
+      setNextCursor(payload.meta?.nextCursor ?? null);
+      setHasMore(payload.meta?.hasMore ?? false);
     }
     setLoading(false);
   };
 
-  useEffect(() => { void loadPayments(0); }, []);
+  useEffect(() => { void loadPayments(); }, []);
 
   useEffect(() => {
     if (isSA) {
@@ -1325,7 +1377,7 @@ export function PaymentsPanel({ role }: { role: string }) {
           setReferenceToVerify(ref!);
         }
       }
-      await loadPayments(0);
+      await loadPayments();
     })();
   }, []);
 
@@ -1338,12 +1390,12 @@ export function PaymentsPanel({ role }: { role: string }) {
     if (!res.ok) { toast.error(payload?.error ?? "Verification failed."); return; }
     toast.success(`Verification complete: ${payload.payment.status}`);
     setReferenceToVerify("");
-    await loadPayments(offset);
+    await loadPayments(cursorStack[cursorStack.length - 1]);
   };
 
-  const hasMore  = offset + PAGE_SIZE < total;
-  const hasPrev  = offset > 0;
-  const showFor  = isAdmin || isParent;
+  const hasPrev     = cursorStack.length > 0;
+  const currentPage = cursorStack.length + 1;
+  const showFor     = isAdmin || isParent;
 
   return (
     <div className="space-y-4">
@@ -1409,7 +1461,7 @@ export function PaymentsPanel({ role }: { role: string }) {
       <section className="kat-card">
         <div className="flex items-center justify-between">
           <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Financial History</h3>
-          {total > 0 && <p className="text-xs text-slate-400 dark:text-slate-500">{offset + 1}–{Math.min(offset + PAGE_SIZE, total)} of {total}</p>}
+          {total > 0 && <p className="text-xs text-slate-400 dark:text-slate-500">Page {currentPage} · {total} total</p>}
         </div>
 
         <div className="mt-4 max-h-96 overflow-auto pb-1">
@@ -1465,8 +1517,17 @@ export function PaymentsPanel({ role }: { role: string }) {
 
         {(hasPrev || hasMore) && (
           <div className="mt-4 flex justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
-            <Button variant="outline" size="sm" disabled={!hasPrev || loading} onClick={() => void loadPayments(offset - PAGE_SIZE)}>Previous</Button>
-            <Button variant="outline" size="sm" disabled={!hasMore || loading} onClick={() => void loadPayments(offset + PAGE_SIZE)}>Next</Button>
+            <Button variant="outline" size="sm" disabled={!hasPrev || loading} onClick={() => {
+              const newStack = cursorStack.slice(0, -1);
+              setCursorStack(newStack);
+              void loadPayments(newStack[newStack.length - 1]);
+            }}>Previous</Button>
+            <Button variant="outline" size="sm" disabled={!hasMore || loading} onClick={() => {
+              if (nextCursor) {
+                setCursorStack(prev => [...prev, nextCursor]);
+                void loadPayments(nextCursor);
+              }
+            }}>Next</Button>
           </div>
         )}
       </section>

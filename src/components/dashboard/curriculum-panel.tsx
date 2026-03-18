@@ -331,87 +331,93 @@ export function CurriculumPanel({ role }: { role: string }) {
                 transition={{ delay: i * 0.05 }}
                 className={`kat-card flex flex-col ${!program.isActive ? "opacity-60" : ""}`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="truncate font-semibold text-slate-900 dark:text-slate-100">{program.name}</h3>
-                      {!program.isActive && (
-                        <span className="shrink-0 rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
-                          Archived
+                {isCreator ? (
+                  /* ── Creator card ── */
+                  <>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="truncate font-semibold text-slate-900 dark:text-slate-100">{program.name}</h3>
+                          {!program.isActive && (
+                            <span className="shrink-0 rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                              Archived
+                            </span>
+                          )}
+                        </div>
+                        {(() => {
+                          const fee = Number(program.monthlyFee);
+                          const disc = program.discountPercent ? Number(program.discountPercent) : 0;
+                          const effective = disc > 0 ? fee * (1 - disc / 100) : fee;
+                          return (
+                            <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                              {disc > 0 ? (
+                                <>
+                                  <span className="line-through">₦{fee.toLocaleString()}</span>
+                                  {" "}
+                                  <span className="font-medium text-emerald-600">₦{effective.toLocaleString()}/mo</span>
+                                  {" "}
+                                  <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-400">{disc}% off</span>
+                                </>
+                              ) : (
+                                <>₦{fee.toLocaleString()}/mo</>
+                              )}
+                            </p>
+                          );
+                        })()}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${LEVEL_COLORS[program.level] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"}`}>
+                          {program.level.charAt(0) + program.level.slice(1).toLowerCase()}
                         </span>
+                        {isSA && (
+                          <>
+                            <button onClick={() => openEdit(program)} title="Edit program" className="rounded p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button onClick={() => setArchiveTarget(program)} title={program.isActive ? "Archive program" : "Restore program"} className="rounded p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300">
+                              {program.isActive ? <Archive className="h-3.5 w-3.5" /> : <ArchiveRestore className="h-3.5 w-3.5" />}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {program.description && (
+                      <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-slate-500 dark:text-slate-400">{program.description}</p>
+                    )}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Link href={`/dashboard/curriculum/${program.id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-[#1E5FAF] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1a52a0] transition-colors">
+                        <BookOpen className="h-3.5 w-3.5" />Manage Curriculum
+                      </Link>
+                      {(isSA || role === "ADMIN") && (
+                        <Link href={`/dashboard/curriculum/${program.id}/versions`} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                          <Settings className="h-3.5 w-3.5" />Versions
+                        </Link>
                       )}
                     </div>
-                    {(() => {
-                      const fee = Number(program.monthlyFee);
-                      const disc = program.discountPercent ? Number(program.discountPercent) : 0;
-                      const effective = disc > 0 ? fee * (1 - disc / 100) : fee;
-                      return (
-                        <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
-                          {disc > 0 ? (
-                            <>
-                              <span className="line-through">₦{fee.toLocaleString()}</span>
-                              {" "}
-                              <span className="font-medium text-emerald-600">₦{effective.toLocaleString()}/mo</span>
-                              {" "}
-                              <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-400">{disc}% off</span>
-                            </>
-                          ) : (
-                            <>₦{fee.toLocaleString()}/mo</>
-                          )}
-                        </p>
-                      );
-                    })()}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${LEVEL_COLORS[program.level] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"}`}>
-                      {program.level.charAt(0) + program.level.slice(1).toLowerCase()}
-                    </span>
-                    {isSA && (
-                      <>
-                        <button
-                          onClick={() => openEdit(program)}
-                          title="Edit program"
-                          className="rounded p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setArchiveTarget(program)}
-                          title={program.isActive ? "Archive program" : "Restore program"}
-                          className="rounded p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300"
-                        >
-                          {program.isActive
-                            ? <Archive className="h-3.5 w-3.5" />
-                            : <ArchiveRestore className="h-3.5 w-3.5" />
-                          }
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {program.description && (
-                  <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-slate-500 dark:text-slate-400">{program.description}</p>
-                )}
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Link
-                    href={`/dashboard/curriculum/${program.id}`}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#1E5FAF] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1a52a0] transition-colors"
-                  >
-                    <BookOpen className="h-3.5 w-3.5" />
-                    {isCreator ? "Manage Curriculum" : "View Curriculum"}
-                  </Link>
-                  {(isSA || role === "ADMIN") && (
+                  </>
+                ) : (
+                  /* ── Learner card ── */
+                  <>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1E5FAF]/10 dark:bg-blue-900/30">
+                        <GraduationCap className="h-5 w-5 text-[#1E5FAF] dark:text-blue-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-slate-900 dark:text-slate-100">{program.name}</h3>
+                        {program.description && (
+                          <p className="mt-0.5 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">{program.description}</p>
+                        )}
+                      </div>
+                    </div>
                     <Link
-                      href={`/dashboard/curriculum/${program.id}/versions`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                      href={`/dashboard/curriculum/${program.id}`}
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1E5FAF] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#1a52a0]"
                     >
-                      <Settings className="h-3.5 w-3.5" />
-                      Versions
+                      <BookOpen className="h-4 w-4" />
+                      Open Course
                     </Link>
-                  )}
-                </div>
+                  </>
+                )}
               </motion.div>
             ))}
           </div>

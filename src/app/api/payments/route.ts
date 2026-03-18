@@ -14,6 +14,9 @@ function parseIntParam(raw: string | null, fallback: number, max?: number): numb
   return max !== undefined ? Math.min(floored, max) : floored;
 }
 
+// Cursor-based pagination avoids the O(offset) table scan that skip/take causes
+// at large offsets. We fetch limit+1 records and use the last id as the next cursor.
+
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) {
@@ -21,8 +24,8 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const limit = parseIntParam(url.searchParams.get("limit"), DEFAULT_LIMIT, MAX_LIMIT);
-  const offset = parseIntParam(url.searchParams.get("offset"), 0);
+  const limit  = parseIntParam(url.searchParams.get("limit"), DEFAULT_LIMIT, MAX_LIMIT);
+  const cursor = url.searchParams.get("cursor") ?? undefined;
 
   const role = session.user.role;
   const isAdmin = role === UserRole.SUPER_ADMIN || role === UserRole.ADMIN;
@@ -49,7 +52,7 @@ export async function GET(request: Request) {
     where = { userId: session.user.id };
   }
 
-  const [payments, total] = await prisma.$transaction([
+  const [raw, total] = await prisma.$transaction([
     prisma.payment.findMany({
       where,
       include: {
@@ -57,12 +60,17 @@ export async function GET(request: Request) {
         program: { select: { id: true, name: true } },
         user: { select: { id: true, firstName: true, lastName: true, role: true } },
       },
-      orderBy: [{ billingMonth: "desc" }, { initializedAt: "desc" }],
-      take: limit,
-      skip: offset,
+      orderBy: [{ billingMonth: "desc" }, { initializedAt: "desc" }, { id: "desc" }],
+      take: limit + 1, // fetch one extra to detect whether a next page exists
+      skip: cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
     }),
     prisma.payment.count({ where }),
   ]);
+
+  const hasMore   = raw.length > limit;
+  const payments  = hasMore ? raw.slice(0, limit) : raw;
+  const nextCursor = hasMore ? (payments[payments.length - 1]?.id ?? null) : null;
 
   const monthly = payments.reduce<Record<string, { total: number; successful: number; failed: number }>>(
     (acc, payment) => {
@@ -85,6 +93,6 @@ export async function GET(request: Request) {
   return ok({
     payments,
     monthly,
-    meta: { total, limit, offset, hasMore: offset + limit < total },
+    meta: { total, limit, nextCursor, hasMore },
   });
 }

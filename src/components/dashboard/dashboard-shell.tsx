@@ -8,10 +8,12 @@ import { signOut } from "next-auth/react";
 import { motion } from "framer-motion";
 import {
   Award,
+  BadgeCheck,
   BookOpen,
   Calendar,
   CreditCard,
   FileText,
+  FolderOpen,
   GraduationCap,
   LayoutDashboard,
   Library,
@@ -37,6 +39,7 @@ type DashboardShellProps = {
     role: UserRoleValue;
     avatarUrl?: string | null;
   };
+  isEnrolled?: boolean;
   children: ReactNode;
 };
 
@@ -53,7 +56,14 @@ const LEARNING_NAV = [
   { href: "/dashboard/certificates", label: "Certificates", icon: Award },
 ];
 
-function getNavItems(role: UserRoleValue) {
+function getNavItems(role: UserRoleValue, isEnrolled = true) {
+  if (role === "STUDENT" && !isEnrolled) {
+    return [
+      { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+      { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
+      { href: "/dashboard/profile", label: "Profile", icon: UserCircle },
+    ];
+  }
   switch (role) {
     case "SUPER_ADMIN":
       return [
@@ -85,7 +95,9 @@ function getNavItems(role: UserRoleValue) {
       return [
         ...CORE_NAV,
         ...LEARNING_NAV,
+        { href: "/dashboard/badges", label: "Badges", icon: BadgeCheck },
         { href: "/dashboard/grades", label: "My Grades", icon: Award },
+        { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
         { href: "/dashboard/transcript", label: "Transcript", icon: ScrollText },
         { href: "/dashboard/fellows/apply", label: "Fellowship", icon: FileText },
       ];
@@ -93,11 +105,13 @@ function getNavItems(role: UserRoleValue) {
       return [
         ...CORE_NAV,
         ...LEARNING_NAV,
+        { href: "/dashboard/badges", label: "Badges", icon: BadgeCheck },
         { href: "/dashboard/grades", label: "My Grades", icon: Award },
+        { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
         { href: "/dashboard/transcript", label: "Transcript", icon: ScrollText },
       ];
     case "INSTRUCTOR":
-      return [...CORE_NAV, ...LEARNING_NAV];
+      return [...CORE_NAV, ...LEARNING_NAV, { href: "/dashboard/projects", label: "Projects", icon: FolderOpen }];
     default:
       return CORE_NAV;
   }
@@ -123,13 +137,13 @@ function resolveIsDark(): boolean {
   return false;
 }
 
-export function DashboardShell({ user, children }: DashboardShellProps) {
+export function DashboardShell({ user, isEnrolled = true, children }: DashboardShellProps) {
   const pathname = usePathname();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user.avatarUrl ?? null);
   const [displayFirstName, setDisplayFirstName] = useState(user.firstName);
   const [displayLastName, setDisplayLastName] = useState(user.lastName);
   const [isDark, setIsDark] = useState(false);
-  const navItems = getNavItems(user.role);
+  const navItems = getNavItems(user.role, isEnrolled);
   const initials = getInitials(displayFirstName, displayLastName);
 
   useEffect(() => {

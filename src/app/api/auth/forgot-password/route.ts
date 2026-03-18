@@ -2,6 +2,7 @@ import { z } from "zod";
 import { fail, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, buildPasswordResetEmail } from "@/lib/email";
+import { forgotPasswordLimiter, getClientIp, rateLimitResponse } from "@/lib/ratelimit";
 
 const schema = z.object({
   email: z.string().email(),
@@ -13,6 +14,12 @@ const TOKEN_TTL_MS = 60 * 60 * 1000;
 
 export async function POST(request: Request) {
   try {
+    if (forgotPasswordLimiter) {
+      const ip = getClientIp(request);
+      const { success, reset } = await forgotPasswordLimiter.limit(ip);
+      if (!success) return rateLimitResponse(reset);
+    }
+
     const body = await request.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {

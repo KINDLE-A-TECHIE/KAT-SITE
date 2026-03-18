@@ -36,6 +36,7 @@ export async function GET() {
       lastName: true,
       role: true,
       isActive: true,
+      canGrantRetakes: true,
       createdAt: true,
       updatedAt: true,
       adminInvitesUsed: {
@@ -64,6 +65,7 @@ export async function GET() {
       lastName: admin.lastName,
       role: admin.role,
       isActive: admin.isActive,
+      canGrantRetakes: admin.canGrantRetakes,
       createdAt: admin.createdAt,
       updatedAt: admin.updatedAt,
       invitedBy: admin.adminInvitesUsed[0]?.createdBy ?? null,
@@ -99,19 +101,34 @@ export async function PATCH(request: Request) {
       return fail("Account not found.", 404);
     }
 
-    const nextIsActive = parsed.data.action === "activate";
-    await prisma.user.update({
-      where: { id: target.id },
-      data: { isActive: nextIsActive },
-    });
+    const isRetakeToggle = parsed.data.action === "enable-retakes" || parsed.data.action === "disable-retakes";
 
-    await trackEvent({
-      userId: session.user.id,
-      organizationId: session.user.organizationId ?? undefined,
-      eventType: "auth",
-      eventName: nextIsActive ? "admin_account_activated" : "admin_account_held",
-      payload: { adminId: target.id, role: target.role },
-    });
+    if (isRetakeToggle) {
+      await prisma.user.update({
+        where: { id: target.id },
+        data: { canGrantRetakes: parsed.data.action === "enable-retakes" },
+      });
+      await trackEvent({
+        userId: session.user.id,
+        organizationId: session.user.organizationId ?? undefined,
+        eventType: "auth",
+        eventName: parsed.data.action === "enable-retakes" ? "retakes_enabled" : "retakes_disabled",
+        payload: { adminId: target.id, role: target.role },
+      });
+    } else {
+      const nextIsActive = parsed.data.action === "activate";
+      await prisma.user.update({
+        where: { id: target.id },
+        data: { isActive: nextIsActive },
+      });
+      await trackEvent({
+        userId: session.user.id,
+        organizationId: session.user.organizationId ?? undefined,
+        eventType: "auth",
+        eventName: nextIsActive ? "admin_account_activated" : "admin_account_held",
+        payload: { adminId: target.id, role: target.role },
+      });
+    }
 
     return ok({ success: true });
   } catch (error) {

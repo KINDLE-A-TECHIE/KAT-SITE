@@ -1,147 +1,139 @@
-# KAT Platform (Next.js + Prisma + NextAuth)
+# KAT — Kindle A Techie
 
-Production-grade learning platform foundation with:
+A full-stack Learning Management System (LMS) built with Next.js 15, TypeScript, Prisma, and PostgreSQL.
 
-- Multi-role authentication: `SUPER_ADMIN`, `ADMIN`, `INSTRUCTOR`, `FELLOW`, `STUDENT`, `PARENT`
-- Single-tenant organization model with automatic user assignment
-- Prisma/PostgreSQL schema with 20+ interconnected models
-- Role-aware messaging with read receipts and permission matrix
-- Assessment engine with objective auto-grading + manual grading flow
-- Payments via Paystack with Stripe-ready provider abstraction
-- Zoho Meeting session creation for live meeting scheduling with recording policy flags
-- Role dashboards and analytics endpoints
-- Animated UI with Tailwind + Framer Motion + Sonner toasts
+## Tech Stack
 
-## Stack
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 15 (App Router) |
+| Language | TypeScript |
+| ORM | Prisma |
+| Database | PostgreSQL (Neon) |
+| Auth | NextAuth.js |
+| Styling | Tailwind CSS + shadcn/ui |
+| Payments | Paystack |
+| Meetings | Daily.co / Zoho Meet |
+| Email | Nodemailer |
+| File uploads | Cloudinary |
+| Animations | Framer Motion |
+| Validation | Zod |
 
-- Frontend: Next.js App Router, React, TypeScript, Tailwind CSS, Framer Motion
-- Backend: Next.js API Routes (Route Handlers)
-- Database: PostgreSQL + Prisma
-- Realtime: SSE + optional Redis pub/sub fan-out for multi-instance messaging
-- Auth: NextAuth.js JWT credentials flow + bcrypt
-- Payments: Paystack integration (`src/lib/payments`), Stripe scaffold
-- Video: Zoho Meeting integration (`src/lib/zoho-meeting.ts`)
-
-## Quick Start
-
-1. Install dependencies
+## Getting Started
 
 ```bash
+# 1. Install dependencies
 npm install
-```
 
-2. Configure environment
+# 2. Configure environment
+cp .env.example .env.local
+# Fill in DATABASE_URL, DIRECT_URL, NEXTAUTH_SECRET, PAYSTACK_*, CLOUDINARY_*, etc.
+# For Neon: DATABASE_URL = pooled connection string, DIRECT_URL = direct (non-pooled)
+# Optional: REDIS_URL for horizontally scaled realtime messaging
+# Optional: NEXT_PUBLIC_ENABLE_SW_DEV=true for service worker in dev
 
-```bash
-cp .env.example .env
-```
+# 3. Push schema to database
+npx prisma db push
 
-Optional for horizontally scaled realtime messaging:
+# 4. Seed demo data
+npx prisma db seed
 
-- Set `REDIS_URL` (for example: `redis://localhost:6379`)
-- Optionally override `REDIS_MESSAGES_CHANNEL`
-
-Optional for PWA testing on local development:
-
-- Set `NEXT_PUBLIC_ENABLE_SW_DEV=true` to register service worker in dev
-
-If you use Neon:
-
-- Set `DATABASE_URL` to the pooled connection string (`...-pooler...` host).
-- Set `DIRECT_URL` to the direct/non-pooled connection string (no `-pooler` in host).
-
-3. Initialize Prisma
-
-```bash
-npm run prisma:generate
-npm run prisma:migrate
-npm run prisma:seed
-```
-
-4. Run app
-
-```bash
+# 5. Start dev server
 npm run dev
 ```
 
 Open `http://localhost:3000`.
 
+## Seed Accounts
+
+All accounts use the password `Passw0rd!`
+
+| Email | Role |
+|---|---|
+| superadmin@kindleatechie.com | SUPER_ADMIN |
+| admin@kindleatechie.com | ADMIN |
+| instructor@kindleatechie.com | INSTRUCTOR |
+| fellow@kindleatechie.com | FELLOW |
+| student@kindleatechie.com | STUDENT |
+| parent@kindleatechie.com | PARENT |
+
+## Features
+
+### Access & Roles
+- Six roles: Super Admin, Admin, Instructor, Fellow, Student, Parent
+- Role-based dashboards with scoped navigation and permissions
+- Organisation codes for self-service role registration; invite-only for staff and SA
+- Parent-student linking with delegated payment and notifications
+
+### Curriculum
+- Versioned curriculum builder: programs → versions → modules → lessons → content blocks
+- Content types: rich text, code, document, video, links
+- Multi-block content queue — stage multiple blocks before submitting for review
+- Content review workflow — instructors submit, admins/SA approve or reject
+
+### Assessments
+- Drag-and-drop question builder with three question types: multiple choice, true/false, open-ended
+- Assessments are linked to modules for structured progression
+- Verification workflow — requires Super Admin approval before learners can access
+- Assessments close after first submission; retakes require an explicit grant from an instructor/admin
+- Super Admin can toggle retake-grant permission per instructor/admin account
+- Auto-grading for objective questions; manual grading queue for open-ended responses
+
+### Badges & Certificates
+- Badges: auto-awarded per module when all assessments in that module are passed
+- Certificates: issued at program completion; Admin/Instructor requests require Super Admin approval
+- Public certificate verification page at `/certificate/[credentialId]`
+
+### Billing & Enrollment
+- Monthly Paystack billing with 30-day periods, 3-day warning, 4-day grace, then suspension
+- Billing cron at `POST /api/cron/enrollment-billing` (secured via `CRON_SECRET`)
+- Manual enrollment by staff: Waived (no billing ever) or Billable (30-day cycle starts immediately)
+- Discount/promo codes with percentage off
+
+### Other
+- Messaging with pinned messages, read receipts, and role-based permission matrix
+- Realtime messaging via SSE; scales to multi-instance with Redis pub/sub when `REDIS_URL` is set
+- Video meeting scheduling (Zoho Meet / Daily.co)
+- Cohort management with fellow applications (including external/guest applicants)
+- In-app notifications (INFO, WARNING, ERROR, SUCCESS)
+- Analytics event tracking
+- Dark mode scoped to the dashboard — marketing and auth pages are always light
+- PWA support with service worker, offline fallback, and manifest
+
 ## Maintenance
 
-Backfill old Zoho meeting URLs safely (dry-run first):
+Backfill Zoho meeting join URLs (dry-run first):
 
 ```bash
 npm run backfill:meeting-join-urls
-```
-
-Apply updates:
-
-```bash
 npm run backfill:meeting-join-urls -- --apply
-```
-
-Optional limit for staged updates:
-
-```bash
 npm run backfill:meeting-join-urls -- --apply --limit=20
 ```
 
-Include `path_key_mismatch` cases only if you explicitly want them:
+## Project Structure
 
-```bash
-npm run backfill:meeting-join-urls -- --apply --include-path-mismatch
+```
+prisma/
+  schema.prisma         # Full data model
+  seed.ts               # Demo data
+
+src/
+  app/
+    api/                # Route handlers (REST)
+    dashboard/          # Dashboard pages
+    certificate/        # Public certificate verification
+  components/
+    dashboard/          # All dashboard panels and shell
+    ui/                 # shadcn/ui primitives
+  lib/
+    auth.ts             # NextAuth config
+    prisma.ts           # Prisma client singleton
+    badges.ts           # Module badge award logic
+    email.ts            # Email builders and templates
+    validators.ts       # Zod schemas shared across API routes
+    rbac.ts             # Messaging permission matrix
 ```
 
-## Demo Credentials
+## License
 
-After seed, these accounts exist (password: `Passw0rd!`):
-
-- `superadmin@kat.africa`
-- `admin@kat.africa`
-- `instructor@kat.africa`
-- `fellow@kat.africa`
-- `student@kat.africa`
-- `parent@kat.africa`
-
-All public registrations are auto-assigned to the default organization (`KAT-ORG` by default).
-
-## API Surface
-
-- `/api/auth/[...nextauth]`
-- `/api/users/register`
-- `/api/users/profile`
-- `/api/messages`
-- `/api/messages/contacts`
-- `/api/assessments`
-- `/api/assessments/submissions`
-- `/api/payments`
-- `/api/payments/initialize`
-- `/api/payments/verify`
-- `/api/meetings`
-- `/api/programs`
-- `/api/enrollments`
-- `/api/notifications`
-- `/api/analytics`
-- `/api/super-admin/invites`
-- `/api/super-admin/invites/accept`
-- `/api/super-admin/admin-invites`
-- `/api/super-admin/admin-invites/accept`
-- `/api/super-admin/admin-accounts`
-- `/api/integrations/zoho/start`
-- `/api/integrations/zoho/callback`
-- `/api/integrations/zoho/connection`
-
-## Notes
-
-- Messaging permissions are enforced server-side in `src/lib/rbac.ts`.
-- Realtime messaging works in-memory by default and automatically uses Redis pub/sub when `REDIS_URL` is set.
-- PWA support includes manifest, offline fallback route (`/offline`), and service worker caching.
-- Assessment objective questions are auto-graded on submission.
-- Open-ended answers move submissions to manual grading queue.
-- Paystack verification creates receipts for successful payments.
-- Meeting status is derived from schedule (`UPCOMING`, `LIVE`, `ENDED`).
-- Zoho Meeting can be connected via in-app OAuth (`Dashboard -> Access`) or env tokens.
-- Meetings that include `STUDENT` or `FELLOW` are marked `AUTO_REQUIRED` for recording and can sync recording links from Zoho.
-- Public registration cannot create `SUPER_ADMIN`, `ADMIN`, or `INSTRUCTOR`.
-- Super admins are created through invite-only flow at `/register/super-admin`.
-- Admins and instructors are created through invite-only flow at `/register/staff`.
+Private. All rights reserved.

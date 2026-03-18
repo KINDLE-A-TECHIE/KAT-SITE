@@ -77,7 +77,12 @@ export const adminInviteValidateSchema = z.object({
 
 export const adminAccountUpdateSchema = z.object({
   adminId: z.string().cuid(),
-  action: z.enum(["hold", "activate"]),
+  action: z.enum(["hold", "activate", "enable-retakes", "disable-retakes"]),
+});
+
+export const retakeGrantSchema = z.object({
+  assessmentId: z.string().cuid(),
+  studentId: z.string().cuid(),
 });
 
 export const adminAccountDeleteSchema = z.object({

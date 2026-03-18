@@ -5,9 +5,16 @@ import { prisma } from "@/lib/prisma";
 import { ensureDefaultOrganization } from "@/lib/default-organization";
 import { registerSchema } from "@/lib/validators";
 import { trackEvent } from "@/lib/analytics";
+import { registerLimiter, getClientIp, rateLimitResponse } from "@/lib/ratelimit";
 
 export async function POST(request: Request) {
   try {
+    if (registerLimiter) {
+      const ip = getClientIp(request);
+      const { success, reset } = await registerLimiter.limit(ip);
+      if (!success) return rateLimitResponse(reset);
+    }
+
     const body = await request.json();
     const parsed = registerSchema.safeParse(body);
 

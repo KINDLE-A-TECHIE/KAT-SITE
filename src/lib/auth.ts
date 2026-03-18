@@ -8,6 +8,7 @@ import { prisma } from "./prisma";
 import { ensureDefaultOrganization } from "./default-organization";
 import { loginSchema } from "./validators";
 import { trackEvent } from "./analytics";
+import { loginLimiter } from "./ratelimit";
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
@@ -33,6 +34,13 @@ export const authOptions: NextAuthOptions = {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) {
           return null;
+        }
+
+        if (loginLimiter) {
+          const { success } = await loginLimiter.limit(parsed.data.email.toLowerCase());
+          if (!success) {
+            throw new Error("Too many login attempts. Please try again in 15 minutes.");
+          }
         }
 
         const user = await prisma.user.findUnique({

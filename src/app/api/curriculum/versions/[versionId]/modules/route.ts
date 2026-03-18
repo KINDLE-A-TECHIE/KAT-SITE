@@ -56,7 +56,13 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const mod = await prisma.module.create({
-    data: { versionId, title: parsed.data.title, description: parsed.data.description, sortOrder },
+    data: {
+      versionId,
+      title: parsed.data.title,
+      description: parsed.data.description,
+      sortOrder,
+      badge: { create: { name: parsed.data.title } },
+    },
   });
 
   return ok({ module: mod }, 201);

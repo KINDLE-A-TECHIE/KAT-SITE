@@ -3,11 +3,18 @@
 import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { ArrowDown, ArrowUp, Eye, GripVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, Eye, GripVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   ASSESSMENT_TYPES,
   type AssessmentTypeValue,
@@ -44,7 +51,8 @@ type Assessment = {
     answerKey?: string | null;
     options: { id: string; label: string; value: string; isCorrect?: boolean }[];
   }[];
-  submissions?: { id: string; status: string; totalScore: number; submittedAt: string }[];
+  submissions?: { id: string; status: string; totalScore: number; submittedAt: string; attemptNumber: number }[];
+  retakeGrants?: { id: string }[];
 };
 
 type Submission = {
@@ -142,9 +150,11 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
   const [busy, setBusy] = useState(false);
   const [verifyingAssessmentId, setVerifyingAssessmentId] = useState<string | null>(null);
   const [verificationNotes, setVerificationNotes] = useState<Record<string, string>>({});
-  const [expandedVerificationAssessmentIds, setExpandedVerificationAssessmentIds] = useState<string[]>([]);
+  const [previewAssessment, setPreviewAssessment] = useState<Assessment | null>(null);
 
   const [programId, setProgramId] = useState("");
+  const [moduleId, setModuleId] = useState("");
+  const [modules, setModules] = useState<{ id: string; title: string }[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<AssessmentTypeValue>("QUIZ");
@@ -196,6 +206,20 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Load modules for the selected program so users can link an assessment to a module
+  useEffect(() => {
+    if (!programId) { setModules([]); setModuleId(""); return; }
+    fetch(`/api/programs/${programId}/curriculum`)
+      .then((r) => r.ok ? r.json() as Promise<{ curriculum?: { versions?: Array<{ modules?: Array<{ id: string; title: string }> }> } }> : null)
+      .then((data) => {
+        const mods = data?.curriculum?.versions?.[0]?.modules ?? [];
+        setModules(mods.map((m) => ({ id: m.id, title: m.title })));
+        setModuleId("");
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [programId]);
+
   const roleCanCreate = CREATOR_ROLES.includes(role);
   const roleCanSubmit = LEARNER_ROLES.includes(role);
   const roleCanVerify = role === "SUPER_ADMIN";
@@ -204,7 +228,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
     [submissions],
   );
   const verificationQueue = useMemo(
-    () => assessments.filter((assessment) => assessment.verificationStatus !== "APPROVED"),
+    () => assessments.filter((assessment) => assessment.verificationStatus === "PENDING"),
     [assessments],
   );
   const draftTotalPoints = useMemo(
@@ -477,6 +501,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         programId,
+        moduleId: moduleId || undefined,
         title,
         description,
         type,
@@ -497,6 +522,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
     toast.success("Assessment created.");
     setTitle("");
     setDescription("");
+    setModuleId("");
     setQuestionDrafts([createQuestionDraft("MULTIPLE_CHOICE")]);
     await load();
   };
@@ -614,13 +640,23 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
     }
   };
 
-  const toggleVerificationPreview = (assessmentId: string) => {
-    setExpandedVerificationAssessmentIds((previous) =>
-      previous.includes(assessmentId)
-        ? previous.filter((id) => id !== assessmentId)
-        : [...previous, assessmentId],
-    );
+  const grantRetake = async (assessmentId: string, studentId: string, studentName: string) => {
+    setBusy(true);
+    const response = await fetch("/api/assessments/retakes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assessmentId, studentId }),
+    });
+    const payload = await response.json();
+    setBusy(false);
+    if (!response.ok) {
+      toast.error(payload?.error ?? "Could not grant retake.");
+      return;
+    }
+    toast.success(`Retake granted to ${studentName}.`);
+    await load();
   };
+
 
   const verificationBadgeClass = (status: AssessmentVerificationStatusValue) => {
     if (status === "APPROVED") {
@@ -651,6 +687,18 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                 ))}
               </SelectContent>
             </Select>
+            {modules.length > 0 && (
+              <Select value={moduleId || undefined} onValueChange={setModuleId}>
+                <SelectTrigger className={KAT_DROPDOWN_TRIGGER_CLASS}>
+                  <SelectValue placeholder="Link to module (optional)" />
+                </SelectTrigger>
+                <SelectContent className={KAT_DROPDOWN_CONTENT_CLASS} position="popper" side="bottom" align="start" sideOffset={6}>
+                  {modules.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <Select value={type} onValueChange={(value) => setType(value as AssessmentTypeValue)}>
               <SelectTrigger className={KAT_DROPDOWN_TRIGGER_CLASS}>
                 <SelectValue placeholder="Select assessment type" />
@@ -952,7 +1000,9 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                   <div>
                     <p className="font-medium text-slate-900 dark:text-slate-100">{assessment.title}</p>
                     <p className="text-xs text-slate-600 dark:text-slate-400">
-                      {assessment.program?.name} - Pass score: {assessment.passScore}/{assessment.totalPoints}
+                      {assessment.program?.name}
+                      {assessment.module && <span className="text-slate-400 dark:text-slate-500"> · {assessment.module.title}</span>}
+                      {" "}— Pass: {assessment.passScore}/{assessment.totalPoints}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -974,42 +1024,70 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                   </div>
                 </div>
 
-                {roleCanSubmit ? (
-                  <div className="mt-3 space-y-3 border-t border-slate-100 pt-3 dark:border-slate-800">
-                    {assessment.questions.map((question) => (
-                      <div key={question.id} className="rounded-lg border border-slate-100 p-3 dark:border-slate-800">
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{question.prompt}</p>
-                        {question.type === "OPEN_ENDED" ? (
-                          <textarea
-                            className="mt-2 min-h-[80px] w-full rounded-md border border-slate-200 p-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                            onChange={(event) =>
-                              updateAnswerDraft(assessment.id, question.id, { responseText: event.target.value })
-                            }
-                          />
-                        ) : (
-                          <div className="mt-2 space-y-1">
-                            {question.options.map((option) => (
-                              <label key={option.id} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                                <input
-                                  type="radio"
-                                  name={`${assessment.id}-${question.id}`}
-                                  value={option.id}
-                                  onChange={() =>
-                                    updateAnswerDraft(assessment.id, question.id, { selectedOptionId: option.id })
-                                  }
-                                />
-                                {option.label}
-                              </label>
-                            ))}
-                          </div>
-                        )}
+                {roleCanSubmit ? (() => {
+                  const latestSub = assessment.submissions?.[0]; // ordered by attemptNumber desc
+                  const hasRetakeGrant = (assessment.retakeGrants?.length ?? 0) > 0;
+                  const isLocked = !!latestSub && !hasRetakeGrant;
+
+                  if (isLocked) {
+                    const passed = latestSub.totalScore >= assessment.passScore;
+                    return (
+                      <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/40">
+                        <p className={`text-sm font-semibold ${passed ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
+                          {passed ? "✓ Passed" : "✗ Not passed"} — Attempt #{latestSub.attemptNumber}
+                        </p>
+                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                          Score: {latestSub.totalScore}/{assessment.totalPoints} · {latestSub.status === "IN_REVIEW" ? "Awaiting manual review" : "Graded"}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                          Contact your instructor if you need a retake.
+                        </p>
                       </div>
-                    ))}
-                    <Button className="w-full sm:w-auto" disabled={busy} onClick={() => void submitAssessment(assessment.id)}>
-                      {busy ? "Submitting..." : "Submit Assessment"}
-                    </Button>
-                  </div>
-                ) : null}
+                    );
+                  }
+
+                  return (
+                    <div className="mt-3 space-y-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+                      {hasRetakeGrant && (
+                        <div className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+                          Retake available — Attempt #{(latestSub?.attemptNumber ?? 0) + 1}
+                        </div>
+                      )}
+                      {assessment.questions.map((question) => (
+                        <div key={question.id} className="rounded-lg border border-slate-100 p-3 dark:border-slate-800">
+                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{question.prompt}</p>
+                          {question.type === "OPEN_ENDED" ? (
+                            <textarea
+                              className="mt-2 min-h-[80px] w-full rounded-md border border-slate-200 p-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                              onChange={(event) =>
+                                updateAnswerDraft(assessment.id, question.id, { responseText: event.target.value })
+                              }
+                            />
+                          ) : (
+                            <div className="mt-2 space-y-1">
+                              {question.options.map((option) => (
+                                <label key={option.id} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                                  <input
+                                    type="radio"
+                                    name={`${assessment.id}-${question.id}`}
+                                    value={option.id}
+                                    onChange={() =>
+                                      updateAnswerDraft(assessment.id, question.id, { selectedOptionId: option.id })
+                                    }
+                                  />
+                                  {option.label}
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <Button className="w-full sm:w-auto" disabled={busy} onClick={() => void submitAssessment(assessment.id)}>
+                        {busy ? "Submitting..." : hasRetakeGrant ? "Submit Retake" : "Submit Assessment"}
+                      </Button>
+                    </div>
+                  );
+                })() : null}
 
                 {roleCanCreate ? (
                   <div className="mt-2 space-y-1 text-xs text-slate-500 dark:text-slate-400">
@@ -1065,60 +1143,14 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     <Button
                       type="button"
                       size="sm"
-                      variant="ghost"
-                      onClick={() => toggleVerificationPreview(assessment.id)}
+                      variant="outline"
+                      className="gap-1.5"
+                      onClick={() => setPreviewAssessment(assessment)}
                     >
-                      {expandedVerificationAssessmentIds.includes(assessment.id) ? "Hide Assessment" : "View Assessment"}
+                      <Eye className="h-3.5 w-3.5" />
+                      Preview
                     </Button>
                   </div>
-                  {expandedVerificationAssessmentIds.includes(assessment.id) ? (
-                    <div className="mt-3 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
-                      {assessment.description ? <p className="text-sm text-slate-700 dark:text-slate-300">{assessment.description}</p> : null}
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Due: {assessment.dueDate ? new Date(assessment.dueDate).toLocaleString() : "No due date"}
-                      </p>
-                      <div className="space-y-2">
-                        {assessment.questions.length === 0 ? (
-                          <p className="text-xs text-slate-500 dark:text-slate-400">No questions found on this assessment.</p>
-                        ) : (
-                          assessment.questions.map((question, index) => (
-                            <div key={question.id} className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                              <div className="flex flex-wrap items-center justify-between gap-2">
-                                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                                  {index + 1}. {question.prompt}
-                                </p>
-                                <span className="text-xs text-slate-500 dark:text-slate-400">
-                                  {question.type} - {question.points} point(s)
-                                </span>
-                              </div>
-                              {question.type === "OPEN_ENDED" ? (
-                                <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
-                                  Manual grading required.
-                                  {question.answerKey ? ` Suggested key: ${question.answerKey}` : ""}
-                                </p>
-                              ) : (
-                                <div className="mt-2 space-y-1">
-                                  {question.options.map((option) => (
-                                    <div
-                                      key={option.id}
-                                      className={`flex items-center justify-between rounded-md border px-2 py-1 text-xs ${
-                                        option.isCorrect
-                                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400"
-                                          : "border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                                      }`}
-                                    >
-                                      <span>{option.label}</span>
-                                      {option.isCorrect ? <span className="font-semibold">Correct</span> : null}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  ) : null}
                   <Input
                     className="mt-3"
                     placeholder="Optional verification note"
@@ -1158,6 +1190,102 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
         </section>
       ) : null}
 
+      {/* Assessment Preview Dialog */}
+      <Dialog open={!!previewAssessment} onOpenChange={(open) => { if (!open) setPreviewAssessment(null); }}>
+        <DialogContent className="max-h-[85dvh] max-w-2xl overflow-y-auto">
+          {previewAssessment && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-lg">{previewAssessment.title}</DialogTitle>
+                <DialogDescription asChild>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-500 dark:text-slate-400">
+                      <span>{previewAssessment.program?.name}</span>
+                      {previewAssessment.module && <span>{previewAssessment.module.title}</span>}
+                      <span>{previewAssessment.type}</span>
+                      <span>Pass: {previewAssessment.passScore}/{previewAssessment.totalPoints} pts</span>
+                      {previewAssessment.dueDate && (
+                        <span>Due: {new Date(previewAssessment.dueDate).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}</span>
+                      )}
+                    </div>
+                    {previewAssessment.createdBy && (
+                      <p className="text-xs text-slate-400 dark:text-slate-500">
+                        By {previewAssessment.createdBy.firstName} {previewAssessment.createdBy.lastName} · {previewAssessment.createdBy.role}
+                      </p>
+                    )}
+                    {previewAssessment.description && (
+                      <p className="mt-2 text-slate-600 dark:text-slate-300">{previewAssessment.description}</p>
+                    )}
+                  </div>
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="mt-2 space-y-3">
+                {previewAssessment.questions.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-slate-200 py-6 text-center text-sm text-slate-400 dark:border-slate-700">
+                    No questions added yet.
+                  </p>
+                ) : (
+                  previewAssessment.questions.map((q, i) => (
+                    <div key={q.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                          {i + 1}. {q.prompt}
+                        </p>
+                        <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                          {q.points} pt{q.points !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+
+                      {q.type === "OPEN_ENDED" ? (
+                        <div className="mt-3 space-y-2">
+                          <textarea
+                            disabled
+                            placeholder="Student writes their answer here…"
+                            className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-400 dark:border-slate-700 dark:bg-slate-900"
+                            rows={3}
+                          />
+                          {q.answerKey && (
+                            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                              <span className="font-semibold">Answer key:</span> {q.answerKey}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="mt-3 space-y-1.5">
+                          {q.options.map((opt) => (
+                            <div
+                              key={opt.id}
+                              className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm ${
+                                opt.isCorrect
+                                  ? "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-900/30"
+                                  : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+                              }`}
+                            >
+                              <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
+                                opt.isCorrect ? "border-emerald-500 bg-emerald-500" : "border-slate-300 dark:border-slate-600"
+                              }`}>
+                                {opt.isCorrect && <CheckCircle2 className="h-3 w-3 text-white" />}
+                              </div>
+                              <span className={opt.isCorrect ? "font-medium text-emerald-800 dark:text-emerald-300" : "text-slate-700 dark:text-slate-300"}>
+                                {opt.label}
+                              </span>
+                              {opt.isCorrect && (
+                                <span className="ml-auto text-xs font-semibold text-emerald-600 dark:text-emerald-400">Correct</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {roleCanCreate ? (
         <section className="kat-card flex max-h-[70dvh] min-h-0 flex-col">
           <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Manual Grading Queue</h3>
@@ -1194,9 +1322,25 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                       </div>
                     ))}
                 </div>
-                <Button className="mt-3 w-full sm:w-auto" disabled={busy} onClick={() => void submitManualGrade(submission)}>
-                  {busy ? "Saving..." : "Apply Manual Grade"}
-                </Button>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button className="w-full sm:w-auto" disabled={busy} onClick={() => void submitManualGrade(submission)}>
+                    {busy ? "Saving..." : "Apply Manual Grade"}
+                  </Button>
+                  {submission.student && (
+                    <Button
+                      variant="outline"
+                      className="w-full sm:w-auto"
+                      disabled={busy}
+                      onClick={() => void grantRetake(
+                        submission.assessment.id,
+                        submission.student!.id,
+                        `${submission.student!.firstName} ${submission.student!.lastName}`,
+                      )}
+                    >
+                      Grant Retake
+                    </Button>
+                  )}
+                </div>
                 </div>
               ))}
             </div>

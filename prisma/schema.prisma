@@ -133,6 +133,19 @@ enum ProfileVisibility {
   PUBLIC
 }
 
+enum ProjectStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  NEEDS_WORK
+  REJECTED
+}
+
+enum ProjectVisibility {
+  PRIVATE
+  PUBLIC
+}
+
 model Organization {
   id                String             @id @default(cuid())
   name              String
@@ -218,9 +231,16 @@ model User {
   curriculumVersionsCreated CurriculumVersion[] @relation("CurriculumVersionCreator")
   lessonContentsCreated     LessonContent[]    @relation("LessonContentCreator")
   lessonContentsReviewed    LessonContent[]    @relation("LessonContentReviewer")
-  certificatesEarned   Certificate[]        @relation("CertificateRecipient")
-  certificatesIssued   Certificate[]        @relation("CertificateIssuer")
-  passwordResetTokens  PasswordResetToken[]
+  certificatesEarned    Certificate[]        @relation("CertificateRecipient")
+  certificatesIssued    Certificate[]        @relation("CertificateIssuer")
+  certificatesApproved  Certificate[]        @relation("CertificateApprover")
+  canGrantRetakes           Boolean              @default(true)
+  retakeGrantsIssued        RetakeGrant[]        @relation("RetakeGrantIssuer")
+  retakeGrantsReceived      RetakeGrant[]        @relation("RetakeGrantStudent")
+  badgesEarned              UserBadge[]
+  passwordResetTokens       PasswordResetToken[]
+  projects              Project[]           @relation("StudentProjects")
+  projectFeedback       ProjectFeedback[]   @relation("ProjectFeedbackAuthor")
 }
 
 model SuperAdminInvite {
@@ -394,6 +414,7 @@ model Program {
   curriculum      Curriculum?
   discountCodes   DiscountCode[]
   certificates    Certificate[]
+  projects              Project[]
 
   @@index([organizationId])
 }
@@ -424,6 +445,7 @@ model Enrollment {
   userId            String
   programId         String
   status            EnrollmentStatus @default(ACTIVE)
+  isBillingWaived   Boolean          @default(false)
   enrolledAt        DateTime         @default(now())
   completedAt       DateTime?
   currentPeriodEnd  DateTime?        // null = no billing cycle set yet; set on each verified payment
@@ -477,6 +499,7 @@ model Assessment {
   verifiedBy         User?                        @relation("AssessmentVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
   questions          AssessmentQuestion[]
   submissions        AssessmentSubmission[]
+  retakeGrants       RetakeGrant[]
 
   @@index([programId, moduleId, published, verificationStatus])
   @@index([verificationStatus, verifiedAt])
@@ -515,6 +538,7 @@ model AssessmentSubmission {
   assessmentId  String
   studentId     String
   enrollmentId  String?
+  attemptNumber Int             @default(1)
   status        AttemptStatus   @default(SUBMITTED)
   submittedAt   DateTime        @default(now())
   gradedAt      DateTime?
@@ -528,8 +552,23 @@ model AssessmentSubmission {
   answers       AssessmentAnswer[]
   manualGrades  ManualGrade[]
 
-  @@unique([assessmentId, studentId])
+  @@unique([assessmentId, studentId, attemptNumber])
   @@index([studentId, status])
+}
+
+model RetakeGrant {
+  id           String     @id @default(cuid())
+  assessmentId String
+  studentId    String
+  grantedById  String
+  usedAt       DateTime?
+  createdAt    DateTime   @default(now())
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  student      User       @relation("RetakeGrantStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  grantedBy    User       @relation("RetakeGrantIssuer", fields: [grantedById], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId, studentId, usedAt])
+  @@index([studentId, usedAt])
 }
 
 model AssessmentAnswer {
@@ -870,8 +909,34 @@ model Module {
   version       CurriculumVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
   lessons       Lesson[]
   assessments   Assessment[]
+  badge         Badge?
 
   @@index([versionId, sortOrder])
+}
+
+model Badge {
+  id          String      @id @default(cuid())
+  moduleId    String      @unique
+  name        String
+  description String?     @db.Text
+  icon        String      @default("🏅")
+  color       String      @default("#0D1F45")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  module      Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  earnedBy    UserBadge[]
+}
+
+model UserBadge {
+  id       String   @id @default(cuid())
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge    Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
 }
 
 model Lesson {
@@ -940,19 +1005,31 @@ model PartnerInquiry {
 }
 
 model Certificate {
-  id           String   @id @default(cuid())
-  credentialId String   @unique @default(cuid())
-  userId       String
-  programId    String
-  issuedById   String
-  issuedAt     DateTime @default(now())
-  user         User     @relation("CertificateRecipient", fields: [userId], references: [id], onDelete: Cascade)
-  program      Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
-  issuedBy     User     @relation("CertificateIssuer", fields: [issuedById], references: [id], onDelete: Cascade)
+  id             String            @id @default(cuid())
+  credentialId   String            @unique @default(cuid())
+  userId         String
+  programId      String
+  issuedById     String
+  issuedAt       DateTime          @default(now())
+  status         CertificateStatus @default(PENDING)
+  approvedById   String?
+  approvedAt     DateTime?
+  rejectionNote  String?
+  user           User              @relation("CertificateRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  program        Program           @relation(fields: [programId], references: [id], onDelete: Cascade)
+  issuedBy       User              @relation("CertificateIssuer", fields: [issuedById], references: [id], onDelete: Cascade)
+  approvedBy     User?             @relation("CertificateApprover", fields: [approvedById], references: [id], onDelete: SetNull)
 
   @@unique([userId, programId])
   @@index([userId])
   @@index([programId])
+  @@index([status])
+}
+
+enum CertificateStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model PasswordResetToken {
@@ -966,4 +1043,55 @@ model PasswordResetToken {
 
   @@index([token])
   @@index([userId])
+}
+
+model Project {
+  id             String            @id @default(cuid())
+  studentId      String
+  programId      String?
+  title          String
+  description    String?           @db.Text
+  tags           String[]
+  status         ProjectStatus     @default(DRAFT)
+  visibility     ProjectVisibility @default(PRIVATE)
+  deployedUrl    String?
+  coverImageKey  String?
+  coverImageUrl  String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  student        User              @relation("StudentProjects", fields: [studentId], references: [id], onDelete: Cascade)
+  program        Program?          @relation(fields: [programId], references: [id], onDelete: SetNull)
+  files          ProjectFile[]
+  feedback       ProjectFeedback[]
+
+  @@index([studentId, status])
+  @@index([status, visibility])
+  @@index([programId])
+}
+
+model ProjectFile {
+  id         String   @id @default(cuid())
+  projectId  String
+  name       String
+  mimeType   String
+  size       Int
+  storageKey String
+  url        String
+  uploadedAt DateTime @default(now())
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model ProjectFeedback {
+  id        String   @id @default(cuid())
+  projectId String
+  authorId  String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author    User     @relation("ProjectFeedbackAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }

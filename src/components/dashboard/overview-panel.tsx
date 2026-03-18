@@ -24,9 +24,10 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FellowDashboard } from "@/components/dashboard/fellow-dashboard";
+import { StudentDashboard } from "@/components/dashboard/student-dashboard";
 import type { UserRoleValue } from "@/lib/enums";
 
-type OverviewPanelProps = { role: UserRoleValue };
+type OverviewPanelProps = { role: UserRoleValue; firstName?: string };
 
 type AnalyticsPayload = {
   scope: "user" | "platform";
@@ -170,17 +171,18 @@ const ACTIONS: Record<UserRoleValue, ActionCard[]> = {
       color: "bg-sky-50 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400",
     },
     {
-      label: "Student Progress",
-      description: "Monitor learner activity and outcomes.",
-      href: "/dashboard/analytics",
+      label: "Children's Grades",
+      description: "View assessment scores and learning progress.",
+      href: "/dashboard/grades",
       icon: <TrendingUp className="size-4" />,
       color: "bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
     },
   ],
 };
 
-export function OverviewPanel({ role }: OverviewPanelProps) {
+export function OverviewPanel({ role, firstName = "there" }: OverviewPanelProps) {
   if (role === "FELLOW") return <FellowDashboard />;
+  if (role === "STUDENT") return <StudentDashboard firstName={firstName} />;
   return <GenericOverview role={role} />;
 }
 

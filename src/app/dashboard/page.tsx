@@ -71,7 +71,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <OverviewPanel role={role} />
+      <OverviewPanel role={role} firstName={firstName} />
     </section>
   );
 }
