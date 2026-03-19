@@ -246,7 +246,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
       }
     } else {
       toast.success(`Redirecting to Paystack for ${cart.length} payment${cart.length !== 1 ? "s" : ""}…`);
-      window.location.href = authUrl;
+      window.location.assign(authUrl);
     }
     onSuccess();
   };
@@ -549,7 +549,7 @@ function AdminPayForStudentForm({ onSuccess }: { onSuccess: () => void }) {
       }
     } else {
       toast.success(`Redirecting to Paystack for ${selectedUser.firstName}…`);
-      window.location.href = authUrl;
+      window.location.assign(authUrl);
     }
     onSuccess();
   };
