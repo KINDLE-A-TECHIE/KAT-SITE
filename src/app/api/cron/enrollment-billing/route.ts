@@ -11,7 +11,7 @@ import { sendEmail, buildPaymentReminderEmail } from "@/lib/email";
 //   Day 30    — period ends → grace starts, "grace period" warning sent
 //   Day 30+4  — grace expires → status = SUSPENDED
 
-const PERIOD_DAYS  = 30;
+const _PERIOD_DAYS  = 30;
 const GRACE_DAYS   = 4;
 const WARN_DAYS    = 3; // days before period end to send first warning
 

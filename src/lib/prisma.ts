@@ -21,7 +21,7 @@ function makePrismaClient() {
 
   return client.$extends({
     query: {
-      async $allOperations({ operation, model, args, query }) {
+      async $allOperations({ operation: _operation, model: _model, args, query }) {
         // Retry up to 3 times on connection errors (handles Neon cold-start timeouts).
         // Delays: 1 s → 2 s → 4 s (total max ~7 s), covering Neon's typical wake-up window.
         const delays = [1000, 2000, 4000];
