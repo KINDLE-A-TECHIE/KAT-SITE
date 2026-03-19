@@ -43,6 +43,7 @@ type Assessment = {
   verifiedAt?: string | null;
   dueDate: string | null;
   program: Program;
+  module?: { id: string; title: string } | null;
   questions: {
     id: string;
     prompt: string;
