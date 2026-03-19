@@ -17,18 +17,29 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "en-US",
     icons: [
       {
-        // Tight-cropped — used for browser tabs, bookmarks, splash screens
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
+        // SVG fallback for modern desktop browsers
         src: "/kindle-a-techie.svg",
         sizes: "any",
         type: "image/svg+xml",
         purpose: "any",
-      },
-      {
-        // Full-canvas with background — used by OS for adaptive icon shapes (circle, squircle, etc.)
-        src: "/kindle-a-techie-maskable.svg",
-        sizes: "any",
-        type: "image/svg+xml",
-        purpose: "maskable",
       },
     ],
     screenshots: [

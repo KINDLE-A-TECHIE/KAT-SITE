@@ -18,8 +18,15 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: [{ url: "/kindle-a-techie.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/kindle-a-techie.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/kindle-a-techie.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      // iOS "Add to Home Screen" icon — must be PNG, 180×180
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
 };
 
