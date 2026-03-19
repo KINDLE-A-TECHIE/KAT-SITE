@@ -197,3 +197,5 @@ export async function POST(request: Request) {
     suspended,
   });
 }
+
+export { POST as GET };
