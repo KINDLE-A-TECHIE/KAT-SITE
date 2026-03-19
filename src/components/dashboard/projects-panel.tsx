@@ -239,7 +239,7 @@ function ProjectCard({
   const cfg = STATUS_CONFIG[localProject.status];
 
   const canEdit = localProject.status === "DRAFT" || localProject.status === "NEEDS_WORK";
-  const canSubmit = canEdit && localProject.files.length > 0;
+  const canSubmit = canEdit && (localProject.files.length > 0 || !!localProject.deployedUrl);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -421,7 +421,9 @@ function ProjectCard({
                   Files
                 </p>
                 {localProject.files.length === 0 ? (
-                  <p className="text-xs text-slate-400 dark:text-slate-500">No files yet.</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500">
+                    No files uploaded.{localProject.deployedUrl ? " Project link provided above." : ""}
+                  </p>
                 ) : (
                   <div className="space-y-1.5">
                     {localProject.files.map((file) => (

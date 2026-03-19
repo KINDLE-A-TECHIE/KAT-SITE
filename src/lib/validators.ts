@@ -94,12 +94,9 @@ export const profileSchema = z.object({
   lastName: z.string().trim().min(2).max(100).optional(),
   avatarUrl: z
     .string()
-    .max(1_500_000, "Avatar image is too large.")
+    .max(2048, "Avatar URL is too long.")
     .refine(
       (value) => {
-        if (value.startsWith("data:image/")) {
-          return true;
-        }
         try {
           const url = new URL(value);
           return url.protocol === "https:" || url.protocol === "http:";
@@ -107,9 +104,7 @@ export const profileSchema = z.object({
           return false;
         }
       },
-      {
-        message: "Avatar must be an image data URL or a valid http(s) URL.",
-      },
+      { message: "Avatar must be a valid https URL." },
     )
     .optional()
     .nullable(),

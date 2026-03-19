@@ -30,11 +30,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { type WaitlistState, SIDEBAR_ITEMS } from "../landing-tokens";
-
-type PreviewState = "idle" | "loading" | "ready";
 
 const WAITLIST_QUEUE_KEY = "kat-waitlist-queue";
 
@@ -59,15 +56,7 @@ type HeroSectionProps = {
 export function HeroSection({ enrollments, passRate }: HeroSectionProps) {
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [waitlistState, setWaitlistState] = useState<WaitlistState>("idle");
-  const [previewState, setPreviewState] = useState<PreviewState>("idle");
-  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const waitlistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handlePreviewLoad = () => {
-    if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
-    setPreviewState("loading");
-    previewTimerRef.current = setTimeout(() => setPreviewState("ready"), 1200);
-  };
 
   // On reconnect, flush any queued email
   useEffect(() => {
@@ -119,17 +108,17 @@ export function HeroSection({ enrollments, passRate }: HeroSectionProps) {
         <div className="space-y-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-sm font-medium text-[var(--kat-primary-blue)]">
             <Sparkles className="size-3.5" />
-            Coding education built for African youth
+            Africa&apos;s coding school for ages 8–19
           </div>
 
           <div className="space-y-5">
             <h1 className="[font-family:var(--font-space-grotesk)] text-[2.5rem] font-bold leading-[1.08] tracking-tight text-[var(--kat-text-primary)] sm:text-5xl lg:text-[3.75rem]">
-              Learn code, build projects,{" "}
+              Learn to code, build real projects,{" "}
               <span
                 className="bg-clip-text text-transparent"
                 style={{ backgroundImage: "var(--kat-gradient)" }}
               >
-                and grow into a tech leader.
+                and become Africa&apos;s next tech builder.
               </span>
             </h1>
             <p className="max-w-lg text-[1.05rem] leading-relaxed text-[var(--kat-text-secondary)]">
@@ -150,7 +139,7 @@ export function HeroSection({ enrollments, passRate }: HeroSectionProps) {
             <span className="text-[var(--kat-text-secondary)]">
               Trusted by{" "}
               <strong className="text-[var(--kat-text-primary)]">{displayEnrollments} students</strong>{" "}
-              across Nigeria
+              across Africa
             </span>
             <Badge className="border-0 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
               {passRate}% pass rate
@@ -346,68 +335,50 @@ export function HeroSection({ enrollments, passRate }: HeroSectionProps) {
               </aside>
 
               <div className="p-4 sm:p-5">
-                {previewState === "loading" ? (
-                  <div className="space-y-3">
-                    <Skeleton className="h-14 w-full rounded-xl bg-blue-100" />
-                    <Skeleton className="h-4 w-2/3 rounded-lg bg-slate-200" />
-                    <Skeleton className="h-4 w-1/2 rounded-lg bg-slate-200" />
-                    <Skeleton className="h-20 w-full rounded-xl bg-slate-200" />
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <Alert className="border-green-200 bg-green-50 py-3">
-                      <CalendarCheck2 className="size-4 text-[var(--kat-success)]" />
-                      <AlertTitle className="text-sm text-[var(--kat-text-primary)]">
-                        Next class in 2 hours
-                      </AlertTitle>
-                      <AlertDescription className="text-xs text-[var(--kat-text-secondary)]">
-                        Python Mission Lab · 4:00 PM WAT · Join link ready
-                      </AlertDescription>
-                    </Alert>
+                <div className="space-y-4">
+                  <Alert className="border-green-200 bg-green-50 py-3">
+                    <CalendarCheck2 className="size-4 text-[var(--kat-success)]" />
+                    <AlertTitle className="text-sm text-[var(--kat-text-primary)]">
+                      Next class in 2 hours
+                    </AlertTitle>
+                    <AlertDescription className="text-xs text-[var(--kat-text-secondary)]">
+                      Python Mission Lab · 4:00 PM WAT · Join link ready
+                    </AlertDescription>
+                  </Alert>
 
-                    <div className="space-y-2.5">
-                      {[
-                        { label: "Frontend Sprint", value: 78, isBlue: true },
-                        { label: "Python Practice", value: 64, isBlue: false },
-                      ].map((item) => (
-                        <div key={item.label}>
-                          <div className="mb-1 flex items-center justify-between text-xs">
-                            <span className="font-medium text-[var(--kat-text-secondary)]">{item.label}</span>
-                            <span className="font-bold text-[var(--kat-text-primary)]">{item.value}%</span>
-                          </div>
-                          <Progress
-                            value={item.value}
-                            className={cn(
-                              "h-2 bg-blue-100",
-                              item.isBlue
-                                ? "[&>[data-slot=progress-indicator]]:bg-[var(--kat-primary-blue)]"
-                                : "[&>[data-slot=progress-indicator]]:bg-[var(--kat-accent-sky)]",
-                            )}
-                          />
+                  <div className="space-y-2.5">
+                    {[
+                      { label: "Frontend Sprint", value: 78, isBlue: true },
+                      { label: "Python Practice", value: 64, isBlue: false },
+                    ].map((item) => (
+                      <div key={item.label}>
+                        <div className="mb-1 flex items-center justify-between text-xs">
+                          <span className="font-medium text-[var(--kat-text-secondary)]">{item.label}</span>
+                          <span className="font-bold text-[var(--kat-text-primary)]">{item.value}%</span>
                         </div>
-                      ))}
-                    </div>
-
-                    <div className="rounded-xl border border-[var(--kat-border)] bg-[#FAFCFF] p-3">
-                      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-[var(--kat-text-primary)]">
-                        <Zap className="size-3.5 text-amber-500" />
-                        Weekly Challenge
+                        <Progress
+                          value={item.value}
+                          className={cn(
+                            "h-2 bg-blue-100",
+                            item.isBlue
+                              ? "[&>[data-slot=progress-indicator]]:bg-[var(--kat-primary-blue)]"
+                              : "[&>[data-slot=progress-indicator]]:bg-[var(--kat-accent-sky)]",
+                          )}
+                        />
                       </div>
-                      <p className="text-xs leading-relaxed text-[var(--kat-text-secondary)]">
-                        Build a mini quiz app and share your GitHub link before Friday.
-                      </p>
-                    </div>
+                    ))}
                   </div>
-                )}
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={handlePreviewLoad}
-                  className="mt-3 w-full rounded-lg text-xs text-[var(--kat-primary-blue)] hover:bg-blue-50"
-                >
-                  Refresh Preview
-                </Button>
+
+                  <div className="rounded-xl border border-[var(--kat-border)] bg-[#FAFCFF] p-3">
+                    <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-[var(--kat-text-primary)]">
+                      <Zap className="size-3.5 text-amber-500" />
+                      Weekly Challenge
+                    </div>
+                    <p className="text-xs leading-relaxed text-[var(--kat-text-secondary)]">
+                      Build a mini quiz app and share your GitHub link before Friday.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>

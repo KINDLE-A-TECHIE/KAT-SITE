@@ -69,6 +69,7 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
       return [
         ...CORE_NAV,
         ...LEARNING_NAV,
+        { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
         { href: "/dashboard/content-review", label: "Content Review", icon: Library },
         { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
         { href: "/dashboard/analytics", label: "Analytics", icon: LineChart },
@@ -80,6 +81,7 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
       return [
         ...CORE_NAV,
         ...LEARNING_NAV,
+        { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
         { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
         { href: "/dashboard/analytics", label: "Analytics", icon: LineChart },
         { href: "/dashboard/fellows/applications", label: "Applications", icon: FileText },

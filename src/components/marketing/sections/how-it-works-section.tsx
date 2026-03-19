@@ -13,7 +13,7 @@ export function HowItWorksSection() {
         <div className="mb-10 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-300">How It Works</p>
           <h2 className="mt-2 [font-family:var(--font-space-grotesk)] text-3xl font-bold text-white sm:text-4xl">
-            Three steps to a coding career
+            From sign-up to your child&apos;s first build
           </h2>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">

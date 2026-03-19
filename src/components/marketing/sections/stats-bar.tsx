@@ -12,9 +12,9 @@ export function StatsBar({ enrollments, passRate }: StatsBarProps) {
 
   const stats = [
     { value: displayEnrollments, label: "Students Enrolled", Icon: Users },
-    { value: "4.9★", label: "Average Rating", Icon: Star },
+    { value: "4.9", label: "Average Rating", Icon: Star },
     { value: "3", label: "Age-Based Tracks", Icon: Layers3 },
-    { value: `${passRate}%`, label: "Project Completion", Icon: Trophy },
+    { value: `${passRate}%`, label: "Pass Rate", Icon: Trophy },
   ];
 
   return (

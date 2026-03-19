@@ -118,17 +118,17 @@ export const HOW_IT_WORKS = [
   {
     step: "01",
     title: "Parent Registers & Enrolls",
-    description: "A parent creates an account, selects the right age-matched track, and completes enrollment for their child.",
+    description: "Create a parent account, pick the right age-matched track, and complete enrollment. Your child gets access the same day.",
   },
   {
     step: "02",
-    title: "Join Live Classes",
-    description: "Your child attends small-group live sessions with dedicated mentors and builds something new every week.",
+    title: "Your Child Joins Live Classes",
+    description: "Small groups of 6–12 students. A dedicated mentor every week. Real coding, real feedback — from day one.",
   },
   {
     step: "03",
-    title: "Ship Real Projects",
-    description: "Graduate each module by shipping a real project. Build a portfolio and grow into a community leader.",
+    title: "Build, Ship & Grow",
+    description: "Every module ends with a real project. Students build portfolios, earn badges, and grow into community leaders.",
   },
 ];
 
@@ -136,25 +136,28 @@ export const TESTIMONIALS = [
   {
     name: "Adaeze O.",
     role: "Parent of a Teen Builder",
+    location: "Lagos, Nigeria",
     initials: "AO",
     quote:
-      "My daughter went from 'coding is boring' to building her own portfolio site in 8 weeks. The mentors are phenomenal.",
+      "My daughter went from 'coding is boring' to building her own portfolio site in 8 weeks. The mentors genuinely care — it shows.",
     stars: 5,
   },
   {
     name: "Chukwuemeka A.",
     role: "Student, Future Innovators",
+    location: "Abuja, Nigeria",
     initials: "CA",
     quote:
-      "KAT gave me real skills, not just theory. I shipped my first API project and got accepted into a fellowship program.",
+      "KAT taught me real skills, not just theory. I shipped my first API project, built a portfolio, and got accepted into a fellowship — all in one year.",
     stars: 5,
   },
   {
     name: "Funmilayo B.",
     role: "Parent of a Junior Explorer",
+    location: "Port Harcourt, Nigeria",
     initials: "FB",
     quote:
-      "The parent dashboard is everything. I can see exactly what Temi is learning and how he's progressing each week.",
+      "The parent dashboard is everything. I can see exactly what Temi is working on, how he scored, and what his mentor said — every single week.",
     stars: 5,
   },
 ];
@@ -236,34 +239,39 @@ export const PRICING_TIERS: PricingTier[] = [
 
 export const FAQ_ITEMS = [
   {
-    question: "What age groups does KAT Learning accept?",
+    question: "What ages does KAT Learning accept?",
     answer:
-      "KAT welcomes students aged 8 to 19. We have three tracks: Junior Explorers (8–11), Teen Builders (12–15), and Future Innovators (16–19). Each track is designed around the developmental stage and attention span of that age group.",
+      "KAT welcomes students aged 8 to 19 across Africa. We have three age-matched tracks: Junior Explorers (8–11), Teen Builders (12–15), and Future Innovators (16–19). Each track is designed around the learning style and attention span of that age group.",
   },
   {
-    question: "How much does it cost?",
+    question: "How is pricing structured?",
     answer:
-      "Enrollment is paid on a per-cohort basis. A parent registers, selects a track, and completes payment to activate their child's access. Pricing is shown during registration. Scholarships are available — join the waitlist to hear about funded spots.",
+      "Enrollment is billed monthly per track. A parent registers, selects a track for their child, and pays to activate access. Exact pricing is displayed during registration. Scholarship spots are available every cohort — join the waitlist and mention scholarships when you sign up.",
   },
   {
     question: "What device does my child need?",
     answer:
-      "Any laptop or desktop computer running a modern browser (Chrome, Firefox, Edge, or Safari) is sufficient. A stable internet connection is required for live classes. Tablets are supported for viewing but a keyboard is recommended for coding.",
+      "Any laptop or desktop with a modern browser (Chrome, Firefox, Edge, or Safari) works perfectly. A stable internet connection is required for live classes. Tablets can be used for viewing, but a physical keyboard is strongly recommended for coding exercises.",
   },
   {
-    question: "How large are the class groups?",
+    question: "How many students are in each class?",
     answer:
-      "We keep sessions small — typically 6 to 12 students per group. This ensures every child gets individual attention from the mentor and has time to ask questions and share their work.",
+      "We cap each session at 6 to 12 students. This ensures every child gets direct attention from the mentor, has space to ask questions, and gets feedback on their work — not just a lecture.",
   },
   {
-    question: "Can parents see their child's progress?",
+    question: "Can I track my child's progress as a parent?",
     answer:
-      "Yes. Every parent account has a dedicated dashboard showing class attendance, submitted projects, assessment scores, and mentor feedback. You also receive a monthly progress email summary.",
+      "Yes — every parent account includes a dedicated dashboard with class attendance, project submissions, assessment scores, and mentor feedback. You'll never be left guessing how your child is doing.",
   },
   {
-    question: "What happens after a student completes a track?",
+    question: "What happens after completing a track?",
     answer:
-      "Students who complete the Future Innovators track can apply for the KAT Fellowship Programme, where they transition from learners to mentors and lead real community-impact projects. Younger graduates move up to the next track.",
+      "Students who complete the Future Innovators track are eligible to apply for the KAT Fellowship Programme — transitioning from learners to mentors who lead real community-impact projects. Younger students simply move up to the next track when they're ready.",
+  },
+  {
+    question: "My child has never coded before. Is KAT right for them?",
+    answer:
+      "Absolutely. The Junior Explorers and Teen Builders tracks are designed for complete beginners. We start from zero — no prior experience needed. Our mentors are trained to make the first few sessions fun and pressure-free.",
   },
 ];
 

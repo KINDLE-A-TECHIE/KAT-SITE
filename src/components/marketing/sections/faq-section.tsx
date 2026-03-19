@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FAQ_ITEMS } from "../landing-tokens";
@@ -56,12 +55,12 @@ export function FaqSection() {
 
       <p className="mt-6 text-center text-sm text-[var(--kat-text-secondary)]">
         Still have questions?{" "}
-        <Link
-          href="/login"
+        <a
+          href="mailto:hello@kindleatechie.com"
           className="font-medium text-[var(--kat-primary-blue)] hover:underline"
         >
-          Sign in and message us
-        </Link>
+          Email us at hello@kindleatechie.com
+        </a>
         .
       </p>
     </section>

@@ -26,6 +26,18 @@ export async function generatePresignedUploadUrl(
   return getSignedUrl(r2Client, command, { expiresIn: expiresInSeconds });
 }
 
+export async function uploadToR2(key: string, body: Buffer, contentType: string): Promise<void> {
+  await r2Client.send(
+    new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: body, ContentType: contentType }),
+  );
+}
+
 export async function deleteR2Object(key: string): Promise<void> {
   await r2Client.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
+}
+
+/** Extract the R2 storage key from a public URL, or null if it's not an R2 URL. */
+export function r2KeyFromUrl(url: string): string | null {
+  if (!R2_PUBLIC_URL || !url.startsWith(R2_PUBLIC_URL + "/")) return null;
+  return url.slice(R2_PUBLIC_URL.length + 1);
 }

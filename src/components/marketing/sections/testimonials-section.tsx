@@ -37,6 +37,7 @@ export function TestimonialsSection() {
               <div>
                 <p className="text-sm font-semibold text-[var(--kat-text-primary)]">{t.name}</p>
                 <p className="text-xs text-[var(--kat-text-secondary)]">{t.role}</p>
+                <p className="text-xs text-[var(--kat-text-secondary)] opacity-70">{t.location}</p>
               </div>
             </div>
           </div>

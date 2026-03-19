@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendEmail, buildPartnerEnquiryNotificationEmail } from "@/lib/email";
 import { PartnerType } from "@prisma/client";
+
+const PARTNER_NOTIFY_EMAIL = "hello@kindleatechie.com";
 
 const VALID_TYPES = new Set<string>(Object.values(PartnerType));
 
@@ -26,7 +29,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
   }
 
-  await prisma.partnerInquiry.create({
+  const inquiry = await prisma.partnerInquiry.create({
     data: {
       name: name.trim(),
       organization: organization.trim(),
@@ -35,6 +38,23 @@ export async function POST(req: Request) {
       phone: phone?.trim() || null,
       message: message.trim(),
     },
+  });
+
+  const { html, text } = buildPartnerEnquiryNotificationEmail({
+    name: inquiry.name,
+    organization: inquiry.organization,
+    type: inquiry.type,
+    email: inquiry.email,
+    phone: inquiry.phone,
+    message: inquiry.message,
+  });
+
+  await sendEmail({
+    to: PARTNER_NOTIFY_EMAIL,
+    replyTo: inquiry.email,
+    subject: `Partnership enquiry from ${inquiry.name} — ${inquiry.organization}`,
+    html,
+    text,
   });
 
   return NextResponse.json({ ok: true });

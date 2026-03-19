@@ -12,3 +12,5 @@ prisma/migrations
 *.log
 
 .vercel
+
+.claude

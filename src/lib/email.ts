@@ -8,7 +8,6 @@ function createTransport() {
   const pass = process.env.SMTP_PASS;
 
   if (!host || !user || !pass) {
-    // Return null so callers can log a warning instead of crashing.
     return null;
   }
 
@@ -25,6 +24,7 @@ type SendEmailOptions = {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
 };
 
 export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
@@ -47,9 +47,11 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
   return true;
 }
 
-// ── Templates ────────────────────────────────────────────────────────────────
+// ── Shared layout ─────────────────────────────────────────────────────────────
 
 const BASE_URL = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+const LOGO_URL = `${BASE_URL}/kindle-a-techie.svg`;
+const YEAR = new Date().getFullYear();
 
 function emailWrapper(content: string) {
   return `<!DOCTYPE html>
@@ -59,33 +61,59 @@ function emailWrapper(content: string) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KAT Learning</title>
 </head>
-<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:32px 0;">
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 16px;">
     <tr>
       <td align="center">
-        <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;max-width:100%;">
-          <!-- Header -->
+        <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+
+          <!-- Brand header -->
           <tr>
-            <td style="background:linear-gradient(135deg,#0D1F45 0%,#132B5E 45%,#1E5FAF 100%);padding:28px 32px;">
-              <p style="margin:0;color:#93c5fd;font-size:11px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;">KAT Learning</p>
-              <h1 style="margin:6px 0 0;color:#ffffff;font-size:22px;font-weight:700;">kindleatechie.com</h1>
+            <td style="padding:0 0 28px;text-align:center;">
+              <img src="${LOGO_URL}" alt="KAT" width="36" height="36"
+                   style="display:inline-block;vertical-align:middle;margin-right:10px;" />
+              <span style="font-size:17px;font-weight:700;color:#0f172a;vertical-align:middle;letter-spacing:-0.02em;">
+                KAT Learning
+              </span>
             </td>
           </tr>
-          <!-- Body -->
+
+          <!-- Card -->
           <tr>
-            <td style="padding:32px;">
-              ${content}
+            <td style="background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
+
+              <!-- Top accent bar -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td height="3" style="background:linear-gradient(90deg,#1E5FAF 0%,#4DB3E6 100%);font-size:0;line-height:0;">&nbsp;</td>
+                </tr>
+              </table>
+
+              <!-- Content -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:40px 40px 44px;">
+                    ${content}
+                  </td>
+                </tr>
+              </table>
+
             </td>
           </tr>
+
           <!-- Footer -->
           <tr>
-            <td style="border-top:1px solid #f1f5f9;padding:20px 32px;background:#f8fafc;">
-              <p style="margin:0;font-size:12px;color:#94a3b8;text-align:center;">
-                © ${new Date().getFullYear()} KAT Learning · kindleatechie.com<br/>
-                If you didn't expect this email, you can safely ignore it.
+            <td style="padding:28px 0 0;text-align:center;">
+              <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;line-height:1.6;">
+                © ${YEAR} KAT Learning &nbsp;·&nbsp;
+                <a href="https://kindleatechie.com" style="color:#94a3b8;text-decoration:none;">kindleatechie.com</a>
+              </p>
+              <p style="margin:0;font-size:11px;color:#cbd5e1;">
+                If you didn&apos;t expect this email, you can safely ignore it.
               </p>
             </td>
           </tr>
+
         </table>
       </td>
     </tr>
@@ -94,32 +122,84 @@ function emailWrapper(content: string) {
 </html>`;
 }
 
+// ── Shared primitives ─────────────────────────────────────────────────────────
+
+function primaryButton(href: string, label: string) {
+  return `
+    <table cellpadding="0" cellspacing="0" style="margin:28px 0 0;">
+      <tr>
+        <td style="border-radius:10px;background:linear-gradient(90deg,#1E5FAF,#4DB3E6);">
+          <a href="${href}"
+             style="display:inline-block;padding:13px 32px;color:#ffffff;font-size:14px;
+                    font-weight:600;text-decoration:none;border-radius:10px;letter-spacing:0.01em;">
+            ${label}
+          </a>
+        </td>
+      </tr>
+    </table>`;
+}
+
+function ghostButton(href: string, label: string) {
+  return `
+    <table cellpadding="0" cellspacing="0" style="margin:24px 0 0;">
+      <tr>
+        <td style="border-radius:10px;border:1px solid #e2e8f0;">
+          <a href="${href}"
+             style="display:inline-block;padding:12px 28px;color:#1E5FAF;font-size:14px;
+                    font-weight:600;text-decoration:none;border-radius:10px;">
+            ${label}
+          </a>
+        </td>
+      </tr>
+    </table>`;
+}
+
+function infoRow(label: string, value: string) {
+  return `
+    <tr>
+      <td style="padding:9px 14px;font-size:12px;font-weight:600;color:#64748b;
+                 background:#f8fafc;border-bottom:1px solid #f1f5f9;
+                 white-space:nowrap;text-transform:uppercase;letter-spacing:0.06em;
+                 width:30%;">${label}</td>
+      <td style="padding:9px 14px;font-size:14px;color:#0f172a;
+                 border-bottom:1px solid #f1f5f9;">${value}</td>
+    </tr>`;
+}
+
+function badge(text: string, color: string) {
+  return `<span style="display:inline-block;padding:3px 10px;background:${color};
+                border-radius:999px;font-size:11px;font-weight:600;
+                letter-spacing:0.04em;">${text}</span>`;
+}
+
+function sectionLabel(text: string) {
+  return `<p style="margin:24px 0 10px;font-size:10px;font-weight:700;color:#94a3b8;
+                    text-transform:uppercase;letter-spacing:0.12em;">${text}</p>`;
+}
+
 // ── Password Reset ────────────────────────────────────────────────────────────
 
 export function buildPasswordResetEmail(opts: { firstName: string; resetUrl: string }) {
-  const content = `
-    <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">Reset your password</h2>
-    <p style="margin:0 0 24px;font-size:14px;color:#475569;line-height:1.6;">
+  const html = emailWrapper(`
+    <h2 style="margin:0 0 6px;font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.02em;">
+      Reset your password
+    </h2>
+    <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.7;">
       Hi ${opts.firstName}, we received a request to reset your KAT Learning password.
-      Click the button below to choose a new password. This link expires in <strong>1 hour</strong>.
+      Use the button below to choose a new one. This link expires in <strong>1 hour</strong>.
     </p>
-    <div style="text-align:center;margin:0 0 24px;">
-      <a href="${opts.resetUrl}"
-         style="display:inline-block;background:#0D1F45;color:#ffffff;font-size:14px;font-weight:600;
-                padding:12px 28px;border-radius:10px;text-decoration:none;letter-spacing:0.02em;">
-        Reset Password
-      </a>
-    </div>
-    <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;">
-      Or copy and paste this link into your browser:
+    ${primaryButton(opts.resetUrl, "Reset My Password →")}
+    ${sectionLabel("Or paste this link into your browser")}
+    <p style="margin:0;font-size:12px;color:#94a3b8;word-break:break-all;
+              padding:10px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+      ${opts.resetUrl}
     </p>
-    <p style="margin:0 0 24px;font-size:11px;color:#94a3b8;word-break:break-all;">${opts.resetUrl}</p>
-    <p style="margin:0;font-size:12px;color:#94a3b8;">
-      If you didn't request a password reset, you can safely ignore this email.
-      Your password will remain unchanged.
+    <p style="margin:24px 0 0;font-size:13px;color:#94a3b8;line-height:1.6;">
+      Didn&apos;t request this? Your password is safe — you can ignore this email.
     </p>
-  `;
-  return emailWrapper(content);
+  `);
+
+  return html;
 }
 
 // ── Parent Monthly Digest ─────────────────────────────────────────────────────
@@ -149,75 +229,84 @@ export function buildParentDigestEmail(opts: {
   const childSections = opts.children
     .map((child) => {
       const hasActivity = child.programs.some((p) => p.submissionsLastMonth > 0);
+
       const programRows = child.programs
         .map(
           (p) => `
             <tr>
-              <td style="padding:8px 4px;font-size:13px;color:#0f172a;border-bottom:1px solid #f1f5f9;">${p.programName}</td>
-              <td style="padding:8px 4px;font-size:13px;color:#475569;text-align:center;border-bottom:1px solid #f1f5f9;">${p.submissionsLastMonth}</td>
-              <td style="padding:8px 4px;font-size:13px;color:#475569;text-align:center;border-bottom:1px solid #f1f5f9;">${p.avgScore !== null ? `${p.avgScore} pts` : "—"}</td>
-              <td style="padding:8px 4px;font-size:13px;text-align:center;border-bottom:1px solid #f1f5f9;${p.passRate !== null && p.passRate < 60 ? "color:#dc2626;font-weight:600;" : "color:#475569;"}">${p.passRate !== null ? `${p.passRate}%` : "—"}</td>
+              <td style="padding:10px 4px;font-size:13px;color:#0f172a;border-bottom:1px solid #f8fafc;">
+                ${p.programName}
+              </td>
+              <td style="padding:10px 4px;font-size:13px;color:#475569;text-align:center;border-bottom:1px solid #f8fafc;">
+                ${p.submissionsLastMonth}
+              </td>
+              <td style="padding:10px 4px;font-size:13px;color:#475569;text-align:center;border-bottom:1px solid #f8fafc;">
+                ${p.avgScore !== null ? `${p.avgScore} pts` : "—"}
+              </td>
+              <td style="padding:10px 4px;font-size:13px;text-align:center;font-weight:600;border-bottom:1px solid #f8fafc;
+                         ${p.passRate !== null && p.passRate < 60 ? "color:#dc2626;" : "color:#16a34a;"}">
+                ${p.passRate !== null ? `${p.passRate}%` : "—"}
+              </td>
             </tr>`,
         )
         .join("");
 
       const tableOrEmpty = hasActivity
-        ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;">
+        ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;border-radius:8px;overflow:hidden;border:1px solid #f1f5f9;">
              <thead>
-               <tr>
-                 <th style="padding:0 4px 6px;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;text-align:left;">Program</th>
-                 <th style="padding:0 4px 6px;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;text-align:center;">Submissions</th>
-                 <th style="padding:0 4px 6px;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;text-align:center;">Avg Score</th>
-                 <th style="padding:0 4px 6px;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;text-align:center;">Pass Rate</th>
+               <tr style="background:#f8fafc;">
+                 <th style="padding:8px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;text-align:left;">Programme</th>
+                 <th style="padding:8px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;text-align:center;">Submissions</th>
+                 <th style="padding:8px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;text-align:center;">Avg Score</th>
+                 <th style="padding:8px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;text-align:center;">Pass Rate</th>
                </tr>
              </thead>
              <tbody>${programRows}</tbody>
            </table>`
-        : `<p style="margin:8px 0 0;font-size:13px;color:#94a3b8;">No assessment activity last month.</p>`;
+        : `<p style="margin:10px 0 0;font-size:13px;color:#94a3b8;font-style:italic;">No assessment activity this month.</p>`;
 
       const alerts: string[] = [];
       if (child.overdueAssessments > 0) {
-        alerts.push(
-          `<span style="display:inline-block;margin-top:8px;padding:4px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;font-size:12px;color:#dc2626;font-weight:600;">${child.overdueAssessments} overdue assessment${child.overdueAssessments > 1 ? "s" : ""}</span>`,
-        );
+        alerts.push(badge(
+          `${child.overdueAssessments} overdue assessment${child.overdueAssessments > 1 ? "s" : ""}`,
+          "#fef2f2;color:#dc2626;border:1px solid #fecaca;",
+        ));
       }
       if (child.upcomingMeetings > 0) {
-        alerts.push(
-          `<span style="display:inline-block;margin-top:8px;padding:4px 10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;font-size:12px;color:#1d4ed8;">${child.upcomingMeetings} upcoming meeting${child.upcomingMeetings > 1 ? "s" : ""}</span>`,
-        );
+        alerts.push(badge(
+          `${child.upcomingMeetings} upcoming meeting${child.upcomingMeetings > 1 ? "s" : ""}`,
+          "#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;",
+        ));
       }
 
       return `
-        <div style="margin:0 0 16px;padding:16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
-          <p style="margin:0;font-size:15px;font-weight:600;color:#0f172a;">${child.firstName} ${child.lastName}</p>
+        <div style="margin:0 0 16px;padding:18px 20px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
+          <p style="margin:0;font-size:15px;font-weight:700;color:#0f172a;">
+            ${child.firstName} ${child.lastName}
+          </p>
           ${tableOrEmpty}
-          <div style="margin-top:4px;">${alerts.join(" ")}</div>
+          ${alerts.length > 0 ? `<div style="margin-top:12px;display:flex;gap:6px;">${alerts.join(" ")}</div>` : ""}
         </div>`;
     })
     .join("");
 
   const html = emailWrapper(`
-    <h2 style="margin:0 0 4px;font-size:20px;color:#0f172a;">Monthly Progress Report</h2>
-    <p style="margin:0 0 20px;font-size:13px;color:#94a3b8;">${opts.month}</p>
-    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Hi ${opts.parentFirstName}, here is a summary of your child's academic activity at KAT Learning for <strong>${opts.month}</strong>.
+    <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#94a3b8;
+              text-transform:uppercase;letter-spacing:0.12em;">${opts.month}</p>
+    <h2 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.02em;">
+      Monthly Progress Report
+    </h2>
+    <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.7;">
+      Hi ${opts.parentFirstName}, here&apos;s a snapshot of your child&apos;s learning activity at
+      KAT for <strong style="color:#0f172a;">${opts.month}</strong>. Keep it up!
     </p>
     ${childSections}
-    <table cellpadding="0" cellspacing="0" style="margin-top:8px;">
-      <tr>
-        <td style="border-radius:10px;background:#1E5FAF;">
-          <a href="${dashboardUrl}" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;border-radius:10px;">
-            View Full Grades →
-          </a>
-        </td>
-      </tr>
-    </table>
+    ${primaryButton(dashboardUrl, "View Full Report →")}
   `);
 
   const text =
     `Monthly Progress Report — ${opts.month}\n\n` +
-    `Hi ${opts.parentFirstName},\n\n` +
-    `Here is a summary of your child's activity at KAT Learning.\n\n` +
+    `Hi ${opts.parentFirstName},\n\nHere is your child's KAT Learning activity for ${opts.month}.\n\n` +
     opts.children
       .map((child) => {
         const lines = child.programs
@@ -240,10 +329,12 @@ export function buildParentDigestEmail(opts: {
         );
       })
       .join("\n\n") +
-    `\n\nView full grades: ${dashboardUrl}\n\n© ${new Date().getFullYear()} KAT Learning`;
+    `\n\nView full report: ${dashboardUrl}\n\n© ${YEAR} KAT Learning`;
 
   return { html, text };
 }
+
+// ── Fellow Approval ───────────────────────────────────────────────────────────
 
 export function buildFellowApprovalEmail(opts: {
   firstName: string;
@@ -254,60 +345,59 @@ export function buildFellowApprovalEmail(opts: {
   const dashboardUrl = `${BASE_URL}/dashboard`;
 
   const cohortLine = opts.cohortName
-    ? `<p style="margin:0 0 12px;color:#475569;">You have been placed in <strong>${opts.cohortName}</strong>.</p>`
-    : "";
-
-  const notesLine = opts.reviewNotes
-    ? `<p style="margin:0 0 16px;padding:12px 16px;background:#f0fdf4;border-left:3px solid #22c55e;border-radius:4px;font-size:14px;color:#166534;">
-        <em>${opts.reviewNotes}</em>
+    ? `<p style="margin:0 0 20px;font-size:14px;color:#475569;line-height:1.7;">
+        You&apos;ve been placed in <strong style="color:#0f172a;">${opts.cohortName}</strong>.
+        Your cohort schedule and assigned students will be visible on your dashboard.
        </p>`
     : "";
 
+  const notesLine = opts.reviewNotes
+    ? `<div style="margin:0 0 20px;padding:14px 16px;background:#f0fdf4;border-left:3px solid #22c55e;
+                   border-radius:0 8px 8px 0;">
+         <p style="margin:0;font-size:13px;color:#166534;font-style:italic;">&ldquo;${opts.reviewNotes}&rdquo;</p>
+       </div>`
+    : "";
+
   const html = emailWrapper(`
-    <h2 style="margin:0 0 8px;font-size:20px;color:#0f172a;">Congratulations, ${opts.firstName}! 🎉</h2>
-    <p style="margin:0 0 16px;color:#475569;font-size:15px;line-height:1.6;">
-      Your application to join the <strong>KAT Learning Fellowship Programme</strong> has been
-      <strong style="color:#16a34a;">approved</strong>. Your account has been upgraded to Fellow.
+    <p style="margin:0 0 6px;font-size:28px;">🎉</p>
+    <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.02em;">
+      You&apos;re in, ${opts.firstName}!
+    </h2>
+    <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.7;">
+      Your application to the <strong style="color:#0f172a;">KAT Learning Fellowship Programme</strong>
+      has been approved. Your account has been upgraded to Fellow — welcome to the team.
     </p>
     ${cohortLine}
     ${notesLine}
-    <p style="margin:0 0 8px;color:#475569;font-size:14px;font-weight:600;">What happens next?</p>
-    <ul style="margin:0 0 24px;padding-left:20px;color:#475569;font-size:14px;line-height:1.8;">
-      <li>Log in using your existing email and password.</li>
-      <li>Your dashboard now reflects your Fellow role.</li>
-      <li>You can begin mentoring students assigned to you.</li>
-      <li>Check your dashboard for cohort schedules and assessments.</li>
-    </ul>
-    <table cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-      <tr>
-        <td style="border-radius:10px;background:#1E5FAF;">
-          <a href="${loginUrl}"
-             style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;border-radius:10px;">
-            Log in to Dashboard →
-          </a>
-        </td>
-      </tr>
+    ${sectionLabel("What happens next")}
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:4px;">
+      ${[
+        "Log in with your existing email and password — your role has already been updated.",
+        "Your dashboard now shows your Fellow view, including assigned students and cohort schedules.",
+        "Start mentoring students and leading sessions from day one.",
+      ].map((step, i) => `
+        <tr>
+          <td style="width:28px;vertical-align:top;padding:4px 12px 12px 0;">
+            <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#1E5FAF,#4DB3E6);
+                        text-align:center;line-height:22px;font-size:11px;font-weight:700;color:#fff;">
+              ${i + 1}
+            </div>
+          </td>
+          <td style="padding:4px 0 12px;font-size:14px;color:#475569;line-height:1.6;">${step}</td>
+        </tr>`).join("")}
     </table>
-    <p style="margin:0;font-size:13px;color:#94a3b8;">
-      Or copy this link: <a href="${dashboardUrl}" style="color:#1E5FAF;">${dashboardUrl}</a>
+    ${primaryButton(loginUrl, "Go to My Dashboard →")}
+    <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;">
+      Direct link: <a href="${dashboardUrl}" style="color:#1E5FAF;text-decoration:none;">${dashboardUrl}</a>
     </p>
   `);
 
-  const text = `Congratulations, ${opts.firstName}!
-
-Your KAT Learning fellowship application has been approved. Your account has been upgraded to Fellow.
-
-Log in here: ${loginUrl}
-
-What's next:
-- Log in with your existing credentials
-- Your dashboard now shows your Fellow role
-- Begin mentoring students assigned to you
-
-© ${new Date().getFullYear()} KAT Learning`;
+  const text = `Congratulations, ${opts.firstName}!\n\nYour KAT Learning fellowship application has been approved.\n\nLog in: ${loginUrl}\n\n© ${YEAR} KAT Learning`;
 
   return { html, text };
 }
+
+// ── Fellow Rejection ──────────────────────────────────────────────────────────
 
 export function buildFellowRejectionEmail(opts: {
   firstName: string;
@@ -316,49 +406,36 @@ export function buildFellowRejectionEmail(opts: {
   const applyUrl = `${BASE_URL}/dashboard/fellows/apply`;
 
   const notesLine = opts.reviewNotes
-    ? `<p style="margin:0 0 16px;padding:12px 16px;background:#fff7ed;border-left:3px solid #f97316;border-radius:4px;font-size:14px;color:#9a3412;">
-        Reviewer feedback: <em>${opts.reviewNotes}</em>
-       </p>`
+    ? `<div style="margin:0 0 20px;padding:14px 16px;background:#fff7ed;border-left:3px solid #f97316;
+                   border-radius:0 8px 8px 0;">
+         <p style="margin:0 0 2px;font-size:11px;font-weight:700;color:#9a3412;
+                   text-transform:uppercase;letter-spacing:0.08em;">Reviewer feedback</p>
+         <p style="margin:0;font-size:13px;color:#9a3412;font-style:italic;">&ldquo;${opts.reviewNotes}&rdquo;</p>
+       </div>`
     : "";
 
   const html = emailWrapper(`
-    <h2 style="margin:0 0 8px;font-size:20px;color:#0f172a;">Fellowship Application Update</h2>
-    <p style="margin:0 0 16px;color:#475569;font-size:15px;line-height:1.6;">
-      Hi ${opts.firstName}, thank you for applying to the KAT Learning Fellowship Programme.
-      After careful review, we were unable to approve your application at this time.
+    <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.02em;">
+      Fellowship Application Update
+    </h2>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.7;">
+      Hi ${opts.firstName}, thank you for putting yourself forward for the KAT Fellowship Programme.
+      After careful review, we&apos;re not able to move your application forward at this time.
     </p>
     ${notesLine}
-    <p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.6;">
-      We encourage you to keep learning and apply again in a future cohort. Your progress
-      as a student is valued and we look forward to seeing you grow.
+    <p style="margin:0 0 20px;font-size:14px;color:#475569;line-height:1.7;">
+      This isn&apos;t the end of the road. Every cohort is a new opportunity — keep building,
+      keep shipping, and apply again when the next one opens. We&apos;re rooting for you.
     </p>
-    <table cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-      <tr>
-        <td style="border-radius:10px;background:#f1f5f9;border:1px solid #e2e8f0;">
-          <a href="${applyUrl}"
-             style="display:inline-block;padding:12px 28px;color:#1E5FAF;font-size:15px;font-weight:600;text-decoration:none;border-radius:10px;">
-            View My Application
-          </a>
-        </td>
-      </tr>
-    </table>
-    <p style="margin:0;font-size:13px;color:#94a3b8;">You can re-apply once your current application is closed.</p>
+    ${ghostButton(applyUrl, "View My Application")}
   `);
 
-  const text = `Hi ${opts.firstName},
-
-Thank you for applying to the KAT Learning Fellowship. After review, we were unable to approve your application at this time.
-${opts.reviewNotes ? `\nFeedback: ${opts.reviewNotes}\n` : ""}
-We encourage you to keep learning and apply again in a future cohort.
-
-View your application: ${applyUrl}
-
-© ${new Date().getFullYear()} KAT Learning`;
+  const text = `Hi ${opts.firstName},\n\nThank you for applying to the KAT Fellowship. After review, we're unable to approve your application at this time.\n${opts.reviewNotes ? `\nFeedback: ${opts.reviewNotes}\n` : ""}\nKeep learning — you can re-apply in a future cohort.\n\nView application: ${applyUrl}\n\n© ${YEAR} KAT Learning`;
 
   return { html, text };
 }
 
-// ── Enrollment Payment Reminder ───────────────────────────────────────────────
+// ── Payment Reminder ──────────────────────────────────────────────────────────
 
 export type PaymentReminderKind = "due_soon" | "grace_started" | "suspended";
 
@@ -366,7 +443,7 @@ export function buildPaymentReminderEmail(opts: {
   parentFirstName: string;
   childFirstName: string;
   programName: string;
-  dueDate: string;         // human-readable e.g. "20 Mar 2026"
+  dueDate: string;
   amount: number;
   currency: string;
   kind: PaymentReminderKind;
@@ -377,53 +454,67 @@ export function buildPaymentReminderEmail(opts: {
     return `${opts.currency} ${opts.amount.toLocaleString()}`;
   }
 
-  const kindConfig: Record<PaymentReminderKind, { subject: string; headline: string; body: string; accent: string }> = {
+  const kindConfig: Record<
+    PaymentReminderKind,
+    { subject: string; headline: string; body: string; accentColor: string; badgeText: string; badgeBg: string }
+  > = {
     due_soon: {
-      subject: `Payment due in 3 days — ${opts.childFirstName}'s ${opts.programName} enrolment`,
-      headline: "Payment Due in 3 Days",
-      body: `${opts.childFirstName}'s enrolment in <strong>${opts.programName}</strong> is due for renewal on <strong>${opts.dueDate}</strong>. Please pay before the due date to avoid a disruption to their learning.`,
-      accent: "#1E5FAF",
+      subject: `Payment due in 3 days — ${opts.childFirstName}'s ${opts.programName}`,
+      headline: "Payment due in 3 days",
+      body: `${opts.childFirstName}&apos;s enrolment in <strong style="color:#0f172a;">${opts.programName}</strong> renews on <strong style="color:#0f172a;">${opts.dueDate}</strong>. Pay before the due date to keep their learning uninterrupted.`,
+      accentColor: "#1E5FAF",
+      badgeText: "DUE SOON",
+      badgeBg: "#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;",
     },
     grace_started: {
-      subject: `Grace period started — ${opts.childFirstName}'s ${opts.programName} enrolment`,
-      headline: "4-Day Grace Period Has Started",
-      body: `${opts.childFirstName}'s enrolment in <strong>${opts.programName}</strong> expired on <strong>${opts.dueDate}</strong>. You have <strong>4 days</strong> to pay before their access is suspended.`,
-      accent: "#D97706",
+      subject: `Grace period started — ${opts.childFirstName}'s ${opts.programName}`,
+      headline: "4-day grace period has started",
+      body: `${opts.childFirstName}&apos;s enrolment in <strong style="color:#0f172a;">${opts.programName}</strong> expired on <strong style="color:#0f172a;">${opts.dueDate}</strong>. You have <strong>4 days</strong> to pay before access is suspended.`,
+      accentColor: "#D97706",
+      badgeText: "GRACE PERIOD",
+      badgeBg: "#fffbeb;color:#b45309;border:1px solid #fde68a;",
     },
     suspended: {
-      subject: `Enrolment suspended — ${opts.childFirstName}'s ${opts.programName}`,
-      headline: "Enrolment Suspended",
-      body: `${opts.childFirstName}'s access to <strong>${opts.programName}</strong> has been suspended due to non-payment. Pay now to restore access immediately.`,
-      accent: "#DC2626",
+      subject: `Access suspended — ${opts.childFirstName}'s ${opts.programName}`,
+      headline: "Enrolment suspended",
+      body: `${opts.childFirstName}&apos;s access to <strong style="color:#0f172a;">${opts.programName}</strong> has been suspended due to an outstanding payment. Pay now to restore access immediately.`,
+      accentColor: "#DC2626",
+      badgeText: "SUSPENDED",
+      badgeBg: "#fef2f2;color:#dc2626;border:1px solid #fecaca;",
     },
   };
 
   const cfg = kindConfig[opts.kind];
 
   const html = emailWrapper(`
-    <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">${cfg.headline}</h2>
-    <p style="margin:0 0 20px;font-size:14px;color:#475569;line-height:1.6;">
+    <div style="margin:0 0 20px;">${badge(cfg.badgeText, cfg.badgeBg)}</div>
+    <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.02em;text-transform:capitalize;">
+      ${cfg.headline}
+    </h2>
+    <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.7;">
       Hi ${opts.parentFirstName}, ${cfg.body}
     </p>
-    <table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
-      <tr style="background:#f8fafc;">
-        <td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">Programme</td>
-        <td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${opts.programName}</td>
-      </tr>
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px;">
+      <tbody>
+        ${infoRow("Programme", opts.programName)}
+        ${infoRow("Amount due", formatAmount())}
+        ${infoRow("Due date", opts.dueDate)}
+      </tbody>
+    </table>
+    <table cellpadding="0" cellspacing="0" style="margin:24px 0 0;">
       <tr>
-        <td style="padding:10px 16px;font-size:13px;color:#64748b;">Amount due</td>
-        <td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;">${formatAmount()}</td>
+        <td style="border-radius:10px;background:${cfg.accentColor};">
+          <a href="${opts.payUrl}"
+             style="display:inline-block;padding:13px 36px;color:#ffffff;font-size:14px;
+                    font-weight:600;text-decoration:none;border-radius:10px;">
+            Pay Now →
+          </a>
+        </td>
       </tr>
     </table>
-    <div style="text-align:center;margin:0 0 24px;">
-      <a href="${opts.payUrl}"
-         style="display:inline-block;background:${cfg.accent};color:#ffffff;font-size:14px;font-weight:600;
-                padding:12px 32px;border-radius:10px;text-decoration:none;letter-spacing:0.02em;">
-        Pay Now
-      </a>
-    </div>
-    <p style="margin:0;font-size:12px;color:#94a3b8;">
-      If you have already paid, please allow a few minutes for verification to complete.
+    <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;line-height:1.6;">
+      Already paid? Verification can take a few minutes — no action needed.
     </p>
   `);
 
@@ -443,26 +534,81 @@ export function buildExternalFellowApplicationEmail(opts: {
     return "₦" + amount.toLocaleString("en-NG", { minimumFractionDigits: 0 });
   }
 
-  const feeNote = opts.requiresPayment && opts.fee !== null
-    ? `<p style="margin:0 0 16px;font-size:14px;color:#475569;line-height:1.6;">
-        An application fee of <strong style="color:#0f172a;">${formatNaira(opts.fee)}</strong> will be required if your application is approved.
-        We'll send you full payment and account setup details at that point.
-       </p>`
-    : "";
+  const feeNote =
+    opts.requiresPayment && opts.fee !== null
+      ? `<div style="margin:0 0 20px;padding:14px 16px;background:#f0fdf4;border-left:3px solid #22c55e;
+                     border-radius:0 8px 8px 0;">
+           <p style="margin:0;font-size:13px;color:#166534;line-height:1.6;">
+             An application fee of <strong>${formatNaira(opts.fee)}</strong> will be required if your
+             application is approved. We&apos;ll send full payment and onboarding details at that point.
+           </p>
+         </div>`
+      : "";
 
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">Application Received!</h2>
-    <p style="margin:0 0 20px;font-size:14px;color:#475569;line-height:1.6;">
-      Hi ${opts.firstName}, thanks for applying to the <strong style="color:#0f172a;">${opts.cohortName}</strong>
-      cohort of the <strong style="color:#0f172a;">${opts.programName}</strong> Fellowship Programme.
-      Your application has been submitted and is now under review by our team.
+    <p style="margin:0 0 6px;font-size:26px;">✅</p>
+    <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.02em;">
+      Application received
+    </h2>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.7;">
+      Hi ${opts.firstName}, we&apos;ve received your application for the
+      <strong style="color:#0f172a;">${opts.cohortName}</strong> cohort of the
+      <strong style="color:#0f172a;">${opts.programName}</strong> Fellowship Programme.
+      Our team will review it and get back to you within a few business days.
     </p>
     ${feeNote}
-    <p style="margin:0 0 16px;font-size:14px;color:#475569;line-height:1.6;">
-      We'll be in touch via this email address with a decision. This usually takes a few business days.
-    </p>
-    <p style="margin:0;font-size:12px;color:#94a3b8;">
-      If you have questions, reply to this email or contact us at support@kindleatechie.com.
+    <p style="margin:0 0 24px;font-size:13px;color:#94a3b8;line-height:1.6;">
+      Questions? Reply to this email or write to us at
+      <a href="mailto:hello@kindleatechie.com" style="color:#1E5FAF;text-decoration:none;">hello@kindleatechie.com</a>.
     </p>
   `);
+}
+
+// ── Partner Enquiry Notification (internal) ───────────────────────────────────
+
+export function buildPartnerEnquiryNotificationEmail(opts: {
+  name: string;
+  organization: string;
+  type: string;
+  email: string;
+  phone?: string | null;
+  message: string;
+}) {
+  const html = emailWrapper(`
+    <div style="margin:0 0 20px;">${badge("NEW ENQUIRY", "#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;")}</div>
+    <h2 style="margin:0 0 4px;font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.02em;">
+      Partnership Enquiry
+    </h2>
+    <p style="margin:0 0 24px;font-size:13px;color:#94a3b8;">
+      Submitted via kindleatechie.com/partners
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:24px;">
+      <tbody>
+        ${infoRow("Name", opts.name)}
+        ${infoRow("Organisation", opts.organization)}
+        ${infoRow("Type", opts.type)}
+        ${infoRow("Email", `<a href="mailto:${opts.email}" style="color:#1E5FAF;text-decoration:none;">${opts.email}</a>`)}
+        ${opts.phone ? infoRow("Phone", opts.phone) : ""}
+      </tbody>
+    </table>
+    ${sectionLabel("Message")}
+    <div style="padding:16px 18px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+      <p style="margin:0;font-size:14px;color:#475569;line-height:1.75;">
+        ${opts.message.replace(/\n/g, "<br/>")}
+      </p>
+    </div>
+    ${primaryButton(`mailto:${opts.email}`, `Reply to ${opts.name} →`)}
+  `);
+
+  const text =
+    `New Partnership Enquiry\n\n` +
+    `Name: ${opts.name}\n` +
+    `Organisation: ${opts.organization}\n` +
+    `Type: ${opts.type}\n` +
+    `Email: ${opts.email}\n` +
+    (opts.phone ? `Phone: ${opts.phone}\n` : "") +
+    `\nMessage:\n${opts.message}\n`;
+
+  return { html, text };
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Briefcase, GraduationCap, Plus, Trash2, Upload } from "lucide-react";
+import { Briefcase, GraduationCap, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -97,10 +97,7 @@ type ProfileApiUser = {
   };
 };
 
-const MAX_AVATAR_FILE_SIZE = 5 * 1024 * 1024;
-const MAX_AVATAR_DATA_URL_LENGTH = 1_200_000;
-const AVATAR_MAX_DIMENSION = 640;
-const AVATAR_QUALITY = 0.84;
+const MAX_AVATAR_FILE_SIZE = 20 * 1024 * 1024; // 20 MB — server compresses to <5 MB
 const VISIBILITY_OPTIONS: { label: string; value: ProfileVisibilityValue }[] = [
   { label: "Only me", value: "PRIVATE" },
   { label: "Institution members", value: "ORG" },
@@ -227,42 +224,14 @@ function cleanOptional(value: string) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-async function toOptimizedAvatarDataUrl(file: File) {
-  const objectUrl = URL.createObjectURL(file);
-
-  try {
-    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const element = new window.Image();
-      element.onload = () => resolve(element);
-      element.onerror = () => reject(new Error("Could not read image file."));
-      element.src = objectUrl;
-    });
-
-    const largestSide = Math.max(image.width, image.height);
-    const ratio = largestSide > AVATAR_MAX_DIMENSION ? AVATAR_MAX_DIMENSION / largestSide : 1;
-    const width = Math.max(1, Math.round(image.width * ratio));
-    const height = Math.max(1, Math.round(image.height * ratio));
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext("2d");
-    if (!context) {
-      throw new Error("Could not process image.");
-    }
-
-    context.drawImage(image, 0, 0, width, height);
-    return canvas.toDataURL("image/jpeg", AVATAR_QUALITY);
-  } finally {
-    URL.revokeObjectURL(objectUrl);
-  }
-}
 
 export function ProfilePanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [skillDraft, setSkillDraft] = useState("");
   const [state, setState] = useState<ProfileState>(defaultState);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const displayName = useMemo(() => {
     const full = `${state.firstName} ${state.lastName}`.trim();
@@ -361,19 +330,57 @@ export function ProfilePanel() {
       return;
     }
     if (file.size > MAX_AVATAR_FILE_SIZE) {
-      toast.error("Image must be smaller than 5MB.");
+      toast.error("Image must be smaller than 20 MB.");
       return;
     }
 
+    setAvatarUploading(true);
+
     try {
-      const optimized = await toOptimizedAvatarDataUrl(file);
-      if (optimized.length > MAX_AVATAR_DATA_URL_LENGTH) {
-        toast.error("Image is still too large after processing. Please choose a smaller image.");
+      const res = await fetch("/api/users/avatar", {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+
+      let data: { error?: string; avatarUrl?: string } = {};
+      try {
+        data = (await res.json()) as typeof data;
+      } catch {
+        // Server returned non-JSON (e.g. HTML error page)
+        toast.error("Server error — check console for details.");
         return;
       }
-      setState((prev) => ({ ...prev, avatarUrl: optimized }));
-    } catch {
-      toast.error("Could not process selected image.");
+      if (!res.ok) {
+        toast.error(data.error ?? "Could not upload photo.");
+        return;
+      }
+
+      const avatarUrl = data.avatarUrl ?? "";
+      setState((prev) => ({ ...prev, avatarUrl }));
+      toast.success("Profile photo updated!");
+      window.dispatchEvent(
+        new CustomEvent("kat-profile-updated", { detail: { avatarUrl } }),
+      );
+    } catch (err) {
+      console.error("[avatar upload]", err);
+      toast.error("Avatar upload failed.");
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  };
+
+  const removeAvatar = async () => {
+    const res = await fetch("/api/users/avatar", { method: "DELETE" });
+    if (res.ok) {
+      setState((prev) => ({ ...prev, avatarUrl: "" }));
+      toast.success("Profile photo removed.");
+      window.dispatchEvent(
+        new CustomEvent("kat-profile-updated", { detail: { avatarUrl: null } }),
+      );
+    } else {
+      toast.error("Could not remove photo.");
     }
   };
 
@@ -526,12 +533,6 @@ export function ProfilePanel() {
     const skills = Array.from(new Set(state.skills.map((item) => item.trim()).filter(Boolean))).map((name) => ({
       name,
     }));
-    const normalizedAvatar = cleanOptional(state.avatarUrl);
-
-    if (state.avatarUrl.startsWith("data:image/") && state.avatarUrl.length > MAX_AVATAR_DATA_URL_LENGTH) {
-      toast.error("Profile image is too large. Please upload a smaller image.");
-      return;
-    }
 
     setSaving(true);
     try {
@@ -541,7 +542,6 @@ export function ProfilePanel() {
         body: JSON.stringify({
           firstName,
           lastName,
-          avatarUrl: normalizedAvatar,
           phone: cleanOptional(state.phone),
           headline: cleanOptional(state.headline),
           bio: cleanOptional(state.bio),
@@ -573,11 +573,7 @@ export function ProfilePanel() {
       toast.success("Profile updated.");
       window.dispatchEvent(
         new CustomEvent("kat-profile-updated", {
-          detail: {
-            avatarUrl: normalizedAvatar,
-            firstName,
-            lastName,
-          },
+          detail: { firstName, lastName },
         }),
       );
       await load();
@@ -629,33 +625,38 @@ export function ProfilePanel() {
           </div>
 
           <div className="grid grid-cols-1 gap-2">
-            <label
-              htmlFor="profile-avatar-upload"
-              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/60 px-3 text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors hover:bg-white dark:hover:bg-slate-700/50"
-            >
-              <Upload className="size-4" />
-              Upload Photo
-            </label>
             <input
+              ref={avatarInputRef}
               id="profile-avatar-upload"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/gif"
               className="hidden"
               onChange={(event) => {
                 const file = event.target.files?.[0];
-                if (file) {
-                  void uploadAvatar(file);
-                }
-                event.currentTarget.value = "";
+                if (file) void uploadAvatar(file);
               }}
             />
+            {avatarUploading ? (
+              <div className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 text-sm text-slate-600 dark:text-slate-400">
+                <Loader2 className="size-4 animate-spin" />
+                Uploading…
+              </div>
+            ) : (
+              <label
+                htmlFor="profile-avatar-upload"
+                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/60 px-3 text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors hover:bg-white dark:hover:bg-slate-700/50"
+              >
+                <Upload className="size-4" />
+                Upload Photo
+              </label>
+            )}
             <Button
               type="button"
               variant="ghost"
               size="sm"
               className="rounded-xl"
-              disabled={!state.avatarUrl}
-              onClick={() => setState((prev) => ({ ...prev, avatarUrl: "" }))}
+              disabled={!state.avatarUrl || avatarUploading}
+              onClick={() => void removeAvatar()}
             >
               Remove Photo
             </Button>

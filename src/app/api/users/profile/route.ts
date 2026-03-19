@@ -1,7 +1,6 @@
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import { profileSchema } from "@/lib/validators";
 import { trackEvent } from "@/lib/analytics";
 
@@ -163,20 +162,6 @@ export async function PUT(request: Request) {
 
     return ok({ user: updated });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2028") {
-      return fail("Profile update timed out. Please retry with a smaller image.", 408);
-    }
-
-    if (error instanceof Error) {
-      const lowered = error.message.toLowerCase();
-      if (
-        (lowered.includes("body") && lowered.includes("limit")) ||
-        lowered.includes("too large") ||
-        lowered.includes("request entity")
-      ) {
-        return fail("Profile image is too large. Please choose a smaller image.", 413);
-      }
-    }
     return fail("Could not update profile.", 500, error instanceof Error ? error.message : error);
   }
 }
