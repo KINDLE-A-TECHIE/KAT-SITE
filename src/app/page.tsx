@@ -2,7 +2,7 @@ import { LandingPage } from "@/components/marketing/landing-page";
 import { prisma } from "@/lib/prisma";
 import { EnrollmentStatus } from "@prisma/client";
 
-const BASE = process.env.NEXTAUTH_URL ?? "https://kat.africa";
+const BASE = process.env.NEXTAUTH_URL ?? "https://kindleatechie.com";
 
 const organizationSchema = {
   "@context": "https://schema.org",

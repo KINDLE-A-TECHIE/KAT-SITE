@@ -181,6 +181,20 @@
     background-color: rgba(30, 95, 175, 0.1);
   }
 
+  /* On touch devices: drop the custom SVG icon and use the browser's native
+     calendar icon with a proper 44px touch target. The custom 26px icon is
+     too small for fingers and the transparent-overlay trick hides it entirely. */
+  @media (hover: none) and (pointer: coarse) {
+    .kat-date-input::-webkit-calendar-picker-indicator {
+      background-image: none;
+      width: 2.75rem;
+      height: 2.75rem;
+      opacity: 0.6;
+      cursor: pointer;
+      padding: 0;
+    }
+  }
+
   .dark .kat-date-input {
     @apply border-slate-700 bg-slate-800/70 text-slate-200;
     color-scheme: dark;
@@ -213,6 +227,13 @@
   .kat-title {
     @apply text-2xl;
   }
+
+  /* Prevent iOS Safari from auto-zooming when date inputs are tapped.
+     iOS zooms any input with font-size < 16px. The base .kat-date-input
+     uses text-sm (14px) which triggers the zoom. Force 16px on mobile. */
+  .kat-date-input {
+    font-size: 1rem;
+  }
 }
 
 @media (max-width: 360px) {
@@ -228,7 +249,7 @@
 
   .kat-date-input {
     height: 2.5rem;
-    font-size: 0.8125rem;
+    font-size: 1rem; /* keep ≥16px to prevent iOS zoom */
     padding-left: 0.625rem;
     padding-right: 0.625rem;
   }

@@ -308,7 +308,7 @@ function TranscriptContent() {
       )}
 
       <div className="kat-card print:block hidden text-center text-xs text-slate-500 dark:text-slate-400">
-        Generated {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} · KAT Learning · kat.africa
+        Generated {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} · KAT Learning · kindleatechie.com
       </div>
     </div>
   );
