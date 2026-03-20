@@ -1,6 +1,6 @@
 # KAT — Kindle A Techie
 
-A full-stack Learning Management System (LMS) for KAT Academy, serving students aged 8–19 across Africa. Built with Next.js 15, TypeScript, Prisma, and PostgreSQL.
+A full-stack Learning Management System (LMS) for KAT Academy, serving students aged 8–19 across Africa. Built with Next.js 15, TypeScript, Prisma, Jitsi and PostgreSQL.
 
 ---
 
