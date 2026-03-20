@@ -242,66 +242,66 @@ export function WaitlistPanel() {
             {search ? "No results matching your search." : "No one on the waitlist yet."}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            {/* Column headers */}
-            <div className="grid min-w-[440px] grid-cols-[1fr_auto_auto_auto] gap-3 border-b border-slate-100 px-4 py-2.5 dark:border-slate-800">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</p>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Signed Up</p>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Notified</p>
-              <p className="w-8" />
-            </div>
+          <>
+            <div className="overflow-x-auto">
+              {/* Column headers */}
+              <div className="grid min-w-[440px] grid-cols-[1fr_auto_auto_auto] gap-3 border-b border-slate-100 px-4 py-2.5 dark:border-slate-800">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Signed Up</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Notified</p>
+                <p className="w-8" />
+              </div>
 
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {entries.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="grid min-w-[440px] grid-cols-[1fr_auto_auto_auto] items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                >
-                  <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
-                    {entry.email}
-                  </p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                    {formatDate(entry.createdAt)}
-                  </p>
-                  <p className="whitespace-nowrap">
-                    {entry.notifiedAt ? (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        {formatDate(entry.notifiedAt)}
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-700 dark:text-slate-400">
-                        Not yet
-                      </span>
-                    )}
-                  </p>
-                  <button
-                    onClick={() => void handleDelete(entry)}
-                    disabled={deleting === entry.id}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50 dark:hover:bg-rose-900/20"
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {entries.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="grid min-w-[440px] grid-cols-[1fr_auto_auto_auto] items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
+                    <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {entry.email}
+                    </p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      {formatDate(entry.createdAt)}
+                    </p>
+                    <p className="whitespace-nowrap">
+                      {entry.notifiedAt ? (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                          {formatDate(entry.notifiedAt)}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-700 dark:text-slate-400">
+                          Not yet
+                        </span>
+                      )}
+                    </p>
+                    <button
+                      onClick={() => void handleDelete(entry)}
+                      disabled={deleting === entry.id}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50 dark:hover:bg-rose-900/20"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
 
-          </div>
-
-          {/* Load more */}
-          {hasMore && (
-            <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-800">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-sm"
-                disabled={loading}
-                onClick={() => void load(nextCursor ?? undefined, search)}
-              >
-                {loading ? "Loading…" : "Load more"}
-              </Button>
-            </div>
-          )}
-        </div>
+            {/* Load more */}
+            {hasMore && (
+              <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-800">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-sm"
+                  disabled={loading}
+                  onClick={() => void load(nextCursor ?? undefined, search)}
+                >
+                  {loading ? "Loading…" : "Load more"}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
       {/* Notify dialog */}
