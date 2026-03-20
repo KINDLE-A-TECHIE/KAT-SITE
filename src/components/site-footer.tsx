@@ -5,7 +5,6 @@ const LINKS = {
   Company: [
     { label: "Our Programs", href: "/#tracks" },
     { label: "Pricing", href: "/#pricing" },
-    { label: "Schedule", href: "/#schedule" },
     { label: "Partner with Us", href: "/partners" },
     { label: "FAQ", href: "/#faq" },
     { label: "Contact Us", href: "mailto:support@kindleatechie.com" },

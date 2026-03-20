@@ -76,14 +76,23 @@ export async function PATCH(request: Request, { params }: Params) {
   const isOwner = project.studentId === session.user.id;
   if (!isOwner) return fail("Forbidden", 403);
 
-  // Can only edit DRAFT or NEEDS_WORK projects
-  if (project.status !== "DRAFT" && project.status !== "NEEDS_WORK") {
-    return fail("Cannot edit a submitted or reviewed project.", 400);
-  }
-
   const body = await request.json() as unknown;
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) return fail("Invalid input.", 400, parsed.error.flatten());
+
+  const { status: newStatus, ...fields } = parsed.data;
+  const hasFieldEdits = Object.keys(fields).length > 0;
+  const isRetract = newStatus === "DRAFT" && project.status === "SUBMITTED";
+  const isSubmit = newStatus === "SUBMITTED" && (project.status === "DRAFT" || project.status === "NEEDS_WORK");
+
+  // Field edits only allowed on DRAFT or NEEDS_WORK
+  if (hasFieldEdits && project.status !== "DRAFT" && project.status !== "NEEDS_WORK") {
+    return fail("Cannot edit a submitted or reviewed project.", 400);
+  }
+  // Status transitions: only submit or retract
+  if (newStatus && !isRetract && !isSubmit) {
+    return fail("Invalid status transition.", 400);
+  }
 
   const updated = await prisma.project.update({
     where: { id: projectId },

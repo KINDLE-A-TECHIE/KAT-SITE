@@ -23,10 +23,10 @@ export function TracksSection() {
           Program Tracks
         </p>
         <h2 className="mt-2 [font-family:var(--font-space-grotesk)] text-3xl font-bold text-[var(--kat-text-primary)] sm:text-4xl">
-          A path for every age and skill level
+          Pick your child&apos;s track. Watch them grow.
         </h2>
         <p className="mt-2 text-[var(--kat-text-secondary)]">
-          Pick the track that fits your child&apos;s age. Move up as they grow.
+          Age-matched tracks from 8 to 19. Start where they are. Go as far as they can.
         </p>
       </div>
 

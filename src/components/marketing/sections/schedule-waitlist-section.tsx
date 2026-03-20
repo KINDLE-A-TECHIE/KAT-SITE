@@ -2,7 +2,7 @@
 
 import type { FormEvent } from "react";
 import { useRef, useState } from "react";
-import { BookOpen, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -153,7 +153,7 @@ export function ScheduleWaitlistSection() {
             )}
             {waitlistState === "error" && (
               <Alert className="border-red-200 bg-red-50">
-                <BookOpen className="text-[var(--kat-danger)]" />
+                <AlertCircle className="text-[var(--kat-danger)]" />
                 <AlertTitle className="text-[var(--kat-text-primary)]">Invalid email</AlertTitle>
                 <AlertDescription className="text-[var(--kat-text-secondary)]">
                   Please enter a valid email address.

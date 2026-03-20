@@ -9,9 +9,7 @@ import { TracksSection } from "./sections/tracks-section";
 import { FellowshipSection } from "./sections/fellowship-section";
 import { TestimonialsSection } from "./sections/testimonials-section";
 import { PricingSection } from "./sections/pricing-section";
-import { ScheduleWaitlistSection } from "./sections/schedule-waitlist-section";
 import { FaqSection } from "./sections/faq-section";
-import { CtaSection } from "./sections/cta-section";
 import { SiteFooter } from "@/components/site-footer";
 
 type OpenCohort = {
@@ -52,9 +50,7 @@ export function LandingPage({ enrollments, passRate, openCohorts }: LandingPageP
       <FellowshipSection cohorts={openCohorts} />
       <TestimonialsSection />
       <PricingSection />
-      <ScheduleWaitlistSection />
       <FaqSection />
-      <CtaSection />
       <SiteFooter />
     </main>
   );

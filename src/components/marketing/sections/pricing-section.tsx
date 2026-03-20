@@ -11,11 +11,10 @@ export function PricingSection() {
       <div className="mb-10 text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--kat-primary-blue)]">Pricing</p>
         <h2 className="mt-2 [font-family:var(--font-space-grotesk)] text-3xl font-bold text-[var(--kat-text-primary)] sm:text-4xl">
-          Transparent, per-track enrollment
+          Simple pricing. No surprises.
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-[var(--kat-text-secondary)]">
-          Each track is billed monthly. Parents register, select a cohort, and complete payment to
-          activate their child&apos;s access. Scholarships are available.
+          Billed monthly per track — pause or cancel anytime. Register to see your track&apos;s price. Scholarships are available every cohort.
         </p>
       </div>
 

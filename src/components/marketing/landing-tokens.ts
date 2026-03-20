@@ -19,7 +19,6 @@ export const NAV_ITEMS = [
   { href: "#features", label: "Features" },
   { href: "#tracks", label: "Tracks" },
   { href: "#pricing", label: "Pricing" },
-  { href: "#schedule", label: "Schedule" },
   { href: "#faq", label: "FAQ" },
   { href: "/partners", label: "Partner with Us" },
 ];
@@ -41,74 +40,74 @@ export const PROGRAM_TRACKS: ProgramTrack[] = [
     id: "explorers",
     label: "Junior Explorers",
     ages: "Ages 8–11",
-    summary: "Playful coding basics with Scratch, animations, and simple logic games.",
+    summary: "Your child starts coding from day one — building games, animations, and interactive stories. Zero boredom. Maximum curiosity. No experience needed.",
     modules: [
       { title: "Block Coding and Logic", progress: 92 },
       { title: "Creative Story Projects", progress: 80 },
       { title: "Early Web Design", progress: 63 },
     ],
-    project: "Build and share a mini interactive story game.",
+    project: "Create and share an original interactive story or mini game — their very first real build.",
   },
   {
     id: "builders",
     label: "Teen Builders",
     ages: "Ages 12–15",
-    summary: "HTML, CSS, JavaScript, and Python projects focused on practical skills.",
+    summary: "Real skills: HTML, CSS, JavaScript, and Python. Every module ends with something they can actually show off to friends and family.",
     modules: [
       { title: "Frontend Fundamentals", progress: 85 },
       { title: "Python Foundations", progress: 74 },
       { title: "API and Team Projects", progress: 59 },
     ],
-    project: "Launch a portfolio site and one API-powered app.",
+    project: "Ship a live portfolio site and one API-powered app they built from scratch.",
   },
   {
     id: "innovators",
     label: "Future Innovators",
     ages: "Ages 16–19",
-    summary: "Advanced engineering, product thinking, and mentorship leadership.",
+    summary: "Full-stack engineering, product thinking, and leadership. For teens who want to build things that matter — and lead others doing the same.",
     modules: [
       { title: "Fullstack Engineering", progress: 71 },
       { title: "Leadership and Mentorship", progress: 62 },
       { title: "Startup Problem Solving", progress: 49 },
     ],
-    project: "Ship a community-impact product and mentor juniors.",
+    project: "Ship a community-impact product, present it publicly, and mentor younger students along the way.",
   },
 ];
 
 export const FEATURES = [
   {
     title: "Live Coding Clubs",
-    description: "Small group sessions where kids build games, apps, and websites with mentors guiding each step.",
+    description: "Small groups of 6–12 kids building real games and apps with a mentor in the room. Not videos. Not passive watching. Actual code, every session.",
     iconName: "Code2" as const,
     color: "bg-blue-500",
   },
   {
-    title: "Safe Parent View",
-    description: "Parents can track class attendance, learning streaks, and project progress from one simple view.",
+    title: "Parent Visibility",
+    description: "See your child's attendance, current project, and mentor feedback — without having to ask them. Full clarity, one simple dashboard.",
     iconName: "Shield" as const,
     color: "bg-indigo-500",
   },
   {
-    title: "Project-Based Learning",
-    description: "Every track ships real projects so students learn by building, sharing, and improving in public.",
+    title: "Build Real Projects",
+    description: "No textbook exercises. Every module ends with something students actually shipped — games, websites, and apps they can show anyone.",
     iconName: "Layers3" as const,
     color: "bg-sky-500",
   },
   {
-    title: "Mentor Feedback",
-    description: "Instructors leave clear feedback, next steps, and motivation after each class challenge.",
+    title: "Personal Mentor Feedback",
+    description: "After every submission, mentors leave personalised notes — what they nailed, what to fix, and exactly what to tackle next.",
     iconName: "Brain" as const,
     color: "bg-violet-500",
   },
   {
-    title: "Community Challenges",
-    description: "Weekly coding missions and friendly leaderboard moments keep kids and teens engaged.",
+    title: "Weekly Challenges",
+    description: "Coding missions, friendly leaderboards, and peer shoutouts give students something exciting to race toward every single week.",
     iconName: "Flame" as const,
     color: "bg-orange-500",
   },
   {
     title: "Path to Fellowship",
-    description: "Top learners move into leadership tracks where they mentor juniors and lead impact projects.",
+    description: "The best learners don't just graduate — they become KAT Fellows, mentoring juniors, leading impact projects, and building their own legacy.",
     iconName: "Compass" as const,
     color: "bg-emerald-500",
   },
@@ -117,18 +116,18 @@ export const FEATURES = [
 export const HOW_IT_WORKS = [
   {
     step: "01",
-    title: "Parent Registers & Enrolls",
-    description: "Create a parent account, pick the right age-matched track, and complete enrollment. Your child gets access the same day.",
+    title: "Sign Up & Pick a Track",
+    description: "Create a parent account in minutes, choose the age-matched track for your child, and complete enrollment. They get access the same day.",
   },
   {
     step: "02",
-    title: "Your Child Joins Live Classes",
-    description: "Small groups of 6–12 students. A dedicated mentor every week. Real coding, real feedback — from day one.",
+    title: "Your Child Codes Live",
+    description: "Small groups of 6–12 students. A dedicated mentor every week. Real code from the very first session — no boring intro lectures.",
   },
   {
     step: "03",
-    title: "Build, Ship & Grow",
-    description: "Every module ends with a real project. Students build portfolios, earn badges, and grow into community leaders.",
+    title: "Build, Ship & Show Off",
+    description: "Every module ends with a real project. Students grow their portfolio, earn badges, and can become leaders who mentor others.",
   },
 ];
 
@@ -239,39 +238,39 @@ export const PRICING_TIERS: PricingTier[] = [
 
 export const FAQ_ITEMS = [
   {
-    question: "What ages does KAT Learning accept?",
+    question: "My child has never coded before. Will they keep up?",
     answer:
-      "KAT welcomes students aged 8 to 19 across Africa. We have three age-matched tracks: Junior Explorers (8–11), Teen Builders (12–15), and Future Innovators (16–19). Each track is designed around the learning style and attention span of that age group.",
+      "Absolutely. Junior Explorers and Teen Builders are built from zero — no prior experience needed. Our mentors are trained to make the first few sessions fun and pressure-free. Most kids are building something they're proud of within the first two weeks.",
   },
   {
-    question: "How is pricing structured?",
+    question: "What ages do you accept?",
     answer:
-      "Enrollment is billed monthly per track. A parent registers, selects a track for their child, and pays to activate access. Exact pricing is displayed during registration. Scholarship spots are available every cohort — join the waitlist and mention scholarships when you sign up.",
+      "KAT welcomes students aged 8 to 19 across Africa. Three age-matched tracks: Junior Explorers (8–11), Teen Builders (12–15), and Future Innovators (16–19). Each track is paced around the learning style and energy of that age group.",
+  },
+  {
+    question: "How does pricing work?",
+    answer:
+      "Enrollment is billed monthly per track. A parent registers, selects the right track, and pays to activate their child's access. Exact pricing is shown at registration. Scholarship spots are available every cohort — apply and mention financial support needs.",
+  },
+  {
+    question: "How many kids are in each class?",
+    answer:
+      "We cap every session at 6 to 12 students. That's intentional — it means your child gets direct mentor attention, space to ask questions, and feedback on their actual work, not just a passive lecture.",
+  },
+  {
+    question: "Can I see what my child is learning?",
+    answer:
+      "Yes — every parent account includes a full dashboard: class attendance, project submissions, assessment scores, and what their mentor said. You'll always know exactly how your child is progressing.",
   },
   {
     question: "What device does my child need?",
     answer:
-      "Any laptop or desktop with a modern browser (Chrome, Firefox, Edge, or Safari) works perfectly. A stable internet connection is required for live classes. Tablets can be used for viewing, but a physical keyboard is strongly recommended for coding exercises.",
+      "Any laptop or desktop with a modern browser (Chrome, Firefox, Edge, or Safari) works great. A stable internet connection is required for live classes. Tablets can be used for viewing, but a physical keyboard is strongly recommended for writing code.",
   },
   {
-    question: "How many students are in each class?",
+    question: "What happens when they finish a track?",
     answer:
-      "We cap each session at 6 to 12 students. This ensures every child gets direct attention from the mentor, has space to ask questions, and gets feedback on their work — not just a lecture.",
-  },
-  {
-    question: "Can I track my child's progress as a parent?",
-    answer:
-      "Yes — every parent account includes a dedicated dashboard with class attendance, project submissions, assessment scores, and mentor feedback. You'll never be left guessing how your child is doing.",
-  },
-  {
-    question: "What happens after completing a track?",
-    answer:
-      "Students who complete the Future Innovators track are eligible to apply for the KAT Fellowship Programme — transitioning from learners to mentors who lead real community-impact projects. Younger students simply move up to the next track when they're ready.",
-  },
-  {
-    question: "My child has never coded before. Is KAT right for them?",
-    answer:
-      "Absolutely. The Junior Explorers and Teen Builders tracks are designed for complete beginners. We start from zero — no prior experience needed. Our mentors are trained to make the first few sessions fun and pressure-free.",
+      "Younger students move up to the next track when they're ready. Students who complete Future Innovators are eligible for the KAT Fellowship — transitioning from learner to mentor, leading real community-impact projects.",
   },
 ];
 

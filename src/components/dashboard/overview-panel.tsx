@@ -261,7 +261,7 @@ function GenericOverview({ role }: { role: UserRoleValue }) {
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+              <div key={i} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 sm:p-5">
                 <Skeleton className="mb-3 h-8 w-8 rounded-lg" />
                 <Skeleton className="mb-2 h-7 w-16" />
                 <Skeleton className="h-3 w-24" />
@@ -269,7 +269,7 @@ function GenericOverview({ role }: { role: UserRoleValue }) {
             ))
           : stats.map((stat, i) => {
               const inner = (
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-slate-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600 sm:p-5">
                   <div className={`mb-3 inline-flex h-8 w-8 items-center justify-center rounded-lg ${stat.accent}`}>
                     {stat.icon}
                   </div>

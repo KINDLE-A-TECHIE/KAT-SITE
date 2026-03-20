@@ -103,11 +103,11 @@ function FellowshipApplyContent() {
         </div>
       </header>
 
-      <main className="flex flex-1 justify-center px-6 py-12">
+      <main className="flex flex-1 justify-center px-4 py-8 sm:px-6 sm:py-12">
         <div className="w-full max-w-2xl">
           {submitted ? (
             /* ── Success state ── */
-            <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-10">
               <CheckCircle2 className="mx-auto mb-4 size-14 text-emerald-500" />
               <h1 className="[font-family:var(--font-space-grotesk)] text-2xl font-bold text-slate-900">
                 Application Submitted!
@@ -166,7 +166,7 @@ function FellowshipApplyContent() {
               ) : (
                 <form
                   onSubmit={onSubmit}
-                  className="space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm"
+                  className="space-y-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8"
                 >
                   <div>
                     <h2 className="[font-family:var(--font-space-grotesk)] text-lg font-bold text-slate-900">

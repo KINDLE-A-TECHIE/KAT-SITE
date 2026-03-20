@@ -38,9 +38,12 @@ export async function GET(request: Request) {
     };
   } else if (isInstructor) {
     // Instructors see submitted/approved/needs_work/rejected projects in their org
+    const allowedStatuses = ["SUBMITTED", "APPROVED", "NEEDS_WORK", "REJECTED"];
     where = {
       student: { organizationId },
-      status: { in: ["SUBMITTED", "APPROVED", "NEEDS_WORK", "REJECTED"] },
+      status: statusFilter && allowedStatuses.includes(statusFilter)
+        ? statusFilter
+        : { in: allowedStatuses },
       ...(studentId ? { studentId } : {}),
       ...(programId ? { programId } : {}),
     };

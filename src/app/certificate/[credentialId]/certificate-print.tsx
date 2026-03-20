@@ -84,19 +84,19 @@ export function CertificatePrint({
       {/* ── Toolbar (hidden on print) ─────────────────────────── */}
       <div
         id="no-print"
-        className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-3"
+        className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 py-3 sm:px-6"
       >
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
           >
             <ArrowLeft className="size-4" />
             Back
           </button>
           <div className="flex items-center gap-2">
             <Image src="/kindle-a-techie.svg" alt="KAT Learning" width={28} height={28} />
-            <span className="text-sm font-semibold text-slate-800">KAT Learning</span>
+            <span className="hidden text-sm font-semibold text-slate-800 sm:inline">KAT Learning</span>
           </div>
         </div>
         <button
@@ -104,20 +104,25 @@ export function CertificatePrint({
           className="flex items-center gap-2 rounded-lg bg-[#0D1F45] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#162d5e]"
         >
           <Printer className="size-4" />
-          Print / Save PDF
+          <span>Print / Save PDF</span>
         </button>
+      </div>
+
+      {/* ── Mobile tip banner ─────────────────────────────────── */}
+      <div id="no-print" className="border-b border-amber-100 bg-amber-50 px-4 py-2 text-center text-xs text-amber-700 sm:hidden">
+        Rotate your phone for the best view, or use <strong>Print / Save PDF</strong> to download.
       </div>
 
       {/* ── Gray page background (hidden on print) ────────────── */}
       <div
         id="cert-bg"
-        className="flex min-h-[calc(100vh-57px)] items-center justify-center bg-slate-100 p-6"
+        className="flex min-h-[calc(100vh-57px)] items-center justify-center overflow-x-auto bg-slate-100 p-4 sm:p-6"
       >
 
         {/* ── Certificate card ──────────────────────────────────── */}
         <div
           id="cert-root"
-          className="relative w-full max-w-[900px] overflow-hidden bg-white shadow-2xl"
+          className="relative w-full min-w-[480px] max-w-[900px] overflow-hidden bg-white shadow-2xl"
           style={{ aspectRatio: "297 / 210" }}
         >
 

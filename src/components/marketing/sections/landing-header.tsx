@@ -63,7 +63,7 @@ export function LandingHeader() {
 
         <button
           type="button"
-          className="inline-flex size-9 items-center justify-center rounded-lg border border-[var(--kat-border)] text-[var(--kat-primary-blue)] md:hidden"
+          className="inline-flex size-10 items-center justify-center rounded-lg border border-[var(--kat-border)] text-[var(--kat-primary-blue)] md:hidden"
           onClick={() => setMobileMenuOpen((o) => !o)}
           aria-label="Toggle menu"
           aria-expanded={mobileMenuOpen}

@@ -908,7 +908,8 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
 
   return (
     <section className="grid grid-cols-1 gap-4 max-[360px]:gap-3 xl:grid-cols-[320px_1fr]">
-      <aside className="kat-card flex h-[72dvh] min-h-[420px] max-h-[880px] min-w-0 flex-col overflow-hidden max-[360px]:h-[68dvh] max-[360px]:min-h-[360px] sm:h-[74dvh] md:h-[78dvh]">
+      {/* Thread list — hidden on mobile when a thread is open */}
+      <aside className={`kat-card flex h-[72dvh] min-h-[420px] max-h-[880px] min-w-0 flex-col overflow-hidden max-[360px]:h-[68dvh] max-[360px]:min-h-[360px] sm:h-[74dvh] md:h-[78dvh] xl:flex ${selectedThreadId ? "hidden xl:flex" : "flex"}`}>
         {/* ── Fixed header ── */}
         <div className="mb-3 flex shrink-0 items-center justify-between">
           <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Conversations</h3>
@@ -1153,9 +1154,19 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
         </div>
       </aside>
 
-      <div className="kat-card flex h-[72dvh] min-h-[420px] max-h-[880px] min-w-0 flex-col overflow-hidden max-[360px]:h-[68dvh] max-[360px]:min-h-[360px] sm:h-[74dvh] md:h-[78dvh]">
+      {/* Chat view — hidden on mobile when no thread is selected */}
+      <div className={`kat-card flex h-[72dvh] min-h-[420px] max-h-[880px] min-w-0 flex-col overflow-hidden max-[360px]:h-[68dvh] max-[360px]:min-h-[360px] sm:h-[74dvh] md:h-[78dvh] ${selectedThreadId ? "flex" : "hidden xl:flex"}`}>
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex min-w-0 items-center gap-2.5">
+            {/* Mobile back button */}
+            <button
+              type="button"
+              onClick={() => setSelectedThreadId("")}
+              className="mr-1 flex size-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 xl:hidden"
+              aria-label="Back to conversations"
+            >
+              <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
             {activeThread ? (
               <>
                 {activeThread.type === "GROUP" ? (

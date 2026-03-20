@@ -66,7 +66,7 @@ export default function PartnersPage() {
           <Handshake className="size-3.5" />
           Partnership Enquiries
         </div>
-        <h1 className="[font-family:var(--font-space-grotesk)] text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+        <h1 className="[font-family:var(--font-space-grotesk)] text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
           Bring coding education <br className="hidden sm:block" />
           <span
             className="bg-clip-text text-transparent"
@@ -84,7 +84,7 @@ export default function PartnersPage() {
 
       {/* Partnership type cards */}
       <section className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
           {PARTNER_TYPES.map((card) => (
             <div
               key={card.title}
@@ -124,7 +124,7 @@ export default function PartnersPage() {
             Fill in the form and our partnerships team will respond within 2 business days.
           </p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
           <PartnerForm />
         </div>
       </section>

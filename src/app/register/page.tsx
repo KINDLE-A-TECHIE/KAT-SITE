@@ -150,7 +150,7 @@ function RegisterContent() {
         </div>
 
         {/* Right form panel */}
-        <div className="flex flex-1 items-center justify-center bg-slate-50 px-6 py-12">
+        <div className="flex flex-1 items-center justify-center bg-slate-50 px-4 py-8 sm:px-6 sm:py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -195,7 +195,7 @@ function RegisterContent() {
             </div>
 
             <form onSubmit={onSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="firstName" className="text-sm font-medium text-slate-700">
                     First name
@@ -302,9 +302,7 @@ function RegisterContent() {
                 >
                   <GoogleIcon />
                   <span className="ml-2">
-                    {googleLoading
-                      ? "Redirecting…"
-                      : `Continue with Google as ${watchedRole === "PARENT" ? "Parent" : "Student"}`}
+                    {googleLoading ? "Redirecting…" : "Continue with Google"}
                   </span>
                 </Button>
               </>

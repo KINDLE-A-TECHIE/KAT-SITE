@@ -50,7 +50,9 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
 // ── Shared layout ─────────────────────────────────────────────────────────────
 
 const BASE_URL = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-const LOGO_URL = `${BASE_URL}/kindle-a-techie.svg`;
+// Use LOGO_PNG_URL env var for a publicly accessible PNG (SVGs are blocked by most email clients).
+// e.g. set LOGO_PNG_URL=https://pub-xxx.r2.dev/brand/kat-logo.png
+const LOGO_PNG_URL = process.env.LOGO_PNG_URL ?? null;
 const YEAR = new Date().getFullYear();
 
 function emailWrapper(content: string) {
@@ -70,8 +72,10 @@ function emailWrapper(content: string) {
           <!-- Brand header -->
           <tr>
             <td style="padding:0 0 28px;text-align:center;">
-              <img src="${LOGO_URL}" alt="KAT" width="36" height="36"
-                   style="display:inline-block;vertical-align:middle;margin-right:10px;" />
+              ${LOGO_PNG_URL
+                ? `<img src="${LOGO_PNG_URL}" alt="KAT Learning" width="36" height="36"
+                        style="display:inline-block;vertical-align:middle;margin-right:10px;" />`
+                : ""}
               <span style="font-size:17px;font-weight:700;color:#0f172a;vertical-align:middle;letter-spacing:-0.02em;">
                 KAT Learning
               </span>
@@ -609,6 +613,113 @@ export function buildPartnerEnquiryNotificationEmail(opts: {
     `Email: ${opts.email}\n` +
     (opts.phone ? `Phone: ${opts.phone}\n` : "") +
     `\nMessage:\n${opts.message}\n`;
+
+  return { html, text };
+}
+
+// ── Waitlist Cohort Open Notification ─────────────────────────────────────────
+
+export function buildWaitlistCohortNotificationEmail(opts: {
+  email: string;
+  cohortName: string;
+  programName: string;
+  startsAt: string;
+  enrollUrl: string;
+}) {
+  const html = emailWrapper(`
+    <div style="margin:0 0 20px;">${badge("COHORT NOW OPEN", "#f0fdf4;color:#166534;border:1px solid #bbf7d0;")}</div>
+    <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.02em;">
+      Spots are open — enrol now
+    </h2>
+    <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.7;">
+      Good news! A new cohort of <strong style="color:#0f172a;">${opts.programName}</strong>
+      is now open for enrolment. You&apos;re receiving this because you joined our waitlist —
+      you get first access before we open to the public.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px;">
+      <tbody>
+        ${infoRow("Cohort", opts.cohortName)}
+        ${infoRow("Programme", opts.programName)}
+        ${infoRow("Starts", opts.startsAt)}
+      </tbody>
+    </table>
+    ${primaryButton(opts.enrollUrl, "Enrol Now →")}
+    <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;line-height:1.6;">
+      Spots are limited and fill up fast. Enrol today to secure your child&apos;s place.
+      Questions? Reply to this email or write to
+      <a href="mailto:hello@kindleatechie.com" style="color:#1E5FAF;text-decoration:none;">hello@kindleatechie.com</a>.
+    </p>
+  `);
+
+  const text =
+    `Great news — ${opts.cohortName} is now open!\n\n` +
+    `Programme: ${opts.programName}\n` +
+    `Starts: ${opts.startsAt}\n\n` +
+    `Enrol here: ${opts.enrollUrl}\n\n` +
+    `Spots are limited. Enrol today to secure your place.\n\n` +
+    `© ${YEAR} KAT Learning`;
+
+  return { html, text };
+}
+
+// ── Waitlist Confirmation ──────────────────────────────────────────────────────
+
+export function buildWaitlistConfirmationEmail(opts: { email: string }) {
+  const fellowshipUrl = `${BASE_URL}/#fellowship`;
+
+  const html = emailWrapper(`
+    <p style="margin:0 0 6px;font-size:28px;">🎉</p>
+    <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.02em;">
+      You&apos;re on the list!
+    </h2>
+    <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.7;">
+      Thanks for your interest in KAT Learning. You&apos;re now on our waitlist —
+      we&apos;ll reach out as soon as a new cohort opens for enrolment.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:24px;">
+      <tbody>
+        ${infoRow("Registered email", opts.email)}
+      </tbody>
+    </table>
+
+    ${sectionLabel("What happens next")}
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:8px;">
+      ${[
+        "We&apos;ll notify you by email when the next cohort opens — usually a few weeks before the start date.",
+        "You&apos;ll get early access to enrol before spots are opened to the public.",
+        "In the meantime, explore our Fellowship Programme if you&apos;re 18+ and want to teach.",
+      ].map((step, i) => `
+        <tr>
+          <td style="width:28px;vertical-align:top;padding:4px 12px 12px 0;">
+            <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#1E5FAF,#4DB3E6);
+                        text-align:center;line-height:22px;font-size:11px;font-weight:700;color:#fff;">
+              ${i + 1}
+            </div>
+          </td>
+          <td style="padding:4px 0 12px;font-size:14px;color:#475569;line-height:1.6;">${step}</td>
+        </tr>`).join("")}
+    </table>
+
+    ${ghostButton(fellowshipUrl, "Explore the Fellowship Programme")}
+
+    <p style="margin:24px 0 0;font-size:12px;color:#94a3b8;line-height:1.6;">
+      Questions? Reply to this email or write to us at
+      <a href="mailto:hello@kindleatechie.com" style="color:#1E5FAF;text-decoration:none;">hello@kindleatechie.com</a>.
+    </p>
+  `);
+
+  const text =
+    `You're on the KAT Learning waitlist!\n\n` +
+    `Registered email: ${opts.email}\n\n` +
+    `What happens next:\n` +
+    `1. We'll notify you when the next cohort opens.\n` +
+    `2. You'll get early access before spots open to the public.\n` +
+    `3. Explore our Fellowship Programme at ${fellowshipUrl}\n\n` +
+    `Questions? Email us at hello@kindleatechie.com\n\n` +
+    `© ${YEAR} KAT Learning`;
 
   return { html, text };
 }

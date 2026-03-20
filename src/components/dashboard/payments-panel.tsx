@@ -1459,10 +1459,11 @@ export function PaymentsPanel({ role }: { role: string }) {
       )}
 
       <section className="kat-card">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Financial History</h3>
           {total > 0 && <p className="text-xs text-slate-400 dark:text-slate-500">Page {currentPage} · {total} total</p>}
         </div>
+        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 sm:hidden">Swipe left to see all columns →</p>
 
         <div className="mt-4 max-h-96 overflow-auto pb-1">
           {loading ? (

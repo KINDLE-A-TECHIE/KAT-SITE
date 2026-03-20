@@ -9,7 +9,7 @@ export function TestimonialsSection() {
           Testimonials
         </p>
         <h2 className="mt-2 [font-family:var(--font-space-grotesk)] text-3xl font-bold text-[var(--kat-text-primary)] sm:text-4xl">
-          Loved by students and parents
+          Real kids. Real results. Real parents.
         </h2>
       </div>
 

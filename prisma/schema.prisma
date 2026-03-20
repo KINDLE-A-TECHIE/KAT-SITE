@@ -979,9 +979,10 @@ model LessonContent {
 
 
 model WaitlistEntry {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  createdAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  email       String    @unique
+  createdAt   DateTime  @default(now())
+  notifiedAt  DateTime?
 }
 
 enum PartnerType {
