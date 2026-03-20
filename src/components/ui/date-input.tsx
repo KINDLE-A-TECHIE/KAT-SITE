@@ -3,37 +3,78 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-type DateInputProps = React.ComponentProps<"input"> & {
+type DateInputProps = Omit<React.ComponentProps<"input">, "type"> & {
+  type?: "date" | "datetime-local";
   placeholder?: string;
 };
 
 /**
- * A date/datetime-local input that shows a placeholder hint on mobile.
- * Desktop browsers already render a format hint (dd/mm/yyyy) natively;
- * iOS Safari shows a blank field until tapped, which is confusing.
- * The overlay span is hidden on sm+ screens where the native hint appears.
+ * Date input that shows a real placeholder on mobile (iOS + Android).
+ *
+ * Problem: iOS Safari / Android Chrome show a blank field for type="date" /
+ * type="datetime-local" when no value is set. The HTML placeholder attribute
+ * is ignored on date inputs on these platforms.
+ *
+ * Solution: render as type="text" (so placeholder works) and switch to the
+ * real date type synchronously via direct DOM mutation on pointerdown — BEFORE
+ * the browser decides whether to open a text keyboard or the native date picker.
+ * React state batching makes onFocus-based type-swaps arrive too late on iOS.
  */
 export function DateInput({
-  className,
+  type = "date",
   placeholder = "Select date",
   value,
+  onChange,
+  onFocus,
+  onBlur,
+  className,
+  disabled,
   ...props
 }: DateInputProps) {
+  const ref = React.useRef<HTMLInputElement>(null);
+  // Track displayed type in state so React keeps in sync.
+  const [inputType, setInputType] = React.useState<string>(
+    value ? type : "text"
+  );
+
+  // If value is set/cleared externally, keep the type in sync.
+  React.useEffect(() => {
+    const next = value ? type : "text";
+    setInputType(next);
+    if (ref.current) ref.current.type = next;
+  }, [value, type]);
+
+  const switchToDateType = () => {
+    if (!ref.current || ref.current.type === type) return;
+    // Direct DOM write is synchronous — iOS reads the new type before
+    // deciding which picker to open, unlike a React setState re-render.
+    ref.current.type = type;
+    setInputType(type);
+  };
+
   return (
-    <div className="relative">
-      <input
-        value={value}
-        className={cn("kat-date-input", className)}
-        {...props}
-      />
-      {!value && (
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 flex items-center px-4 text-sm text-slate-400 sm:hidden"
-        >
-          {placeholder}
-        </span>
-      )}
-    </div>
+    <input
+      ref={ref}
+      {...props}
+      type={inputType}
+      value={value}
+      disabled={disabled}
+      placeholder={inputType === "text" ? placeholder : undefined}
+      className={cn("kat-date-input", className)}
+      onPointerDown={switchToDateType}
+      onFocus={(e) => {
+        switchToDateType();
+        onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        if (!e.target.value) {
+          const textType = "text";
+          e.target.type = textType;
+          setInputType(textType);
+        }
+        onBlur?.(e);
+      }}
+      onChange={onChange}
+    />
   );
 }
