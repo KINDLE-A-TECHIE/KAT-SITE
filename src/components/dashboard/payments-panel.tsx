@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Check, Loader2, Plus, ShoppingCart, Tag, Trash2, User, UserMinus, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -1215,9 +1216,9 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">Expires</label>
-                  <Input
+                  <DateInput
                     type="date"
-                    className="kat-date-input"
+                    placeholder="Select expiry date"
                     value={form.expiresAt}
                     onChange={(e) => setForm((f) => ({ ...f, expiresAt: e.target.value }))}
                   />

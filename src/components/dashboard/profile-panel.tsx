@@ -6,6 +6,7 @@ import { Briefcase, GraduationCap, Loader2, Plus, Trash2, Upload } from "lucide-
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1043,15 +1044,15 @@ export function ProfilePanel() {
                       />
                       Currently studying
                     </label>
-                    <Input
-                      className={`${PROFILE_INPUT_CLASS} kat-date-input`}
+                    <DateInput
                       type="date"
+                      placeholder="Start date"
                       value={item.startDate}
                       onChange={(event) => updateEducation(item.id, { startDate: event.target.value })}
                     />
-                    <Input
-                      className={`${PROFILE_INPUT_CLASS} kat-date-input`}
+                    <DateInput
                       type="date"
+                      placeholder="End date"
                       value={item.endDate}
                       disabled={item.isCurrent}
                       onChange={(event) => updateEducation(item.id, { endDate: event.target.value })}
@@ -1172,15 +1173,15 @@ export function ProfilePanel() {
                       Current role
                     </label>
                     <div />
-                    <Input
-                      className={`${PROFILE_INPUT_CLASS} kat-date-input`}
+                    <DateInput
                       type="date"
+                      placeholder="Start date"
                       value={item.startDate}
                       onChange={(event) => updateExperience(item.id, { startDate: event.target.value })}
                     />
-                    <Input
-                      className={`${PROFILE_INPUT_CLASS} kat-date-input`}
+                    <DateInput
                       type="date"
+                      placeholder="End date"
                       value={item.endDate}
                       disabled={item.isCurrent}
                       onChange={(event) => updateExperience(item.id, { endDate: event.target.value })}

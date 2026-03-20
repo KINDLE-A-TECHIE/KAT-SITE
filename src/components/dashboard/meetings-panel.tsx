@@ -6,6 +6,7 @@ import { CalendarClock, Radio, RefreshCcw, Search, Users, Video } from "lucide-r
 import { toast } from "sonner";
 import { ProfilePreviewCard, type ProfilePreviewContact } from "@/components/dashboard/profile-preview-card";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -386,18 +387,18 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="space-y-1">
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Start Date and Time</p>
-                <Input
-                  className="kat-date-input"
+                <DateInput
                   type="datetime-local"
+                  placeholder="Select start date & time"
                   value={startTime}
                   onChange={(event) => setStartTime(event.target.value)}
                 />
               </div>
               <div className="space-y-1">
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">End Date and Time</p>
-                <Input
-                  className="kat-date-input"
+                <DateInput
                   type="datetime-local"
+                  placeholder="Select end date & time"
                   value={endTime}
                   onChange={(event) => setEndTime(event.target.value)}
                 />

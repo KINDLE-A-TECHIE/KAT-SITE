@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { ArrowDown, ArrowUp, CheckCircle2, Eye, GripVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -713,10 +714,9 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
             </Select>
             <Input placeholder="Assessment title" value={title} onChange={(event) => setTitle(event.target.value)} />
             <Input placeholder="Pass score" type="number" value={passScore} onChange={(event) => setPassScore(event.target.value)} />
-            <Input
-              className="kat-date-input"
-              placeholder="Due date"
+            <DateInput
               type="date"
+              placeholder="Select due date"
               value={dueDate}
               onChange={(event) => setDueDate(event.target.value)}
             />
