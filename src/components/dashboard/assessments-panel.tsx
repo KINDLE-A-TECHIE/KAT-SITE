@@ -43,6 +43,7 @@ type Assessment = {
   verifiedAt?: string | null;
   dueDate: string | null;
   program: Program;
+  module?: { id: string; title: string } | null;
   questions: {
     id: string;
     prompt: string;
@@ -217,7 +218,6 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
         setModuleId("");
       })
       .catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [programId]);
 
   const roleCanCreate = CREATOR_ROLES.includes(role);

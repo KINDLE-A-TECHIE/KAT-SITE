@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -83,7 +83,7 @@ function formatDate(value: string | null | undefined) {
   return new Date(value).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
 
-export default function TranscriptPage() {
+function TranscriptContent() {
   const searchParams = useSearchParams();
   const wardId = searchParams.get("wardId");
 
@@ -311,5 +311,13 @@ export default function TranscriptPage() {
         Generated {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} · KAT Learning · kat.africa
       </div>
     </div>
+  );
+}
+
+export default function TranscriptPage() {
+  return (
+    <Suspense fallback={<div className="kat-card animate-pulse h-40" />}>
+      <TranscriptContent />
+    </Suspense>
   );
 }

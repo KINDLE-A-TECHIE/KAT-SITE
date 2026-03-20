@@ -246,7 +246,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
       }
     } else {
       toast.success(`Redirecting to Paystack for ${cart.length} payment${cart.length !== 1 ? "s" : ""}…`);
-      window.location.href = authUrl;
+      window.location.assign(authUrl);
     }
     onSuccess();
   };
@@ -549,7 +549,7 @@ function AdminPayForStudentForm({ onSuccess }: { onSuccess: () => void }) {
       }
     } else {
       toast.success(`Redirecting to Paystack for ${selectedUser.firstName}…`);
-      window.location.href = authUrl;
+      window.location.assign(authUrl);
     }
     onSuccess();
   };
@@ -1405,7 +1405,7 @@ export function PaymentsPanel({ role }: { role: string }) {
             <div className="kat-card">
               <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Pay for Your Children</h3>
               <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">Add payments for one or more children to your cart, then checkout in a single transaction.</p>
-              <ParentPayForm onSuccess={() => void loadPayments(0)} />
+              <ParentPayForm onSuccess={() => void loadPayments()} />
             </div>
           )}
 
@@ -1413,7 +1413,7 @@ export function PaymentsPanel({ role }: { role: string }) {
             <div className="kat-card">
               <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Pay for a Student</h3>
               <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">Process a payment on behalf of a student and redirect to Paystack.</p>
-              <AdminPayForStudentForm onSuccess={() => void loadPayments(0)} />
+              <AdminPayForStudentForm onSuccess={() => void loadPayments()} />
             </div>
           )}
 
@@ -1453,7 +1453,7 @@ export function PaymentsPanel({ role }: { role: string }) {
             </div>
           </div>
           <div className="mt-5">
-            <ManualEnrollmentForm programs={programs} onSuccess={() => void loadPayments(0)} />
+            <ManualEnrollmentForm programs={programs} onSuccess={() => void loadPayments()} />
           </div>
         </div>
       )}

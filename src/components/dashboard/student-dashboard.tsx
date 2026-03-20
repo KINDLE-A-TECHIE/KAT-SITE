@@ -29,7 +29,7 @@ function computeXP(assessments: number, badges: number, logins: number) {
 }
 
 function getLevelInfo(xp: number) {
-  let current = LEVEL_TIERS[0];
+  let current: typeof LEVEL_TIERS[number] = LEVEL_TIERS[0];
   for (const tier of LEVEL_TIERS) {
     if (xp >= tier.xp) current = tier;
   }

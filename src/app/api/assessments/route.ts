@@ -170,14 +170,14 @@ export async function POST(request: Request) {
     }
 
     if (parsed.data.moduleId) {
-      const module = await prisma.module.findFirst({
+      const mod = await prisma.module.findFirst({
         where: {
           id: parsed.data.moduleId,
           version: { curriculum: { programId: parsed.data.programId } },
         },
         select: { id: true },
       });
-      if (!module) {
+      if (!mod) {
         return fail("Module does not belong to the selected program.", 400);
       }
     }

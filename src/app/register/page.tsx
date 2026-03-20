@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -36,7 +36,7 @@ const roleOptions: { label: string; value: UserRoleValue; description: string }[
   { label: "Parent / Guardian", value: "PARENT", description: "Manage your child's education" },
 ];
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") ?? "/dashboard";
@@ -321,5 +321,13 @@ export default function RegisterPage() {
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-slate-50" />}>
+      <RegisterContent />
+    </Suspense>
   );
 }
