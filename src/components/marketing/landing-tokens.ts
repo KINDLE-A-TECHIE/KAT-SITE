@@ -24,7 +24,6 @@ export const NAV_ITEMS = [
 ];
 
 export type TrackId = "explorers" | "builders" | "innovators";
-export type WaitlistState = "idle" | "loading" | "success" | "error" | "offline";
 
 export type ProgramTrack = {
   id: TrackId;

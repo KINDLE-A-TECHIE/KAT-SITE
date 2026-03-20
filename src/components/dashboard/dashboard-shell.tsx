@@ -18,7 +18,6 @@ import {
   LayoutDashboard,
   Library,
   LineChart,
-  ListFilter,
   LogOut,
   MessageSquare,
   ScrollText,
@@ -76,7 +75,6 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
         { href: "/dashboard/analytics", label: "Analytics", icon: LineChart },
         { href: "/dashboard/fellows/applications", label: "Applications", icon: FileText },
         { href: "/dashboard/cohorts", label: "Cohorts", icon: UsersRound },
-        { href: "/dashboard/waitlist", label: "Waitlist", icon: ListFilter },
         { href: "/dashboard/super-admin-invites", label: "Access", icon: ShieldAlert },
       ];
     case "ADMIN":

@@ -84,7 +84,7 @@ export function PricingSection() {
           Scholarship spots available every cohort
         </p>
         <p className="mt-1 text-sm text-emerald-700">
-          Need financial support? Join the waitlist and mention scholarships — we review every application.
+          Need financial support? Reach out to us about scholarships — we review every application.
         </p>
       </div>
     </section>
