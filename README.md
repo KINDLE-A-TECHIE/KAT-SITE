@@ -1,6 +1,6 @@
 # KAT — Kindle A Techie
 
-A full-stack Learning Management System (LMS) for KAT Academy, serving students aged 8–19 across Africa. Built with Next.js 15, TypeScript, Prisma, Jitsi and PostgreSQL.
+A full-stack Learning Management System (LMS) for KAT Academy, serving students aged 8–19 across Africa. Built with Next.js 15, TypeScript, Prisma, Zoho Meeting and PostgreSQL.
 
 ---
 
@@ -135,11 +135,14 @@ All seed accounts use the password `Passw0rd!`
 - Auto-grading for objective questions; manual grading queue for open-ended responses
 
 ### Projects
-- Students create standalone or program-linked projects
-- Direct browser-to-R2 uploads via presigned PUT URLs (max 50 MB per file, 10 files per project)
+- Students create standalone or program-linked projects with a required description and optional "How to Use" guide
+- Direct browser-to-R2 uploads via presigned PUT URLs (max 20 MB per file, 10 files per project)
 - Submission workflow: Draft → Submitted → Approved / Needs Work / Rejected
-- Instructor/admin feedback thread per project
-- Public showcase page at `/projects` (ISR, approved + public projects only)
+- Instructor/admin feedback thread per project with edit and delete support
+- Approval history: each review action is recorded with reviewer name and timestamp
+- Instructors and admins can upload scoped asset files per project for students to download
+- Approved projects get a shareable public link at `/showcase/[projectId]` (ISR, 5-minute revalidation)
+- Rate limiting on create, upload, feedback, and status-change endpoints
 
 ### Badges & Certificates
 - Badges auto-awarded per module when all assessments in that module are passed
@@ -164,6 +167,7 @@ All seed accounts use the password `Passw0rd!`
 
 ### Security
 - Rate limiting on auth endpoints: login (10/15 min), register (5/hr), forgot-password (3/15 min)
+- Rate limiting on project endpoints: create (10/hr), upload (30/hr), feedback (60/hr), status change (100/hr)
 - Security headers on all routes: `X-Frame-Options`, `X-Content-Type-Options`, `HSTS`, `Referrer-Policy`, `Permissions-Policy`
 - Paystack webhook signature verification (hard-required)
 
@@ -229,12 +233,13 @@ src/
       partners/           # Partner enquiry form handler
       payments/           # Paystack billing, webhooks, history
       programs/           # Program management
-      projects/           # Project CRUD, R2 uploads, feedback, showcase
+      projects/           # Project CRUD, R2 uploads, feedback, assets, status reviews, showcase
       super-admin/        # Admin account and invite management
       users/              # Registration, profile, avatar
       waitlist/           # Landing page waitlist
     dashboard/            # All dashboard pages by role
-    projects/             # Public project showcase (/projects)
+    showcase/             # Public project showcase index (/showcase)
+    showcase/[projectId]/ # ISR public project detail page
     certificate/          # Public certificate verification
     partners/             # Partner enquiry page
 
