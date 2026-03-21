@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import type { UserRoleValue } from "@/lib/enums";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -126,11 +127,11 @@ const STATUS_CONFIG = {
 };
 
 const STATUS_ACCENT: Record<Project["status"], string> = {
-  DRAFT: "border-l-4 border-l-slate-300 dark:border-l-slate-600",
-  SUBMITTED: "border-l-4 border-l-blue-400 dark:border-l-blue-500",
-  APPROVED: "border-l-4 border-l-emerald-400 dark:border-l-emerald-500",
-  NEEDS_WORK: "border-l-4 border-l-amber-400 dark:border-l-amber-500",
-  REJECTED: "border-l-4 border-l-rose-400 dark:border-l-rose-500",
+  DRAFT: "border-t-4 border-t-slate-300 dark:border-t-slate-600",
+  SUBMITTED: "border-t-4 border-t-blue-400 dark:border-t-blue-500",
+  APPROVED: "border-t-4 border-t-emerald-400 dark:border-t-emerald-500",
+  NEEDS_WORK: "border-t-4 border-t-amber-400 dark:border-t-amber-500",
+  REJECTED: "border-t-4 border-t-rose-400 dark:border-t-rose-500",
 };
 
 const STATUS_GROUPS: { label: string; statuses: Project["status"][]; emptyText: string }[] = [
@@ -304,11 +305,13 @@ function AssetUploader({ projectId, onUploaded }: { projectId: string; onUploade
 function ProjectCard({
   project,
   isReviewer,
+  readOnly = false,
   onUpdate,
   onDelete,
 }: {
   project: Project;
   isReviewer: boolean;
+  readOnly?: boolean;
   onUpdate: (updated: Project) => void;
   onDelete: (id: string) => void;
 }) {
@@ -529,11 +532,11 @@ function ProjectCard({
   };
 
   return (
-    <div className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 ${STATUS_ACCENT[p.status]}`}>
+    <div className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-slate-700 dark:bg-slate-900 ${STATUS_ACCENT[p.status]}`}>
 
       {/* Cover image */}
       {p.coverImageUrl && !editing && (
-        <div className="relative h-40 w-full overflow-hidden">
+        <div className="relative h-44 w-full overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={p.coverImageUrl} alt={`${p.title} cover`} className="h-full w-full object-cover" />
           {canEdit && (
@@ -548,31 +551,30 @@ function ProjectCard({
         </div>
       )}
 
-      {/* Card header — always visible */}
+      {/* Card body */}
       <div className="p-4">
-        {/* Row 1: badges + icon buttons */}
-        <div className="mb-2.5 flex items-start justify-between gap-2">
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${cfg.className}`}>
-              {cfg.label}
-            </span>
-            {p.program && (
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                {p.program.name}
-              </span>
-            )}
-            {p.assessment && (
-              <span className="flex items-center gap-0.5 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                <Briefcase className="size-3" />
-                Assignment
-              </span>
-            )}
-            {p.student && (
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                {p.student.firstName} {p.student.lastName}
-              </span>
-            )}
-          </div>
+
+        {/* Student name (reviewer/parent view) */}
+        {p.student && (
+          <p className="mb-2 text-xs font-medium text-slate-400 dark:text-slate-500">
+            {p.student.firstName} {p.student.lastName}
+          </p>
+        )}
+
+        {/* Title row */}
+        <div className="mb-2 flex items-start justify-between gap-2">
+          {editing ? (
+            <Input
+              value={editForm.title}
+              onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
+              className="font-semibold dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              maxLength={120}
+            />
+          ) : (
+            <button onClick={() => setExpanded((v) => !v)} className="min-w-0 flex-1 text-left">
+              <h3 className="[font-family:var(--font-space-grotesk)] text-base font-bold leading-snug text-slate-900 dark:text-slate-100">{p.title}</h3>
+            </button>
+          )}
           <div className="flex shrink-0 items-center gap-0.5">
             {canEdit && !editing && (
               <button
@@ -592,18 +594,24 @@ function ProjectCard({
           </div>
         </div>
 
-        {/* Title */}
-        {editing ? (
-          <Input
-            value={editForm.title}
-            onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
-            className="mb-2 font-semibold dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-            maxLength={120}
-          />
-        ) : (
-          <button onClick={() => setExpanded((v) => !v)} className="mb-1.5 w-full text-left">
-            <h3 className="text-base font-semibold leading-snug text-slate-900 dark:text-slate-100">{p.title}</h3>
-          </button>
+        {/* Badges row */}
+        {!editing && (
+          <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${cfg.className}`}>
+              {cfg.label}
+            </span>
+            {p.program && (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                {p.program.name}
+              </span>
+            )}
+            {p.assessment && (
+              <span className="flex items-center gap-0.5 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                <Briefcase className="size-3" />
+                Assignment
+              </span>
+            )}
+          </div>
         )}
 
         {/* Tags */}
@@ -619,31 +627,33 @@ function ProjectCard({
 
         {/* Description snippet — visible when collapsed */}
         {!editing && !expanded && p.description && (
-          <p className="mb-3 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">{p.description}</p>
+          <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{p.description}</p>
         )}
 
-        {/* Meta row + primary CTA */}
+        {/* Meta row */}
         {!editing && (
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
             <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
               <span className="flex items-center gap-1">
                 <FileText className="size-3" />{p.files.length} file{p.files.length !== 1 ? "s" : ""}
               </span>
-              <span className="flex items-center gap-1">
-                <MessageSquare className="size-3" />{p.feedback.length}
-              </span>
-              <span>{formatDate(p.updatedAt)}</span>
+              {p.feedback.length > 0 && (
+                <span className="flex items-center gap-1">
+                  <MessageSquare className="size-3" />{p.feedback.length} note{p.feedback.length !== 1 ? "s" : ""}
+                </span>
+              )}
+              <span className="text-slate-300 dark:text-slate-600">{formatDate(p.updatedAt)}</span>
             </div>
-            {!isReviewer && (canSubmit || canRetract) && (
+            {!isReviewer && !readOnly && (canSubmit || canRetract) && (
               <div className="flex shrink-0 gap-1.5">
                 {canSubmit && (
-                  <Button size="sm" onClick={() => void handleSubmit()} disabled={submitting} className="h-7 gap-1 px-2.5 text-xs">
+                  <Button size="sm" onClick={() => void handleSubmit()} disabled={submitting} className="h-7 gap-1 px-3 text-xs">
                     {submitting ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}
                     Submit
                   </Button>
                 )}
                 {canRetract && (
-                  <Button size="sm" variant="outline" onClick={() => void handleRetract()} disabled={submitting} className="h-7 gap-1 px-2.5 text-xs">
+                  <Button size="sm" variant="outline" onClick={() => void handleRetract()} disabled={submitting} className="h-7 gap-1 px-3 text-xs">
                     {submitting ? <Loader2 className="size-3 animate-spin" /> : <Undo2 className="size-3" />}
                     Retract
                   </Button>
@@ -767,7 +777,9 @@ function ProjectCard({
               {/* Files */}
               {!editing && (
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Files</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                    Files {readOnly && p.files.length > 0 && <span className="ml-1 font-normal normal-case text-slate-400">(click to download)</span>}
+                  </p>
                   {p.files.length === 0 ? (
                     <p className="text-xs text-slate-400 dark:text-slate-500">
                       No files uploaded.{p.deployedUrl ? " Project link provided above." : ""}
@@ -783,11 +795,26 @@ function ProjectCard({
                             </a>
                             <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{formatBytes(file.size)}</span>
                           </div>
-                          {canEdit && (
-                            <button onClick={() => void handleDeleteFile(file.id)} className="shrink-0 rounded p-2 text-rose-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20 touch-manipulation">
-                              <Trash2 className="size-4" />
-                            </button>
-                          )}
+                          <div className="flex shrink-0 items-center gap-0.5">
+                            {readOnly && (
+                              <a
+                                href={file.url}
+                                download={file.name}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+                                title="Download file"
+                              >
+                                <Upload className="size-3 rotate-180" />
+                                Download
+                              </a>
+                            )}
+                            {canEdit && (
+                              <button onClick={() => void handleDeleteFile(file.id)} className="rounded p-2 text-rose-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20 touch-manipulation">
+                                <Trash2 className="size-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1159,10 +1186,42 @@ function NewProjectForm({ programs, onCreated, assignment, onCancelAssignment }:
   );
 }
 
+// ── New Project Dialog ────────────────────────────────────────────────────────
+
+function NewProjectDialog({ open, onClose, programs, onCreated, assignment }: {
+  open: boolean;
+  onClose: () => void;
+  programs: Program[];
+  onCreated: (p: Project) => void;
+  assignment?: Assignment | null;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-h-[92vh] max-w-lg overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {assignment ? <><Briefcase className="size-4 text-amber-500" />Start Assignment</> : <><Plus className="size-4" />New Project</>}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-slate-500">
+            {assignment ? `Working on: ${assignment.title}` : "Start a new project for your portfolio."}
+          </DialogDescription>
+        </DialogHeader>
+        <NewProjectForm
+          programs={programs}
+          onCreated={(p) => { onCreated(p); onClose(); }}
+          assignment={assignment}
+          onCancelAssignment={onClose}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Main Panel ────────────────────────────────────────────────────────────────
 
 export function ProjectsPanel({ role }: { role: UserRoleValue }) {
-  const [tab, setTab] = useState<"mine" | "assignments" | "new" | "review">("mine");
+  const [tab, setTab] = useState<"mine" | "assignments" | "review">("mine");
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [reviewProjects, setReviewProjects] = useState<Project[]>([]);
@@ -1267,7 +1326,6 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
 
   const handleCreated = (project: Project) => {
     setProjects((prev) => [project, ...prev]);
-    // If the new project was for an assignment, update its linkedProject in state
     if (project.assessmentId) {
       setAssignments((prev) =>
         prev.map((a) =>
@@ -1277,46 +1335,65 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
         )
       );
     }
-    setTab("mine");
+    setNewProjectOpen(false);
     setActiveAssignment(null);
+    setTab("mine");
   };
 
   const tabs = [
-    { key: "mine" as const, label: isParent ? "Children's Projects" : "My Projects", show: true },
-    { key: "assignments" as const, label: "Assignments", show: canCreate || isReviewer },
-    { key: "new" as const, label: "New Project", show: canCreate },
+    { key: "mine" as const, label: isParent ? "Children's Projects" : "My Work", show: !isReviewer },
+    { key: "assignments" as const, label: "Assignments", show: isReviewer },
     { key: "review" as const, label: "Review Queue", show: isReviewer },
   ].filter((t) => t.show);
+
+  // Pending assignments (not started yet)
+  const pendingAssignments = assignments.filter((a) => !a.linkedProject);
+  const inProgressAssignments = assignments.filter((a) => a.linkedProject && a.linkedProject.status !== "APPROVED");
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900 dark:text-slate-100">Projects</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{isParent ? "Track your children's project submissions and feedback" : "Build, showcase, and get feedback on your work"}</p>
+          <h2 className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900 dark:text-slate-100">
+            {isParent ? "Children's Projects" : isReviewer ? "Project Centre" : "My Projects"}
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {isParent ? "Track your children's work and download their project files." : isReviewer ? "Review submissions and manage project assignments." : "Build real projects, get feedback, and grow your portfolio."}
+          </p>
         </div>
-        <FolderOpen className="size-8 text-slate-300 dark:text-slate-600" />
+        {canCreate && (
+          <Button
+            onClick={() => { setActiveAssignment(null); setNewProjectOpen(true); }}
+            className="shrink-0 gap-1.5"
+            size="sm"
+          >
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">New Project</span>
+            <span className="sm:hidden">New</span>
+          </Button>
+        )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/50">
-        {tabs.map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)} className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-medium transition touch-manipulation ${tab === t.key ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* New project form */}
-      {tab === "new" && canCreate && (
-        <NewProjectForm
-          programs={programs}
-          onCreated={handleCreated}
-          assignment={activeAssignment}
-          onCancelAssignment={() => { setActiveAssignment(null); setTab("assignments"); }}
-        />
+      {/* Tabs — only for reviewers; students get a single merged view */}
+      {tabs.length > 1 && (
+        <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/50">
+          {tabs.map((t) => (
+            <button key={t.key} onClick={() => setTab(t.key)} className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-medium transition touch-manipulation ${tab === t.key ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
       )}
+
+      {/* New Project Dialog */}
+      <NewProjectDialog
+        open={newProjectOpen}
+        onClose={() => { setNewProjectOpen(false); setActiveAssignment(null); }}
+        programs={programs}
+        onCreated={handleCreated}
+        assignment={activeAssignment}
+      />
 
       {/* Assignments tab */}
       {tab === "assignments" && (
@@ -1451,7 +1528,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                           <Button
                             size="sm"
                             className="h-7 gap-1.5 px-3 text-xs"
-                            onClick={() => { setActiveAssignment(a); setTab("new"); }}
+                            onClick={() => { setActiveAssignment(a); setNewProjectOpen(true); }}
                           >
                             <Plus className="size-3.5" />
                             Start Project
@@ -1527,71 +1604,209 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
         </div>
       )}
 
-      {/* My projects — grouped by status (or by child for parents) */}
+      {/* My Work — assignments at top + portfolio below (or by child for parents) */}
       {tab === "mine" && (
         <div className="space-y-6">
-          {loading ? (
+          {loading || assignmentsLoading ? (
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
-          ) : projects.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-12 text-center dark:border-slate-700">
-              <FolderOpen className="size-10 text-slate-300 dark:text-slate-600" />
-              <div>
-                <p className="font-medium text-slate-700 dark:text-slate-300">{isParent ? "No projects from your children yet" : "No projects yet"}</p>
-                {canCreate && <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">Click <strong>New Project</strong> to get started</p>}
-              </div>
-            </div>
           ) : isParent ? (
-            // Group by child
-            (() => {
-              const byChild = new Map<string, { name: string; projects: Project[] }>();
-              for (const p of projects) {
-                const childId = p.student?.id ?? "unknown";
-                const name = p.student ? `${p.student.firstName} ${p.student.lastName}` : "Unknown";
-                if (!byChild.has(childId)) byChild.set(childId, { name, projects: [] });
-                byChild.get(childId)!.projects.push(p);
-              }
-              return Array.from(byChild.entries()).map(([childId, { name, projects: childProjects }]) => (
-                <div key={childId}>
-                  <div className="mb-2 flex items-center gap-2">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{name}</h3>
-                    <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                      {childProjects.length}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {childProjects.map((p) => (
-                      <ProjectCard key={p.id} project={p} isReviewer={false} onUpdate={handleUpdate} onDelete={handleDelete} />
-                    ))}
-                  </div>
-                </div>
-              ));
-            })()
-          ) : (
-            STATUS_GROUPS.map(({ label, statuses, emptyText }) => {
-              const group = projects.filter((p) => statuses.includes(p.status));
-              if (group.length === 0 && !emptyText) return null;
-              return (
-                <div key={label}>
-                  <div className="mb-2 flex items-center gap-2">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</h3>
-                    {group.length > 0 && (
+            // ── Parent: group by child ──────────────────────────────────────
+            projects.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-12 text-center dark:border-slate-700">
+                <FolderOpen className="size-10 text-slate-300 dark:text-slate-600" />
+                <p className="font-medium text-slate-700 dark:text-slate-300">No projects from your children yet</p>
+              </div>
+            ) : (
+              (() => {
+                const byChild = new Map<string, { name: string; projects: Project[] }>();
+                for (const p of projects) {
+                  const childId = p.student?.id ?? "unknown";
+                  const name = p.student ? `${p.student.firstName} ${p.student.lastName}` : "Unknown";
+                  if (!byChild.has(childId)) byChild.set(childId, { name, projects: [] });
+                  byChild.get(childId)!.projects.push(p);
+                }
+                return Array.from(byChild.entries()).map(([childId, { name, projects: childProjects }]) => (
+                  <div key={childId}>
+                    <div className="mb-2 flex items-center gap-2">
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{name}</h3>
                       <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                        {group.length}
+                        {childProjects.length}
                       </span>
-                    )}
-                  </div>
-                  {group.length === 0 ? (
-                    <p className="text-xs text-slate-400 dark:text-slate-500">{emptyText}</p>
-                  ) : (
+                    </div>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {group.map((p) => (
-                        <ProjectCard key={p.id} project={p} isReviewer={false} onUpdate={handleUpdate} onDelete={handleDelete} />
+                      {childProjects.map((p) => (
+                        <ProjectCard key={p.id} project={p} isReviewer={false} readOnly={true} onUpdate={handleUpdate} onDelete={handleDelete} />
                       ))}
                     </div>
-                  )}
+                  </div>
+                ));
+              })()
+            )
+          ) : (
+            // ── Student / Fellow: assignments first, then portfolio ──────────
+            <>
+              {/* Pending assignments — amber accent cards */}
+              {(pendingAssignments.length > 0 || inProgressAssignments.length > 0) && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <BookMarked className="size-4 text-amber-500" />
+                    <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                      Assignments
+                      <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                        {pendingAssignments.length + inProgressAssignments.length}
+                      </span>
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {[...pendingAssignments, ...inProgressAssignments].map((a) => {
+                      const linked = a.linkedProject;
+                      const statusConfig = linked ? STATUS_CONFIG[linked.status as Project["status"]] : null;
+                      const fileCount = (linked?.files.length ?? 0) + (linked?.assets.length ?? 0);
+                      const dueMs = a.dueDate ? new Date(a.dueDate).getTime() - Date.now() : null;
+                      const dueDays = dueMs !== null ? Math.ceil(dueMs / 86_400_000) : null;
+                      const overdue = dueDays !== null && dueDays < 0;
+                      const urgent = dueDays !== null && dueDays <= 3 && dueDays >= 0;
+
+                      return (
+                        <motion.div
+                          key={a.id}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="overflow-hidden rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm dark:border-amber-800/50 dark:from-amber-950/30 dark:to-orange-950/20"
+                        >
+                          <div className="p-4">
+                            {/* Program / module badges */}
+                            <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                                {a.program.name}
+                              </span>
+                              {a.module && (
+                                <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-[11px] font-medium text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+                                  {a.module.title}
+                                </span>
+                              )}
+                              {a.weekNumber && (
+                                <span className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+                                  Week {a.weekNumber}
+                                </span>
+                              )}
+                            </div>
+
+                            <h3 className="[font-family:var(--font-space-grotesk)] font-semibold leading-snug text-slate-900 dark:text-slate-100">
+                              {a.title}
+                            </h3>
+                            {a.description && (
+                              <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                                {a.description}
+                              </p>
+                            )}
+
+                            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                              <span className="flex items-center gap-1">
+                                <Star className="size-3.5 text-amber-400" />
+                                {a.totalPoints} pts
+                              </span>
+                              {a.dueDate && (
+                                <span className={`flex items-center gap-1 font-medium ${overdue ? "text-red-500 dark:text-red-400" : urgent ? "text-orange-500 dark:text-orange-400" : "text-slate-500"}`}>
+                                  <Clock className="size-3.5" />
+                                  {dueDays === null ? "" : dueDays < 0 ? `Overdue by ${Math.abs(dueDays)}d` : dueDays === 0 ? "Due today!" : dueDays === 1 ? "Due tomorrow" : `${dueDays} days left`}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Linked project status */}
+                            {linked && statusConfig && (
+                              <div className="mt-3 flex items-center gap-2 rounded-lg bg-white/60 px-3 py-2 dark:bg-slate-800/40">
+                                <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusConfig.className}`}>
+                                  {statusConfig.label}
+                                </span>
+                                <span className="text-xs text-slate-500 dark:text-slate-400">{statusConfig.description}</span>
+                                {fileCount > 0 && (
+                                  <span className="ml-auto flex items-center gap-1 text-xs text-slate-400">
+                                    <FileText className="size-3.5" />{fileCount}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* CTA footer */}
+                          <div className="flex items-center gap-2 border-t border-amber-200/60 bg-white/40 px-4 py-2.5 dark:border-amber-800/30 dark:bg-slate-800/20">
+                            {linked ? (
+                              <button
+                                onClick={() => {
+                                  const el = document.getElementById(`project-${linked.id}`);
+                                  el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                                }}
+                                className="text-xs font-medium text-amber-700 hover:underline dark:text-amber-400"
+                              >
+                                View my submission →
+                              </button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                className="h-7 gap-1.5 border-amber-400 bg-amber-500 px-3 text-xs text-white hover:bg-amber-600 dark:border-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500"
+                                onClick={() => { setActiveAssignment(a); setNewProjectOpen(true); }}
+                              >
+                                <Plus className="size-3.5" />
+                                Start Project
+                              </Button>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
                 </div>
-              );
-            })
+              )}
+
+              {/* Portfolio sections grouped by status */}
+              {projects.length === 0 && pendingAssignments.length === 0 && inProgressAssignments.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-center dark:border-slate-700">
+                  <FolderOpen className="size-10 text-slate-300 dark:text-slate-600" />
+                  <div>
+                    <p className="font-medium text-slate-700 dark:text-slate-300">Your portfolio is empty</p>
+                    <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">Hit <strong>New Project</strong> to add your first project</p>
+                  </div>
+                </div>
+              ) : projects.length > 0 && (
+                <>
+                  {(pendingAssignments.length > 0 || inProgressAssignments.length > 0) && (
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="size-4 text-slate-400" />
+                      <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400">My Portfolio</h3>
+                    </div>
+                  )}
+                  {STATUS_GROUPS.map(({ label, statuses, emptyText }) => {
+                    const group = projects.filter((p) => statuses.includes(p.status));
+                    if (group.length === 0 && !emptyText) return null;
+                    return (
+                      <div key={label}>
+                        <div className="mb-2 flex items-center gap-2">
+                          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</h3>
+                          {group.length > 0 && (
+                            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                              {group.length}
+                            </span>
+                          )}
+                        </div>
+                        {group.length === 0 ? (
+                          <p className="text-xs text-slate-400 dark:text-slate-500">{emptyText}</p>
+                        ) : (
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            {group.map((p) => (
+                              <div key={p.id} id={`project-${p.id}`}>
+                                <ProjectCard project={p} isReviewer={false} onUpdate={handleUpdate} onDelete={handleDelete} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </>
           )}
         </div>
       )}

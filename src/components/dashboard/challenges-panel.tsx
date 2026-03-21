@@ -426,7 +426,7 @@ function CreateChallengeDialog({
           weekNumber: form.weekNumber ? parseInt(form.weekNumber, 10) : null,
           totalPoints: parseInt(form.totalPoints, 10) || 100,
           passScore: parseInt(form.passScore, 10) || 50,
-          dueDate: form.dueDate || null,
+          dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : undefined,
           published: true,
           questions: [
             {

@@ -286,6 +286,17 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
     toast.success("Recording mode updated.");
   };
 
+  const removeMeeting = async (meetingId: string) => {
+    const response = await fetch(`/api/meetings?meetingId=${meetingId}`, { method: "DELETE" });
+    const payload = await response.json();
+    if (!response.ok) {
+      toast.error(payload?.error ?? "Could not remove meeting.");
+      return;
+    }
+    toast.success("Meeting removed.");
+    setMeetings((prev) => prev.filter((m) => m.id !== meetingId));
+  };
+
   const cancelMeeting = async (meetingId: string) => {
     const response = await fetch("/api/meetings", {
       method: "PATCH",
@@ -598,14 +609,16 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                           </span>
                         </div>
                         <div className="mt-2 flex flex-wrap gap-2">
-                          <Button
-                            size="sm"
-                            className="w-full sm:w-auto"
-                            disabled={joiningId === meeting.id}
-                            onClick={() => void joinMeeting(meeting.id)}
-                          >
-                            {joiningId === meeting.id ? "Joining..." : "Join"}
-                          </Button>
+                          {(meeting.status === "LIVE" || meeting.status === "UPCOMING") && (
+                            <Button
+                              size="sm"
+                              className="w-full sm:w-auto"
+                              disabled={joiningId === meeting.id}
+                              onClick={() => void joinMeeting(meeting.id)}
+                            >
+                              {joiningId === meeting.id ? "Joining..." : meeting.status === "LIVE" ? "Join Now" : "Join"}
+                            </Button>
+                          )}
                           {canWatchRecordings && recordingUrl ? (
                             <Button
                               size="sm"
@@ -626,6 +639,17 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                           {canCancelMeeting(meeting) && meeting.status !== "ENDED" && meeting.status !== "CANCELLED" ? (
                             <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => void cancelMeeting(meeting.id)}>
                               Cancel
+                            </Button>
+                          ) : null}
+                          {(meeting.status === "ENDED" || meeting.status === "CANCELLED") &&
+                            (role === "SUPER_ADMIN" || ((role === "ADMIN" || role === "INSTRUCTOR") && meeting.host.id === userId)) ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 sm:w-auto dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950"
+                              onClick={() => void removeMeeting(meeting.id)}
+                            >
+                              Remove
                             </Button>
                           ) : null}
                         </div>

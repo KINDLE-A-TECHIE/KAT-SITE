@@ -65,5 +65,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json({ challenges });
+  // Add empty submissions array for type compatibility with learner response
+  const result = challenges.map((c) => ({ ...c, submissions: [] as never[] }));
+  return NextResponse.json({ challenges: result });
 }

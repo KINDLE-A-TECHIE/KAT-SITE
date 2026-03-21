@@ -140,6 +140,33 @@ export async function POST(request: Request) {
   return ok({ meeting }, 201);
 }
 
+export async function DELETE(request: Request) {
+  const session = await getServerAuthSession();
+  if (!session?.user?.id) return fail("Unauthorized", 401);
+
+  const url = new URL(request.url);
+  const meetingId = url.searchParams.get("meetingId");
+  if (!meetingId) return fail("meetingId is required.", 400);
+
+  const meeting = await prisma.meeting.findUnique({
+    where: { id: meetingId },
+    select: { id: true, hostId: true, status: true, organizationId: true },
+  });
+  if (!meeting) return fail("Meeting not found.", 404);
+
+  const isSuperAdmin = session.user.role === UserRole.SUPER_ADMIN;
+  const isHost = meeting.hostId === session.user.id;
+  const isAdminOrInstructor = session.user.role === UserRole.ADMIN || session.user.role === UserRole.INSTRUCTOR;
+
+  if (!isSuperAdmin && !(isHost && isAdminOrInstructor)) return fail("Forbidden", 403);
+  if (meeting.status !== MeetingStatus.ENDED && meeting.status !== MeetingStatus.CANCELLED) {
+    return fail("Only ended or cancelled meetings can be removed.", 400);
+  }
+
+  await prisma.meeting.delete({ where: { id: meetingId } });
+  return ok({ meetingId });
+}
+
 export async function PATCH(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
