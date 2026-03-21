@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { CalendarClock, Radio, RefreshCcw, Search, Users, Video } from "lucide-react";
+import { CalendarClock, Download, Radio, RefreshCcw, Search, Users, Video } from "lucide-react";
 import { toast } from "sonner";
 import { ProfilePreviewCard, type ProfilePreviewContact } from "@/components/dashboard/profile-preview-card";
 import { Button } from "@/components/ui/button";
@@ -86,6 +86,7 @@ function recordingStatusLabel(status: MeetingRecordingStatusValue) {
 }
 
 export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
+  const [activeColumn, setActiveColumn] = useState<"live" | "upcoming" | "ended">("upcoming");
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [recordingLibrary, setRecordingLibrary] = useState<Meeting[]>([]);
   const [contacts, setContacts] = useState<ProfilePreviewContact[]>([]);
@@ -322,31 +323,25 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
 
   return (
     <div className="space-y-5">
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {/* Mobile tab switcher — hidden on xl where columns show side by side */}
+      <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 xl:hidden dark:border-slate-700 dark:bg-slate-800/50">
         {(["live", "upcoming", "ended"] as const).map((key) => {
           const Icon = key === "live" ? Radio : key === "upcoming" ? CalendarClock : Video;
           return (
-            <div
+            <button
               key={key}
-              className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.55)] dark:border-slate-700 dark:bg-slate-800/90"
+              onClick={() => setActiveColumn(key)}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition ${activeColumn === key ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`inline-flex size-8 items-center justify-center rounded-lg bg-gradient-to-br text-white ${COLUMN_META[key].tone}`}
-                  >
-                    <Icon className="size-4" />
-                  </div>
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{COLUMN_META[key].label}</p>
-                </div>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${COLUMN_META[key].chip}`}>
-                  {grouped[key].length}
-                </span>
-              </div>
-            </div>
+              <Icon className="size-3.5" />
+              {COLUMN_META[key].label}
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${COLUMN_META[key].chip}`}>
+                {grouped[key].length}
+              </span>
+            </button>
           );
         })}
-      </section>
+      </div>
 
       {canHost ? (
         <section className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.5)] sm:p-5 dark:border-slate-700 dark:bg-slate-900/95">
@@ -506,7 +501,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
           return (
             <div
               key={key}
-              className="flex flex-col rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.5)] dark:border-slate-700 dark:bg-slate-900/95"
+              className={`flex flex-col rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.5)] dark:border-slate-700 dark:bg-slate-900/95 ${activeColumn === key ? "block" : "hidden xl:flex"}`}
             >
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -552,8 +547,9 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                             {meeting.status}
                           </span>
                         </div>
-                        <p className="mt-2 break-words text-xs text-slate-600 dark:text-slate-400">
-                          {new Date(meeting.startTime).toLocaleString()} - {new Date(meeting.endTime).toLocaleString()}
+                        <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+                          <span className="block">{new Date(meeting.startTime).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>
+                          <span>{new Date(meeting.startTime).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })} – {new Date(meeting.endTime).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
                         </p>
                         <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                           <Users className="size-3.5" />
@@ -590,7 +586,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                             </select>
                           </div>
                         )}
-                        <div className="mt-3 flex flex-wrap gap-2">
+                        <div className="mt-2">
                           <span
                             className={
                               meeting.host.id === userId
@@ -598,8 +594,10 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                                 : "inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
                             }
                           >
-                            {meeting.host.id === userId ? "Joining as host" : "Joining as attendee"}
+                            {meeting.host.id === userId ? "Host" : "Attendee"}
                           </span>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
                           <Button
                             size="sm"
                             className="w-full sm:w-auto"
@@ -617,6 +615,13 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                             >
                               Watch Recording
                             </Button>
+                          ) : null}
+                          {role === "SUPER_ADMIN" && meeting.recordingDownloadUrl ? (
+                            <a href={meeting.recordingDownloadUrl} download>
+                              <Button size="sm" variant="outline" className="w-full sm:w-auto">
+                                <Download className="mr-1.5 size-3.5" /> Download
+                              </Button>
+                            </a>
                           ) : null}
                           {canCancelMeeting(meeting) && meeting.status !== "ENDED" && meeting.status !== "CANCELLED" ? (
                             <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => void cancelMeeting(meeting.id)}>
@@ -678,7 +683,8 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                           Host: {meeting.host.firstName} {meeting.host.lastName}
                         </p>
                         <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-                          {new Date(meeting.startTime).toLocaleString()} - {new Date(meeting.endTime).toLocaleString()}
+                          <span className="block">{new Date(meeting.startTime).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>
+                          <span>{new Date(meeting.startTime).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })} – {new Date(meeting.endTime).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
                         </p>
                       </div>
                       <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
@@ -722,6 +728,13 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                         >
                           Watch Recording
                         </Button>
+                      ) : null}
+                      {meeting.recordingDownloadUrl ? (
+                        <a href={meeting.recordingDownloadUrl} download>
+                          <Button size="sm" variant="outline" className="w-full sm:w-auto">
+                            <Download className="mr-1.5 size-3.5" /> Download
+                          </Button>
+                        </a>
                       ) : null}
                     </div>
                   </div>
