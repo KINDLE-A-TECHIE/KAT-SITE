@@ -107,7 +107,7 @@ export async function POST(request: Request) {
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-1.5-flash",
       systemInstruction: SYSTEM_PROMPT,
     });
 
@@ -128,7 +128,20 @@ export async function POST(request: Request) {
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   } catch (err) {
-    console.error("[enrollment-chat]", err);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[enrollment-chat]", message);
+
+    // Surface API key / quota errors clearly without leaking internals
+    if (message.includes("API_KEY") || message.includes("API key")) {
+      return Response.json({ error: "Chat is misconfigured — invalid API key." }, { status: 503 });
+    }
+    if (message.includes("quota") || message.includes("RESOURCE_EXHAUSTED")) {
+      return Response.json({ error: "Chat quota reached. Please try again later." }, { status: 429 });
+    }
+    if (message.includes("not found") || message.includes("404")) {
+      return Response.json({ error: "Chat model unavailable. Please try again later." }, { status: 503 });
+    }
+
     return Response.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
