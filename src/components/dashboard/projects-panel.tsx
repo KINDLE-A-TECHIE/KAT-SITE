@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
+  BookMarked,
+  Briefcase,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -18,6 +21,7 @@ import {
   Pencil,
   Plus,
   Search,
+  Star,
   Tag,
   Trash2,
   Undo2,
@@ -65,6 +69,8 @@ type Project = {
   status: "DRAFT" | "SUBMITTED" | "APPROVED" | "NEEDS_WORK" | "REJECTED";
   deployedUrl: string | null;
   coverImageUrl: string | null;
+  assessmentId: string | null;
+  assessment?: { id: string; title: string } | null;
   createdAt: string;
   updatedAt: string;
   program: { id: string; name: string } | null;
@@ -75,6 +81,19 @@ type Project = {
   student?: { id: string; firstName: string; lastName: string };
 };
 type Program = { id: string; name: string };
+type Assignment = {
+  id: string;
+  title: string;
+  description: string | null;
+  weekNumber: number | null;
+  totalPoints: number;
+  passScore: number;
+  dueDate: string | null;
+  program: { id: string; name: string };
+  module: { id: string; title: string } | null;
+  linkedProject: { id: string; title: string; status: string; updatedAt: string; files: { id: string }[]; assets: { id: string }[] } | null;
+  _count?: { projects: number; submissions: number };
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -542,6 +561,12 @@ function ProjectCard({
                 {p.program.name}
               </span>
             )}
+            {p.assessment && (
+              <span className="flex items-center gap-0.5 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                <Briefcase className="size-3" />
+                Assignment
+              </span>
+            )}
             {p.student && (
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                 {p.student.firstName} {p.student.lastName}
@@ -983,8 +1008,15 @@ function ProjectCard({
 
 // ── New Project Form ──────────────────────────────────────────────────────────
 
-function NewProjectForm({ programs, onCreated }: { programs: Program[]; onCreated: (p: Project) => void }) {
-  const [form, setForm] = useState({ title: "", description: "", tags: "", programId: "", deployedUrl: "", howToUse: "" });
+function NewProjectForm({ programs, onCreated, assignment, onCancelAssignment }: { programs: Program[]; onCreated: (p: Project) => void; assignment?: Assignment | null; onCancelAssignment?: () => void }) {
+  const [form, setForm] = useState({
+    title: assignment?.title ?? "",
+    description: "",
+    tags: "",
+    programId: assignment?.program.id ?? "",
+    deployedUrl: "",
+    howToUse: "",
+  });
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState<Project | null>(null);
 
@@ -995,7 +1027,15 @@ function NewProjectForm({ programs, onCreated }: { programs: Program[]; onCreate
     const res = await fetch("/api/projects", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: form.title, description: form.description || undefined, tags, programId: form.programId || undefined, deployedUrl: form.deployedUrl || undefined, howToUse: form.howToUse || undefined }),
+      body: JSON.stringify({
+        title: form.title,
+        description: form.description || undefined,
+        tags,
+        programId: form.programId || undefined,
+        assessmentId: assignment?.id ?? undefined,
+        deployedUrl: form.deployedUrl || undefined,
+        howToUse: form.howToUse || undefined,
+      }),
     });
     if (res.ok) {
       const { project } = (await res.json()) as { project: Project };
@@ -1013,6 +1053,7 @@ function NewProjectForm({ programs, onCreated }: { programs: Program[]; onCreate
     onCreated(created);
     setCreated(null);
     setForm({ title: "", description: "", tags: "", programId: "", deployedUrl: "", howToUse: "" });
+    onCancelAssignment?.();
   };
 
   // ── Step 2: upload files (optional) ────────────────────────────────────────
@@ -1054,7 +1095,25 @@ function NewProjectForm({ programs, onCreated }: { programs: Program[]; onCreate
   // ── Step 1: project details ─────────────────────────────────────────────────
   return (
     <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-      <h3 className="font-semibold text-slate-900 dark:text-slate-100">New Project</h3>
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+          {assignment ? "Start Assignment" : "New Project"}
+        </h3>
+        {onCancelAssignment && (
+          <button type="button" onClick={onCancelAssignment} className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+            Cancel
+          </button>
+        )}
+      </div>
+      {assignment && (
+        <div className="flex items-start gap-2 rounded-lg bg-blue-50 px-3 py-2.5 dark:bg-blue-900/20">
+          <Briefcase className="mt-0.5 size-4 shrink-0 text-blue-500" />
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">Assignment: {assignment.title}</p>
+            {assignment.description && <p className="mt-0.5 line-clamp-2 text-xs text-blue-600 dark:text-blue-500">{assignment.description}</p>}
+          </div>
+        </div>
+      )}
 
       <div>
         <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Title *</label>
@@ -1103,11 +1162,14 @@ function NewProjectForm({ programs, onCreated }: { programs: Program[]; onCreate
 // ── Main Panel ────────────────────────────────────────────────────────────────
 
 export function ProjectsPanel({ role }: { role: UserRoleValue }) {
-  const [tab, setTab] = useState<"mine" | "new" | "review">("mine");
+  const [tab, setTab] = useState<"mine" | "assignments" | "new" | "review">("mine");
   const [projects, setProjects] = useState<Project[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [reviewProjects, setReviewProjects] = useState<Project[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assignmentsLoading, setAssignmentsLoading] = useState(false);
+  const [activeAssignment, setActiveAssignment] = useState<Assignment | null>(null);
 
   // Review queue filters + pagination
   const [reviewSearch, setReviewSearch] = useState("");
@@ -1137,6 +1199,17 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
     };
     void load();
   }, []);
+
+  // Load assignments for students/fellows and instructors/admins
+  useEffect(() => {
+    if (isParent) return;
+    setAssignmentsLoading(true);
+    fetch("/api/projects/assignments")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d: { assignments?: Assignment[] }) => setAssignments(d.assignments ?? []))
+      .catch(() => {})
+      .finally(() => setAssignmentsLoading(false));
+  }, [isParent]);
 
   // Review queue: re-fetch whenever search or status filter changes
   useEffect(() => {
@@ -1194,11 +1267,23 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
 
   const handleCreated = (project: Project) => {
     setProjects((prev) => [project, ...prev]);
+    // If the new project was for an assignment, update its linkedProject in state
+    if (project.assessmentId) {
+      setAssignments((prev) =>
+        prev.map((a) =>
+          a.id === project.assessmentId
+            ? { ...a, linkedProject: { id: project.id, title: project.title, status: project.status, updatedAt: project.updatedAt, files: project.files.map((f) => ({ id: f.id })), assets: [] } }
+            : a
+        )
+      );
+    }
     setTab("mine");
+    setActiveAssignment(null);
   };
 
   const tabs = [
     { key: "mine" as const, label: isParent ? "Children's Projects" : "My Projects", show: true },
+    { key: "assignments" as const, label: "Assignments", show: canCreate || isReviewer },
     { key: "new" as const, label: "New Project", show: canCreate },
     { key: "review" as const, label: "Review Queue", show: isReviewer },
   ].filter((t) => t.show);
@@ -1224,7 +1309,163 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
       </div>
 
       {/* New project form */}
-      {tab === "new" && canCreate && <NewProjectForm programs={programs} onCreated={handleCreated} />}
+      {tab === "new" && canCreate && (
+        <NewProjectForm
+          programs={programs}
+          onCreated={handleCreated}
+          assignment={activeAssignment}
+          onCancelAssignment={() => { setActiveAssignment(null); setTab("assignments"); }}
+        />
+      )}
+
+      {/* Assignments tab */}
+      {tab === "assignments" && (
+        <div className="space-y-3">
+          {isReviewer && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Project assignments visible to enrolled students.
+              </p>
+              <Link
+                href="/dashboard/assessments"
+                className="flex items-center gap-1.5 rounded-lg bg-[#0D1F45] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#162d5e]"
+              >
+                <Plus className="size-3.5" />
+                New Assignment
+              </Link>
+            </div>
+          )}
+          {assignmentsLoading ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-40 w-full rounded-xl" />)}
+            </div>
+          ) : assignments.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-200 py-16 text-center dark:border-slate-700">
+              <BookMarked className="size-10 text-slate-300 dark:text-slate-600" />
+              <p className="font-medium text-slate-600 dark:text-slate-400">No project assignments yet</p>
+              <p className="text-sm text-slate-400">
+                {isReviewer ? "Create a PROJECT-type assessment — it will appear here for enrolled students." : "Your instructor hasn't assigned any projects yet."}
+              </p>
+              {isReviewer && (
+                <Link
+                  href="/dashboard/assessments"
+                  className="mt-1 flex items-center gap-1.5 rounded-lg bg-[#0D1F45] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#162d5e]"
+                >
+                  <Plus className="size-3.5" />
+                  Go to Assessments
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {assignments.map((a) => {
+                const linked = a.linkedProject;
+                const statusConfig = linked ? STATUS_CONFIG[linked.status as Project["status"]] : null;
+                const fileCount = (linked?.files.length ?? 0) + (linked?.assets.length ?? 0);
+                const dueMs = a.dueDate ? new Date(a.dueDate).getTime() - Date.now() : null;
+                const dueDays = dueMs !== null ? Math.ceil(dueMs / 86_400_000) : null;
+                const urgent = dueDays !== null && dueDays <= 3 && dueDays >= 0;
+
+                return (
+                  <motion.div
+                    key={a.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
+                  >
+                    <div className="p-4">
+                      {/* Badges */}
+                      <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                        <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                          {a.program.name}
+                        </span>
+                        {a.module && (
+                          <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-medium text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                            {a.module.title}
+                          </span>
+                        )}
+                        {a.weekNumber && (
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            Week {a.weekNumber}
+                          </span>
+                        )}
+                      </div>
+
+                      <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-900 leading-snug dark:text-slate-100">
+                        {a.title}
+                      </h3>
+                      {a.description && (
+                        <p className="mt-1 line-clamp-2 text-sm text-slate-500 leading-relaxed dark:text-slate-400">
+                          {a.description}
+                        </p>
+                      )}
+
+                      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <Star className="size-3.5 text-amber-400" />
+                          {a.totalPoints} pts
+                        </span>
+                        {a.dueDate && (
+                          <span className={`flex items-center gap-1 ${urgent ? "text-orange-500 dark:text-orange-400" : ""}`}>
+                            <Clock className="size-3.5" />
+                            {dueDays === null ? "" : dueDays < 0 ? "Ended" : dueDays === 0 ? "Due today!" : dueDays === 1 ? "Due tomorrow" : `${dueDays} days left`}
+                          </span>
+                        )}
+                        {isReviewer && a._count && (
+                          <span className="flex items-center gap-1">
+                            <FolderOpen className="size-3.5" />
+                            {a._count.projects} submitted
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Linked project status (student view) */}
+                      {linked && statusConfig && canCreate && (
+                        <div className="mt-3 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800">
+                          <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusConfig.className}`}>
+                            {statusConfig.label}
+                          </span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">{statusConfig.description}</span>
+                          {fileCount > 0 && (
+                            <span className="ml-auto flex items-center gap-1 text-xs text-slate-400">
+                              <FileText className="size-3.5" />{fileCount} file{fileCount !== 1 ? "s" : ""}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    {canCreate && (
+                      <div className="flex items-center gap-2 border-t border-slate-100 bg-slate-50/50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-800/30">
+                        {linked ? (
+                          <>
+                            <button
+                              onClick={() => setTab("mine")}
+                              className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                            >
+                              View my project →
+                            </button>
+                          </>
+                        ) : (
+                          <Button
+                            size="sm"
+                            className="h-7 gap-1.5 px-3 text-xs"
+                            onClick={() => { setActiveAssignment(a); setTab("new"); }}
+                          >
+                            <Plus className="size-3.5" />
+                            Start Project
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Review queue */}
       {tab === "review" && (

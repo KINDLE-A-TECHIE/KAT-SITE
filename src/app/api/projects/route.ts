@@ -10,6 +10,7 @@ const createSchema = z.object({
   description: z.string().min(10).max(2000),
   tags: z.array(z.string().max(30)).max(10).default([]),
   programId: z.string().cuid().optional(),
+  assessmentId: z.string().cuid().optional(),
   deployedUrl: z.string().url().optional().or(z.literal("")),
   howToUse: z.string().max(2000).optional(),
 });
@@ -89,6 +90,7 @@ export async function GET(request: Request) {
     include: {
       student: { select: { id: true, firstName: true, lastName: true } },
       program: { select: { id: true, name: true } },
+      assessment: { select: { id: true, title: true } },
       files: { select: { id: true, name: true, mimeType: true, size: true, url: true } },
       feedback: {
         include: { author: { select: { id: true, firstName: true, lastName: true, role: true } } },
@@ -138,7 +140,7 @@ export async function POST(request: Request) {
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return fail("Invalid input.", 400, parsed.error.flatten());
 
-  const { title, description, tags, programId, deployedUrl, howToUse } = parsed.data;
+  const { title, description, tags, programId, assessmentId, deployedUrl, howToUse } = parsed.data;
 
   if (programId) {
     const enrollment = await prisma.enrollment.findFirst({
@@ -147,10 +149,24 @@ export async function POST(request: Request) {
     if (!enrollment) return fail("You are not enrolled in that program.", 403);
   }
 
+  if (assessmentId) {
+    // Verify it's a PROJECT assessment and the student is enrolled in its program
+    const assessment = await prisma.assessment.findFirst({
+      where: { id: assessmentId, type: "PROJECT" },
+      select: { programId: true },
+    });
+    if (!assessment) return fail("Assignment not found.", 404);
+    const enrolled = await prisma.enrollment.findFirst({
+      where: { userId: session.user.id, programId: assessment.programId, status: { in: ["ACTIVE", "COMPLETED"] } },
+    });
+    if (!enrolled) return fail("You are not enrolled in that program.", 403);
+  }
+
   const project = await prisma.project.create({
     data: {
       studentId: session.user.id,
       programId: programId ?? null,
+      assessmentId: assessmentId ?? null,
       title,
       description,
       tags,
@@ -159,6 +175,7 @@ export async function POST(request: Request) {
     },
     include: {
       program: { select: { id: true, name: true } },
+      assessment: { select: { id: true, title: true } },
       files: true,
       feedback: true,
     },
