@@ -90,6 +90,9 @@ UPSTASH_REDIS_REST_TOKEN=
 # ── Cron ──────────────────────────────────────────────────────────────────────
 CRON_SECRET=           # Shared secret for securing cron endpoints
 
+# ── Gemini (AI enrollment chat) ───────────────────────────────────────────────
+GEMINI_API_KEY=                  # Google AI Studio key — enables the Kemi enrollment assistant
+
 # ── Optional ──────────────────────────────────────────────────────────────────
 REDIS_URL=                       # Enables Redis pub/sub for multi-instance realtime messaging
 NEXT_PUBLIC_ENABLE_SW_DEV=true   # Enable service worker in development

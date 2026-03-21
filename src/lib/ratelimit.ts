@@ -40,6 +40,9 @@ export const projectFeedbackLimiter = makeLimiter(60, "1 h", "kat:projects:feedb
 /** Status update (review): 100 per hour per user */
 export const projectStatusLimiter = makeLimiter(100, "1 h", "kat:projects:status");
 
+/** Enrollment chat agent: 30 messages per hour per IP */
+export const enrollmentChatLimiter = makeLimiter(30, "1 h", "kat:chat:enrollment");
+
 export function getClientIp(request: Request): string {
   return (
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??

@@ -11,6 +11,7 @@ import { TestimonialsSection } from "./sections/testimonials-section";
 import { PricingSection } from "./sections/pricing-section";
 import { FaqSection } from "./sections/faq-section";
 import { SiteFooter } from "@/components/site-footer";
+import { EnrollmentChat } from "./enrollment-chat";
 
 type OpenCohort = {
   id: string;
@@ -52,6 +53,7 @@ export function LandingPage({ enrollments, passRate, openCohorts }: LandingPageP
       <PricingSection />
       <FaqSection />
       <SiteFooter />
+      <EnrollmentChat />
     </main>
   );
 }
