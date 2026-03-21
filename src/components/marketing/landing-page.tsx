@@ -12,6 +12,7 @@ import { PricingSection } from "./sections/pricing-section";
 import { FaqSection } from "./sections/faq-section";
 import { SiteFooter } from "@/components/site-footer";
 import { EnrollmentChat } from "./enrollment-chat";
+import { WhatsAppButton } from "./whatsapp-button";
 
 type OpenCohort = {
   id: string;
@@ -54,6 +55,7 @@ export function LandingPage({ enrollments, passRate, openCohorts }: LandingPageP
       <FaqSection />
       <SiteFooter />
       <EnrollmentChat />
+      <WhatsAppButton />
     </main>
   );
 }
