@@ -213,7 +213,6 @@ function AssetUploader({ projectId, onUploaded }: { projectId: string; onUploade
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [assetDesc, setAssetDesc] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleUpload = async (file: File) => {
     setUploading(true);
@@ -242,7 +241,6 @@ function AssetUploader({ projectId, onUploaded }: { projectId: string; onUploade
       toast.success(`${file.name} uploaded as asset!`);
       onUploaded(asset);
       setAssetDesc("");
-      setSelectedFile(null);
       if (inputRef.current) inputRef.current.value = "";
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed.");
@@ -260,7 +258,7 @@ function AssetUploader({ projectId, onUploaded }: { projectId: string; onUploade
         className="text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
         maxLength={500}
       />
-      <input ref={inputRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setSelectedFile(f); void handleUpload(f); } }} />
+      <input ref={inputRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { void handleUpload(f); } }} />
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
@@ -572,15 +570,15 @@ function ProjectCard({
           {canEdit && !editing && (
             <button
               onClick={() => { setEditing(true); setExpanded(true); }}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+              className="rounded-lg p-2.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 touch-manipulation"
               title="Edit project"
             >
-              <Pencil className="size-3.5" />
+              <Pencil className="size-4" />
             </button>
           )}
           <button
             onClick={() => setExpanded((v) => !v)}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+            className="rounded-lg p-2.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 touch-manipulation"
           >
             {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
           </button>
@@ -717,8 +715,8 @@ function ProjectCard({
                             <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{formatBytes(file.size)}</span>
                           </div>
                           {canEdit && (
-                            <button onClick={() => void handleDeleteFile(file.id)} className="shrink-0 rounded p-1 text-rose-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20">
-                              <Trash2 className="size-3.5" />
+                            <button onClick={() => void handleDeleteFile(file.id)} className="shrink-0 rounded p-2 text-rose-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20 touch-manipulation">
+                              <Trash2 className="size-4" />
                             </button>
                           )}
                         </div>
@@ -746,23 +744,23 @@ function ProjectCard({
                             <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(fb.createdAt)}</span>
                           </div>
                           {isReviewer && (
-                            <div className="flex items-center gap-1 shrink-0">
+                            <div className="flex items-center gap-0.5 shrink-0">
                               {editingFeedbackId === fb.id ? (
                                 <>
-                                  <button onClick={() => void handleSaveFeedback(fb.id)} className="flex size-6 items-center justify-center rounded text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" title="Save">
-                                    <Check className="size-3.5" />
+                                  <button onClick={() => void handleSaveFeedback(fb.id)} className="flex size-8 items-center justify-center rounded text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 touch-manipulation" title="Save">
+                                    <Check className="size-4" />
                                   </button>
-                                  <button onClick={() => setEditingFeedbackId(null)} className="flex size-6 items-center justify-center rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" title="Cancel">
-                                    <X className="size-3.5" />
+                                  <button onClick={() => setEditingFeedbackId(null)} className="flex size-8 items-center justify-center rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 touch-manipulation" title="Cancel">
+                                    <X className="size-4" />
                                   </button>
                                 </>
                               ) : (
                                 <>
-                                  <button onClick={() => handleEditFeedback(fb)} className="flex size-6 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300" title="Edit">
-                                    <Pencil className="size-3" />
+                                  <button onClick={() => handleEditFeedback(fb)} className="flex size-8 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 touch-manipulation" title="Edit">
+                                    <Pencil className="size-3.5" />
                                   </button>
-                                  <button onClick={() => void handleDeleteFeedback(fb.id)} className="flex size-6 items-center justify-center rounded text-slate-400 hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20" title="Delete">
-                                    <Trash2 className="size-3" />
+                                  <button onClick={() => void handleDeleteFeedback(fb.id)} className="flex size-8 items-center justify-center rounded text-slate-400 hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20 touch-manipulation" title="Delete">
+                                    <Trash2 className="size-3.5" />
                                   </button>
                                 </>
                               )}
@@ -792,7 +790,7 @@ function ProjectCard({
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Review History</p>
                   <div className="space-y-1">
                     {p.reviews.map((rv) => (
-                      <div key={rv.id} className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <div key={rv.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium ${STATUS_CONFIG[rv.status].className}`}>
                           {STATUS_CONFIG[rv.status].label}
                         </span>
@@ -815,13 +813,15 @@ function ProjectCard({
                         <div key={asset.id} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800">
                           <div className="flex min-w-0 items-center gap-2">
                             <FileText className="size-4 shrink-0 text-slate-400" />
-                            <a href={asset.url} download={asset.name} target="_blank" rel="noopener noreferrer" className="truncate text-sm text-blue-600 hover:underline dark:text-blue-400">
-                              {asset.name}
-                            </a>
-                            {asset.description && <span className="truncate text-xs text-slate-400">{asset.description}</span>}
+                            <div className="min-w-0">
+                              <a href={asset.url} download={asset.name} target="_blank" rel="noopener noreferrer" className="block truncate text-sm text-blue-600 hover:underline dark:text-blue-400">
+                                {asset.name}
+                              </a>
+                              {asset.description && <p className="truncate text-xs text-slate-400 dark:text-slate-500">{asset.description}</p>}
+                            </div>
                           </div>
-                          <button onClick={() => void handleDeleteAsset(asset.id)} className="shrink-0 rounded p-1 text-rose-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20">
-                            <Trash2 className="size-3.5" />
+                          <button onClick={() => void handleDeleteAsset(asset.id)} className="shrink-0 rounded p-2 text-rose-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20 touch-manipulation">
+                            <Trash2 className="size-4" />
                           </button>
                         </div>
                       ))}
@@ -843,19 +843,19 @@ function ProjectCard({
                     className="mb-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     rows={3}
                   />
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" onClick={() => void handleAddFeedback()} disabled={submitting || !feedbackText.trim()}>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => void handleAddFeedback()} disabled={submitting || !feedbackText.trim()}>
                       <MessageSquare className="mr-1.5 size-3.5" /> Comment
                     </Button>
                     {p.status === "SUBMITTED" && (
                       <>
-                        <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => void handleReview("APPROVED")} disabled={submitting}>
+                        <Button size="sm" className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto" onClick={() => void handleReview("APPROVED")} disabled={submitting}>
                           <CheckCircle2 className="mr-1.5 size-3.5" /> Approve
                         </Button>
-                        <Button size="sm" className="bg-amber-500 text-white hover:bg-amber-600" onClick={() => void handleReview("NEEDS_WORK")} disabled={submitting}>
+                        <Button size="sm" className="w-full bg-amber-500 text-white hover:bg-amber-600 sm:w-auto" onClick={() => void handleReview("NEEDS_WORK")} disabled={submitting}>
                           <Clock className="mr-1.5 size-3.5" /> Needs Work
                         </Button>
-                        <Button size="sm" className="bg-rose-600 text-white hover:bg-rose-700" onClick={() => void handleReview("REJECTED")} disabled={submitting}>
+                        <Button size="sm" className="w-full bg-rose-600 text-white hover:bg-rose-700 sm:w-auto" onClick={() => void handleReview("REJECTED")} disabled={submitting}>
                           <XCircle className="mr-1.5 size-3.5" /> Reject
                         </Button>
                       </>
@@ -876,11 +876,13 @@ function ProjectCard({
                         download={asset.name}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300"
+                        className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2.5 text-sm text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300"
                       >
                         <FileText className="size-4 shrink-0" />
-                        <span className="truncate font-medium">{asset.name}</span>
-                        {asset.description && <span className="shrink-0 text-xs text-blue-400">{asset.description}</span>}
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{asset.name}</p>
+                          {asset.description && <p className="truncate text-xs text-blue-400 dark:text-blue-500">{asset.description}</p>}
+                        </div>
                       </a>
                     ))}
                   </div>
@@ -889,11 +891,12 @@ function ProjectCard({
 
               {/* Student actions */}
               {!isReviewer && !editing && (
-                <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                <div className="flex flex-col gap-2 border-t border-slate-100 pt-3 dark:border-slate-800 sm:flex-row sm:flex-wrap">
                   {p.status === "APPROVED" && (
                     <Button
                       size="sm"
                       variant="outline"
+                      className="w-full sm:w-auto"
                       onClick={() => {
                         const url = `${window.location.origin}/showcase/${p.id}`;
                         void navigator.clipboard.writeText(url).then(() => toast.success("Public link copied!"));
@@ -903,13 +906,13 @@ function ProjectCard({
                     </Button>
                   )}
                   {canSubmit && (
-                    <Button size="sm" onClick={() => void handleSubmit()} disabled={submitting}>
+                    <Button size="sm" className="w-full sm:w-auto" onClick={() => void handleSubmit()} disabled={submitting}>
                       {submitting ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : <Upload className="mr-1.5 size-3.5" />}
                       Submit for Review
                     </Button>
                   )}
                   {canRetract && (
-                    <Button size="sm" variant="outline" onClick={() => void handleRetract()} disabled={submitting}>
+                    <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => void handleRetract()} disabled={submitting}>
                       {submitting ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : <Undo2 className="mr-1.5 size-3.5" />}
                       Retract Submission
                     </Button>
@@ -918,7 +921,7 @@ function ProjectCard({
                     <Button
                       size="sm"
                       variant="outline"
-                      className="border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-900/20"
+                      className="w-full border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-900/20 sm:w-auto"
                       onClick={() => void handleDelete()}
                       disabled={deleting}
                     >
@@ -996,7 +999,7 @@ function NewProjectForm({ programs, onCreated }: { programs: Program[]; onCreate
       {programs.length > 0 && (
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Link to Program <span className="text-slate-400">(optional)</span></label>
-          <select value={form.programId} onChange={(e) => setForm((f) => ({ ...f, programId: e.target.value }))} className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+          <select value={form.programId} onChange={(e) => setForm((f) => ({ ...f, programId: e.target.value }))} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
             <option value="">Standalone project</option>
             {programs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
@@ -1128,7 +1131,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
       {/* Tabs */}
       <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/50">
         {tabs.map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)} className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition ${tab === t.key ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>
+          <button key={t.key} onClick={() => setTab(t.key)} className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-medium transition touch-manipulation ${tab === t.key ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>
             {t.label}
           </button>
         ))}
@@ -1154,7 +1157,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
             <select
               value={reviewStatus}
               onChange={(e) => setReviewStatus(e.target.value)}
-              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 sm:w-44"
+              className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 sm:w-44"
             >
               <option value="all">All statuses</option>
               <option value="SUBMITTED">Under Review</option>

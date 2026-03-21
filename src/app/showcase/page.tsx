@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ExternalLink, FileText, FolderOpen } from "lucide-react";
 import { LandingHeader } from "@/components/marketing/sections/landing-header";
 import { SiteFooter } from "@/components/site-footer";
