@@ -52,7 +52,7 @@ export default function PrivacyPage() {
       <h3>Communication data</h3>
       <ul>
         <li>Messages sent through the in-platform messaging system</li>
-        <li>Meeting attendance and recording metadata (via Zoho Meeting)</li>
+        <li>Meeting attendance and recording metadata (via Jitsi Meet / Jibri)</li>
       </ul>
       <h3>Technical data</h3>
       <ul>
@@ -82,7 +82,7 @@ export default function PrivacyPage() {
       <h2>5. Third parties we share data with</h2>
       <ul>
         <li><strong>Paystack</strong> — payment processing (enrollment billing and receipts)</li>
-        <li><strong>Zoho Meeting</strong> — live class video sessions</li>
+        <li><strong>Jitsi Meet</strong> — live class video sessions (self-hosted)</li>
         <li><strong>Cloudflare R2</strong> — file storage (avatars and project uploads)</li>
         <li><strong>Neon (PostgreSQL)</strong> — our hosted database provider</li>
       </ul>

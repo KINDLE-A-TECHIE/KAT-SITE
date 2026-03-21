@@ -15,5 +15,8 @@ prisma/migrations
 
 .claude
 
+# Jibri secrets — fill in locally, never commit
+scripts/jibri-env.sh
+
 # Local npm overrides — .npmrc is intentionally tracked for Vercel builds
 # (Do NOT add .npmrc here)

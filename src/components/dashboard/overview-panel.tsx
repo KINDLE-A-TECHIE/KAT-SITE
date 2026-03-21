@@ -118,7 +118,7 @@ const ACTIONS: Record<UserRoleValue, ActionCard[]> = {
     },
     {
       label: "Run Live Sessions",
-      description: "Schedule sessions with Zoho Meeting.",
+      description: "Schedule sessions with Jitsi Meet.",
       href: "/dashboard/meetings",
       icon: <Video className="size-4" />,
       color: "bg-violet-50 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400",

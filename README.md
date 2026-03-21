@@ -1,6 +1,6 @@
 # KAT — Kindle A Techie
 
-A full-stack Learning Management System (LMS) for KAT Academy, serving students aged 8–19 across Africa. Built with Next.js 15, TypeScript, Prisma, Zoho Meeting and PostgreSQL.
+A full-stack Learning Management System (LMS) for KAT Academy, serving students aged 8–19 across Africa. Built with Next.js 15, TypeScript, Prisma, Jitsi Meet and PostgreSQL.
 
 ---
 
@@ -19,7 +19,7 @@ A full-stack Learning Management System (LMS) for KAT Academy, serving students 
 | Payments | Paystack |
 | File Storage | Cloudflare R2 (S3-compatible) |
 | Email | Nodemailer (SMTP) |
-| Meetings | Zoho Meeting (OAuth 2.0) |
+| Meetings | Jitsi Meet (self-hosted) + Jibri (recordings) |
 | Realtime | SSE + Redis pub/sub (optional) |
 | Rate Limiting | Upstash Redis |
 
@@ -78,10 +78,11 @@ SMTP_USER=
 SMTP_PASS=
 SMTP_FROM=             # e.g. KAT Learning <noreply@kindleatechie.com>
 
-# ── Zoho Meeting ──────────────────────────────────────────────────────────────
-ZOHO_CLIENT_ID=
-ZOHO_CLIENT_SECRET=
-ZOHO_REDIRECT_URI=
+# ── Jitsi Meet + Jibri ────────────────────────────────────────────────────────
+JITSI_DOMAIN=              # Your Jitsi VPS domain, e.g. meet.yourdomain.com
+JITSI_APP_ID=              # App ID for JWT auth, e.g. kat-app
+JITSI_APP_SECRET=          # Secret for signing Jitsi JWTs
+JIBRI_WEBHOOK_SECRET=      # Shared secret for the Jibri recording-ready webhook
 
 # ── Rate Limiting (Upstash Redis) ─────────────────────────────────────────────
 UPSTASH_REDIS_REST_URL=
@@ -165,8 +166,11 @@ All seed accounts use the password `Passw0rd!`
 - Realtime delivery via SSE; scales horizontally with Redis pub/sub when `REDIS_URL` is set
 
 ### Meetings
-- Zoho Meeting scheduling with OAuth 2.0 integration
-- Recording policies and participant management
+- Self-hosted Jitsi Meet scheduling with JWT authentication
+- Role-based moderator rights (hosts get moderator JWT; students do not)
+- Auto-recording policy: sessions with students/fellows trigger `AUTO_REQUIRED` mode via Jibri
+- Jibri webhook at `POST /api/meetings/recording-ready` (HMAC-SHA256 verified) saves recording URLs
+- Signed join URLs generated per-user at join time (4-hour JWT validity)
 
 ### Security
 - Rate limiting on auth endpoints: login (10/15 min), register (5/hr), forgot-password (3/15 min)
@@ -231,7 +235,7 @@ src/
       enrollments/        # Enrolment management
       fellows/            # Fellowship applications
       messages/           # Messaging threads and SSE stream
-      meetings/           # Zoho meeting scheduling
+      meetings/           # Jitsi meeting scheduling + Jibri webhook
       notifications/      # In-app notifications
       partners/           # Partner enquiry form handler
       payments/           # Paystack billing, webhooks, history
@@ -260,7 +264,7 @@ src/
     ratelimit.ts          # Upstash rate limiter instances
     rbac.ts               # Messaging permission matrix
     validators.ts         # Shared Zod schemas
-    zoho-meeting.ts       # Zoho Meeting API client
+    jitsi.ts              # Jitsi JWT generation, room naming, status helpers
 ```
 
 ---

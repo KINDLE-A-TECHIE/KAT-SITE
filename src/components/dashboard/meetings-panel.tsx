@@ -29,7 +29,7 @@ type Meeting = {
   recordingPlayUrl: string | null;
   recordingDownloadUrl: string | null;
   recordingSyncedAt: string | null;
-  dailyRoomUrl: string;
+  roomUrl: string;
   host: { id: string; firstName: string; lastName: string };
   participants: {
     user: { id: string; firstName: string; lastName: string; role: UserRoleValue };
@@ -43,7 +43,6 @@ type MeetingsPanelProps = {
 
 const HOST_ROLES: UserRoleValue[] = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR", "FELLOW"];
 const SKILL_DISCOVERY_ROLES: UserRoleValue[] = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR"];
-const AUTO_RECORD_ROLES: UserRoleValue[] = ["STUDENT", "FELLOW"];
 const RECORDING_VIEW_ROLES: UserRoleValue[] = ["SUPER_ADMIN", "ADMIN"];
 const COLUMN_META = {
   live: {
@@ -94,7 +93,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
   const [recordingLibraryLoading, setRecordingLibraryLoading] = useState(false);
   const [contactsLoading, setContactsLoading] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [recordingSyncingId, setRecordingSyncingId] = useState<string | null>(null);
+  const [joiningId, setJoiningId] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -107,7 +106,6 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
   const canHost = HOST_ROLES.includes(role);
   const canDiscoverBySkill = SKILL_DISCOVERY_ROLES.includes(role);
   const canWatchRecordings = RECORDING_VIEW_ROLES.includes(role);
-  const canSyncRecordings = role === "SUPER_ADMIN";
   const canViewRecordingLibrary = role === "SUPER_ADMIN";
   const canCancelMeeting = useCallback(
     (meeting: Meeting) => {
@@ -131,15 +129,6 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
 
   const contactsById = useMemo(() => new Map(contacts.map((contact) => [contact.id, contact])), [contacts]);
 
-  const requiresAutoRecording = useMemo(() => {
-    if (AUTO_RECORD_ROLES.includes(role)) {
-      return true;
-    }
-    return selectedParticipants.some((participantId) => {
-      const participantRole = contactsById.get(participantId)?.role;
-      return participantRole === "STUDENT" || participantRole === "FELLOW";
-    });
-  }, [contactsById, role, selectedParticipants]);
 
   const participantOptions = useMemo(
     () => contacts.filter((contact) => !selectedParticipants.includes(contact.id)),
@@ -275,6 +264,27 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
     await loadMeetings();
   };
 
+  const setRecordingMode = async (meetingId: string, recordingMode: MeetingRecordingModeValue) => {
+    const response = await fetch("/api/meetings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ meetingId, recordingMode }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      toast.error(payload?.error ?? "Could not update recording mode.");
+      return;
+    }
+    setMeetings((prev) =>
+      prev.map((m) =>
+        m.id === meetingId
+          ? { ...m, recordingMode: (payload.meeting as Meeting).recordingMode, recordingStatus: (payload.meeting as Meeting).recordingStatus }
+          : m,
+      ),
+    );
+    toast.success("Recording mode updated.");
+  };
+
   const cancelMeeting = async (meetingId: string) => {
     const response = await fetch("/api/meetings", {
       method: "PATCH",
@@ -293,41 +303,22 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
     await loadMeetings();
   };
 
-  const syncMeetingRecording = useCallback(
-    async (meetingId: string) => {
-      setRecordingSyncingId(meetingId);
-      try {
-        const response = await fetch("/api/meetings", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            meetingId,
-            syncRecording: true,
-          }),
-        });
-        const payload = await response.json();
-        if (!response.ok) {
-          toast.error(payload?.error ?? "Could not sync recording.");
-          return;
-        }
-        const status = payload?.meeting?.recordingStatus as MeetingRecordingStatusValue | undefined;
-        if (status === "AVAILABLE") {
-          toast.success("Recording is ready.");
-        } else if (status === "FAILED") {
-          toast.error("Recording not found yet.");
-        } else {
-          toast.message("Recording is still processing.");
-        }
-        await loadMeetings();
-        if (canViewRecordingLibrary) {
-          await loadRecordingLibrary();
-        }
-      } finally {
-        setRecordingSyncingId(null);
+  const joinMeeting = useCallback(async (meetingId: string) => {
+    setJoiningId(meetingId);
+    try {
+      const response = await fetch(`/api/meetings/${meetingId}/join`);
+      const payload = await response.json();
+      if (!response.ok || !payload?.joinUrl) {
+        toast.error(payload?.error ?? "Could not get meeting join link.");
+        return;
       }
-    },
-    [canViewRecordingLibrary, loadMeetings, loadRecordingLibrary],
-  );
+      window.open(payload.joinUrl as string, "_blank", "noopener,noreferrer");
+    } catch {
+      toast.error("Could not get meeting join link.");
+    } finally {
+      setJoiningId(null);
+    }
+  }, []);
 
   return (
     <div className="space-y-5">
@@ -500,12 +491,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
             })}
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              {requiresAutoRecording
-                ? "This meeting is marked AUTO_REQUIRED. Ensure Zoho host settings have automatic recording enabled (or start recording manually at session start)."
-                : "This meeting will use manual recording mode."}
-            </p>
+          <div className="mt-4 flex justify-end">
             <Button className="w-full sm:min-w-44 sm:w-auto" disabled={busy} onClick={() => void createMeeting()}>
               {busy ? "Scheduling..." : "Schedule Session"}
             </Button>
@@ -590,6 +576,20 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                             {recordingStatusLabel(meeting.recordingStatus)}
                           </span>
                         </div>
+                        {role === "SUPER_ADMIN" && (
+                          <div className="mt-3">
+                            <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Recording Mode</p>
+                            <select
+                              value={meeting.recordingMode}
+                              onChange={(e) => void setRecordingMode(meeting.id, e.target.value as MeetingRecordingModeValue)}
+                              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 sm:w-auto"
+                            >
+                              <option value="NONE">No recording</option>
+                              <option value="MANUAL">Manual recording</option>
+                              <option value="AUTO_REQUIRED">Auto recording (Jibri)</option>
+                            </select>
+                          </div>
+                        )}
                         <div className="mt-3 flex flex-wrap gap-2">
                           <span
                             className={
@@ -603,9 +603,10 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                           <Button
                             size="sm"
                             className="w-full sm:w-auto"
-                            onClick={() => window.open(meeting.dailyRoomUrl, "_blank", "noopener,noreferrer")}
+                            disabled={joiningId === meeting.id}
+                            onClick={() => void joinMeeting(meeting.id)}
                           >
-                            Join
+                            {joiningId === meeting.id ? "Joining..." : "Join"}
                           </Button>
                           {canWatchRecordings && recordingUrl ? (
                             <Button
@@ -615,20 +616,6 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                               onClick={() => window.open(recordingUrl, "_blank")}
                             >
                               Watch Recording
-                            </Button>
-                          ) : null}
-                          {canSyncRecordings &&
-                          meeting.status === "ENDED" &&
-                          meeting.recordingMode === "AUTO_REQUIRED" &&
-                          meeting.recordingStatus !== "AVAILABLE" ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full sm:w-auto"
-                              disabled={recordingSyncingId === meeting.id}
-                              onClick={() => void syncMeetingRecording(meeting.id)}
-                            >
-                              {recordingSyncingId === meeting.id ? "Syncing..." : "Sync Recording"}
                             </Button>
                           ) : null}
                           {canCancelMeeting(meeting) && meeting.status !== "ENDED" && meeting.status !== "CANCELLED" ? (
@@ -734,19 +721,6 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                           onClick={() => window.open(recordingUrl, "_blank")}
                         >
                           Watch Recording
-                        </Button>
-                      ) : null}
-                      {canSyncRecordings &&
-                      meeting.recordingMode === "AUTO_REQUIRED" &&
-                      meeting.recordingStatus !== "AVAILABLE" ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full sm:w-auto"
-                          disabled={recordingSyncingId === meeting.id}
-                          onClick={() => void syncMeetingRecording(meeting.id)}
-                        >
-                          {recordingSyncingId === meeting.id ? "Syncing..." : "Sync Recording"}
                         </Button>
                       ) : null}
                     </div>

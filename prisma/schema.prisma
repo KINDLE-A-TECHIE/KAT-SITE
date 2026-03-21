@@ -754,14 +754,14 @@ model Meeting {
   description    String?       @db.Text
   startTime      DateTime
   endTime        DateTime
-  dailyRoomName  String
-  dailyRoomUrl   String
+  roomName       String        @map("dailyRoomName") // Jitsi room name, e.g. "kat-abc123"
+  roomUrl        String        @map("dailyRoomUrl")  // Base URL without JWT (for display)
   status         MeetingStatus @default(UPCOMING)
   recordingMode  MeetingRecordingMode @default(NONE)
   recordingStatus MeetingRecordingStatus @default(NOT_REQUESTED)
   recordingPlayUrl String?
   recordingDownloadUrl String?
-  recordingExternalId String?
+  recordingJobId  String?      @map("recordingExternalId") // Jibri job/file identifier
   recordingSyncedAt DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt

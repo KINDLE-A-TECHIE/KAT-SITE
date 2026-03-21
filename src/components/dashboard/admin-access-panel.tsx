@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Copy, Link2, RefreshCcw, RotateCcw, ShieldPlus, Unplug, UserCheck, UserMinus, UserX } from "lucide-react";
+import { Copy, RefreshCcw, RotateCcw, ShieldPlus, UserCheck, UserMinus, UserX } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -52,31 +52,13 @@ type AdminAccountRecord = {
   invitedAt: string | null;
 };
 
-type ZohoConnectionRecord = {
-  accountId: string;
-  providerAccountId: string;
-  hasRefreshToken: boolean;
-  expiresAt: number | null;
-  connectedBy: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    role: string;
-  };
-  connectedAt: string;
-  zsoid: string | null;
-  presenterId: string;
-};
 
 export function AdminAccessPanel() {
-  const [loadingZoho, setLoadingZoho] = useState(true);
   const [loadingInvites, setLoadingInvites] = useState(true);
   const [loadingAdmins, setLoadingAdmins] = useState(true);
   const [busy, setBusy] = useState(false);
   const [invites, setInvites] = useState<AdminInviteRecord[]>([]);
   const [admins, setAdmins] = useState<AdminAccountRecord[]>([]);
-  const [zohoConnection, setZohoConnection] = useState<ZohoConnectionRecord | null>(null);
   const [email, setEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"ADMIN" | "INSTRUCTOR">("ADMIN");
   const [expiresInHours, setExpiresInHours] = useState("24");
@@ -90,19 +72,6 @@ export function AdminAccessPanel() {
     () => admins.filter((admin) => admin.isActive).length,
     [admins],
   );
-
-  const loadZohoConnection = async () => {
-    setLoadingZoho(true);
-    const response = await fetch("/api/integrations/zoho/connection", { cache: "no-store" });
-    const payload = await response.json();
-    if (!response.ok) {
-      setLoadingZoho(false);
-      toast.error(payload?.error ?? "Could not load Zoho connection status.");
-      return;
-    }
-    setZohoConnection(payload.connected ? (payload.connection as ZohoConnectionRecord) : null);
-    setLoadingZoho(false);
-  };
 
   const loadInvites = async () => {
     setLoadingInvites(true);
@@ -131,32 +100,7 @@ export function AdminAccessPanel() {
   };
 
   useEffect(() => {
-    void Promise.all([loadZohoConnection(), loadInvites(), loadAdmins()]);
-  }, []);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const zohoStatus = params.get("zoho");
-    if (!zohoStatus) {
-      return;
-    }
-
-    if (zohoStatus === "connected") {
-      toast.success("Zoho Meeting connected.");
-    } else if (zohoStatus === "connected_access_only") {
-      toast.success("Zoho connected, but no refresh token was issued. Reconnect with consent if needed.");
-    } else if (zohoStatus === "disconnected") {
-      toast.success("Zoho Meeting disconnected.");
-    } else {
-      const reason = params.get("reason");
-      toast.error(reason ? `Zoho OAuth failed: ${reason}` : "Zoho OAuth failed.");
-    }
-
-    params.delete("zoho");
-    params.delete("reason");
-    const clean = params.toString();
-    const next = `${window.location.pathname}${clean ? `?${clean}` : ""}`;
-    window.history.replaceState({}, "", next);
+    void Promise.all([loadInvites(), loadAdmins()]);
   }, []);
 
   const createInvite = async () => {
@@ -273,93 +217,19 @@ export function AdminAccessPanel() {
     toast.success("Invite URL copied.");
   };
 
-  const startZohoConnect = async () => {
-    setBusy(true);
-    const response = await fetch("/api/integrations/zoho/start", { cache: "no-store" });
-    const payload = await response.json();
-    setBusy(false);
-    if (!response.ok || !payload?.authUrl) {
-      toast.error(payload?.error ?? "Could not start Zoho OAuth.");
-      return;
-    }
-    window.location.href = payload.authUrl as string;
-  };
-
-  const disconnectZoho = async () => {
-    const confirmed = window.confirm("Disconnect Zoho Meeting for this organization?");
-    if (!confirmed) {
-      return;
-    }
-
-    setBusy(true);
-    const response = await fetch("/api/integrations/zoho/connection", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-    });
-    const payload = await response.json();
-    setBusy(false);
-    if (!response.ok) {
-      toast.error(payload?.error ?? "Could not disconnect Zoho Meeting.");
-      return;
-    }
-
-    toast.success("Zoho Meeting disconnected.");
-    await loadZohoConnection();
-  };
-
   return (
     <div className="space-y-4">
       <section className="kat-card">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">
-              Zoho Session Infrastructure
-            </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Connect your institution to enable trusted live session links for instruction and mentorship.
-            </p>
-          </div>
-          <span className={`kat-chip ${zohoConnection ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : ""}`}>
-            {zohoConnection ? "Connected" : "Not connected"}
-          </span>
-        </div>
-
-        {loadingZoho ? (
-          <div className="mt-3">
-            <Skeleton className="h-16 w-full" />
-          </div>
-        ) : zohoConnection ? (
-          <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
-            <p>
-              Connected by {zohoConnection.connectedBy.firstName} {zohoConnection.connectedBy.lastName} (
-              {zohoConnection.connectedBy.role}) on {new Date(zohoConnection.connectedAt).toLocaleString()}.
-            </p>
-            <p className="mt-1 text-xs">
-              Presenter ID: {zohoConnection.presenterId} | Refresh token:{" "}
-              {zohoConnection.hasRefreshToken ? "available" : "missing"}
-            </p>
-          </div>
-        ) : (
-          <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
-            No Zoho OAuth connection yet. Connect once to activate live meeting operations.
+        <div>
+          <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">
+            Jitsi Meetings
+          </h3>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            Configured via environment variables (<code className="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800">JITSI_DOMAIN</code>,{" "}
+            <code className="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800">JITSI_APP_ID</code>,{" "}
+            <code className="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800">JITSI_APP_SECRET</code>).
+            Contact your system administrator to update these settings.
           </p>
-        )}
-
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button disabled={busy} onClick={() => void startZohoConnect()}>
-            <Link2 className="size-4" />
-            {zohoConnection ? "Reconnect Zoho" : "Connect Zoho"}
-          </Button>
-          {zohoConnection ? (
-            <Button variant="outline" disabled={busy} onClick={() => void disconnectZoho()}>
-              <Unplug className="size-4" />
-              Disconnect
-            </Button>
-          ) : null}
-          <Button variant="outline" onClick={() => void loadZohoConnection()}>
-            <RefreshCcw className="size-4" />
-            Check Status
-          </Button>
         </div>
       </section>
 
@@ -406,7 +276,7 @@ export function AdminAccessPanel() {
             <ShieldPlus className="size-4" />
             {busy ? "Creating..." : "Create Invite"}
           </Button>
-          <Button variant="outline" onClick={() => void Promise.all([loadZohoConnection(), loadInvites(), loadAdmins()])}>
+          <Button variant="outline" onClick={() => void Promise.all([loadInvites(), loadAdmins()])}>
             <RefreshCcw className="size-4" />
             Refresh
           </Button>

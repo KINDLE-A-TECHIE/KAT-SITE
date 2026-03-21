@@ -20,7 +20,7 @@ export default async function MeetingsPage() {
           isAdmin
             ? "Oversee all scheduled classes and mentorship calls. Monitor attendance and access recordings."
             : isInstructor
-              ? "Host live classes, 1-on-1 reviews, and group sessions for your learners using Zoho Meeting."
+              ? "Host live classes, 1-on-1 reviews, and group sessions for your learners using Jitsi Meet."
               : "Join your upcoming live classes and mentorship calls. Catch up on recordings you missed."
         }
       />
