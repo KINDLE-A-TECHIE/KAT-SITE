@@ -3,15 +3,18 @@ import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { projectCreateLimiter, rateLimitResponse } from "@/lib/ratelimit";
 
 const createSchema = z.object({
   title: z.string().min(1).max(120),
-  description: z.string().max(2000).optional(),
+  description: z.string().min(10).max(2000),
   tags: z.array(z.string().max(30)).max(10).default([]),
   programId: z.string().cuid().optional(),
   deployedUrl: z.string().url().optional().or(z.literal("")),
-  visibility: z.enum(["PRIVATE", "PUBLIC"]).default("PRIVATE"),
+  howToUse: z.string().max(2000).optional(),
 });
+
+const PAGE_SIZE = 20;
 
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
@@ -22,22 +25,38 @@ export async function GET(request: Request) {
   const studentId = url.searchParams.get("studentId");
   const statusFilter = url.searchParams.get("status");
   const programId = url.searchParams.get("programId");
+  const search = url.searchParams.get("search")?.trim() ?? "";
+  const cursor = url.searchParams.get("cursor");
+  const paginate = url.searchParams.get("paginate") === "1";
 
   const isAdmin = role === UserRole.SUPER_ADMIN || role === UserRole.ADMIN;
   const isInstructor = role === UserRole.INSTRUCTOR;
 
-  let where: Record<string, unknown> = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let where: Record<string, any> = {};
+
+  const searchFilter = search
+    ? {
+        OR: [
+          { title: { contains: search, mode: "insensitive" } },
+          { tags: { has: search } },
+          { student: { OR: [
+            { firstName: { contains: search, mode: "insensitive" } },
+            { lastName: { contains: search, mode: "insensitive" } },
+          ]}},
+        ],
+      }
+    : {};
 
   if (isAdmin) {
-    // Admins see all projects in their org
     where = {
       student: { organizationId },
       ...(studentId ? { studentId } : {}),
       ...(statusFilter ? { status: statusFilter } : {}),
       ...(programId ? { programId } : {}),
+      ...searchFilter,
     };
   } else if (isInstructor) {
-    // Instructors see submitted/approved/needs_work/rejected projects in their org
     const allowedStatuses = ["SUBMITTED", "APPROVED", "NEEDS_WORK", "REJECTED"];
     where = {
       student: { organizationId },
@@ -46,19 +65,24 @@ export async function GET(request: Request) {
         : { in: allowedStatuses },
       ...(studentId ? { studentId } : {}),
       ...(programId ? { programId } : {}),
+      ...searchFilter,
     };
   } else if (role === UserRole.PARENT) {
-    // Parents see their children's projects
     const childLinks = await prisma.parentStudent.findMany({
       where: { parentId: userId },
       select: { childId: true },
     });
     const childIds = childLinks.map((l) => l.childId);
-    where = { studentId: { in: childIds } };
+    where = {
+      studentId: { in: childIds },
+      ...searchFilter,
+    };
   } else {
     // STUDENT / FELLOW — own projects only
     where = { studentId: userId };
   }
+
+  const take = paginate ? PAGE_SIZE + 1 : undefined;
 
   const projects = await prisma.project.findMany({
     where,
@@ -70,12 +94,30 @@ export async function GET(request: Request) {
         include: { author: { select: { id: true, firstName: true, lastName: true, role: true } } },
         orderBy: { createdAt: "asc" },
       },
+      reviews: {
+        include: { reviewer: { select: { id: true, firstName: true, lastName: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      },
+      assets: {
+        select: { id: true, name: true, mimeType: true, size: true, url: true, description: true, uploadedAt: true,
+          uploader: { select: { firstName: true, lastName: true } } },
+        orderBy: { uploadedAt: "asc" },
+      },
       _count: { select: { files: true, feedback: true } },
     },
     orderBy: { updatedAt: "desc" },
+    ...(take ? { take } : {}),
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
   });
 
-  return ok({ projects });
+  if (!paginate) return ok({ projects });
+
+  const hasMore = projects.length > PAGE_SIZE;
+  const page = hasMore ? projects.slice(0, PAGE_SIZE) : projects;
+  const nextCursor = hasMore ? page[page.length - 1]?.id ?? null : null;
+
+  return ok({ projects: page, hasMore, nextCursor });
 }
 
 export async function POST(request: Request) {
@@ -87,13 +129,17 @@ export async function POST(request: Request) {
     return fail("Only students and fellows can create projects.", 403);
   }
 
+  if (projectCreateLimiter) {
+    const { success, reset } = await projectCreateLimiter.limit(session.user.id);
+    if (!success) return rateLimitResponse(reset);
+  }
+
   const body = await request.json() as unknown;
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return fail("Invalid input.", 400, parsed.error.flatten());
 
-  const { title, description, tags, programId, deployedUrl, visibility } = parsed.data;
+  const { title, description, tags, programId, deployedUrl, howToUse } = parsed.data;
 
-  // Verify enrollment if programId provided
   if (programId) {
     const enrollment = await prisma.enrollment.findFirst({
       where: { userId: session.user.id, programId, status: { in: ["ACTIVE", "COMPLETED"] } },
@@ -109,7 +155,7 @@ export async function POST(request: Request) {
       description,
       tags,
       deployedUrl: deployedUrl || null,
-      visibility,
+      howToUse: howToUse ?? null,
     },
     include: {
       program: { select: { id: true, name: true } },

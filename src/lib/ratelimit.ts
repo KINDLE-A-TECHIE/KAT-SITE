@@ -28,6 +28,18 @@ export const forgotPasswordLimiter = makeLimiter(3, "15 m", "kat:auth:forgot");
 /** Registration: 5 requests per hour per IP */
 export const registerLimiter = makeLimiter(5, "1 h", "kat:auth:register");
 
+/** Project creation: 10 per hour per user */
+export const projectCreateLimiter = makeLimiter(10, "1 h", "kat:projects:create");
+
+/** File upload presigned URL: 30 per hour per user */
+export const projectUploadLimiter = makeLimiter(30, "1 h", "kat:projects:upload");
+
+/** Feedback submission: 60 per hour per user */
+export const projectFeedbackLimiter = makeLimiter(60, "1 h", "kat:projects:feedback");
+
+/** Status update (review): 100 per hour per user */
+export const projectStatusLimiter = makeLimiter(100, "1 h", "kat:projects:status");
+
 export function getClientIp(request: Request): string {
   return (
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??

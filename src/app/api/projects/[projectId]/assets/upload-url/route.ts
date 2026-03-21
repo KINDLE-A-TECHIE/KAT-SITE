@@ -9,44 +9,29 @@ import { projectUploadLimiter, rateLimitResponse } from "@/lib/ratelimit";
 
 interface Params { params: Promise<{ projectId: string }> }
 
-const ALLOWED_TYPES = [
-  "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
-  "video/mp4", "video/webm",
-  "application/pdf",
-  "application/zip", "application/x-zip-compressed",
-  "text/plain", "text/html", "text/css", "text/javascript",
-  "application/json",
-];
-
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+const MAX_ASSET_SIZE = 20 * 1024 * 1024; // 20 MB
 
 const schema = z.object({
   name: z.string().min(1).max(255),
-  mimeType: z.string().refine((t) => ALLOWED_TYPES.includes(t), { message: "File type not allowed." }),
-  size: z.number().int().positive().max(MAX_FILE_SIZE, { message: "File too large (max 20 MB)." }),
+  mimeType: z.string().min(1),
+  size: z.number().int().positive().max(MAX_ASSET_SIZE, { message: "Asset file too large (max 20 MB)." }),
 });
 
 export async function POST(request: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
 
+  const role = session.user.role;
+  const canUploadAsset =
+    role === UserRole.INSTRUCTOR || role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN;
+  if (!canUploadAsset) return fail("Only instructors and admins can upload project assets.", 403);
+
   const { projectId } = await params;
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    select: { studentId: true, status: true, _count: { select: { files: true } } },
+    select: { id: true, student: { select: { organizationId: true } } },
   });
   if (!project) return fail("Project not found.", 404);
-  if (project.studentId !== session.user.id) return fail("Forbidden", 403);
-  if (project.status !== "DRAFT" && project.status !== "NEEDS_WORK") {
-    return fail("Cannot add files to a submitted project.", 400);
-  }
-  if (project._count.files >= 10) return fail("Maximum 10 files per project.", 400);
-
-  // Only students and fellows can upload
-  const role = session.user.role;
-  if (role !== UserRole.STUDENT && role !== UserRole.FELLOW) {
-    return fail("Forbidden", 403);
-  }
 
   if (projectUploadLimiter) {
     const { success, reset } = await projectUploadLimiter.limit(session.user.id);
@@ -58,8 +43,8 @@ export async function POST(request: Request, { params }: Params) {
   if (!parsed.success) return fail("Invalid input.", 400, parsed.error.flatten());
 
   const { name, mimeType, size } = parsed.data;
-  const ext = name.split(".").pop() ?? "";
-  const key = `projects/${projectId}/${randomUUID()}.${ext}`;
+  const ext = name.split(".").pop() ?? "bin";
+  const key = `projects/${projectId}/assets/${randomUUID()}.${ext}`;
 
   const uploadUrl = await generatePresignedUploadUrl(key, mimeType);
   const publicUrl = r2PublicUrl(key);

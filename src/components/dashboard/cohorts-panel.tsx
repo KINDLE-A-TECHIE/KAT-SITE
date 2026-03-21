@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ChevronDown, ChevronUp, Loader2, Plus, Save, Settings2, Trash2, Users, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -143,11 +143,36 @@ function TextInput({
 }
 
 function DateInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [inputType, setInputType] = useState<string>(value ? "datetime-local" : "text");
+
+  useEffect(() => {
+    const next = value ? "datetime-local" : "text";
+    setInputType(next);
+    if (ref.current) ref.current.type = next;
+  }, [value]);
+
+  const switchToDatetime = () => {
+    if (!ref.current || ref.current.type === "datetime-local") return;
+    ref.current.type = "datetime-local";
+    setInputType("datetime-local");
+  };
+
   return (
     <input
-      type="datetime-local"
+      ref={ref}
+      type={inputType}
       className="kat-date-input"
       value={value}
+      placeholder={inputType === "text" ? "Select date & time" : undefined}
+      onPointerDown={switchToDatetime}
+      onFocus={switchToDatetime}
+      onBlur={(e) => {
+        if (!e.target.value) {
+          if (ref.current) ref.current.type = "text";
+          setInputType("text");
+        }
+      }}
       onChange={(e) => onChange(e.target.value)}
     />
   );
@@ -534,19 +559,21 @@ export function CohortsPanel() {
                     <button
                       type="button"
                       onClick={() => setSettingsOpen((p) => ({ ...p, [cohort.id]: !isSettingsOpen }))}
-                      className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${isSettingsOpen ? "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"}`}
+                      className={`flex items-center gap-1 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 ${isSettingsOpen ? "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"}`}
+                      title="Settings"
                     >
                       <Settings2 className="size-3.5" />
-                      Settings
+                      <span className="hidden sm:inline">Settings</span>
                       {isSettingsOpen ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
                     </button>
                     <button
                       type="button"
                       onClick={() => toggleFellows(cohort.id)}
-                      className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${isFellowsOpen ? "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"}`}
+                      className={`flex items-center gap-1 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 ${isFellowsOpen ? "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"}`}
+                      title="Fellows"
                     >
                       <Users className="size-3.5" />
-                      Fellows
+                      <span className="hidden sm:inline">Fellows</span>
                       {isFellowsOpen ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
                     </button>
                   </div>
@@ -579,7 +606,7 @@ export function CohortsPanel() {
                       </FormField>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between gap-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
                       <label className="flex cursor-pointer items-start gap-3">
                         <input
                           type="checkbox"
@@ -659,7 +686,7 @@ export function CohortsPanel() {
                               )}
 
                               {available.length > 0 ? (
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                                   <select
                                     className={`flex-1 ${INPUT_CLS}`}
                                     value={selectedProgram}
@@ -674,7 +701,7 @@ export function CohortsPanel() {
                                     type="button"
                                     disabled={!selectedProgram || isAssigning}
                                     onClick={() => void handleAssign(cohort.id, fellow.userId)}
-                                    className="flex shrink-0 items-center gap-1.5 rounded-xl bg-[var(--kat-primary-blue)] px-4 py-2.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--kat-primary-blue)] px-4 py-2.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50 sm:w-auto sm:shrink-0"
                                   >
                                     {isAssigning ? <Loader2 className="size-3 animate-spin" /> : <Plus className="size-3" />}
                                     Assign

@@ -9,10 +9,10 @@ interface Params { params: Promise<{ projectId: string }> }
 
 const updateSchema = z.object({
   title: z.string().min(1).max(120).optional(),
-  description: z.string().max(2000).optional(),
+  description: z.string().min(10).max(2000).optional(),
   tags: z.array(z.string().max(30)).max(10).optional(),
   deployedUrl: z.string().url().optional().or(z.literal("")),
-  visibility: z.enum(["PRIVATE", "PUBLIC"]).optional(),
+  howToUse: z.string().max(2000).optional(),
   status: z.enum(["DRAFT", "SUBMITTED"]).optional(), // students can only submit/retract
 });
 
@@ -30,6 +30,16 @@ export async function GET(_req: Request, { params }: Params) {
       feedback: {
         include: { author: { select: { id: true, firstName: true, lastName: true, role: true } } },
         orderBy: { createdAt: "asc" },
+      },
+      reviews: {
+        include: { reviewer: { select: { id: true, firstName: true, lastName: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      },
+      assets: {
+        select: { id: true, name: true, mimeType: true, size: true, url: true, description: true, uploadedAt: true,
+          uploader: { select: { firstName: true, lastName: true } } },
+        orderBy: { uploadedAt: "asc" },
       },
     },
   });
@@ -101,13 +111,18 @@ export async function PATCH(request: Request, { params }: Params) {
       ...(parsed.data.description !== undefined && { description: parsed.data.description }),
       ...(parsed.data.tags !== undefined && { tags: parsed.data.tags }),
       ...(parsed.data.deployedUrl !== undefined && { deployedUrl: parsed.data.deployedUrl || null }),
-      ...(parsed.data.visibility !== undefined && { visibility: parsed.data.visibility }),
+      ...(parsed.data.howToUse !== undefined && { howToUse: parsed.data.howToUse || null }),
       ...(parsed.data.status !== undefined && { status: parsed.data.status }),
     },
     include: {
       program: { select: { id: true, name: true } },
       files: true,
       feedback: { include: { author: { select: { id: true, firstName: true, lastName: true, role: true } } } },
+      assets: {
+        select: { id: true, name: true, mimeType: true, size: true, url: true, description: true, uploadedAt: true,
+          uploader: { select: { firstName: true, lastName: true } } },
+        orderBy: { uploadedAt: "asc" },
+      },
     },
   });
 

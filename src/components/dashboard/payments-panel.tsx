@@ -1203,7 +1203,7 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">Max uses</label>
                   <Input
@@ -1254,13 +1254,13 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
                   <Tag className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <span className="font-mono text-sm font-bold text-slate-800 dark:text-slate-200">{dc.code}</span>
                     <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">
                       {dc.discountPercent}% off
                     </span>
                     {dc.program && (
-                      <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-700">
+                      <span className="max-w-[120px] truncate rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-700 sm:max-w-none">
                         {dc.program.name}
                       </span>
                     )}
@@ -1268,10 +1268,10 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
                       <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-700 dark:text-slate-400">Inactive</span>
                     )}
                   </div>
-                  <div className="mt-0.5 flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-400 dark:text-slate-500">
                     <span>{dc._count.redemptions} use{dc._count.redemptions !== 1 ? "s" : ""}{dc.maxUses ? ` / ${dc.maxUses}` : ""}</span>
                     {dc.expiresAt && <span>Expires {new Date(dc.expiresAt).toLocaleDateString()}</span>}
-                    {dc.description && <span className="truncate max-w-[180px]">{dc.description}</span>}
+                    {dc.description && <span className="min-w-0 truncate">{dc.description}</span>}
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">

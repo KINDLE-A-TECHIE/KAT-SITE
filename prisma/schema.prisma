@@ -141,10 +141,6 @@ enum ProjectStatus {
   REJECTED
 }
 
-enum ProjectVisibility {
-  PRIVATE
-  PUBLIC
-}
 
 model Organization {
   id                String             @id @default(cuid())
@@ -241,6 +237,8 @@ model User {
   passwordResetTokens       PasswordResetToken[]
   projects              Project[]           @relation("StudentProjects")
   projectFeedback       ProjectFeedback[]   @relation("ProjectFeedbackAuthor")
+  projectReviews        ProjectReview[]     @relation("ProjectReviewer")
+  projectAssets         ProjectAsset[]     @relation("ProjectAssetUploader")
 }
 
 model SuperAdminInvite {
@@ -1047,7 +1045,7 @@ model Project {
   description    String?           @db.Text
   tags           String[]
   status         ProjectStatus     @default(DRAFT)
-  visibility     ProjectVisibility @default(PRIVATE)
+  howToUse       String?           @db.Text
   deployedUrl    String?
   coverImageKey  String?
   coverImageUrl  String?
@@ -1057,10 +1055,23 @@ model Project {
   program        Program?          @relation(fields: [programId], references: [id], onDelete: SetNull)
   files          ProjectFile[]
   feedback       ProjectFeedback[]
+  reviews        ProjectReview[]
+  assets         ProjectAsset[]
 
   @@index([studentId, status])
-  @@index([status, visibility])
   @@index([programId])
+}
+
+model ProjectReview {
+  id         String        @id @default(cuid())
+  projectId  String
+  reviewerId String
+  status     ProjectStatus
+  createdAt  DateTime      @default(now())
+  project    Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reviewer   User          @relation("ProjectReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }
 
 model ProjectFile {
@@ -1086,6 +1097,23 @@ model ProjectFeedback {
   updatedAt DateTime @updatedAt
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   author    User     @relation("ProjectFeedbackAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model ProjectAsset {
+  id          String   @id @default(cuid())
+  projectId   String
+  uploaderId  String
+  name        String
+  mimeType    String
+  size        Int
+  storageKey  String
+  url         String
+  description String?
+  uploadedAt  DateTime @default(now())
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploader    User     @relation("ProjectAssetUploader", fields: [uploaderId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
 }

@@ -617,3 +617,72 @@ export function buildPartnerEnquiryNotificationEmail(opts: {
   return { html, text };
 }
 
+// ── Project Status Notification ────────────────────────────────────────────────
+
+export function buildProjectStatusEmail(opts: {
+  firstName: string;
+  projectTitle: string;
+  status: "APPROVED" | "NEEDS_WORK" | "REJECTED";
+  feedback?: string;
+  projectUrl: string;
+}) {
+  const configs = {
+    APPROVED: {
+      badgeText: "PROJECT APPROVED",
+      badgeColor: "#f0fdf4;color:#166534;border:1px solid #bbf7d0;",
+      heading: "Your project has been approved! 🎉",
+      body: `Great work, <strong>${opts.firstName}</strong>! Your project <strong>&ldquo;${opts.projectTitle}&rdquo;</strong> has been reviewed and approved by your instructor.`,
+      buttonLabel: "View Your Project →",
+    },
+    NEEDS_WORK: {
+      badgeText: "REVISION REQUESTED",
+      badgeColor: "#fffbeb;color:#92400e;border:1px solid #fde68a;",
+      heading: "Your project needs a few changes",
+      body: `Hi <strong>${opts.firstName}</strong>, your instructor has reviewed <strong>&ldquo;${opts.projectTitle}&rdquo;</strong> and left some feedback for you. Address the notes and resubmit when ready.`,
+      buttonLabel: "View Feedback →",
+    },
+    REJECTED: {
+      badgeText: "PROJECT NOT APPROVED",
+      badgeColor: "#fef2f2;color:#991b1b;border:1px solid #fecaca;",
+      heading: "Your project was not approved",
+      body: `Hi <strong>${opts.firstName}</strong>, your project <strong>&ldquo;${opts.projectTitle}&rdquo;</strong> was reviewed and could not be approved at this time. Please read the feedback below and reach out if you have questions.`,
+      buttonLabel: "View Project →",
+    },
+  };
+
+  const cfg = configs[opts.status];
+
+  const html = emailWrapper(`
+    <div style="margin:0 0 20px;">${badge(cfg.badgeText, cfg.badgeColor)}</div>
+    <h2 style="margin:0 0 10px;font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.02em;">
+      ${cfg.heading}
+    </h2>
+    <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.7;">
+      ${cfg.body}
+    </p>
+    ${opts.feedback ? `
+      ${sectionLabel("Instructor feedback")}
+      <div style="padding:16px 18px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:8px;">
+        <p style="margin:0;font-size:14px;color:#334155;line-height:1.75;">
+          ${opts.feedback.replace(/\n/g, "<br/>")}
+        </p>
+      </div>
+    ` : ""}
+    ${primaryButton(opts.projectUrl, cfg.buttonLabel)}
+    <p style="margin:24px 0 0;font-size:12px;color:#94a3b8;line-height:1.6;">
+      Questions? Reply to this email or write to
+      <a href="mailto:hello@kindleatechie.com" style="color:#1E5FAF;text-decoration:none;">hello@kindleatechie.com</a>.
+    </p>
+  `);
+
+  const statusLabel = { APPROVED: "approved", NEEDS_WORK: "needs revision", REJECTED: "not approved" }[opts.status];
+  const text =
+    `Hi ${opts.firstName},\n\n` +
+    `Your project "${opts.projectTitle}" has been reviewed and marked as: ${statusLabel}.\n\n` +
+    (opts.feedback ? `Instructor feedback:\n${opts.feedback}\n\n` : "") +
+    `View your project: ${opts.projectUrl}\n\n` +
+    `© ${YEAR} KAT Learning`;
+
+  return { html, text };
+}
+

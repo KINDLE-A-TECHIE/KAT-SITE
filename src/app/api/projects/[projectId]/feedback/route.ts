@@ -3,6 +3,7 @@ import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { projectFeedbackLimiter, rateLimitResponse } from "@/lib/ratelimit";
 
 interface Params { params: Promise<{ projectId: string }> }
 
@@ -20,6 +21,11 @@ export async function POST(request: Request, { params }: Params) {
   const project = await prisma.project.findUnique({ where: { id: projectId }, select: { id: true, status: true } });
   if (!project) return fail("Project not found.", 404);
   if (project.status === "DRAFT") return fail("Cannot review a draft project.", 400);
+
+  if (projectFeedbackLimiter) {
+    const { success, reset } = await projectFeedbackLimiter.limit(session.user.id);
+    if (!success) return rateLimitResponse(reset);
+  }
 
   const body = await request.json() as unknown;
   const parsed = schema.safeParse(body);
