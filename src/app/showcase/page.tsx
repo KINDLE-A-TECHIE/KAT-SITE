@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ExternalLink, FileText, FolderOpen } from "lucide-react";
 import { LandingHeader } from "@/components/marketing/sections/landing-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -68,8 +69,9 @@ export default async function ShowcasePage() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((project) => (
-              <article
+              <Link
                 key={project.id}
+                href={`/showcase/${project.id}`}
                 className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md"
               >
                 {/* Cover image */}
@@ -139,25 +141,19 @@ export default async function ShowcasePage() {
                         href={project.deployedUrl}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
                         className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
                       >
                         <ExternalLink className="size-3.5" />
                         Live demo
                       </a>
                     )}
-                    {project.files[0] && (
-                      <a
-                        href={project.files[0].url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 rounded-lg bg-[#1E5FAF] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#1a52a0]"
-                      >
-                        View Project
-                      </a>
-                    )}
+                    <span className="flex items-center gap-1.5 rounded-lg bg-[#1E5FAF] px-3 py-1.5 text-xs font-medium text-white">
+                      View Project
+                    </span>
                   </div>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         )}
