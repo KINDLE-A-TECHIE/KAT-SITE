@@ -23,6 +23,7 @@ import {
   ScrollText,
   Settings,
   ShieldAlert,
+  Swords,
   UserCircle,
   Users,
   UsersRound,
@@ -69,6 +70,7 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
       return [
         ...CORE_NAV,
         ...LEARNING_NAV,
+        { href: "/dashboard/challenges", label: "Challenges", icon: Swords },
         { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
         { href: "/dashboard/content-review", label: "Content Review", icon: Library },
         { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
@@ -81,6 +83,7 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
       return [
         ...CORE_NAV,
         ...LEARNING_NAV,
+        { href: "/dashboard/challenges", label: "Challenges", icon: Swords },
         { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
         { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
         { href: "/dashboard/analytics", label: "Analytics", icon: LineChart },
@@ -91,12 +94,14 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
         ...CORE_NAV,
         { href: "/dashboard/children", label: "My Children", icon: Users },
         { href: "/dashboard/grades", label: "Children's Grades", icon: Award },
+        { href: "/dashboard/projects", label: "Children's Projects", icon: FolderOpen },
         { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
       ];
     case "STUDENT":
       return [
         ...CORE_NAV,
         ...LEARNING_NAV,
+        { href: "/dashboard/challenges", label: "Challenges", icon: Swords },
         { href: "/dashboard/badges", label: "Badges", icon: BadgeCheck },
         { href: "/dashboard/grades", label: "My Grades", icon: Award },
         { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
@@ -107,13 +112,19 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
       return [
         ...CORE_NAV,
         ...LEARNING_NAV,
+        { href: "/dashboard/challenges", label: "Challenges", icon: Swords },
         { href: "/dashboard/badges", label: "Badges", icon: BadgeCheck },
         { href: "/dashboard/grades", label: "My Grades", icon: Award },
         { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
         { href: "/dashboard/transcript", label: "Transcript", icon: ScrollText },
       ];
     case "INSTRUCTOR":
-      return [...CORE_NAV, ...LEARNING_NAV, { href: "/dashboard/projects", label: "Projects", icon: FolderOpen }];
+      return [
+        ...CORE_NAV,
+        ...LEARNING_NAV,
+        { href: "/dashboard/challenges", label: "Challenges", icon: Swords },
+        { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
+      ];
     default:
       return CORE_NAV;
   }

@@ -106,6 +106,14 @@ const STATUS_CONFIG = {
   },
 };
 
+const STATUS_ACCENT: Record<Project["status"], string> = {
+  DRAFT: "border-l-4 border-l-slate-300 dark:border-l-slate-600",
+  SUBMITTED: "border-l-4 border-l-blue-400 dark:border-l-blue-500",
+  APPROVED: "border-l-4 border-l-emerald-400 dark:border-l-emerald-500",
+  NEEDS_WORK: "border-l-4 border-l-amber-400 dark:border-l-amber-500",
+  REJECTED: "border-l-4 border-l-rose-400 dark:border-l-rose-500",
+};
+
 const STATUS_GROUPS: { label: string; statuses: Project["status"][]; emptyText: string }[] = [
   { label: "Needs Attention", statuses: ["NEEDS_WORK"], emptyText: "" },
   { label: "Drafts", statuses: ["DRAFT"], emptyText: "No drafts." },
@@ -297,7 +305,7 @@ function ProjectCard({
 
   const cfg = STATUS_CONFIG[p.status];
   const canEdit = p.status === "DRAFT" || p.status === "NEEDS_WORK";
-  const canSubmit = (p.status === "DRAFT" || p.status === "NEEDS_WORK") && (p.files.length > 0 || !!p.deployedUrl);
+  const canSubmit = p.status === "DRAFT" || p.status === "NEEDS_WORK";
   const canRetract = p.status === "SUBMITTED";
 
   const patch = async (data: Record<string, unknown>, successMsg: string) => {
@@ -502,10 +510,11 @@ function ProjectCard({
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 ${STATUS_ACCENT[p.status]}`}>
+
       {/* Cover image */}
       {p.coverImageUrl && !editing && (
-        <div className="relative h-36 w-full overflow-hidden rounded-t-xl sm:h-44">
+        <div className="relative h-40 w-full overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={p.coverImageUrl} alt={`${p.title} cover`} className="h-full w-full object-cover" />
           {canEdit && (
@@ -519,11 +528,13 @@ function ProjectCard({
           )}
         </div>
       )}
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 p-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cfg.className}`}>
+
+      {/* Card header — always visible */}
+      <div className="p-4">
+        {/* Row 1: badges + icon buttons */}
+        <div className="mb-2.5 flex items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${cfg.className}`}>
               {cfg.label}
             </span>
             {p.program && (
@@ -537,55 +548,88 @@ function ProjectCard({
               </span>
             )}
           </div>
-
-          {editing ? (
-            <Input
-              value={editForm.title}
-              onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
-              className="mt-2 font-semibold dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-              maxLength={120}
-            />
-          ) : (
-            <h3 className="mt-1 font-semibold text-slate-900 dark:text-slate-100">{p.title}</h3>
-          )}
-
-          {!editing && p.tags.length > 0 && (
-            <div className="mt-1.5 flex flex-wrap gap-1">
-              {p.tags.map((tag) => (
-                <span key={tag} className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
-                  <Tag className="size-2.5" />{tag}
-                </span>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-1.5 flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
-            <span>{p.files.length} file{p.files.length !== 1 ? "s" : ""}</span>
-            <span>{p.feedback.length} comment{p.feedback.length !== 1 ? "s" : ""}</span>
-            <span>{formatDate(p.updatedAt)}</span>
+          <div className="flex shrink-0 items-center gap-0.5">
+            {canEdit && !editing && (
+              <button
+                onClick={() => { setEditing(true); setExpanded(true); }}
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 touch-manipulation"
+                title="Edit project"
+              >
+                <Pencil className="size-4" />
+              </button>
+            )}
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 touch-manipulation"
+            >
+              {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+            </button>
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
-          {canEdit && !editing && (
-            <button
-              onClick={() => { setEditing(true); setExpanded(true); }}
-              className="rounded-lg p-2.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 touch-manipulation"
-              title="Edit project"
-            >
-              <Pencil className="size-4" />
-            </button>
-          )}
-          <button
-            onClick={() => setExpanded((v) => !v)}
-            className="rounded-lg p-2.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 touch-manipulation"
-          >
-            {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+        {/* Title */}
+        {editing ? (
+          <Input
+            value={editForm.title}
+            onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
+            className="mb-2 font-semibold dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            maxLength={120}
+          />
+        ) : (
+          <button onClick={() => setExpanded((v) => !v)} className="mb-1.5 w-full text-left">
+            <h3 className="text-base font-semibold leading-snug text-slate-900 dark:text-slate-100">{p.title}</h3>
           </button>
-        </div>
+        )}
+
+        {/* Tags */}
+        {!editing && p.tags.length > 0 && (
+          <div className="mb-2.5 flex flex-wrap gap-1">
+            {p.tags.map((tag) => (
+              <span key={tag} className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
+                <Tag className="size-2.5" />{tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Description snippet — visible when collapsed */}
+        {!editing && !expanded && p.description && (
+          <p className="mb-3 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">{p.description}</p>
+        )}
+
+        {/* Meta row + primary CTA */}
+        {!editing && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
+              <span className="flex items-center gap-1">
+                <FileText className="size-3" />{p.files.length} file{p.files.length !== 1 ? "s" : ""}
+              </span>
+              <span className="flex items-center gap-1">
+                <MessageSquare className="size-3" />{p.feedback.length}
+              </span>
+              <span>{formatDate(p.updatedAt)}</span>
+            </div>
+            {!isReviewer && (canSubmit || canRetract) && (
+              <div className="flex shrink-0 gap-1.5">
+                {canSubmit && (
+                  <Button size="sm" onClick={() => void handleSubmit()} disabled={submitting} className="h-7 gap-1 px-2.5 text-xs">
+                    {submitting ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}
+                    Submit
+                  </Button>
+                )}
+                {canRetract && (
+                  <Button size="sm" variant="outline" onClick={() => void handleRetract()} disabled={submitting} className="h-7 gap-1 px-2.5 text-xs">
+                    {submitting ? <Loader2 className="size-3 animate-spin" /> : <Undo2 className="size-3" />}
+                    Retract
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Expanded */}
+      {/* Expanded content */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -642,9 +686,10 @@ function ProjectCard({
                       className="text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     />
                   </div>
-                  {/* Cover image upload */}
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Cover Image <span className="font-normal text-slate-400">(JPEG, PNG or WebP · max 5 MB)</span></label>
+                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
+                      Cover Image <span className="font-normal text-slate-400">(JPEG, PNG or WebP · max 5 MB)</span>
+                    </label>
                     {p.coverImageUrl ? (
                       <div className="flex items-center gap-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -667,7 +712,6 @@ function ProjectCard({
                       </label>
                     )}
                   </div>
-
                   <div className="flex gap-2 pt-1">
                     <Button size="sm" onClick={() => void handleSaveEdit()} disabled={submitting || !editForm.title.trim()}>
                       {submitting ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : null}
@@ -680,11 +724,11 @@ function ProjectCard({
                 </div>
               ) : (
                 <>
-                  {p.description && <p className="text-sm text-slate-600 dark:text-slate-400">{p.description}</p>}
+                  {p.description && <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">{p.description}</p>}
                   {p.howToUse && (
                     <div>
                       <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">How to Use</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-line">{p.howToUse}</p>
+                      <p className="whitespace-pre-line text-sm text-slate-600 dark:text-slate-400">{p.howToUse}</p>
                     </div>
                   )}
                   {p.deployedUrl && (
@@ -744,7 +788,7 @@ function ProjectCard({
                             <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(fb.createdAt)}</span>
                           </div>
                           {isReviewer && (
-                            <div className="flex items-center gap-0.5 shrink-0">
+                            <div className="flex shrink-0 items-center gap-0.5">
                               {editingFeedbackId === fb.id ? (
                                 <>
                                   <button onClick={() => void handleSaveFeedback(fb.id)} className="flex size-8 items-center justify-center rounded text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 touch-manipulation" title="Save">
@@ -802,11 +846,10 @@ function ProjectCard({
                 </div>
               )}
 
-              {/* Instructor assets */}
+              {/* Instructor assets (reviewer view) */}
               {isReviewer && !editing && (
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Project Assets</p>
-                  {/* existing assets list */}
                   {(p.assets ?? []).length > 0 && (
                     <div className="mb-2 space-y-1.5">
                       {(p.assets ?? []).map((asset) => (
@@ -827,7 +870,6 @@ function ProjectCard({
                       ))}
                     </div>
                   )}
-                  {/* upload new asset */}
                   <AssetUploader projectId={p.id} onUploaded={(asset) => { const merged = { ...p, assets: [...(p.assets ?? []), asset] }; setP(merged); onUpdate(merged); }} />
                 </div>
               )}
@@ -864,7 +906,7 @@ function ProjectCard({
                 </div>
               )}
 
-              {/* Instructor-provided assets */}
+              {/* Student assets view */}
               {!isReviewer && !editing && (p.assets ?? []).length > 0 && (
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Project Assets</p>
@@ -891,7 +933,7 @@ function ProjectCard({
 
               {/* Student actions */}
               {!isReviewer && !editing && (
-                <div className="flex flex-col gap-2 border-t border-slate-100 pt-3 dark:border-slate-800 sm:flex-row sm:flex-wrap">
+                <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
                   {p.status === "APPROVED" && (
                     <Button
                       size="sm"
@@ -944,6 +986,7 @@ function ProjectCard({
 function NewProjectForm({ programs, onCreated }: { programs: Program[]; onCreated: (p: Project) => void }) {
   const [form, setForm] = useState({ title: "", description: "", tags: "", programId: "", deployedUrl: "", howToUse: "" });
   const [saving, setSaving] = useState(false);
+  const [created, setCreated] = useState<Project | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -956,9 +999,8 @@ function NewProjectForm({ programs, onCreated }: { programs: Program[]; onCreate
     });
     if (res.ok) {
       const { project } = (await res.json()) as { project: Project };
-      toast.success("Project created! Add your files below.");
-      onCreated(project);
-      setForm({ title: "", description: "", tags: "", programId: "", deployedUrl: "", howToUse: "" });
+      toast.success("Project created! Upload files or click Done.");
+      setCreated(project);
     } else {
       const err = (await res.json()) as { error?: string };
       toast.error(err.error ?? "Could not create project.");
@@ -966,6 +1008,50 @@ function NewProjectForm({ programs, onCreated }: { programs: Program[]; onCreate
     setSaving(false);
   };
 
+  const handleDone = () => {
+    if (!created) return;
+    onCreated(created);
+    setCreated(null);
+    setForm({ title: "", description: "", tags: "", programId: "", deployedUrl: "", howToUse: "" });
+  };
+
+  // ── Step 2: upload files (optional) ────────────────────────────────────────
+  if (created) {
+    return (
+      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+        <div>
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100">Upload Files</h3>
+          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+            Add files to <span className="font-medium">{created.title}</span> — this is optional. You can also add them later from your project.
+          </p>
+        </div>
+
+        <FileUploader
+          projectId={created.id}
+          onUploaded={(file) => setCreated((prev) => prev ? { ...prev, files: [...prev.files, file] } : prev)}
+        />
+
+        {created.files.length > 0 && (
+          <ul className="space-y-1.5">
+            {created.files.map((f) => (
+              <li key={f.id} className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-800">
+                <FileText className="size-4 shrink-0 text-slate-400" />
+                <span className="min-w-0 flex-1 truncate text-slate-700 dark:text-slate-300">{f.name}</span>
+                <span className="shrink-0 text-xs text-slate-400">{formatBytes(f.size)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <Button onClick={handleDone} className="w-full sm:w-auto">
+          <Check className="mr-2 size-4" />
+          Done
+        </Button>
+      </div>
+    );
+  }
+
+  // ── Step 1: project details ─────────────────────────────────────────────────
   return (
     <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
       <h3 className="font-semibold text-slate-900 dark:text-slate-100">New Project</h3>
@@ -1231,7 +1317,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                       {childProjects.length}
                     </span>
                   </div>
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {childProjects.map((p) => (
                       <ProjectCard key={p.id} project={p} isReviewer={false} onUpdate={handleUpdate} onDelete={handleDelete} />
                     ))}
@@ -1256,7 +1342,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                   {group.length === 0 ? (
                     <p className="text-xs text-slate-400 dark:text-slate-500">{emptyText}</p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {group.map((p) => (
                         <ProjectCard key={p.id} project={p} isReviewer={false} onUpdate={handleUpdate} onDelete={handleDelete} />
                       ))}

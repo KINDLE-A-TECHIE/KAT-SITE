@@ -37,6 +37,7 @@ enum AssessmentType {
   EXAM
   ASSIGNMENT
   PROJECT
+  CHALLENGE
 }
 
 enum QuestionType {
@@ -482,6 +483,7 @@ model Assessment {
   type               AssessmentType
   totalPoints        Int
   passScore          Int
+  weekNumber         Int?
   dueDate            DateTime?
   published          Boolean                      @default(false)
   verificationStatus AssessmentVerificationStatus @default(PENDING)

@@ -9,7 +9,7 @@ export const USER_ROLES = [
 
 export type UserRoleValue = (typeof USER_ROLES)[number];
 
-export const ASSESSMENT_TYPES = ["QUIZ", "EXAM", "ASSIGNMENT", "PROJECT"] as const;
+export const ASSESSMENT_TYPES = ["QUIZ", "EXAM", "ASSIGNMENT", "PROJECT", "CHALLENGE"] as const;
 export type AssessmentTypeValue = (typeof ASSESSMENT_TYPES)[number];
 
 export const ASSESSMENT_VERIFICATION_STATUSES = ["PENDING", "APPROVED", "REJECTED"] as const;

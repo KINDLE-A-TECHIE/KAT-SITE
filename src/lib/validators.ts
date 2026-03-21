@@ -225,10 +225,11 @@ export const assessmentQuestionSchema = z.object({
 
 export const createAssessmentSchema = z.object({
   programId: z.string().cuid(),
-  moduleId: z.string().cuid().optional(),
+  moduleId: z.string().cuid().nullable().optional(),
   title: z.string().trim().min(4).max(200),
-  description: z.string().trim().max(2000).optional(),
+  description: z.string().trim().max(2000).nullable().optional(),
   type: z.enum(ASSESSMENT_TYPES),
+  weekNumber: z.number().int().min(1).nullable().optional(),
   passScore: z.number().int().min(0),
   dueDate: z.string().datetime().optional(),
   published: z.boolean().optional(),

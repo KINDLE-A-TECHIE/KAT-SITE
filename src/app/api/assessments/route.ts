@@ -191,6 +191,7 @@ export async function POST(request: Request) {
         title: parsed.data.title,
         description: parsed.data.description,
         type: parsed.data.type,
+        weekNumber: parsed.data.weekNumber ?? null,
         passScore: parsed.data.passScore,
         totalPoints,
         dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : undefined,
