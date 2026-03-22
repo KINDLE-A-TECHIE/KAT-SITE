@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import Image from "next/image";
 import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { Turnstile } from "@marsidev/react-turnstile";
 import type { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,8 @@ function RegisterContent() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const selectedRole = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: { firstName: "", lastName: "", email: "", password: "", role: "STUDENT" },
@@ -68,7 +71,7 @@ function RegisterContent() {
     const response = await fetch("/api/users/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
+      body: JSON.stringify({ ...values, turnstileToken: turnstileToken ?? "" }),
     });
     const payload = await response.json();
     if (!response.ok) {
@@ -276,8 +279,18 @@ function RegisterContent() {
                 )}
               </div>
 
+              {siteKey && (
+                <Turnstile
+                  siteKey={siteKey}
+                  onSuccess={setTurnstileToken}
+                  onExpire={() => setTurnstileToken(null)}
+                  onError={() => setTurnstileToken(null)}
+                  options={{ theme: "light", size: "flexible" }}
+                />
+              )}
+
               <Button
-                disabled={loading}
+                disabled={loading || (!!siteKey && !turnstileToken)}
                 type="submit"
                 className="h-11 w-full rounded-xl bg-[#1E5FAF] text-sm font-semibold hover:bg-[#1a52a0]"
               >

@@ -9,6 +9,7 @@ import { ensureDefaultOrganization } from "./default-organization";
 import { loginSchema } from "./validators";
 import { trackEvent } from "./analytics";
 import { loginLimiter } from "./ratelimit";
+import { verifyTurnstile } from "./turnstile";
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
@@ -29,8 +30,12 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        turnstileToken: { label: "Turnstile Token", type: "text" },
       },
       async authorize(credentials) {
+        const turnstileOk = await verifyTurnstile(credentials?.turnstileToken);
+        if (!turnstileOk) throw new Error("Bot verification failed. Please refresh and try again.");
+
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) {
           return null;
