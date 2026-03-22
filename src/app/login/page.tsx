@@ -53,7 +53,7 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileKey, setTurnstileKey] = useState(0);
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     await signIn("google", { callbackUrl: redirectTo });
