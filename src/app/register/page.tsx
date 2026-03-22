@@ -45,7 +45,6 @@ function RegisterContent() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileStatus, setTurnstileStatus] = useState<"loading" | "ready" | "verified" | "error">("loading");
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const selectedRole = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
@@ -281,32 +280,17 @@ function RegisterContent() {
               </div>
 
               {siteKey && (
-                <div className="space-y-1.5">
-                  <Turnstile
-                    key={turnstileStatus}
-                    siteKey={siteKey}
-                    onSuccess={(token) => { setTurnstileToken(token); setTurnstileStatus("verified"); }}
-                    onExpire={() => { setTurnstileToken(null); setTurnstileStatus("loading"); }}
-                    onError={() => { setTurnstileToken(null); setTurnstileStatus("error"); }}
-                    options={{ theme: "light", size: "flexible" }}
-                  />
-                  {turnstileStatus === "error" && (
-                    <p className="text-xs text-rose-500">
-                      Verification failed.{" "}
-                      <button
-                        type="button"
-                        className="font-medium underline"
-                        onClick={() => setTurnstileStatus("loading")}
-                      >
-                        Retry
-                      </button>
-                    </p>
-                  )}
-                </div>
+                <Turnstile
+                  siteKey={siteKey}
+                  onSuccess={setTurnstileToken}
+                  onExpire={() => setTurnstileToken(null)}
+                  onError={() => setTurnstileToken(null)}
+                  options={{ theme: "light", size: "flexible" }}
+                />
               )}
 
               <Button
-                disabled={loading || (!!siteKey && turnstileStatus !== "verified")}
+                disabled={loading || (!!siteKey && !turnstileToken)}
                 type="submit"
                 className="h-11 w-full rounded-xl bg-[#1E5FAF] text-sm font-semibold hover:bg-[#1a52a0]"
               >
