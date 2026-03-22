@@ -11,6 +11,7 @@ declare global {
           sitekey: string;
           theme?: string;
           size?: string;
+          retry?: "auto" | "never";
           callback?: (token: string) => void;
           "error-callback"?: () => void;
           "expired-callback"?: () => void;
