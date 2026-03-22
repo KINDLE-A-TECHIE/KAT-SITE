@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import Image from "next/image";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
-import { Turnstile } from "@marsidev/react-turnstile";
+import { TurnstileWidget } from "@/components/ui/turnstile";
 import type { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -212,13 +212,12 @@ function LoginContent() {
               </div>
 
               {siteKey && (
-                <Turnstile
+                <TurnstileWidget
                   key={turnstileKey}
                   siteKey={siteKey}
                   onSuccess={setTurnstileToken}
                   onExpire={() => setTurnstileToken(null)}
                   onError={() => setTurnstileToken(null)}
-                  options={{ theme: "light", size: "flexible" }}
                 />
               )}
 
