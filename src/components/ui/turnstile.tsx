@@ -5,7 +5,6 @@ import { useEffect, useRef } from "react";
 declare global {
   interface Window {
     turnstile?: {
-      ready: (cb: () => void) => void;
       render: (
         container: HTMLElement,
         options: {
@@ -54,7 +53,7 @@ export function TurnstileWidget({ siteKey, onSuccess, onExpire, onError }: Props
     };
 
     if (window.turnstile) {
-      window.turnstile.ready(renderWidget);
+      renderWidget();
       return;
     }
 
@@ -62,7 +61,7 @@ export function TurnstileWidget({ siteKey, onSuccess, onExpire, onError }: Props
     const interval = setInterval(() => {
       if (window.turnstile) {
         clearInterval(interval);
-        window.turnstile.ready(renderWidget);
+        renderWidget();
       }
     }, 100);
 
