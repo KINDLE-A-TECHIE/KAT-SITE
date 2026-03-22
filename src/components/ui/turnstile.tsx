@@ -46,6 +46,7 @@ export function TurnstileWidget({ siteKey, onSuccess, onExpire, onError }: Props
         sitekey: siteKey,
         theme: "light",
         size: "flexible",
+        retry: "never",
         callback: onSuccess,
         "error-callback": onError,
         "expired-callback": onExpire,
