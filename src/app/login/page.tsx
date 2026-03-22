@@ -214,33 +214,26 @@ function LoginContent() {
 
               {siteKey && (
                 <div className="space-y-1.5">
-                  {turnstileStatus === "loading" && (
-                    <div className="flex h-[65px] items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-xs text-slate-400">
-                      Loading verification…
-                    </div>
-                  )}
+                  <Turnstile
+                    key={turnstileStatus}
+                    siteKey={siteKey}
+                    onSuccess={(token) => { setTurnstileToken(token); setTurnstileStatus("verified"); }}
+                    onExpire={() => { setTurnstileToken(null); setTurnstileStatus("loading"); }}
+                    onError={() => { setTurnstileToken(null); setTurnstileStatus("error"); }}
+                    options={{ theme: "light", size: "flexible" }}
+                  />
                   {turnstileStatus === "error" && (
-                    <div className="flex items-center justify-between rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-600">
-                      <span>Verification failed to load.</span>
+                    <p className="text-xs text-rose-500">
+                      Verification failed.{" "}
                       <button
                         type="button"
                         className="font-medium underline"
-                        onClick={() => { setTurnstileStatus("loading"); setTurnstileToken(null); }}
+                        onClick={() => setTurnstileStatus("loading")}
                       >
                         Retry
                       </button>
-                    </div>
+                    </p>
                   )}
-                  <Turnstile
-                    key={turnstileStatus === "error" ? "retry" : "initial"}
-                    siteKey={siteKey}
-                    onBeforeInteractive={() => setTurnstileStatus("ready")}
-                    onSuccess={(token) => { setTurnstileToken(token); setTurnstileStatus("verified"); }}
-                    onExpire={() => { setTurnstileToken(null); setTurnstileStatus("ready"); }}
-                    onError={() => { setTurnstileToken(null); setTurnstileStatus("error"); }}
-                    options={{ theme: "light", size: "flexible" }}
-                    style={{ display: turnstileStatus === "error" ? "none" : undefined }}
-                  />
                 </div>
               )}
 
