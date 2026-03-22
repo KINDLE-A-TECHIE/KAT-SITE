@@ -19,13 +19,14 @@ export function TurnstileWidget({ siteKey, onSuccess, onExpire, onError }: Props
   // Register global callbacks Cloudflare will call
   useEffect(() => {
     const name = callbackName.current;
-    (window as Record<string, unknown>)[name] = onSuccess;
-    (window as Record<string, unknown>)[`${name}_expire`] = onExpire ?? null;
-    (window as Record<string, unknown>)[`${name}_error`] = onError ?? null;
+    const win = window as unknown as Record<string, unknown>;
+    win[name] = onSuccess;
+    win[`${name}_expire`] = onExpire ?? null;
+    win[`${name}_error`] = onError ?? null;
     return () => {
-      delete (window as Record<string, unknown>)[name];
-      delete (window as Record<string, unknown>)[`${name}_expire`];
-      delete (window as Record<string, unknown>)[`${name}_error`];
+      delete win[name];
+      delete win[`${name}_expire`];
+      delete win[`${name}_error`];
     };
   }, [onSuccess, onExpire, onError]);
 
