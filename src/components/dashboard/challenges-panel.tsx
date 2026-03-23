@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -394,6 +394,10 @@ function CreateChallengeDialog({
       .catch(() => {});
   }, [open]);
 
+  const set = useCallback((k: keyof typeof form, v: string) => {
+    setForm((p) => ({ ...p, [k]: v }));
+  }, []);
+
   useEffect(() => {
     set("moduleId", "none");
     if (!form.programId) { setModules([]); return; }
@@ -401,11 +405,7 @@ function CreateChallengeDialog({
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d: { modules: Module[] }) => setModules(d.modules ?? []))
       .catch(() => setModules([]));
-  }, [form.programId]);
-
-  function set(k: keyof typeof form, v: string) {
-    setForm((p) => ({ ...p, [k]: v }));
-  }
+  }, [form.programId, set]);
 
   async function handleSave() {
     if (!form.programId || !form.title.trim() || !form.prompt.trim()) {

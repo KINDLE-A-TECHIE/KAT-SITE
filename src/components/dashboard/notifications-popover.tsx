@@ -9,22 +9,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 
 type NotificationTypeValue = "INFO" | "SUCCESS" | "WARNING" | "ERROR";
-type MessageStreamEvent =
-  | {
-      type: "connected";
-      at: string;
-    }
-  | {
-      type: "message_created";
-      threadId: string;
-      messageId: string;
-      senderId: string;
-      recipientId: string;
-      recipientIds?: string[];
-      createdAt: string;
-    };
-
-const STREAM_RETRY_MS = 3000;
 
 type NotificationItem = {
   id: string;
