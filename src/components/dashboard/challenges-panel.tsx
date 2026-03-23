@@ -376,7 +376,7 @@ function CreateChallengeDialog({
 
   const [form, setForm] = useState({
     programId: "",
-    moduleId: "",
+    moduleId: "none",
     title: "",
     description: "",
     weekNumber: "",
@@ -395,6 +395,7 @@ function CreateChallengeDialog({
   }, [open]);
 
   useEffect(() => {
+    set("moduleId", "none");
     if (!form.programId) { setModules([]); return; }
     fetch(`/api/programs/${form.programId}/modules`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -419,7 +420,7 @@ function CreateChallengeDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           programId: form.programId,
-          moduleId: form.moduleId || null,
+          moduleId: form.moduleId && form.moduleId !== "none" ? form.moduleId : null,
           title: form.title.trim(),
           description: form.description.trim() || null,
           type: "CHALLENGE" as AssessmentTypeValue,
@@ -489,7 +490,7 @@ function CreateChallengeDialog({
                   <SelectValue placeholder={modules.length === 0 ? "No modules yet" : "Select module"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">— No specific module —</SelectItem>
+                  <SelectItem value="none">— No specific module —</SelectItem>
                   {modules.map((m) => (
                     <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
                   ))}

@@ -455,6 +455,9 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
             return;
           }
 
+          // Notify other components (e.g. NotificationsPopover) without a second SSE connection
+          window.dispatchEvent(new CustomEvent("kat:message_created", { detail: payload }));
+
           const activeThreadId = selectedThreadIdRef.current;
           const now = Date.now();
           if (now - lastThreadRefreshAtRef.current >= 1200) {

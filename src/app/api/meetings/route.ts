@@ -1,4 +1,4 @@
-import { MeetingRecordingMode, MeetingRecordingStatus, MeetingStatus, UserRole } from "@prisma/client";
+import { MeetingRecordingMode, MeetingRecordingStatus, MeetingStatus, NotificationType, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -137,6 +137,26 @@ export async function POST(request: Request) {
     payload: { meetingId: meeting.id },
   });
 
+  // Notify all participants except the host
+  const notifyIds = participants.filter((id) => id !== session.user.id);
+  if (notifyIds.length > 0) {
+    const hostName = `${session.user.firstName ?? ""} ${session.user.lastName ?? ""}`.trim() || "Your instructor";
+    const startLabel = startTime.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
+      " at " + startTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    await prisma.notification.createMany({
+      data: notifyIds.map((recipientId) => ({
+        recipientId,
+        creatorId: session.user.id,
+        type: NotificationType.INFO,
+        title: "New meeting scheduled",
+        body: JSON.stringify({
+          text: `${hostName} scheduled "${parsed.data.title}" on ${startLabel}.`,
+          targetPath: "/dashboard/meetings",
+        }),
+      })),
+    });
+  }
+
   return ok({ meeting }, 201);
 }
 
@@ -258,5 +278,28 @@ export async function PATCH(request: Request) {
         });
 
   if (!updated) return fail("Meeting not found.", 404);
+
+  // Notify participants when a meeting is cancelled
+  if (isCancelRequest) {
+    const actorName = `${session.user.firstName ?? ""} ${session.user.lastName ?? ""}`.trim() || "The host";
+    const cancelNotifyIds = updated.participants
+      .map((p) => p.user.id)
+      .filter((id) => id !== session.user.id);
+    if (cancelNotifyIds.length > 0) {
+      await prisma.notification.createMany({
+        data: cancelNotifyIds.map((recipientId) => ({
+          recipientId,
+          creatorId: session.user.id,
+          type: NotificationType.WARNING,
+          title: "Meeting cancelled",
+          body: JSON.stringify({
+            text: `${actorName} cancelled the meeting "${updated.title}".`,
+            targetPath: "/dashboard/meetings",
+          }),
+        })),
+      });
+    }
+  }
+
   return ok({ meeting: updated });
 }

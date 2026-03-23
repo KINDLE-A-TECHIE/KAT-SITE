@@ -614,21 +614,6 @@ function ProjectCard({
           </div>
         )}
 
-        {/* Tags */}
-        {!editing && p.tags.length > 0 && (
-          <div className="mb-2.5 flex flex-wrap gap-1">
-            {p.tags.map((tag) => (
-              <span key={tag} className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
-                <Tag className="size-2.5" />{tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Description snippet — visible when collapsed */}
-        {!editing && !expanded && p.description && (
-          <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{p.description}</p>
-        )}
 
         {/* Meta row */}
         {!editing && (
@@ -674,6 +659,24 @@ function ProjectCard({
             className="overflow-hidden"
           >
             <div className="space-y-4 border-t border-slate-100 p-4 dark:border-slate-800">
+
+              {/* Description + tags (read view only) */}
+              {!editing && (
+                <>
+                  {p.description && (
+                    <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">{p.description}</p>
+                  )}
+                  {p.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {p.tags.map((tag) => (
+                        <span key={tag} className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
+                          <Tag className="size-2.5" />{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
 
               {/* Edit form */}
               {editing ? (

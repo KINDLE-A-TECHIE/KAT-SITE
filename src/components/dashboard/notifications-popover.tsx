@@ -142,43 +142,9 @@ export function NotificationsPopover() {
   }, [open, hasLoadedOnce, loadNotifications]);
 
   useEffect(() => {
-    let eventSource: EventSource | null = null;
-    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-    let unmounted = false;
-
-    const connect = () => {
-      eventSource = new EventSource("/api/messages/stream");
-
-      eventSource.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data) as MessageStreamEvent;
-          if (payload.type !== "message_created") {
-            return;
-          }
-          void loadNotifications({ silent: true });
-        } catch {
-          // Ignore malformed payloads from stream.
-        }
-      };
-
-      eventSource.onerror = () => {
-        eventSource?.close();
-        eventSource = null;
-        if (!unmounted) {
-          reconnectTimeout = setTimeout(connect, STREAM_RETRY_MS);
-        }
-      };
-    };
-
-    connect();
-
-    return () => {
-      unmounted = true;
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-      }
-      eventSource?.close();
-    };
+    const handler = () => void loadNotifications({ silent: true });
+    window.addEventListener("kat:message_created", handler);
+    return () => window.removeEventListener("kat:message_created", handler);
   }, [loadNotifications]);
 
   const markOneAsRead = async (notificationId: string) => {
