@@ -22,6 +22,7 @@ A Learning Management System (LMS) for KAT Academy, serving students aged 8–19
 | Meetings | Jitsi Meet (self-hosted) + Jibri (recordings) |
 | Realtime | SSE + Redis pub/sub (optional) |
 | Rate Limiting | Upstash Redis |
+| Bot Protection | Cloudflare Turnstile |
 
 ---
 
@@ -84,6 +85,10 @@ JITSI_APP_ID=              # App ID for JWT auth, e.g. kat-app
 JITSI_APP_SECRET=          # Secret for signing Jitsi JWTs
 JIBRI_WEBHOOK_SECRET=      # Shared secret for the Jibri recording-ready webhook
 
+# ── Cloudflare Turnstile (bot protection) ─────────────────────────────────────
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=   # From Cloudflare dashboard — shown on login/register
+TURNSTILE_SECRET_KEY=             # Server-side verification secret
+
 # ── Rate Limiting (Upstash Redis) ─────────────────────────────────────────────
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
@@ -138,6 +143,13 @@ All seed accounts use the password `Passw0rd!`
 - Super Admin can toggle retake-grant permission per instructor/admin account
 - Auto-grading for objective questions; manual grading queue for open-ended responses
 
+### Weekly Challenges
+- Instructors and admins create weekly coding challenges per program module
+- Students submit open-ended responses (link, description, or code)
+- Real-time leaderboard per challenge showing ranked scores and a top-3 podium
+- Featured challenge hero banner for learners; active/past tab split
+- Scores displayed with rank titles (Perfect Score, Code Wizard, Bug Slayer, etc.)
+
 ### Projects
 - Students create standalone or program-linked projects with a required description and optional "How to Use" guide
 - Direct browser-to-R2 uploads via presigned PUT URLs (max 20 MB per file, 10 files per project)
@@ -171,8 +183,17 @@ All seed accounts use the password `Passw0rd!`
 - Auto-recording policy: sessions with students/fellows trigger `AUTO_REQUIRED` mode via Jibri
 - Jibri webhook at `POST /api/meetings/recording-ready` (HMAC-SHA256 verified) saves recording URLs
 - Signed join URLs generated per-user at join time (4-hour JWT validity)
+- In-app notifications sent to all participants when a meeting is scheduled or cancelled
+
+### Notifications
+- In-app notification bell with unread count badge
+- Notification types: INFO, SUCCESS, WARNING, ERROR
+- Triggered by: new messages (unread summary), meeting scheduled, meeting cancelled
+- Clicking a notification marks it read and navigates to the relevant page
+- Admins and Super Admins can send manual notifications to any user
 
 ### Security
+- Cloudflare Turnstile bot protection on login and registration
 - Rate limiting on auth endpoints: login (10/15 min), register (5/hr), forgot-password (3/15 min)
 - Rate limiting on project endpoints: create (10/hr), upload (30/hr), feedback (60/hr), status change (100/hr)
 - Security headers on all routes: `X-Frame-Options`, `X-Content-Type-Options`, `HSTS`, `Referrer-Policy`, `Permissions-Policy`
@@ -180,7 +201,6 @@ All seed accounts use the password `Passw0rd!`
 
 ### Other
 - Cohort management with fellow applications (including external/guest applicants)
-- In-app notifications (INFO, WARNING, ERROR, SUCCESS)
 - Analytics event tracking with monthly aggregation
 - Partner enquiry form at `/partners` with email notification to `hello@kindleatechie.com`
 - Dark mode scoped to the dashboard — marketing and auth pages are always light
@@ -196,18 +216,6 @@ All seed accounts use the password `Passw0rd!`
 | `POST /api/cron/parent-digest` | Monthly | Send parent progress digest emails |
 
 All cron endpoints require the `Authorization: Bearer <CRON_SECRET>` header.
-
----
-
-## Maintenance
-
-Backfill Zoho meeting join URLs (dry-run first):
-
-```bash
-npm run backfill:meeting-join-urls
-npm run backfill:meeting-join-urls -- --apply
-npm run backfill:meeting-join-urls -- --apply --limit=20
-```
 
 ---
 
@@ -229,6 +237,7 @@ src/
       auth/               # NextAuth, password reset, forgot-password
       badges/             # Badge queries
       certificates/       # Certificate issuance and verification
+      challenges/         # Weekly challenge list and leaderboard
       cohorts/            # Cohort management
       cron/               # Scheduled job endpoints
       curriculum/         # Versioned curriculum builder
@@ -243,7 +252,6 @@ src/
       projects/           # Project CRUD, R2 uploads, feedback, assets, status reviews, showcase
       super-admin/        # Admin account and invite management
       users/              # Registration, profile, avatar
-      waitlist/           # Landing page waitlist
     dashboard/            # All dashboard pages by role
     showcase/             # Public project showcase index (/showcase)
     showcase/[projectId]/ # ISR public project detail page
@@ -259,12 +267,13 @@ src/
     auth.ts               # NextAuth config and JWT
     badges.ts             # Module badge award logic
     email.ts              # Email builders, templates, SMTP transport
+    jitsi.ts              # Jitsi JWT generation, room naming, status helpers
     prisma.ts             # Prisma client singleton
     r2.ts                 # Cloudflare R2 client and presigned URL helpers
     ratelimit.ts          # Upstash rate limiter instances
     rbac.ts               # Messaging permission matrix
+    turnstile.ts          # Cloudflare Turnstile server-side verification
     validators.ts         # Shared Zod schemas
-    jitsi.ts              # Jitsi JWT generation, room naming, status helpers
 ```
 
 ---
