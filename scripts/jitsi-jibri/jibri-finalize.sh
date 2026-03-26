@@ -36,14 +36,16 @@ set -euo pipefail
 
 log() { echo "[jibri-finalize] $(date '+%Y-%m-%d %H:%M:%S') $*"; }
 
-log "MEETING_URL=$MEETING_URL"
+# Jibri passes the recording directory as the first positional argument
+RECORDINGS_DIR="${1:-}"
+if [[ -z "$RECORDINGS_DIR" ]]; then
+  log "ERROR: No recordings directory passed as argument."
+  exit 1
+fi
+
 log "RECORDINGS_DIR=$RECORDINGS_DIR"
 
-# ── 1. Extract room name ──────────────────────────────────────────────────────
-ROOM_NAME=$(basename "$MEETING_URL")
-log "Room: $ROOM_NAME"
-
-# ── 2. Find raw recording ─────────────────────────────────────────────────────
+# ── 1. Find raw recording ─────────────────────────────────────────────────────
 RAW_FILE=$(find "$RECORDINGS_DIR" -name "*.mp4" -newer /tmp/.jibri_last 2>/dev/null | head -1 || true)
 if [[ -z "$RAW_FILE" ]]; then
   RAW_FILE=$(find "$RECORDINGS_DIR" -name "*.mp4" | sort | tail -1 || true)
@@ -57,7 +59,13 @@ touch /tmp/.jibri_last
 RAW_SIZE=$(du -sh "$RAW_FILE" | cut -f1)
 log "Raw file: $RAW_FILE ($RAW_SIZE)"
 
-# ── 3. Compress with FFmpeg ───────────────────────────────────────────────────
+# ── 2. Extract room name from filename ────────────────────────────────────────
+# Filename format: kat-abc123_2026-03-24-16-38-02.mp4 → room = kat-abc123
+BASENAME=$(basename "$RAW_FILE" .mp4)
+ROOM_NAME="${BASENAME%%_*}"
+log "Room: $ROOM_NAME"
+
+# ── 3. Compress with FFmpeg ──────────────────────────────────────────────────
 # -vf scale=-2:720   → 720p, preserving aspect ratio
 # -crf 28            → quality (18=high quality/large, 32=lower quality/small)
 #                      28 is a good balance for class recordings

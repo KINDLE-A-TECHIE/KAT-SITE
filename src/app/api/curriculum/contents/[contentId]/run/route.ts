@@ -19,23 +19,23 @@ const ratelimit =
 
 interface Params { params: Promise<{ contentId: string }> }
 
-// Map our language identifiers to Glot.io language slugs
-// Full list: https://glot.io/languages
-const GLOT_LANGUAGE_MAP: Record<string, { lang: string; file: string }> = {
-  python:     { lang: "python",     file: "main.py" },
-  javascript: { lang: "javascript", file: "main.js" },
-  typescript: { lang: "typescript", file: "main.ts" },
-  java:       { lang: "java",       file: "Main.java" },
-  c:          { lang: "c",          file: "main.c" },
-  cpp:        { lang: "cpp",        file: "main.cpp" },
-  go:         { lang: "go",         file: "main.go" },
-  rust:       { lang: "rust",       file: "main.rs" },
-  php:        { lang: "php",        file: "main.php" },
-  ruby:       { lang: "ruby",       file: "main.rb" },
-  csharp:     { lang: "csharp",     file: "main.cs" },
+// Judge0 CE language IDs — https://github.com/judge0/judge0/blob/master/docs/api/languages.md
+const JUDGE0_LANGUAGE_MAP: Record<string, number> = {
+  python:     71,  // Python 3
+  javascript: 63,  // Node.js
+  typescript: 74,  // TypeScript
+  java:       62,  // Java (OpenJDK)
+  c:          50,  // C (GCC)
+  cpp:        54,  // C++ (GCC)
+  go:         60,  // Go
+  rust:       73,  // Rust
+  php:        68,  // PHP
+  ruby:       72,  // Ruby
+  csharp:     51,  // C# (Mono)
 };
 
-const GLOT_API_TOKEN = process.env.GLOT_API_TOKEN?.trim() || null;
+const JUDGE0_API_URL = process.env.JUDGE0_API_URL?.replace(/\/$/, "") ?? null;
+const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY?.trim() ?? null;
 
 export async function POST(request: Request, { params }: Params) {
   const session = await getServerAuthSession();
@@ -65,7 +65,7 @@ export async function POST(request: Request, { params }: Params) {
 
   const content = await prisma.lessonContent.findUnique({
     where: { id: contentId },
-    select: { type: true, language: true, reviewStatus: true, lesson: { select: { module: { select: { version: { select: { curriculum: { select: { programId: true } } } } } } } } },
+    select: { type: true, language: true, reviewStatus: true },
   });
 
   if (!content) return fail("Content not found.", 404);
@@ -78,52 +78,61 @@ export async function POST(request: Request, { params }: Params) {
     return fail("Content not published.", 403);
   }
 
-  const body = await request.json() as { code?: string };
+  const body = await request.json() as { code?: string; stdin?: string };
   if (!body.code || typeof body.code !== "string") return fail("code is required.", 400);
   if (body.code.length > 50_000) return fail("Code too long (max 50 000 chars).", 400);
 
-  const glotEntry = GLOT_LANGUAGE_MAP[content.language];
-  if (!glotEntry) return fail(`Unsupported language: ${content.language}`, 400);
+  const languageId = JUDGE0_LANGUAGE_MAP[content.language];
+  if (!languageId) return fail(`Unsupported language: ${content.language}`, 400);
 
-  if (!GLOT_API_TOKEN) {
+  if (!JUDGE0_API_URL || !JUDGE0_API_KEY) {
     return fail("Code execution service is not configured.", 503);
   }
 
   try {
-    const glotRes = await fetch(`https://glot.io/api/run/${glotEntry.lang}/latest`, {
+    // wait=true makes Judge0 execute synchronously (up to ~5s) — ideal for short educational snippets
+    const judge0Res = await fetch(`${JUDGE0_API_URL}/submissions?wait=true`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Token ${GLOT_API_TOKEN}`,
+        "X-Auth-Token": JUDGE0_API_KEY,
       },
       body: JSON.stringify({
-        files: [{ name: glotEntry.file, content: body.code }],
+        source_code: body.code,
+        language_id: languageId,
+        stdin: body.stdin ?? "",
       }),
       signal: AbortSignal.timeout(15_000),
     });
 
-    if (!glotRes.ok) {
+    if (!judge0Res.ok) {
       let detail = "";
-      try { detail = await glotRes.text(); } catch { /* ignore */ }
-      console.error(`[run] Glot.io ${glotRes.status}: ${detail}`);
-      return fail(`Code execution service error (${glotRes.status}).`, 502);
+      try { detail = await judge0Res.text(); } catch { /* ignore */ }
+      console.error(`[run] Judge0 ${judge0Res.status}: ${detail}`);
+      return fail(`Code execution service error (${judge0Res.status}).`, 502);
     }
 
-    const result = await glotRes.json() as {
-      stdout?: string;
-      stderr?: string;
-      error?: string;
+    const result = await judge0Res.json() as {
+      stdout:          string | null;
+      stderr:          string | null;
+      compile_output:  string | null;
+      exit_code:       number | null;
+      status:          { id: number; description: string };
+      time:            string | null;
+      memory:          number | null;
     };
 
-    // Glot returns error string for compile/runtime errors — treat as stderr
-    const stderr = (result.stderr ?? "") + (result.error ? `\n${result.error}` : "");
-    const exitCode = result.error ? 1 : 0;
+    // Status IDs: 3 = Accepted, 6 = Compilation Error, 5 = TLE, 7-12 = Runtime errors
+    const exitCode = result.status.id === 3 ? 0 : 1;
 
     return ok({
-      stdout: result.stdout ?? "",
-      stderr: stderr.trim(),
+      stdout:        result.stdout        ?? "",
+      stderr:        result.stderr        ?? "",
+      compileOutput: result.compile_output ?? "",
       exitCode,
-      compileOutput: null,
+      status:        result.status.description,
+      time:          result.time,
+      memory:        result.memory,
     });
   } catch (err) {
     if (err instanceof Error && err.name === "TimeoutError") {

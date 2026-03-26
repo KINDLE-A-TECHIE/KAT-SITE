@@ -111,14 +111,13 @@ PROSODY_CFG="/etc/prosody/conf.avail/${DOMAIN}.cfg.lua"
 [[ -f "$PROSODY_CFG" ]] || die "Prosody config not found: $PROSODY_CFG"
 
 # Install lua-jwt library (needed for mod_auth_token)
-apt-get install -y lua-jwt 2>/dev/null || true
-if ! dpkg -l | grep -q luarocks 2>/dev/null; then
-  apt-get install -y luarocks
-fi
+# lua-jwt is not in Ubuntu apt repos — install via luarocks
+apt-get install -y libssl-dev luarocks lua5.2 liblua5.2-dev
 luarocks install luajwtjitsi 2>/dev/null || true
 luarocks install lua-cjson 2>/dev/null || true
 
-# Patch main VirtualHost: anonymous → token auth, inject app_id/app_secret
+# Patch main VirtualHost: anonymous → token auth, uncomment app_id/app_secret
+# Jitsi's default Prosody config already has these as commented-out placeholders
 python3 - <<PYEOF
 import re
 
@@ -130,15 +129,9 @@ with open(path) as f:
 text = re.sub(r'authentication\s*=\s*"anonymous"', 'authentication = "token"', text)
 text = re.sub(r'authentication\s*=\s*"jitsi-anonymous"', 'authentication = "token"', text)
 
-# Inject JWT keys after 'authentication = "token"' in the main VirtualHost block
-# Only inject once, before the first VirtualHost closing brace
-inject = """
-    app_id = "${APP_ID}";
-    app_secret = "${APP_SECRET}";
-    allow_empty_token = false;
-"""
-if 'app_id' not in text:
-    text = text.replace('authentication = "token";', 'authentication = "token";' + inject, 1)
+# Uncomment and fill in the app_id/app_secret placeholders that Jitsi ships commented out
+text = text.replace('--app_id="example_app_id"', 'app_id="${APP_ID}"')
+text = text.replace('--app_secret="example_app_secret"', 'app_secret="${APP_SECRET}"')
 
 # Ensure token_verification is in the conference component modules
 if 'token_verification' not in text:
@@ -154,22 +147,17 @@ print("Prosody JWT config patched.")
 PYEOF
 
 # ── 9. Add Prosody virtual hosts + components for Jibri ──────────────────────
-# These must be appended to the domain config file
+# Only append recorder VirtualHost — internal.auth component already exists in
+# the default Jitsi Prosody config; appending it again causes duplicate warnings
+if ! grep -q "recorder.${DOMAIN}" "$PROSODY_CFG"; then
 cat >> "$PROSODY_CFG" <<LUA
-
--- ── Jibri: internal MUC for Jibri brewery ─────────────────────────────────
-Component "internal.auth.${DOMAIN}" "muc"
-    storage = "memory"
-    modules_enabled = { "ping" }
-    admins = { "focus@auth.${DOMAIN}", "jibri@auth.${DOMAIN}" }
-    muc_room_locking = false
-    muc_room_default_public_jids = true
 
 -- ── Jibri: recorder virtual host ──────────────────────────────────────────
 VirtualHost "recorder.${DOMAIN}"
     modules_enabled = { "ping" }
     authentication = "internal_hashed"
 LUA
+fi
 
 # ── 10. Register Jibri XMPP accounts in Prosody ──────────────────────────────
 log "Registering Jibri XMPP accounts in Prosody …"
@@ -352,7 +340,7 @@ jibri {
   }
 
   ffmpeg {
-    resolution = "1280x720"
+    resolution = "1920x1080"
     framerate = 30
     video-encode-preset-recording = "ultrafast"
     h264-constant-rate-factor = 25
@@ -402,12 +390,21 @@ fi
 # ── 17. Place the finalize script ────────────────────────────────────────────
 log "Installing finalize script to /opt/kat/ …"
 mkdir -p /opt/kat
-if [[ -f "/root/jibri-finalize.sh" ]]; then
-  cp /root/jibri-finalize.sh /opt/kat/jibri-finalize.sh
+# Look for the finalize script next to this script or in the invoking user's home
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FINALIZE_SRC=""
+if [[ -f "${SCRIPT_DIR}/jibri-finalize.sh" ]]; then
+  FINALIZE_SRC="${SCRIPT_DIR}/jibri-finalize.sh"
+elif [[ -f "${SUDO_USER:+/home/$SUDO_USER}/jibri-finalize.sh" ]]; then
+  FINALIZE_SRC="/home/${SUDO_USER}/jibri-finalize.sh"
+fi
+
+if [[ -n "$FINALIZE_SRC" ]]; then
+  cp "$FINALIZE_SRC" /opt/kat/jibri-finalize.sh
   chmod +x /opt/kat/jibri-finalize.sh
-  log "Finalize script installed."
+  log "Finalize script installed from $FINALIZE_SRC"
 else
-  warn "jibri-finalize.sh not found at /root/jibri-finalize.sh"
+  warn "jibri-finalize.sh not found automatically."
   warn "Copy it manually: sudo cp jibri-finalize.sh /opt/kat/jibri-finalize.sh && sudo chmod +x /opt/kat/jibri-finalize.sh"
 fi
 
@@ -472,7 +469,7 @@ echo "     and watch logs: journalctl -u jibri -f"
 echo "═══════════════════════════════════════════════════════════════════"
 
 # Save credentials to a file for reference
-CREDS_FILE="/root/kat-jitsi-credentials.txt"
+CREDS_FILE="/home/${SUDO_USER:-root}/kat-jitsi-credentials.txt"
 cat > "$CREDS_FILE" <<CREDS
 # KAT Jitsi Credentials — generated $(date)
 # Add to Vercel environment variables:

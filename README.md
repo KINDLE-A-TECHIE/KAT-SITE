@@ -20,6 +20,7 @@ A Learning Management System (LMS) for KAT Academy, serving students aged 8–19
 | File Storage | Cloudflare R2 (S3-compatible) |
 | Email | Nodemailer (SMTP) |
 | Meetings | Jitsi Meet (self-hosted) + Jibri (recordings) |
+| Code Execution | Judge0 CE (self-hosted, sandboxed) |
 | Realtime | SSE + Redis pub/sub (optional) |
 | Rate Limiting | Upstash Redis |
 | Bot Protection | Cloudflare Turnstile |
@@ -85,6 +86,10 @@ JITSI_APP_ID=              # App ID for JWT auth, e.g. kat-app
 JITSI_APP_SECRET=          # Secret for signing Jitsi JWTs
 JIBRI_WEBHOOK_SECRET=      # Shared secret for the Jibri recording-ready webhook
 
+# ── Judge0 CE (code execution) ────────────────────────────────────────────────
+JUDGE0_API_URL=            # Your Judge0 VPS URL, e.g. https://code.yourdomain.com
+JUDGE0_API_KEY=            # X-Auth-Token from judge0.conf (AUTHN_TOKEN)
+
 # ── Cloudflare Turnstile (bot protection) ─────────────────────────────────────
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=   # From Cloudflare dashboard — shown on login/register
 TURNSTILE_SECRET_KEY=             # Server-side verification secret
@@ -131,9 +136,15 @@ All seed accounts use the password `Passw0rd!`
 
 ### Curriculum
 - Versioned curriculum builder: Programs → Versions → Modules → Lessons → Content Blocks
-- Content types: rich text, code, document, video, external links
+- Content types: rich text, YouTube/external video, document links, code playground
 - Multi-block content queue — stage multiple blocks before submitting for review
 - Content review workflow — instructors submit, admins/Super Admin approve or reject
+- Lesson progress tracking: completion recorded per learner, module badge auto-awarded when all lessons done
+- Prev/Next lesson navigation across module boundaries with a floating bottom nav pill
+- Scroll-aware progress dots in the lesson header track the active content block
+- Code playground powered by self-hosted Judge0 CE: Monaco editor with syntax highlighting, Ctrl+Enter to run, custom stdin input, live stdout/stderr/compiler output, execution time and memory display
+- DOMPurify HTML sanitization on all rich-text content blocks
+- Curriculum tree shows overall completion percentage, per-module lesson counts, and per-lesson check marks for learners
 
 ### Assessments
 - Drag-and-drop question builder: multiple choice, true/false, open-ended
@@ -161,7 +172,8 @@ All seed accounts use the password `Passw0rd!`
 - Rate limiting on create, upload, feedback, and status-change endpoints
 
 ### Badges & Certificates
-- Badges auto-awarded per module when all assessments in that module are passed
+- Badges auto-awarded per module when all lessons in that module are completed
+- Additional badges tied to module assessments
 - Certificates issued on program completion; Admin/Instructor requests require Super Admin approval
 - Public certificate verification at `/certificate/[credentialId]`
 
@@ -181,6 +193,7 @@ All seed accounts use the password `Passw0rd!`
 - Self-hosted Jitsi Meet scheduling with JWT authentication
 - Role-based moderator rights (hosts get moderator JWT; students do not)
 - Auto-recording policy: sessions with students/fellows trigger `AUTO_REQUIRED` mode via Jibri
+- Jibri records at 1920×1080, compresses via FFmpeg, uploads to Cloudflare R2, then fires webhook
 - Jibri webhook at `POST /api/meetings/recording-ready` (HMAC-SHA256 verified) saves recording URLs
 - Signed join URLs generated per-user at join time (4-hour JWT validity)
 - In-app notifications sent to all participants when a meeting is scheduled or cancelled
@@ -196,8 +209,11 @@ All seed accounts use the password `Passw0rd!`
 - Cloudflare Turnstile bot protection on login and registration
 - Rate limiting on auth endpoints: login (10/15 min), register (5/hr), forgot-password (3/15 min)
 - Rate limiting on project endpoints: create (10/hr), upload (30/hr), feedback (60/hr), status change (100/hr)
+- Rate limiting on code execution: 20 runs/user/minute (Upstash sliding window)
 - Security headers on all routes: `X-Frame-Options`, `X-Content-Type-Options`, `HSTS`, `Referrer-Policy`, `Permissions-Policy`
+- DOMPurify sanitization on all rendered rich-text content (forbids script, iframe, object, embed, form and inline event handlers)
 - Paystack webhook signature verification (hard-required)
+- Judge0 CE sandboxed execution: isolate namespaces, CPU/memory/wall-time limits enforced per submission
 
 ### Other
 - Cohort management with fellow applications (including external/guest applicants)
@@ -216,6 +232,48 @@ All seed accounts use the password `Passw0rd!`
 | `POST /api/cron/parent-digest` | Monthly | Send parent progress digest emails |
 
 All cron endpoints require the `Authorization: Bearer <CRON_SECRET>` header.
+
+---
+
+## Self-Hosted Services
+
+Two services run on separate KVM-based VPS instances (AMD64 required for both).
+
+### Jitsi Meet + Jibri
+
+```
+scripts/jitsi-jibri/
+  jitsi-setup.sh        # Installs Jitsi Meet + Jibri, configures Nginx + TLS
+  jibri-finalize.sh     # Called by Jibri after recording: compress → R2 upload → webhook
+  jibri-env.sh          # Jibri environment config (R2 credentials, webhook URL)
+  deploy-to-vps.sh      # Copies scripts to the Jitsi VPS via scp
+```
+
+Required env vars on the Jitsi VPS (set in `jibri-env.sh`):
+`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `APP_URL`, `JIBRI_WEBHOOK_SECRET`
+
+### Judge0 CE (Code Execution)
+
+```
+scripts/judge0/
+  judge0-setup.sh       # Installs Docker, Judge0 CE stack, Nginx reverse proxy, TLS
+  deploy-to-vps.sh      # Copies setup script to the Judge0 VPS via scp
+```
+
+Minimum VPS spec: 2 vCPU, 4 GB RAM, Ubuntu 22.04, KVM virtualisation (not OpenVZ/LXC).
+
+After setup, add to Vercel:
+```
+JUDGE0_API_URL=https://code.yourdomain.com
+JUDGE0_API_KEY=<AUTHN_TOKEN from /opt/judge0/judge0.conf>
+```
+
+Management commands on the Judge0 VPS:
+```bash
+docker compose -f /opt/judge0/docker-compose.yml ps
+docker compose -f /opt/judge0/docker-compose.yml logs -f server
+docker compose -f /opt/judge0/docker-compose.yml restart
+```
 
 ---
 

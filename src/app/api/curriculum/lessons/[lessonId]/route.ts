@@ -25,6 +25,18 @@ export async function GET(_req: Request, { params }: Params) {
             select: {
               id: true, versionNumber: true, label: true,
               curriculum: { select: { program: { select: { id: true, name: true } } } },
+              // Fetch all modules + lessons for prev/next navigation
+              modules: {
+                orderBy: { sortOrder: "asc" },
+                select: {
+                  id: true,
+                  sortOrder: true,
+                  lessons: {
+                    orderBy: { sortOrder: "asc" },
+                    select: { id: true, title: true },
+                  },
+                },
+              },
             },
           },
         },
@@ -39,7 +51,7 @@ export async function GET(_req: Request, { params }: Params) {
 
   if (!lesson) return fail("Lesson not found.", 404);
 
-  // Learners must be enrolled in the program
+  // Learners must be enrolled
   if (isLearner) {
     const programId = lesson.module.version.curriculum.program.id;
     const enrollment = await prisma.enrollment.findUnique({
@@ -49,7 +61,36 @@ export async function GET(_req: Request, { params }: Params) {
     if (!enrollment) return fail("You are not enrolled in this program.", 403);
   }
 
-  return ok({ lesson });
+  // Build flat ordered lesson list for prev/next
+  const allLessons = lesson.module.version.modules.flatMap((m) =>
+    m.lessons.map((l) => ({ id: l.id, title: l.title }))
+  );
+  const currentIndex = allLessons.findIndex((l) => l.id === lessonId);
+  const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
+  const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
+
+  // Check if this lesson is already completed (learners only)
+  let isCompleted = false;
+  if (isLearner) {
+    const progress = await prisma.lessonProgress.findUnique({
+      where: { userId_lessonId: { userId: session.user.id, lessonId } },
+      select: { id: true },
+    });
+    isCompleted = !!progress;
+  }
+
+  // Strip the navigation data from the lesson object before returning
+  const { module: { version: { modules: _modules, ...versionRest }, ...moduleRest }, ...lessonRest } = lesson;
+
+  return ok({
+    lesson: {
+      ...lessonRest,
+      module: { ...moduleRest, version: { ...versionRest } },
+    },
+    prevLesson,
+    nextLesson,
+    isCompleted,
+  });
 }
 
 export async function PATCH(request: Request, { params }: Params) {

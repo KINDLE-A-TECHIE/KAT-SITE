@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowLeft, BookOpen, CheckCircle2, ExternalLink,
+  ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ExternalLink,
   FileText, Link as LinkIcon, Plus, Sparkles,
   Terminal, Video, Youtube, XCircle,
 } from "lucide-react";
+import DOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,6 +29,8 @@ type ContentItem = {
   reviewNote: string | null;
   createdBy: { firstName: string; lastName: string };
 };
+
+type LessonNav = { id: string; title: string } | null;
 
 type LessonData = {
   id: string;
@@ -61,6 +65,15 @@ const REVIEW_STYLE = {
   REJECTED:       "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400",
 };
 
+function sanitizeHtml(html: string): string {
+  if (typeof window === "undefined") return html;
+  return DOMPurify.sanitize(html, {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ["script", "iframe", "object", "embed", "form"],
+    FORBID_ATTR: ["onerror", "onclick", "onload", "onmouseover", "onfocus", "oninput"],
+  });
+}
+
 function extractYouTubeId(url: string): string | null {
   try {
     const u = new URL(url);
@@ -86,10 +99,6 @@ function extractVimeoId(url: string): string | null {
     }
     return null;
   } catch { return null; }
-}
-
-function sanitizeHtml(html: string): string {
-  return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
 }
 
 function VideoEmbed({ url, title }: { url: string; title: string }) {
@@ -271,9 +280,18 @@ function ContentBlock({
 }
 
 export function LessonViewer({ lessonId, programId, role }: { lessonId: string; programId: string; role: string }) {
+  const router = useRouter();
   const [lesson, setLesson] = useState<LessonData | null>(null);
+  const [prevLesson, setPrevLesson] = useState<LessonNav>(null);
+  const [nextLesson, setNextLesson] = useState<LessonNav>(null);
+  const [isCompleted, setIsCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showAddContent, setShowAddContent] = useState(false);
+  const completionFired = useRef(false);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const contentRefs = useRef<(HTMLElement | null)[]>([]);
+  const [showStickyNav, setShowStickyNav] = useState(false);
+  const [activeContentIndex, setActiveContentIndex] = useState(0);
 
   const isCreator = CREATOR_ROLES.includes(role);
   const isSA = role === "SUPER_ADMIN";
@@ -282,14 +300,76 @@ export function LessonViewer({ lessonId, programId, role }: { lessonId: string; 
     try {
       const res = await fetch(`/api/curriculum/lessons/${lessonId}`);
       if (res.ok) {
-        const data = await res.json() as { lesson: LessonData };
+        const data = await res.json() as {
+          lesson: LessonData;
+          prevLesson: LessonNav;
+          nextLesson: LessonNav;
+          isCompleted: boolean;
+        };
         setLesson(data.lesson);
+        setPrevLesson(data.prevLesson);
+        setNextLesson(data.nextLesson);
+        setIsCompleted(data.isCompleted);
+        completionFired.current = data.isCompleted; // don't re-fire if already done
       }
     } catch { /* ignore */ }
     setLoading(false);
   };
 
   useEffect(() => { void load(); }, [lessonId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset per-lesson state when navigating to a different lesson
+  useEffect(() => {
+    contentRefs.current = [];
+    setActiveContentIndex(0);
+    setShowStickyNav(false);
+  }, [lessonId]);
+
+  // Show floating nav pill once the hero header scrolls out of view
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyNav(!(entry?.isIntersecting ?? true)),
+      { threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [lesson]);
+
+  // Track which content block is in view to drive the progress dots
+  useEffect(() => {
+    const els = contentRefs.current.filter(Boolean) as HTMLElement[];
+    if (els.length === 0) return;
+    const observers = els.map((el, i) => {
+      const obs = new IntersectionObserver(
+        ([entry]) => { if (entry?.isIntersecting) setActiveContentIndex(i); },
+        { threshold: 0.4, rootMargin: "0px 0px -30% 0px" },
+      );
+      obs.observe(el);
+      return obs;
+    });
+    return () => observers.forEach((o) => o.disconnect());
+  }, [lesson]);
+
+  // Mark lesson complete when the completion footer is shown (learners only)
+  const markComplete = async () => {
+    if (isCreator || completionFired.current) return;
+    completionFired.current = true;
+    try {
+      const res = await fetch(`/api/curriculum/lessons/${lessonId}/complete`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json() as { completed: boolean; badgeEarned: { name: string; icon: string } | null };
+        setIsCompleted(true);
+        if (data.badgeEarned) {
+          toast.success(`${data.badgeEarned.icon} Badge earned: ${data.badgeEarned.name}!`, {
+            duration: 5000,
+            description: "You completed all lessons in this module.",
+          });
+        }
+      }
+    } catch { /* ignore */ }
+  };
 
   const reviewContent = async (contentId: string, action: "PUBLISH" | "REJECT", note?: string) => {
     const res = await fetch(`/api/curriculum/contents/${contentId}/review`, {
@@ -336,7 +416,7 @@ export function LessonViewer({ lessonId, programId, role }: { lessonId: string; 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       {/* Hero header */}
-      <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#0D1F45] to-[#1E5FAF] px-6 py-6 text-white shadow-md">
+      <div ref={heroRef} className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#0D1F45] to-[#1E5FAF] px-6 py-6 text-white shadow-md">
         {/* Back link */}
         <Link
           href={`/dashboard/curriculum/${program.id}`}
@@ -351,6 +431,11 @@ export function LessonViewer({ lessonId, programId, role }: { lessonId: string; 
           <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white/70">
             {lesson.module.title}
           </span>
+          {isCompleted && (
+            <span className="flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">
+              <CheckCircle2 className="h-3 w-3" /> Completed
+            </span>
+          )}
         </div>
 
         {/* Lesson title */}
@@ -368,7 +453,7 @@ export function LessonViewer({ lessonId, programId, role }: { lessonId: string; 
               <div
                 key={i}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === 0 ? "w-6 bg-white" : "w-1.5 bg-white/30"
+                  i === activeContentIndex ? "w-6 bg-white" : "w-1.5 bg-white/30"
                 }`}
               />
             ))}
@@ -394,6 +479,7 @@ export function LessonViewer({ lessonId, programId, role }: { lessonId: string; 
         {visibleContents.map((content, i) => (
           <motion.div
             key={content.id}
+            ref={(el) => { contentRefs.current[i] = el; }}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06, duration: 0.3 }}
@@ -416,24 +502,86 @@ export function LessonViewer({ lessonId, programId, role }: { lessonId: string; 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: visibleContents.length * 0.06 + 0.1 }}
-          className="flex flex-col items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 py-8 text-center dark:border-emerald-900/40 dark:bg-emerald-950/20"
+          onAnimationComplete={markComplete}
+          className="overflow-hidden rounded-2xl border border-emerald-100 bg-emerald-50 py-8 text-center dark:border-emerald-900/40 dark:bg-emerald-950/20"
         >
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
-            <Sparkles className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex flex-col items-center gap-3 px-6">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
+              <Sparkles className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="font-bold text-emerald-800 dark:text-emerald-300">You&apos;ve reached the end!</p>
+              <p className="mt-0.5 text-sm text-emerald-600 dark:text-emerald-500">Great work finishing this lesson.</p>
+            </div>
+
+            {/* Navigation buttons */}
+            <div className="mt-2 flex items-center gap-3">
+              {prevLesson && (
+                <button
+                  onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${prevLesson.id}`)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Previous
+                </button>
+              )}
+
+              {nextLesson ? (
+                <button
+                  onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${nextLesson.id}`)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#1E5FAF] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a4f8f]"
+                >
+                  Next: {nextLesson.title.length > 28 ? nextLesson.title.slice(0, 28) + "…" : nextLesson.title}
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              ) : (
+                <Link
+                  href={`/dashboard/curriculum/${program.id}`}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#1E5FAF] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a4f8f]"
+                >
+                  Back to Course
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
+            </div>
           </div>
-          <div>
-            <p className="font-bold text-emerald-800 dark:text-emerald-300">You&apos;ve reached the end!</p>
-            <p className="mt-0.5 text-sm text-emerald-600 dark:text-emerald-500">Great work finishing this lesson.</p>
-          </div>
-          <Link
-            href={`/dashboard/curriculum/${program.id}`}
-            className="mt-1 inline-flex items-center gap-2 rounded-xl bg-[#1E5FAF] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1a4f8f]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Course
-          </Link>
         </motion.div>
       )}
+
+      {/* Floating navigation pill — appears once the hero scrolls out of view */}
+      <AnimatePresence>
+        {showStickyNav && !isCreator && (prevLesson ?? nextLesson) && (
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ duration: 0.2 }}
+            className="pointer-events-none fixed bottom-6 left-0 right-0 z-50 flex justify-center"
+          >
+            <div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 px-4 py-2.5 shadow-lg backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/95">
+              {prevLesson && (
+                <button
+                  onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${prevLesson.id}`)}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" /> Prev
+                </button>
+              )}
+              <span className="max-w-[160px] truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+                {lesson.title}
+              </span>
+              {nextLesson && (
+                <button
+                  onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${nextLesson.id}`)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#1E5FAF] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#1a4f8f]"
+                >
+                  Next <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Add content (creators) */}
       {isCreator && (
