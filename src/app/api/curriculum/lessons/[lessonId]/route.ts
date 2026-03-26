@@ -80,6 +80,7 @@ export async function GET(_req: Request, { params }: Params) {
   }
 
   // Strip the navigation data from the lesson object before returning
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { module: { version: { modules: _modules, ...versionRest }, ...moduleRest }, ...lessonRest } = lesson;
 
   return ok({
