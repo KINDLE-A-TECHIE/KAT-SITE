@@ -173,7 +173,7 @@ export async function tryCompleteInstructorGate(
 ): Promise<{ allGatesPassed: boolean } | null> {
   try {
     // Resolve the module → version → curriculum → program to find the enrollment
-    const module = await prisma.module.findUnique({
+    const moduleRecord = await prisma.module.findUnique({
       where: { id: moduleId },
       select: {
         version: {
@@ -186,7 +186,7 @@ export async function tryCompleteInstructorGate(
       },
     });
 
-    const programId = module?.version?.curriculum?.programId;
+    const programId = moduleRecord?.version?.curriculum?.programId;
     if (!programId) return null;
 
     const enrollment = await prisma.enrollment.findUnique({

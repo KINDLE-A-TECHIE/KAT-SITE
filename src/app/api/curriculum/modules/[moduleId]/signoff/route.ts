@@ -27,7 +27,7 @@ export async function POST(request: Request, { params }: Params) {
   const studentId = parsed.data.userId;
 
   // Verify the module exists and belongs to this org
-  const module = await prisma.module.findUnique({
+  const moduleRecord = await prisma.module.findUnique({
     where: { id: moduleId },
     select: {
       title: true,
@@ -44,9 +44,9 @@ export async function POST(request: Request, { params }: Params) {
     },
   });
 
-  if (!module) return fail("Module not found.", 404);
+  if (!moduleRecord) return fail("Module not found.", 404);
 
-  const orgId = module.version.curriculum.program.organizationId;
+  const orgId = moduleRecord.version.curriculum.program.organizationId;
   if (
     session.user.role !== UserRole.SUPER_ADMIN &&
     session.user.organizationId !== orgId
@@ -54,7 +54,7 @@ export async function POST(request: Request, { params }: Params) {
     return fail("Forbidden", 403);
   }
 
-  const programId = module.version.curriculum.programId;
+  const programId = moduleRecord.version.curriculum.programId;
 
   // Verify the student is enrolled
   const enrollment = await prisma.enrollment.findUnique({
@@ -74,7 +74,7 @@ export async function POST(request: Request, { params }: Params) {
       type: NotificationType.SUCCESS,
       title: "Instructor evaluation passed",
       body: JSON.stringify({
-        text: `Your instructor signed off on "${module.title}". ${result.allGatesPassed ? "All gates are now complete — the next module is unlocked!" : "Check your remaining gates to unlock the next module."}`,
+        text: `Your instructor signed off on "${moduleRecord.title}". ${result.allGatesPassed ? "All gates are now complete — the next module is unlocked!" : "Check your remaining gates to unlock the next module."}`,
         targetPath: `/dashboard/curriculum/${programId}`,
       }),
     },
