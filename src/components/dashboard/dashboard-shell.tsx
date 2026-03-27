@@ -225,7 +225,7 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
           <div className="mx-3 my-3 hidden items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800 lg:flex">
             <Avatar className="size-9 shrink-0 border border-slate-200">
               <AvatarImage src={avatarUrl ?? undefined} alt={`${displayFirstName} ${displayLastName}`} />
-              <AvatarFallback className="bg-[#0D1F45] text-[11px] font-bold text-white">{initials}</AvatarFallback>
+              <AvatarFallback className="bg-kat-dark text-[11px] font-bold text-white">{initials}</AvatarFallback>
             </Avatar>
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
@@ -238,7 +238,7 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
           {/* Nav */}
           <div className="relative">
             {/* Gradient fade to hint at horizontal scroll on mobile */}
-            <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-8 bg-gradient-to-l from-white to-transparent dark:from-slate-900 lg:hidden" />
+            <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-14 bg-gradient-to-l from-white to-transparent dark:from-slate-900 lg:hidden" />
             <nav className="flex gap-1 overflow-x-auto px-3 pb-2 pt-2 lg:block lg:space-y-0.5 lg:overflow-visible lg:pb-3 lg:pt-0">
               {navItems.map((item, index) => {
                 const Icon = item.icon;
@@ -253,10 +253,11 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
                   >
                     <Link
                       href={item.href}
+                      aria-current={active ? "page" : undefined}
                       className={cn(
                         "flex items-center gap-2.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition-colors max-[360px]:gap-1.5 max-[360px]:px-2.5 max-[360px]:py-1.5 max-[360px]:text-xs",
                         active
-                          ? "bg-[#0D1F45] text-white"
+                          ? "bg-kat-dark text-white"
                           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
                       )}
                     >
@@ -276,10 +277,11 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
               return (
                 <Link
                   href="/dashboard/settings"
+                  aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors lg:gap-2.5 lg:py-2.5",
                     active
-                      ? "bg-[#0D1F45] text-white"
+                      ? "bg-kat-dark text-white"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
                   )}
                 >
@@ -315,7 +317,7 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
               >
                 <Avatar className="size-7 border border-slate-200">
                   <AvatarImage src={avatarUrl ?? undefined} alt={`${displayFirstName} ${displayLastName}`} />
-                  <AvatarFallback className="bg-[#0D1F45] text-[10px] font-bold text-white">{initials}</AvatarFallback>
+                  <AvatarFallback className="bg-kat-dark text-[10px] font-bold text-white">{initials}</AvatarFallback>
                 </Avatar>
                 <span className="hidden text-xs font-medium text-slate-700 sm:inline dark:text-slate-300">{displayFirstName}</span>
               </Link>

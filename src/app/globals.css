@@ -221,6 +221,21 @@
     content-visibility: auto;
     contain-intrinsic-size: 1px 900px;
   }
+
+  /* Consistent focus ring for interactive elements that aren't using shadcn Button/Input */
+  .kat-focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-[#1E5FAF]/60 focus-visible:ring-offset-1;
+  }
+}
+
+/* Respect user's reduced-motion preference — disable all animations */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @media (max-width: 640px) {
@@ -281,5 +296,15 @@
   .kat-page-header {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  /* Avoid breaking cards across pages */
+  .kat-card {
+    page-break-inside: avoid;
+  }
+
+  /* Avoid orphaned headings at page bottom */
+  h1, h2, h3 {
+    page-break-after: avoid;
   }
 }

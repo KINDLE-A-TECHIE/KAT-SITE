@@ -65,26 +65,28 @@
     @apply px-6 py-3 bg-kat-navy text-white font-medium rounded-lg transition-all duration-200;
   }
   
-  .btn-primary:hover {
-    @apply bg-kat-blue shadow-kat;
+  @media (hover: hover) {
+    .btn-primary:hover {
+      @apply bg-kat-blue shadow-kat;
+    }
+
+    .btn-gradient:hover {
+      background: linear-gradient(135deg, #1E5FAF 0%, #4DB3E6 100%);
+      @apply shadow-kat-lg;
+    }
+
+    .card-kat:hover {
+      @apply shadow-kat border-kat-light/30;
+    }
   }
-  
+
   .btn-gradient {
     @apply px-6 py-3 text-white font-medium rounded-lg transition-all duration-200;
     background: linear-gradient(135deg, #132B5E 0%, #1E5FAF 100%);
   }
-  
-  .btn-gradient:hover {
-    background: linear-gradient(135deg, #1E5FAF 0%, #4DB3E6 100%);
-    @apply shadow-kat-lg;
-  }
-  
+
   .card-kat {
     @apply bg-white rounded-xl border border-kat-border shadow-sm transition-all duration-200;
-  }
-  
-  .card-kat:hover {
-    @apply shadow-kat border-kat-light/30;
   }
   
   .section-padding {

@@ -56,6 +56,7 @@ const config = {
         },
         // KAT Brand Colors
         kat: {
+          dark: "#0D1F45",
           navy: "#132B5E",
           blue: "#1E5FAF",
           light: "#4DB3E6",

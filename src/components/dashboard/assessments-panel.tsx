@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { ArrowDown, ArrowUp, CheckCircle2, Eye, GripVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, ClipboardList, Eye, GripVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
@@ -985,6 +985,18 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
             <div className="space-y-2">
               <Skeleton className="h-20 w-full" />
               <Skeleton className="h-20 w-full" />
+            </div>
+          ) : assessments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+              <div className="flex size-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+                <ClipboardList className="size-6 text-slate-400 dark:text-slate-500" />
+              </div>
+              <div>
+                <p className="font-medium text-slate-700 dark:text-slate-300">No assessments yet</p>
+                <p className="mt-0.5 text-sm text-slate-400 dark:text-slate-500">
+                  {roleCanCreate ? "Create an assessment above to get started." : "Your instructor hasn't assigned any assessments yet."}
+                </p>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">

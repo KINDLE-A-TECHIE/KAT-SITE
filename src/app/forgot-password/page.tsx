@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Mail, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
               </p>
               <Link
                 href="/login"
-                className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#1E5FAF] hover:underline"
+                className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-kat-blue hover:underline"
               >
                 <ArrowLeft className="size-3.5" />
                 Back to Sign In
@@ -105,7 +105,7 @@ export default function ForgotPasswordPage() {
                       placeholder="you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-blue-500/30"
+                      className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-kat-blue/50"
                       required
                     />
                   </div>
@@ -114,15 +114,16 @@ export default function ForgotPasswordPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="h-11 w-full rounded-xl bg-[#1E5FAF] text-sm font-semibold hover:bg-[#1a52a0]"
+                  className="h-11 w-full rounded-xl bg-kat-blue text-sm font-semibold hover:bg-[#1a52a0]"
                 >
+                  {loading && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden="true" />}
                   {loading ? "Sending…" : "Send Reset Link"}
                 </Button>
               </form>
 
               <p className="mt-6 text-center text-sm text-slate-500">
                 Remember your password?{" "}
-                <Link href="/login" className="font-semibold text-[#1E5FAF] hover:underline">
+                <Link href="/login" className="font-semibold text-kat-blue hover:underline">
                   Sign in
                 </Link>
               </p>

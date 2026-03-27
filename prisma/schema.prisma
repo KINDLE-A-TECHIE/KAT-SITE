@@ -228,6 +228,8 @@ model User {
   curriculumVersionsCreated CurriculumVersion[] @relation("CurriculumVersionCreator")
   lessonContentsCreated     LessonContent[]    @relation("LessonContentCreator")
   lessonContentsReviewed    LessonContent[]    @relation("LessonContentReviewer")
+  hostedPeerSessions        PeerSession[]      @relation("PeerSessionHost")
+  peerSessionParticipations PeerSessionParticipant[]
   certificatesEarned    Certificate[]        @relation("CertificateRecipient")
   certificatesIssued    Certificate[]        @relation("CertificateIssuer")
   certificatesApproved  Certificate[]        @relation("CertificateApprover")
@@ -1038,9 +1040,45 @@ model LessonContent {
   lesson       Lesson              @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   createdBy    User                @relation("LessonContentCreator", fields: [createdById], references: [id], onDelete: Cascade)
   reviewedBy   User?               @relation("LessonContentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  peerSessions PeerSession[]
 
   @@index([lessonId, sortOrder])
   @@index([reviewStatus, createdAt])
+}
+
+enum PeerSessionStatus {
+  ACTIVE
+  ENDED
+}
+
+model PeerSession {
+  id          String            @id @default(cuid())
+  contentId   String
+  hostId      String
+  currentCode String            @db.Text
+  status      PeerSessionStatus @default(ACTIVE)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  content      LessonContent          @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  host         User                   @relation("PeerSessionHost", fields: [hostId], references: [id])
+  participants PeerSessionParticipant[]
+
+  @@index([contentId, status])
+}
+
+model PeerSessionParticipant {
+  id         String   @id @default(cuid())
+  sessionId  String
+  userId     String
+  joinedAt   DateTime @default(now())
+  lastSeenAt DateTime @default(now()) @updatedAt
+
+  session PeerSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@index([sessionId])
 }
 
 

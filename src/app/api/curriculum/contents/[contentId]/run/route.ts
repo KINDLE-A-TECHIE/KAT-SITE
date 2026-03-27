@@ -19,19 +19,51 @@ const ratelimit =
 
 interface Params { params: Promise<{ contentId: string }> }
 
-// Judge0 CE language IDs — https://github.com/judge0/judge0/blob/master/docs/api/languages.md
+// Judge0 CE language IDs — matched to the languages returned by GET /languages on this instance
 const JUDGE0_LANGUAGE_MAP: Record<string, number> = {
-  python:     71,  // Python 3
-  javascript: 63,  // Node.js
-  typescript: 74,  // TypeScript
-  java:       62,  // Java (OpenJDK)
-  c:          50,  // C (GCC)
-  cpp:        54,  // C++ (GCC)
-  go:         60,  // Go
-  rust:       73,  // Rust
-  php:        68,  // PHP
-  ruby:       72,  // Ruby
-  csharp:     51,  // C# (Mono)
+  // ── Popular ────────────────────────────────────────────────────────────────
+  python:      71,  // Python (3.8.1)
+  javascript:  63,  // JavaScript (Node.js 12.14.0)
+  typescript:  74,  // TypeScript (3.7.4)
+  java:        62,  // Java (OpenJDK 13.0.1)
+  c:           50,  // C (GCC 9.2.0)
+  cpp:         54,  // C++ (GCC 9.2.0)
+  csharp:      51,  // C# (Mono 6.6.0.161)
+  go:          60,  // Go (1.13.5)
+  rust:        73,  // Rust (1.40.0)
+  kotlin:      78,  // Kotlin (1.3.70)
+  swift:       83,  // Swift (5.2.3)
+  php:         68,  // PHP (7.4.1)
+  ruby:        72,  // Ruby (2.7.0)
+  scala:       81,  // Scala (2.13.2)
+  r:           80,  // R (4.0.0)
+  bash:        46,  // Bash (5.0.0)
+  sql:         82,  // SQL (SQLite 3.27.2)
+  lua:         64,  // Lua (5.3.5)
+  perl:        85,  // Perl (5.28.1)
+  // ── Functional ─────────────────────────────────────────────────────────────
+  haskell:     61,  // Haskell (GHC 8.8.1)
+  clojure:     86,  // Clojure (1.10.1)
+  elixir:      57,  // Elixir (1.9.4)
+  erlang:      58,  // Erlang (OTP 22.2)
+  fsharp:      87,  // F# (.NET Core SDK 3.1.202)
+  commonlisp:  55,  // Common Lisp (SBCL 2.0.0)
+  ocaml:       65,  // OCaml (4.09.0)
+  // ── JVM extras ─────────────────────────────────────────────────────────────
+  groovy:      88,  // Groovy (3.0.3)
+  // ── Systems / low-level ────────────────────────────────────────────────────
+  d:           56,  // D (DMD 2.089.1)
+  objectivec:  79,  // Objective-C (Clang 7.0.1)
+  assembly:    45,  // Assembly (NASM 2.14.02)
+  // ── Scripting / legacy ─────────────────────────────────────────────────────
+  python2:     70,  // Python (2.7.17)
+  fortran:     59,  // Fortran (GFortran 9.2.0)
+  pascal:      67,  // Pascal (FPC 3.0.4)
+  cobol:       77,  // COBOL (GnuCOBOL 2.2)
+  basic:       47,  // Basic (FBC 1.07.1)
+  vbnet:       84,  // Visual Basic.Net (vbnc 0.0.0.5943)
+  prolog:      69,  // Prolog (GNU Prolog 1.4.5)
+  octave:      66,  // Octave (5.1.0)
 };
 
 const JUDGE0_API_URL = process.env.JUDGE0_API_URL?.replace(/\/$/, "") ?? null;

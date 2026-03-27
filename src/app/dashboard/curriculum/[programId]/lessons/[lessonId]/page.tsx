@@ -9,5 +9,5 @@ export default async function LessonPage({ params }: Props) {
   if (!session?.user) redirect("/login");
 
   const { programId, lessonId } = await params;
-  return <LessonViewer lessonId={lessonId} programId={programId} role={session.user.role} />;
+  return <LessonViewer lessonId={lessonId} programId={programId} role={session.user.role} userId={session.user.id} />;
 }

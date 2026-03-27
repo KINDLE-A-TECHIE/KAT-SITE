@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import Image from "next/image";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { TurnstileWidget } from "@/components/ui/turnstile";
 import type { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,7 @@ function LoginContent() {
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
+    mode: "onChange",
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -95,7 +96,7 @@ function LoginContent() {
     <div className="flex min-h-screen flex-col">
       <main className="flex flex-1">
         {/* Left panel — branding */}
-        <div className="relative hidden lg:flex lg:w-[45%] flex-col justify-between overflow-hidden bg-[#0D1F45] p-10">
+        <div className="relative hidden lg:flex lg:w-[45%] flex-col justify-between overflow-hidden bg-kat-dark p-10">
           {/* Background decoration */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-blue-600/20 blur-3xl" />
@@ -167,12 +168,14 @@ function LoginContent() {
                     id="email"
                     type="email"
                     placeholder="you@example.com"
-                    className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-blue-500/30"
+                    aria-describedby={form.formState.errors.email ? "email-error" : undefined}
+                    aria-invalid={!!form.formState.errors.email}
+                    className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-[#1E5FAF]/50"
                     {...form.register("email")}
                   />
                 </div>
                 {form.formState.errors.email && (
-                  <p className="text-xs text-rose-500">{form.formState.errors.email.message}</p>
+                  <p id="email-error" role="alert" className="text-xs text-rose-500">{form.formState.errors.email.message}</p>
                 )}
               </div>
 
@@ -183,7 +186,7 @@ function LoginContent() {
                   </Label>
                   <Link
                     href="/forgot-password"
-                    className="text-xs font-medium text-[#1E5FAF] hover:underline"
+                    className="text-xs font-medium text-kat-blue hover:underline"
                   >
                     Forgot password?
                   </Link>
@@ -194,20 +197,23 @@ function LoginContent() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    className="h-11 rounded-xl border-slate-200 bg-white pl-10 pr-10 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-blue-500/30"
+                    aria-describedby={form.formState.errors.password ? "password-error" : undefined}
+                    aria-invalid={!!form.formState.errors.password}
+                    className="h-11 rounded-xl border-slate-200 bg-white pl-10 pr-10 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-[#1E5FAF]/50"
                     {...form.register("password")}
                   />
                   <button
                     type="button"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     onClick={() => setShowPassword((v) => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     tabIndex={-1}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
                   </button>
                 </div>
                 {form.formState.errors.password && (
-                  <p className="text-xs text-rose-500">{form.formState.errors.password.message}</p>
+                  <p id="password-error" role="alert" className="text-xs text-rose-500">{form.formState.errors.password.message}</p>
                 )}
               </div>
 
@@ -221,11 +227,15 @@ function LoginContent() {
                 />
               )}
 
+              {siteKey && !turnstileToken && !loading && (
+                <p className="text-center text-xs text-slate-400">Complete the security check above to sign in.</p>
+              )}
               <Button
                 disabled={loading || (!!siteKey && !turnstileToken)}
                 type="submit"
-                className="h-11 w-full rounded-xl bg-[#1E5FAF] text-sm font-semibold hover:bg-[#1a52a0]"
+                className="h-11 w-full rounded-xl bg-kat-blue text-sm font-semibold hover:bg-[#1a52a0]"
               >
+                {loading && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden="true" />}
                 {loading ? "Signing in…" : "Sign In"}
               </Button>
             </form>
@@ -255,7 +265,7 @@ function LoginContent() {
               Don&apos;t have an account?{" "}
               <Link
                 href={redirectTo !== "/dashboard" ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}
-                className="font-semibold text-[#1E5FAF] hover:underline"
+                className="font-semibold text-kat-blue hover:underline"
               >
                 Create one
               </Link>
