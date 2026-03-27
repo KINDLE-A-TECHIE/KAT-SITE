@@ -18,6 +18,7 @@ export const DESIGN_TOKENS = {
 export const NAV_ITEMS = [
   { href: "#features", label: "Features" },
   { href: "#tracks", label: "Tracks" },
+  { href: "#fellowship", label: "Fellowship" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
   { href: "/partners", label: "Partner with Us" },

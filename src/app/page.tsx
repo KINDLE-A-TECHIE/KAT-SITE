@@ -14,10 +14,10 @@ const organizationSchema = {
   description:
     "Coding education for African children and teens aged 8–19. Live mentors, project-based learning, and parent visibility.",
   sameAs: [
-    "https://twitter.com/katacademy",
-    "https://instagram.com/katacademy",
-    "https://linkedin.com/company/katacademy",
-    "https://youtube.com/@katacademy",
+    "https://twitter.com/katLearning",
+    "https://instagram.com/kindleatechie",
+    "https://linkedin.com/company/kindle-a-techie",
+    "https://youtube.com/@katlearning",
   ],
 };
 

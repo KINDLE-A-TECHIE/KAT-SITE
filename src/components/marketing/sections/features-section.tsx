@@ -9,7 +9,7 @@ export function FeaturesSection() {
     <section id="features" className="kat-page kat-defer pb-16 sm:pb-20">
       <div className="mb-10 text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--kat-primary-blue)]">Features</p>
-        <h2 className="mt-2 [font-family:var(--font-space-grotesk)] text-3xl font-bold text-[var(--kat-text-primary)] sm:text-[2.5rem]">
+        <h2 className="mx-auto mt-2 max-w-3xl [font-family:var(--font-space-grotesk)] text-3xl font-bold text-[var(--kat-text-primary)] sm:text-[2.5rem]">
           Your child won&apos;t just learn technology —{" "}
           <span className="bg-clip-text text-transparent" style={{ backgroundImage: "var(--kat-gradient)" }}>
             they&apos;ll become a creator and leader

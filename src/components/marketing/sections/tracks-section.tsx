@@ -18,14 +18,14 @@ export function TracksSection() {
 
   return (
     <section id="tracks" className="kat-page kat-defer py-16 sm:py-20">
-      <div className="mb-8">
+      <div className="mb-8 text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--kat-primary-blue)]">
           Program Tracks
         </p>
         <h2 className="mt-2 [font-family:var(--font-space-grotesk)] text-3xl font-bold text-[var(--kat-text-primary)] sm:text-4xl">
           Pick your child&apos;s track. Watch them grow.
         </h2>
-        <p className="mt-2 text-[var(--kat-text-secondary)]">
+        <p className="mx-auto mt-2 max-w-xl text-[var(--kat-text-secondary)]">
           Age-matched tracks from 8 to 19. Start where they are. Go as far as they can.
         </p>
       </div>

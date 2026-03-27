@@ -11,6 +11,7 @@ import { EventsSection } from "./sections/events-section";
 import { TestimonialsSection } from "./sections/testimonials-section";
 import { PricingSection } from "./sections/pricing-section";
 import { FaqSection } from "./sections/faq-section";
+import { CtaSection } from "./sections/cta-section";
 import { SiteFooter } from "@/components/site-footer";
 import { EnrollmentChat } from "./enrollment-chat";
 
@@ -54,6 +55,7 @@ export function LandingPage({ enrollments, passRate, openCohorts }: LandingPageP
       <TestimonialsSection />
       <PricingSection />
       <FaqSection />
+      <CtaSection />
       <SiteFooter />
       <EnrollmentChat />
     </main>
