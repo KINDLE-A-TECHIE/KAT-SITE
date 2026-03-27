@@ -36,7 +36,7 @@ export function HeroSection({ enrollments, passRate }: HeroSectionProps) {
         <div className="space-y-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-sm font-medium text-[var(--kat-primary-blue)]">
             <Sparkles className="size-3.5" />
-            Africa&apos;s coding school for ages 8–19
+            Africa&apos;s technology education platform for ages 8–19
           </div>
 
           <div className="space-y-5">
@@ -50,8 +50,7 @@ export function HeroSection({ enrollments, passRate }: HeroSectionProps) {
               </span>
             </h1>
             <p className="max-w-lg text-[1.05rem] leading-relaxed text-[var(--kat-text-secondary)]">
-              KAT gives children and teens a fun but serious coding path — live mentors, weekly
-              challenges, parent visibility, and real portfolio projects.
+              KAT prepares children and teenagers for the future through structured, real-world training in coding, robotics, AI, UI/UX design, and game development — with live mentors, hands-on projects, and full parent visibility.
             </p>
           </div>
 

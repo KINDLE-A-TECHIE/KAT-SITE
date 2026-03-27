@@ -39,44 +39,44 @@ export const PROGRAM_TRACKS: ProgramTrack[] = [
     id: "explorers",
     label: "Junior Explorers",
     ages: "Ages 8–11",
-    summary: "Your child starts coding from day one — building games, animations, and interactive stories. Zero boredom. Maximum curiosity. No experience needed.",
+    summary: "Your child starts from day one — building games, animations, and early robotics projects. We cover block coding, game development, and creative technology. Zero boredom. Maximum curiosity. No experience needed.",
     modules: [
       { title: "Block Coding and Logic", progress: 92 },
-      { title: "Creative Story Projects", progress: 80 },
-      { title: "Early Web Design", progress: 63 },
+      { title: "Game Design & Story Projects", progress: 80 },
+      { title: "Early Web & Robotics Basics", progress: 63 },
     ],
-    project: "Create and share an original interactive story or mini game — their very first real build.",
+    project: "Create and share an original interactive game or animated story — their very first real build.",
   },
   {
     id: "builders",
     label: "Teen Builders",
     ages: "Ages 12–15",
-    summary: "Real skills: HTML, CSS, JavaScript, and Python. Every module ends with something they can actually show off to friends and family.",
+    summary: "Real skills across multiple disciplines: HTML, CSS, JavaScript, Python, UI/UX design, and game development. Every module ends with something they can actually show off to friends and family.",
     modules: [
-      { title: "Frontend Fundamentals", progress: 85 },
-      { title: "Python Foundations", progress: 74 },
+      { title: "Frontend & UI/UX Fundamentals", progress: 85 },
+      { title: "Python & Game Development", progress: 74 },
       { title: "API and Team Projects", progress: 59 },
     ],
-    project: "Ship a live portfolio site and one API-powered app they built from scratch.",
+    project: "Ship a live portfolio site, one API-powered app, and a designed UI prototype — all built from scratch.",
   },
   {
     id: "innovators",
     label: "Future Innovators",
     ages: "Ages 16–19",
-    summary: "Full-stack engineering, product thinking, and leadership. For teens who want to build things that matter — and lead others doing the same.",
+    summary: "Fullstack engineering, artificial intelligence, computer science, and product leadership. For teens who want to build things that matter — and lead others doing the same.",
     modules: [
-      { title: "Fullstack Engineering", progress: 71 },
+      { title: "Fullstack Engineering & AI", progress: 71 },
       { title: "Leadership and Mentorship", progress: 62 },
-      { title: "Startup Problem Solving", progress: 49 },
+      { title: "Computer Science & Startup Thinking", progress: 49 },
     ],
-    project: "Ship a community-impact product, present it publicly, and mentor younger students along the way.",
+    project: "Ship a community-impact product powered by real technology, present it publicly, and mentor younger students along the way.",
   },
 ];
 
 export const FEATURES = [
   {
-    title: "Live Coding Clubs",
-    description: "Small groups of 6–12 kids building real games and apps with a mentor in the room. Not videos. Not passive watching. Actual code, every session.",
+    title: "Live Tech Classes",
+    description: "Small groups of 6–12 students learning coding, robotics, AI, UI/UX design, and game development with a dedicated mentor. Not videos. Not passive watching. Real builds, every session.",
     iconName: "Code2" as const,
     color: "bg-blue-500",
   },
@@ -88,13 +88,13 @@ export const FEATURES = [
   },
   {
     title: "Build Real Projects",
-    description: "No textbook exercises. Every module ends with something students actually shipped — games, websites, and apps they can show anyone.",
+    description: "No textbook exercises. Students build games, apps, websites, robots, and UI designs — real work across every discipline they can show anyone.",
     iconName: "Layers3" as const,
     color: "bg-sky-500",
   },
   {
-    title: "Personal Mentor Feedback",
-    description: "After every submission, mentors leave personalised notes — what they nailed, what to fix, and exactly what to tackle next.",
+    title: "Mastery-Based Learning",
+    description: "Students advance by demonstrating real understanding through assessments, projects, and instructor reviews — not just showing up. Every learner builds skills with confidence.",
     iconName: "Brain" as const,
     color: "bg-violet-500",
   },
@@ -120,8 +120,8 @@ export const HOW_IT_WORKS = [
   },
   {
     step: "02",
-    title: "Your Child Codes Live",
-    description: "Small groups of 6–12 students. A dedicated mentor every week. Real code from the very first session — no boring intro lectures.",
+    title: "Learn Live with Expert Mentors",
+    description: "Small groups of 6–12 students. Hands-on training in coding, robotics, AI, design, or game development — with a dedicated mentor guiding every session.",
   },
   {
     step: "03",
@@ -188,7 +188,7 @@ export const PRICING_TIERS: PricingTier[] = [
     highlight: false,
     includes: [
       "3 live classes per week",
-      "Block coding & web design modules",
+      "Block coding, game development & robotics basics",
       "Weekly project assignments",
       "Parent progress dashboard",
       "Mentor feedback on every submission",
@@ -205,8 +205,8 @@ export const PRICING_TIERS: PricingTier[] = [
     highlight: true,
     includes: [
       "3 live classes per week",
-      "HTML, CSS, JavaScript & Python",
-      "Portfolio project capstone",
+      "HTML, CSS, JavaScript, Python & UI/UX design",
+      "Game development & portfolio capstone",
       "Parent progress dashboard",
       "1-on-1 mentor review sessions",
       "Fellowship application eligibility",
@@ -223,7 +223,7 @@ export const PRICING_TIERS: PricingTier[] = [
     highlight: false,
     includes: [
       "4 live classes per week",
-      "Fullstack engineering & leadership",
+      "Fullstack engineering, AI & computer science",
       "Community-impact capstone project",
       "Parent progress dashboard",
       "Priority mentor pairing",
@@ -240,6 +240,11 @@ export const FAQ_ITEMS = [
     question: "My child has never coded before. Will they keep up?",
     answer:
       "Absolutely. Junior Explorers and Teen Builders are built from zero — no prior experience needed. Our mentors are trained to make the first few sessions fun and pressure-free. Most kids are building something they're proud of within the first two weeks.",
+  },
+  {
+    question: "What subjects does KAT teach?",
+    answer:
+      "KAT covers coding, robotics, artificial intelligence, UI/UX design, game development, and computer science. Subjects are introduced progressively — younger students explore block coding, game design, and creative technology; teens move into web development, Python, and UI/UX; older students tackle fullstack engineering, AI, and computer science leadership.",
   },
   {
     question: "What ages do you accept?",
@@ -270,6 +275,38 @@ export const FAQ_ITEMS = [
     question: "What happens when they finish a track?",
     answer:
       "Younger students move up to the next track when they're ready. Students who complete Future Innovators are eligible for the KAT Fellowship — transitioning from learner to mentor, leading real community-impact projects.",
+  },
+  {
+    question: "Does KAT run any physical or in-person events?",
+    answer:
+      "Yes. While the core learning programme is online, KAT also runs bootcamps, hackathons, and school partnership programmes that can be delivered physically, virtually, or in a hybrid format depending on the partner and location. These events complement the online curriculum with hands-on, real-world experiences.",
+  },
+];
+
+export const EVENTS = [
+  {
+    title: "Bootcamps",
+    description:
+      "Intensive multi-day sprints where students build and ship real projects under close mentor guidance. Ideal for students ready to accelerate fast.",
+    modes: ["Physical", "Virtual", "Hybrid"] as const,
+    iconName: "Rocket" as const,
+    color: "bg-violet-500",
+  },
+  {
+    title: "Hackathons",
+    description:
+      "Team-based competitions where students tackle real-world challenges, present solutions, and compete for recognition across schools and regions.",
+    modes: ["Physical", "Virtual", "Hybrid"] as const,
+    iconName: "Trophy" as const,
+    color: "bg-amber-500",
+  },
+  {
+    title: "School Programmes",
+    description:
+      "Coding clubs, tech labs, and after-school programmes delivered inside partner schools — with KAT mentors, curriculum, and tools included.",
+    modes: ["Physical", "Hybrid"] as const,
+    iconName: "School" as const,
+    color: "bg-emerald-500",
   },
 ];
 

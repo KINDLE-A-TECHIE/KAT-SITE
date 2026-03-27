@@ -51,18 +51,18 @@ async function main() {
   });
 
   // ── Users (one per role) ─────────────────────────────────────────────────────
-  const superAdmin = await createUser({ email: "superadmin@kindleatechie.com", firstName: "System",  lastName: "Owner",      role: UserRole.SUPER_ADMIN, organizationId: org.id, password: "Passw0rd!" });
-  const admin      = await createUser({ email: "admin@kindleatechie.com",      firstName: "Amina",   lastName: "Admin",      role: UserRole.ADMIN,       organizationId: org.id, password: "Passw0rd!" });
-  const instructor = await createUser({ email: "instructor@kindleatechie.com", firstName: "Ifeanyi", lastName: "Instructor", role: UserRole.INSTRUCTOR,  organizationId: org.id, password: "Passw0rd!" });
-  const fellow     = await createUser({ email: "fellow@kindleatechie.com",     firstName: "Fola",    lastName: "Fellow",     role: UserRole.FELLOW,      organizationId: org.id, password: "Passw0rd!" });
-  const student    = await createUser({ email: "student@kindleatechie.com",    firstName: "Sade",    lastName: "Student",    role: UserRole.STUDENT,     organizationId: org.id, password: "Passw0rd!" });
-  const parent     = await createUser({ email: "parent@kindleatechie.com",     firstName: "Peter",   lastName: "Parent",     role: UserRole.PARENT,      organizationId: org.id, password: "Passw0rd!" });
+  const superAdmin = await createUser({ email: "superadmin@kindleatechie.com", firstName: "System", lastName: "Owner", role: UserRole.SUPER_ADMIN, organizationId: org.id, password: "Passw0rd!" });
+  const admin = await createUser({ email: "admin@kindleatechie.com", firstName: "Amina", lastName: "Admin", role: UserRole.ADMIN, organizationId: org.id, password: "Passw0rd!" });
+  const instructor = await createUser({ email: "instructor@kindleatechie.com", firstName: "Ifeanyi", lastName: "Instructor", role: UserRole.INSTRUCTOR, organizationId: org.id, password: "Passw0rd!" });
+  const fellow = await createUser({ email: "fellow@kindleatechie.com", firstName: "Fola", lastName: "Fellow", role: UserRole.FELLOW, organizationId: org.id, password: "Passw0rd!" });
+  const student = await createUser({ email: "student@kindleatechie.com", firstName: "Sade", lastName: "Student", role: UserRole.STUDENT, organizationId: org.id, password: "Passw0rd!" });
+  const parent = await createUser({ email: "parent@kindleatechie.com", firstName: "Peter", lastName: "Parent", role: UserRole.PARENT, organizationId: org.id, password: "Passw0rd!" });
 
   // ── Invite / org codes ───────────────────────────────────────────────────────
   for (const [code, role, createdById] of [
-    ["KAT-ADMIN-2026",      UserRole.ADMIN,      superAdmin.id],
+    ["KAT-ADMIN-2026", UserRole.ADMIN, superAdmin.id],
     ["KAT-INSTRUCTOR-2026", UserRole.INSTRUCTOR, admin.id],
-    ["KAT-FELLOW-2026",     UserRole.FELLOW,     admin.id],
+    ["KAT-FELLOW-2026", UserRole.FELLOW, admin.id],
   ] as const) {
     await prisma.organizationCode.upsert({
       where: { code },
@@ -139,15 +139,15 @@ async function main() {
   const curriculumVersion = existingVersion
     ? await prisma.curriculumVersion.findUniqueOrThrow({ where: { id: existingVersion.id } })
     : await prisma.curriculumVersion.create({
-        data: {
-          curriculumId: curriculum.id,
-          versionNumber: 1,
-          label: "v1.0",
-          changelog: "Initial curriculum version.",
-          createdById: superAdmin.id,
-          isActive: true,
-        },
-      });
+      data: {
+        curriculumId: curriculum.id,
+        versionNumber: 1,
+        label: "v1.0",
+        changelog: "Initial curriculum version.",
+        createdById: superAdmin.id,
+        isActive: true,
+      },
+    });
 
   const existingModule = await prisma.module.findFirst({
     where: { versionId: curriculumVersion.id, title: "React Fundamentals" },
@@ -156,14 +156,14 @@ async function main() {
   const reactModule = existingModule
     ? await prisma.module.findUniqueOrThrow({ where: { id: existingModule.id } })
     : await prisma.module.create({
-        data: {
-          versionId: curriculumVersion.id,
-          title: "React Fundamentals",
-          description: "Core concepts of React including components, state, and hooks.",
-          sortOrder: 0,
-          badge: { create: { name: "React Fundamentals", icon: "⚛️", color: "#61DAFB" } },
-        },
-      });
+      data: {
+        versionId: curriculumVersion.id,
+        title: "React Fundamentals",
+        description: "Core concepts of React including components, state, and hooks.",
+        sortOrder: 0,
+        badge: { create: { name: "React Fundamentals", icon: "⚛️", color: "#61DAFB" } },
+      },
+    });
 
   // ── Assessment (idempotent via title + program) ──────────────────────────────
   const existingAssessment = await prisma.assessment.findFirst({
@@ -205,9 +205,9 @@ async function main() {
               sortOrder: 1,
               options: {
                 create: [
-                  { label: "Building user interfaces", value: "ui",     isCorrect: true  },
-                  { label: "Managing servers",          value: "server", isCorrect: false },
-                  { label: "Relational databases",      value: "db",     isCorrect: false },
+                  { label: "Building user interfaces", value: "ui", isCorrect: true },
+                  { label: "Managing servers", value: "server", isCorrect: false },
+                  { label: "Relational databases", value: "db", isCorrect: false },
                 ],
               },
             },
@@ -219,7 +219,7 @@ async function main() {
               sortOrder: 2,
               options: {
                 create: [
-                  { label: "True",  value: "true",  isCorrect: true  },
+                  { label: "True", value: "true", isCorrect: true },
                   { label: "False", value: "false", isCorrect: false },
                 ],
               },
@@ -273,7 +273,7 @@ async function main() {
     create: {
       userId: student.id,
       programId: program.id,
-      issuedById: admin.id,
+      issuedById: superAdmin.id,
       issuedAt: new Date("2026-03-10T09:00:00Z"),
     },
   });
@@ -286,18 +286,18 @@ async function main() {
   const meeting = existingMeeting
     ? await prisma.meeting.findUniqueOrThrow({ where: { id: existingMeeting.id } })
     : await prisma.meeting.create({
-        data: {
-          title: "March Mentorship Review",
-          hostId: fellow.id,
-          organizationId: org.id,
-          cohortId: cohort.id,
-          startTime: new Date("2026-03-08T16:00:00Z"),
-          endTime: new Date("2026-03-08T16:45:00Z"),
-          dailyRoomName: "kat-mentorship-march-review",
-          dailyRoomUrl: "https://meet.zoho.com/kat-mentorship-march-review",
-          status: MeetingStatus.UPCOMING,
-        },
-      });
+      data: {
+        title: "March Mentorship Review",
+        hostId: fellow.id,
+        organizationId: org.id,
+        cohortId: cohort.id,
+        startTime: new Date("2026-03-08T16:00:00Z"),
+        endTime: new Date("2026-03-08T16:45:00Z"),
+        dailyRoomName: "kat-mentorship-march-review",
+        dailyRoomUrl: "https://meet.zoho.com/kat-mentorship-march-review",
+        status: MeetingStatus.UPCOMING,
+      },
+    });
 
   for (const [userId, isHost] of [[fellow.id, true], [student.id, false]] as const) {
     await prisma.meetingParticipant.upsert({

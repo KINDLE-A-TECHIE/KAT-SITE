@@ -1,10 +1,11 @@
-import { AssessmentVerificationStatus, AttemptStatus, QuestionType, UserRole } from "@prisma/client";
+import { AssessmentVerificationStatus, AttemptStatus, NotificationType, QuestionType, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { manualGradeSchema, submitAssessmentSchema } from "@/lib/validators";
 import { trackEvent } from "@/lib/analytics";
 import { tryAwardModuleBadge } from "@/lib/badges";
+import { tryCompleteAssessmentGate } from "@/lib/mastery";
 
 const GRADER_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
 const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW];
@@ -220,9 +221,26 @@ export async function POST(request: Request) {
       payload: { assessmentId: assessment.id, submissionId: submission.id },
     });
 
-    // If auto-graded and passed, try to award module badge
+    // If auto-graded, try to award module badge and advance gates
     if (status === AttemptStatus.GRADED) {
       await tryAwardModuleBadge(session.user.id, assessment.id);
+      await tryCompleteAssessmentGate(session.user.id, submission.id);
+
+      // Notify student of their auto-graded result for challenges
+      if (assessment.type === "CHALLENGE") {
+        await prisma.notification.create({
+          data: {
+            recipientId: session.user.id,
+            creatorId: session.user.id,
+            type: NotificationType.SUCCESS,
+            title: "Challenge result in",
+            body: JSON.stringify({
+              text: `Your submission for "${assessment.title}" has been scored: ${autoScore}/${assessment.totalPoints}. Check the leaderboard!`,
+              targetPath: "/dashboard/challenges",
+            }),
+          },
+        });
+      }
     }
 
     return ok({ submission }, 201);
@@ -253,6 +271,9 @@ export async function PATCH(request: Request) {
         assessment: {
           select: {
             id: true,
+            title: true,
+            type: true,
+            totalPoints: true,
             program: { select: { organizationId: true } },
           },
         },
@@ -327,8 +348,26 @@ export async function PATCH(request: Request) {
       payload: { submissionId: submission.id },
     });
 
-    // Try to award module badge to the student now that manual grading is done
+    // Award module badge and advance gates now that manual grading is done
     await tryAwardModuleBadge(submission.studentId, submission.assessmentId);
+    await tryCompleteAssessmentGate(submission.studentId, submission.id);
+
+    // Notify student that their manually-graded challenge result is ready
+    if (submission.assessment.type === "CHALLENGE") {
+      const totalScore = (updated.autoScore ?? 0) + (updated.manualScore ?? 0);
+      await prisma.notification.create({
+        data: {
+          recipientId: submission.studentId,
+          creatorId: session.user.id,
+          type: NotificationType.SUCCESS,
+          title: "Challenge graded",
+          body: JSON.stringify({
+            text: `Your submission for "${submission.assessment.title}" has been graded: ${totalScore}/${submission.assessment.totalPoints}. Check the leaderboard!`,
+            targetPath: "/dashboard/challenges",
+          }),
+        },
+      });
+    }
 
     return ok({ submission: updated });
   } catch (error) {

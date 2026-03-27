@@ -13,9 +13,17 @@ const PARTNER_TYPES = [
   { value: "OTHER", label: "Other" },
 ];
 
+const SCHOOL_PROGRAMS = [
+  { value: "coding_clubs", label: "Coding Clubs" },
+  { value: "tech_labs", label: "Tech Labs" },
+  { value: "after_school", label: "After-School Programmes" },
+  { value: "hackathons", label: "Hackathons" },
+];
+
 export function PartnerForm() {
   const [state, setState] = useState<FormState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [programs, setPrograms] = useState<string[]>([]);
   const [form, setForm] = useState({
     name: "",
     organization: "",
@@ -30,6 +38,12 @@ export function PartnerForm() {
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
   }
 
+  function toggleProgram(value: string) {
+    setPrograms((prev) =>
+      prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value],
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setState("loading");
@@ -38,7 +52,7 @@ export function PartnerForm() {
       const res = await fetch("/api/partners", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, programs }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -101,6 +115,46 @@ export function PartnerForm() {
           ))}
         </select>
       </div>
+
+      {form.type === "SCHOOL" && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-slate-600">
+            Programmes of interest <span className="text-slate-400">(select all that apply)</span>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {SCHOOL_PROGRAMS.map((prog) => {
+              const checked = programs.includes(prog.value);
+              return (
+                <button
+                  key={prog.value}
+                  type="button"
+                  onClick={() => toggleProgram(prog.value)}
+                  className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-left text-sm transition ${
+                    checked
+                      ? "border-[var(--kat-primary-blue)] bg-blue-50 font-medium text-[var(--kat-primary-blue)]"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  }`}
+                >
+                  <span
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${
+                      checked
+                        ? "border-[var(--kat-primary-blue)] bg-[var(--kat-primary-blue)]"
+                        : "border-slate-300 bg-white"
+                    }`}
+                  >
+                    {checked && (
+                      <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 fill-white">
+                        <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </span>
+                  {prog.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">

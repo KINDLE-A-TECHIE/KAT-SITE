@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { UserRole } from "@prisma/client";
+import { NotificationType, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, buildProjectStatusEmail } from "@/lib/email";
 import { projectStatusLimiter, rateLimitResponse } from "@/lib/ratelimit";
+import { tryCompleteProjectGate } from "@/lib/mastery";
 
 interface Params { params: Promise<{ projectId: string }> }
 
@@ -75,6 +76,34 @@ export async function PATCH(request: Request, { params }: Params) {
       projectUrl,
     }),
   });
+
+  // In-app notification to the student
+  const notifText =
+    parsed.data.status === "APPROVED"
+      ? `Your project "${project.title}" has been approved — great work!`
+      : parsed.data.status === "NEEDS_WORK"
+      ? `Your project "${project.title}" needs revisions. Check the feedback and resubmit.`
+      : `Your project "${project.title}" was not accepted. See feedback for details.`;
+
+  await prisma.notification.create({
+    data: {
+      recipientId: project.student.id,
+      creatorId: session.user.id,
+      type: parsed.data.status === "APPROVED" ? NotificationType.SUCCESS : NotificationType.WARNING,
+      title:
+        parsed.data.status === "APPROVED"
+          ? "Project approved"
+          : parsed.data.status === "NEEDS_WORK"
+          ? "Revision requested"
+          : "Project rejected",
+      body: JSON.stringify({ text: notifText, targetPath: "/dashboard/projects" }),
+    },
+  });
+
+  // Advance capstone gate when a project is approved
+  if (parsed.data.status === "APPROVED") {
+    await tryCompleteProjectGate(updated.studentId, projectId);
+  }
 
   return ok({ project: updated });
 }

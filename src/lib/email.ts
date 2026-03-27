@@ -576,8 +576,21 @@ export function buildPartnerEnquiryNotificationEmail(opts: {
   type: string;
   email: string;
   phone?: string | null;
+  programs?: string[];
   message: string;
 }) {
+  const programLabels: Record<string, string> = {
+    coding_clubs: "Coding Clubs",
+    tech_labs: "Tech Labs",
+    after_school: "After-School Programmes",
+    hackathons: "Hackathons",
+  };
+
+  const programsDisplay =
+    opts.programs && opts.programs.length > 0
+      ? opts.programs.map((p) => programLabels[p] ?? p).join(", ")
+      : null;
+
   const html = emailWrapper(`
     <div style="margin:0 0 20px;">${badge("NEW ENQUIRY", "#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;")}</div>
     <h2 style="margin:0 0 4px;font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.02em;">
@@ -592,6 +605,7 @@ export function buildPartnerEnquiryNotificationEmail(opts: {
         ${infoRow("Name", opts.name)}
         ${infoRow("Organisation", opts.organization)}
         ${infoRow("Type", opts.type)}
+        ${programsDisplay ? infoRow("Programmes of Interest", programsDisplay) : ""}
         ${infoRow("Email", `<a href="mailto:${opts.email}" style="color:#1E5FAF;text-decoration:none;">${opts.email}</a>`)}
         ${opts.phone ? infoRow("Phone", opts.phone) : ""}
       </tbody>
@@ -610,6 +624,7 @@ export function buildPartnerEnquiryNotificationEmail(opts: {
     `Name: ${opts.name}\n` +
     `Organisation: ${opts.organization}\n` +
     `Type: ${opts.type}\n` +
+    (programsDisplay ? `Programmes of Interest: ${programsDisplay}\n` : "") +
     `Email: ${opts.email}\n` +
     (opts.phone ? `Phone: ${opts.phone}\n` : "") +
     `\nMessage:\n${opts.message}\n`;

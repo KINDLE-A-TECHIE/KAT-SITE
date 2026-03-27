@@ -14,7 +14,6 @@ type UserTrendPoint = {
   label: string;
   logins: number;
   submissions: number;
-  messagesReceived: number;
   meetingsJoined: number;
 };
 
@@ -272,7 +271,7 @@ export async function getUserAnalytics(userId: string, rangeDays = 30) {
               .then((rows) => rows.map((row) => row.submittedAt));
 
   // Batch 1: counts (4 queries)
-  const [logins, activityCount, unreadMessages, upcomingMeetings] = await Promise.all([
+  const [logins, activityCount, classesAttended, upcomingMeetings] = await Promise.all([
     prisma.analyticsEvent.count({
       where: {
         userId,
@@ -282,33 +281,21 @@ export async function getUserAnalytics(userId: string, rangeDays = 30) {
       },
     }),
     activityCountPromise,
-    prisma.message.count({
-      where: {
-        thread: { participants: { some: { userId } } },
-        senderId: { not: userId },
-        receipts: { none: { userId } },
-      },
+    prisma.meetingParticipant.count({
+      where: { userId, joinedAt: { not: null } },
     }),
     prisma.meetingParticipant.count({
       where: { userId, meeting: { startTime: { gte: new Date() } } },
     }),
   ]);
 
-  // Batch 2: trend data (4 queries)
-  const [loginEventsInRange, activityEventsInRange, messagesInRange, meetingsInRange] = await Promise.all([
+  // Batch 2: trend data (3 queries)
+  const [loginEventsInRange, activityEventsInRange, meetingsInRange] = await Promise.all([
     prisma.analyticsEvent.findMany({
       where: { userId, eventType: "auth", eventName: "login", occurredAt: { gte: trendStart } },
       select: { occurredAt: true },
     }),
     activityEventsInRangePromise,
-    prisma.message.findMany({
-      where: {
-        senderId: { not: userId },
-        createdAt: { gte: trendStart },
-        thread: { participants: { some: { userId, leftAt: null } } },
-      },
-      select: { createdAt: true },
-    }),
     prisma.meetingParticipant.findMany({
       where: { userId, joinedAt: { gte: trendStart } },
       select: { joinedAt: true },
@@ -323,7 +310,6 @@ export async function getUserAnalytics(userId: string, rangeDays = 30) {
         label: labelFromDateKey(key),
         logins: 0,
         submissions: 0,
-        messagesReceived: 0,
         meetingsJoined: 0,
       },
     ]),
@@ -345,14 +331,6 @@ export async function getUserAnalytics(userId: string, rangeDays = 30) {
     }
   }
 
-  for (const item of messagesInRange) {
-    const key = keyFromDate(item.createdAt);
-    const point = pointsByDate.get(key);
-    if (point) {
-      point.messagesReceived += 1;
-    }
-  }
-
   for (const item of meetingsInRange) {
     if (!item.joinedAt) {
       continue;
@@ -368,7 +346,7 @@ export async function getUserAnalytics(userId: string, rangeDays = 30) {
     loginStats30d: logins,
     activityLabel,
     assessmentsSubmitted: activityCount,
-    unreadMessages,
+    classesAttended,
     upcomingMeetings,
     trends: {
       rangeDays,

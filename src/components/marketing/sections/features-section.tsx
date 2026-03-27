@@ -10,13 +10,13 @@ export function FeaturesSection() {
       <div className="mb-10 text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--kat-primary-blue)]">Features</p>
         <h2 className="mt-2 [font-family:var(--font-space-grotesk)] text-3xl font-bold text-[var(--kat-text-primary)] sm:text-[2.5rem]">
-          Your child won&apos;t just learn to code —{" "}
+          Your child won&apos;t just learn technology —{" "}
           <span className="bg-clip-text text-transparent" style={{ backgroundImage: "var(--kat-gradient)" }}>
-            they&apos;ll become a builder
+            they&apos;ll become a creator and leader
           </span>
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-[var(--kat-text-secondary)]">
-          Every feature is designed so kids stay engaged, parents stay informed, and real skills actually stick.
+          Every feature is designed so kids build real digital skills, parents stay informed, and learning actually sticks.
         </p>
       </div>
 

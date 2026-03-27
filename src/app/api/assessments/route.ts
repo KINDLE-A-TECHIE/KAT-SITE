@@ -1,4 +1,4 @@
-import { AssessmentVerificationStatus, UserRole } from "@prisma/client";
+import { AssessmentVerificationStatus, NotificationType, UserRole } from "@prisma/client";
 import { z } from "zod";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
@@ -310,6 +310,32 @@ export async function PATCH(request: Request) {
         verificationStatus: updated.verificationStatus,
       },
     });
+
+    // When a CHALLENGE is approved and published, notify all enrolled students
+    if (
+      parsed.data.action === "APPROVE" &&
+      assessment.type === "CHALLENGE" &&
+      assessment.published
+    ) {
+      const enrollments = await prisma.enrollment.findMany({
+        where: { programId: assessment.programId, status: "ACTIVE" },
+        select: { userId: true },
+      });
+      if (enrollments.length > 0) {
+        await prisma.notification.createMany({
+          data: enrollments.map((e) => ({
+            recipientId: e.userId,
+            creatorId: session.user.id,
+            type: NotificationType.INFO,
+            title: "New challenge available",
+            body: JSON.stringify({
+              text: `A new challenge is live: "${updated.title}". Head to your challenges tab to enter!`,
+              targetPath: "/dashboard/challenges",
+            }),
+          })),
+        });
+      }
+    }
 
     return ok({ assessment: updated });
   } catch (error) {

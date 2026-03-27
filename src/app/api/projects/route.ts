@@ -160,6 +160,12 @@ export async function POST(request: Request) {
       where: { userId: session.user.id, programId: assessment.programId, status: { in: ["ACTIVE", "COMPLETED"] } },
     });
     if (!enrolled) return fail("You are not enrolled in that program.", 403);
+    // Guard: one project per assignment
+    const duplicate = await prisma.project.findFirst({
+      where: { studentId: session.user.id, assessmentId },
+      select: { id: true },
+    });
+    if (duplicate) return fail("You already have a project for this assignment.", 409);
   }
 
   const project = await prisma.project.create({

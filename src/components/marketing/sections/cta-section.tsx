@@ -20,11 +20,10 @@ export function CtaSection() {
             Ready to start?
           </Badge>
           <h2 className="[font-family:var(--font-space-grotesk)] text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[2.8rem]">
-            Give your child a future in tech.
+            Raise a creator, thinker, and technology leader.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-blue-200">
-            From first lines of code to real projects and leadership opportunities — KAT helps kids
-            and teens grow with confidence and community.
+            From first lines of code to robotics, AI, design, and leadership — KAT is on a mission to raise a generation of young Africans ready to shape the future.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button
@@ -45,7 +44,7 @@ export function CtaSection() {
             </Button>
           </div>
           <p className="mt-5 text-xs text-blue-300">
-            Parent-managed enrollment · 3 age-based tracks · Live mentors
+            Parent-managed enrollment · Coding, Robotics, AI, Design & Game Dev · Live mentors
           </p>
         </div>
       </div>

@@ -15,7 +15,6 @@ type UserTrendPoint = {
   label: string;
   logins: number;
   submissions: number;
-  messagesReceived: number;
   meetingsJoined: number;
 };
 
@@ -35,7 +34,7 @@ type AnalyticsResponse = {
     loginStats30d: number;
     activityLabel?: string;
     assessmentsSubmitted: number;
-    unreadMessages: number;
+    classesAttended: number;
     upcomingMeetings: number;
     trends: {
       rangeDays: number;
@@ -362,8 +361,9 @@ export function AnalyticsPanel() {
 
   const headlineSignals = useMemo(() => {
     if (!analytics?.platformAnalytics) {
+      const attended = analytics?.userAnalytics.classesAttended ?? 0;
       return [
-        `${analytics?.userAnalytics.unreadMessages ?? 0} unread message(s)`,
+        `${attended} class${attended === 1 ? "" : "es"} attended`,
         `${analytics?.userAnalytics.upcomingMeetings ?? 0} upcoming meeting(s)`,
       ];
     }
@@ -393,7 +393,7 @@ export function AnalyticsPanel() {
       ["User Metrics"],
       ["Logins (30d)", analytics.userAnalytics.loginStats30d],
       [primaryActivityLabel, analytics.userAnalytics.assessmentsSubmitted],
-      ["Unread Messages", analytics.userAnalytics.unreadMessages],
+      ["Classes Attended", analytics.userAnalytics.classesAttended],
       ["Upcoming Meetings", analytics.userAnalytics.upcomingMeetings],
     ];
 
@@ -537,7 +537,7 @@ export function AnalyticsPanel() {
     const keyMetrics = [
       ["Logins (30d)", analytics.userAnalytics.loginStats30d],
       [primaryActivityLabel, analytics.userAnalytics.assessmentsSubmitted],
-      ["Unread Messages", analytics.userAnalytics.unreadMessages],
+      ["Classes Attended", analytics.userAnalytics.classesAttended],
       ["Upcoming Meetings", analytics.userAnalytics.upcomingMeetings],
     ];
 
@@ -891,15 +891,6 @@ export function AnalyticsPanel() {
         });
       }
     } else {
-      if (analytics.userAnalytics.unreadMessages > 0) {
-        list.push({
-          title: "Clear communication backlog",
-          detail: `You currently have ${analytics.userAnalytics.unreadMessages} unread messages.`,
-          action: "Block 15 minutes to respond and remove pending blockers.",
-          tone: analytics.userAnalytics.unreadMessages >= 8 ? "critical" : "focus",
-        });
-      }
-
       const mid = Math.max(1, Math.floor(userTrendPoints.length / 2));
       const loginFirst = userTrendPoints.slice(0, mid).reduce((sum, point) => sum + point.logins, 0);
       const loginSecond = userTrendPoints.slice(mid).reduce((sum, point) => sum + point.logins, 0);
@@ -1043,7 +1034,7 @@ export function AnalyticsPanel() {
           : [
               { label: "Logins (30d)", value: analytics.userAnalytics.loginStats30d },
               { label: primaryActivityLabel, value: analytics.userAnalytics.assessmentsSubmitted },
-              { label: "Unread Messages", value: analytics.userAnalytics.unreadMessages },
+              { label: "Classes Attended", value: analytics.userAnalytics.classesAttended },
               { label: "Upcoming Meetings", value: analytics.userAnalytics.upcomingMeetings },
             ].map((item, index) => (
               <motion.div
@@ -1063,7 +1054,7 @@ export function AnalyticsPanel() {
 
       <section className="kat-card">
         <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">My Activity Trend</h3>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Daily movement across communication, learning, and attendance.</p>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Daily movement across logins, learning activity, and class attendance.</p>
         {loading || !analytics ? (
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
@@ -1071,20 +1062,13 @@ export function AnalyticsPanel() {
             ))}
           </div>
         ) : (
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             <TrendMiniCard
               title="Logins"
               subtitle={`${range.toUpperCase()} activity`}
               points={userTrendPoints}
               colorClass="bg-blue-500"
               getValue={(point) => point.logins}
-            />
-            <TrendMiniCard
-              title="Messages Received"
-              subtitle="Incoming message volume"
-              points={userTrendPoints}
-              colorClass="bg-cyan-500"
-              getValue={(point) => point.messagesReceived}
             />
             <TrendMiniCard
               title={primaryActivityLabel}

@@ -4,7 +4,7 @@ import { LandingHeader } from "@/components/marketing/sections/landing-header";
 import { SiteFooter } from "@/components/site-footer";
 import { DESIGN_TOKENS } from "@/components/marketing/landing-tokens";
 import { PartnerForm } from "./partner-form";
-import { School, Building2, Landmark, Handshake } from "lucide-react";
+import { School, Building2, Landmark, Handshake, Code2, FlaskConical, Clock4, Trophy } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Partner with KAT Learning — Schools, Corporates & Government",
@@ -25,10 +25,12 @@ const PARTNER_TYPES: PartnerCard[] = [
     title: "Schools",
     who: "Primary, secondary, and tertiary institutions",
     points: [
-      "Curriculum-aligned coding clubs and after-school programmes",
+      "Coding clubs — weekly sessions run by KAT mentors inside your school",
+      "Tech labs — structured programmes that turn any classroom into a build space",
+      "After-school programmes — curriculum-aligned tracks for ages 8–19",
+      "Hackathons — inter-school competitions and showcase events",
       "Teacher support and lesson materials included",
-      "Parent visibility dashboards for every student",
-      "Cohort certificates and portfolio showcases",
+      "Parent visibility dashboards for every enrolled student",
     ],
   },
   {
@@ -80,6 +82,31 @@ export default function PartnersPage() {
           structured, mentor-led tech education to children and teens across Africa. Tell us about
           your goals and we&apos;ll design a programme that fits.
         </p>
+      </section>
+
+      {/* School programme types */}
+      <section className="mx-auto max-w-4xl px-6 pb-14">
+        <p className="mb-5 text-center text-xs font-semibold uppercase tracking-[0.2em] text-[var(--kat-primary-blue)]">
+          What we bring to schools
+        </p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { icon: <Code2 className="size-5" />, label: "Coding Clubs" },
+            { icon: <FlaskConical className="size-5" />, label: "Tech Labs" },
+            { icon: <Clock4 className="size-5" />, label: "After-School Programmes" },
+            { icon: <Trophy className="size-5" />, label: "Hackathons" },
+          ].map(({ icon, label }) => (
+            <div
+              key={label}
+              className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center shadow-sm"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[var(--kat-primary-blue)]">
+                {icon}
+              </span>
+              <span className="text-sm font-semibold text-slate-800">{label}</span>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Partnership type cards */}

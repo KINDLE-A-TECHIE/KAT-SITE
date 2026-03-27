@@ -7,6 +7,7 @@ import { FeaturesSection } from "./sections/features-section";
 import { HowItWorksSection } from "./sections/how-it-works-section";
 import { TracksSection } from "./sections/tracks-section";
 import { FellowshipSection } from "./sections/fellowship-section";
+import { EventsSection } from "./sections/events-section";
 import { TestimonialsSection } from "./sections/testimonials-section";
 import { PricingSection } from "./sections/pricing-section";
 import { FaqSection } from "./sections/faq-section";
@@ -49,6 +50,7 @@ export function LandingPage({ enrollments, passRate, openCohorts }: LandingPageP
       <HowItWorksSection />
       <TracksSection />
       <FellowshipSection cohorts={openCohorts} />
+      <EventsSection />
       <TestimonialsSection />
       <PricingSection />
       <FaqSection />

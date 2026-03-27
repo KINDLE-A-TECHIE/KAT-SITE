@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Printer, Trophy, Star, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Check, Copy, Printer, ShieldCheck, Star, Trophy } from "lucide-react";
 
 type Props = {
   recipientName: string;
@@ -37,10 +38,19 @@ export function CertificatePrint({
   const router = useRouter();
   const level = LEVEL_CONFIG[programLevel] ?? LEVEL_CONFIG["Advanced"];
 
-  const verifyUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/certificate/${credentialId}`
-      : `/certificate/${credentialId}`;
+  // Resolve the full URL only on the client to avoid hydration mismatch
+  const [verifyUrl, setVerifyUrl] = useState(`/certificate/${credentialId}`);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setVerifyUrl(`${window.location.origin}/certificate/${credentialId}`);
+  }, [credentialId]);
+
+  const copyLink = async () => {
+    await navigator.clipboard.writeText(verifyUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <>
@@ -88,7 +98,7 @@ export function CertificatePrint({
       >
         <div className="flex items-center gap-3">
           <button
-            onClick={() => router.back()}
+            onClick={() => window.history.length > 1 ? router.back() : router.push("/")}
             className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
           >
             <ArrowLeft className="size-4" />
@@ -99,13 +109,22 @@ export function CertificatePrint({
             <span className="hidden text-sm font-semibold text-slate-800 sm:inline">KAT Learning</span>
           </div>
         </div>
-        <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 rounded-lg bg-[#0D1F45] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#162d5e]"
-        >
-          <Printer className="size-4" />
-          <span>Print / Save PDF</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => void copyLink()}
+            className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
+          >
+            {copied ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
+            <span>{copied ? "Copied!" : "Copy Link"}</span>
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 rounded-lg bg-[#0D1F45] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#162d5e]"
+          >
+            <Printer className="size-4" />
+            <span>Print / Save PDF</span>
+          </button>
+        </div>
       </div>
 
       {/* ── Mobile tip banner ─────────────────────────────────── */}

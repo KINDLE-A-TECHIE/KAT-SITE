@@ -107,6 +107,9 @@ POSTGRES_PORT=5432
 
 # ── Redis ────────────────────────────────────────────────────────────────────
 REDIS_PASSWORD=${REDIS_PASSWORD}
+# Judge0 reads host/port separately (not REDIS_URL) — must point to the redis service
+REDIS_HOST=redis
+REDIS_PORT=6379
 
 # ── Authentication ───────────────────────────────────────────────────────────
 # Judge0 checks this header on every API request.
@@ -134,10 +137,12 @@ MAX_MAX_FILE_SIZE=4096
 # Number of runs (reserved for future use)
 NUMBER_OF_RUNS=1
 
-# ── Per-process limits (isolate feature) ────────────────────────────────────
-# Set to true to enforce CPU/memory limits per-process (requires kernel support)
-ALLOW_ENABLE_PER_PROCESS_AND_THREAD_TIME_LIMIT=false
-ALLOW_ENABLE_PER_PROCESS_AND_THREAD_MEMORY_LIMIT=false
+# ── Per-process limits ───────────────────────────────────────────────────────
+# These must be true so Judge0 runs isolate WITHOUT --cg (cgroup v1 flag).
+# cgroup v1 memory controller is absent on most modern Ubuntu hosts (cgroup v2).
+# Keeping these true avoids "Failed to create control group" sandbox errors.
+ALLOW_ENABLE_PER_PROCESS_AND_THREAD_TIME_LIMIT=true
+ALLOW_ENABLE_PER_PROCESS_AND_THREAD_MEMORY_LIMIT=true
 
 # ── Defaults applied when a submission does not specify its own limits ────────
 CPU_TIME_LIMIT=5
@@ -145,13 +150,13 @@ WALL_TIME_LIMIT=10
 MEMORY_LIMIT=131072
 STACK_LIMIT=65536
 MAX_PROCESSES_AND_OR_THREADS=60
-ENABLE_PER_PROCESS_AND_THREAD_TIME_LIMIT=false
-ENABLE_PER_PROCESS_AND_THREAD_MEMORY_LIMIT=false
+ENABLE_PER_PROCESS_AND_THREAD_TIME_LIMIT=true
+ENABLE_PER_PROCESS_AND_THREAD_MEMORY_LIMIT=true
 MAX_FILE_SIZE=1024
 
 # ── Submission behaviour ─────────────────────────────────────────────────────
-# Return result synchronously (true = poll not needed, max 5 s per request)
-ENABLE_WAIT_RESULT=false
+# Return result synchronously (no client-side polling needed)
+ENABLE_WAIT_RESULT=true
 # Cache submission results for this many seconds (0 = disabled)
 SUBMISSION_CACHE_DURATION=1
 
@@ -171,6 +176,7 @@ services:
     image: judge0/judge0:1.13.1
     volumes:
       - ./judge0.conf:/judge0.conf:ro
+    env_file: judge0.conf
     ports:
       - "127.0.0.1:2358:2358"   # bind to loopback only — Nginx proxies externally
     privileged: true
@@ -184,6 +190,7 @@ services:
     command: ["./scripts/workers"]
     volumes:
       - ./judge0.conf:/judge0.conf:ro
+    env_file: judge0.conf
     privileged: true
     restart: always
     depends_on:

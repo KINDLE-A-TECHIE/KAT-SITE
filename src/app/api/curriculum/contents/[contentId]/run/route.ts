@@ -35,6 +35,7 @@ const JUDGE0_LANGUAGE_MAP: Record<string, number> = {
 };
 
 const JUDGE0_API_URL = process.env.JUDGE0_API_URL?.replace(/\/$/, "") ?? null;
+// Optional — self-hosted Judge0 CE instances typically have no auth by default
 const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY?.trim() ?? null;
 
 export async function POST(request: Request, { params }: Params) {
@@ -85,42 +86,89 @@ export async function POST(request: Request, { params }: Params) {
   const languageId = JUDGE0_LANGUAGE_MAP[content.language];
   if (!languageId) return fail(`Unsupported language: ${content.language}`, 400);
 
-  if (!JUDGE0_API_URL || !JUDGE0_API_KEY) {
+  if (!JUDGE0_API_URL) {
     return fail("Code execution service is not configured.", 503);
   }
 
+  // Build auth headers — omit X-Auth-Token entirely for self-hosted instances without auth
+  const authHeaders: Record<string, string> = JUDGE0_API_KEY
+    ? { "X-Auth-Token": JUDGE0_API_KEY }
+    : {};
+
+  const submissionBody = JSON.stringify({
+    source_code: body.code,
+    language_id: languageId,
+    stdin: body.stdin ?? "",
+  });
+
   try {
-    // wait=true makes Judge0 execute synchronously (up to ~5s) — ideal for short educational snippets
-    const judge0Res = await fetch(`${JUDGE0_API_URL}/submissions?wait=true`, {
+    type Judge0Result = {
+      stdout:         string | null;
+      stderr:         string | null;
+      compile_output: string | null;
+      exit_code:      number | null;
+      status:         { id: number; description: string };
+      time:           string | null;
+      memory:         number | null;
+    };
+
+    // Attempt synchronous execution first (requires ENABLE_WAIT_RESULT=true on self-hosted)
+    let result: Judge0Result | null = null;
+
+    const waitRes = await fetch(`${JUDGE0_API_URL}/submissions?wait=true`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Auth-Token": JUDGE0_API_KEY,
-      },
-      body: JSON.stringify({
-        source_code: body.code,
-        language_id: languageId,
-        stdin: body.stdin ?? "",
-      }),
+      headers: { "Content-Type": "application/json", ...authHeaders },
+      body: submissionBody,
       signal: AbortSignal.timeout(15_000),
     });
 
-    if (!judge0Res.ok) {
+    if (waitRes.ok) {
+      result = await waitRes.json() as Judge0Result;
+    } else if (waitRes.status === 400) {
+      // wait=true not enabled — fall back to async polling
       let detail = "";
-      try { detail = await judge0Res.text(); } catch { /* ignore */ }
-      console.error(`[run] Judge0 ${judge0Res.status}: ${detail}`);
-      return fail(`Code execution service error (${judge0Res.status}).`, 502);
-    }
+      try { detail = await waitRes.text(); } catch { /* ignore */ }
+      console.warn(`[run] wait=true rejected (${waitRes.status}): ${detail} — falling back to polling`);
 
-    const result = await judge0Res.json() as {
-      stdout:          string | null;
-      stderr:          string | null;
-      compile_output:  string | null;
-      exit_code:       number | null;
-      status:          { id: number; description: string };
-      time:            string | null;
-      memory:          number | null;
-    };
+      const createRes = await fetch(`${JUDGE0_API_URL}/submissions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: submissionBody,
+        signal: AbortSignal.timeout(10_000),
+      });
+
+      if (!createRes.ok) {
+        let d = "";
+        try { d = await createRes.text(); } catch { /* ignore */ }
+        console.error(`[run] Judge0 create ${createRes.status}: ${d}`);
+        return fail(`Code execution service error (${createRes.status}).`, 502);
+      }
+
+      const { token } = await createRes.json() as { token: string };
+
+      // Poll up to 10 times with 1 s intervals (10 s total)
+      for (let i = 0; i < 10; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        const pollRes = await fetch(
+          `${JUDGE0_API_URL}/submissions/${token}?fields=stdout,stderr,compile_output,exit_code,status,time,memory`,
+          { headers: authHeaders, signal: AbortSignal.timeout(5_000) },
+        );
+        if (!pollRes.ok) continue;
+        const polled = await pollRes.json() as Judge0Result;
+        // Status IDs 1 (In Queue) and 2 (Processing) mean not yet done
+        if (polled.status.id !== 1 && polled.status.id !== 2) {
+          result = polled;
+          break;
+        }
+      }
+
+      if (!result) return fail("Execution timed out.", 504);
+    } else {
+      let detail = "";
+      try { detail = await waitRes.text(); } catch { /* ignore */ }
+      console.error(`[run] Judge0 ${waitRes.status}: ${detail}`);
+      return fail(`Code execution service error (${waitRes.status}).`, 502);
+    }
 
     // Status IDs: 3 = Accepted, 6 = Compilation Error, 5 = TLE, 7-12 = Runtime errors
     const exitCode = result.status.id === 3 ? 0 : 1;

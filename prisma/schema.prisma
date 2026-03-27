@@ -240,7 +240,9 @@ model User {
   projects              Project[]           @relation("StudentProjects")
   projectFeedback       ProjectFeedback[]   @relation("ProjectFeedbackAuthor")
   projectReviews        ProjectReview[]     @relation("ProjectReviewer")
-  projectAssets         ProjectAsset[]     @relation("ProjectAssetUploader")
+  projectAssets         ProjectAsset[]      @relation("ProjectAssetUploader")
+  moduleGateStatuses    ModuleGateStatus[]  @relation("UserModuleGates")
+  moduleGateSignOffs    ModuleGateStatus[]  @relation("GateSignOff")
 }
 
 model SuperAdminInvite {
@@ -451,10 +453,11 @@ model Enrollment {
   currentPeriodEnd  DateTime?        // null = no billing cycle set yet; set on each verified payment
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  program     Program          @relation(fields: [programId], references: [id], onDelete: Cascade)
-  payments    Payment[]
-  submissions AssessmentSubmission[]
+  user               User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program            Program               @relation(fields: [programId], references: [id], onDelete: Cascade)
+  payments           Payment[]
+  submissions        AssessmentSubmission[]
+  moduleGateStatuses ModuleGateStatus[]
 
   @@unique([userId, programId])
   @@index([programId])
@@ -553,6 +556,7 @@ model AssessmentSubmission {
   enrollment    Enrollment?     @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
   answers       AssessmentAnswer[]
   manualGrades  ManualGrade[]
+  moduleGate    ModuleGateStatus? @relation("GateSubmission")
 
   @@unique([assessmentId, studentId, attemptNumber])
   @@index([studentId, status])
@@ -908,10 +912,11 @@ model Module {
   sortOrder     Int               @default(0)
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
-  version       CurriculumVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  version       CurriculumVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
   lessons       Lesson[]
   assessments   Assessment[]
   badge         Badge?
+  gateStatuses  ModuleGateStatus[]
 
   @@index([versionId, sortOrder])
 }
@@ -968,6 +973,52 @@ model LessonProgress {
   @@index([userId])
 }
 
+enum GateStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  PASSED
+}
+
+model ModuleGateStatus {
+  id                  String     @id @default(cuid())
+  userId              String
+  moduleId            String
+  enrollmentId        String
+
+  // Gate 1 — Knowledge Assessment
+  assessmentGate      GateStatus @default(NOT_STARTED)
+  assessmentPassedAt  DateTime?
+  passingSubmissionId String?    @unique
+
+  // Gate 2 — Capstone Project
+  projectGate         GateStatus @default(NOT_STARTED)
+  projectPassedAt     DateTime?
+  passingProjectId    String?    @unique
+
+  // Gate 3 — Instructor Evaluation
+  instructorGate      GateStatus @default(NOT_STARTED)
+  instructorPassedAt  DateTime?
+  signedOffById       String?
+
+  // Sealed when all three gates are PASSED
+  allGatesPassed      Boolean    @default(false)
+  allGatesPassedAt    DateTime?
+
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  user              User                  @relation("UserModuleGates", fields: [userId], references: [id], onDelete: Cascade)
+  module            Module                @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  enrollment        Enrollment            @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  passingSubmission AssessmentSubmission? @relation("GateSubmission", fields: [passingSubmissionId], references: [id], onDelete: SetNull)
+  passingProject    Project?              @relation("GateProject", fields: [passingProjectId], references: [id], onDelete: SetNull)
+  signedOffBy       User?                 @relation("GateSignOff", fields: [signedOffById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, moduleId])
+  @@index([userId, enrollmentId])
+  @@index([moduleId, allGatesPassed])
+}
+
 model LessonContent {
   id           String              @id @default(cuid())
   lessonId     String
@@ -1007,6 +1058,7 @@ model PartnerInquiry {
   type         PartnerType
   email        String
   phone        String?
+  programs     String[]
   message      String
   createdAt    DateTime    @default(now())
 
@@ -1076,6 +1128,7 @@ model Project {
   feedback       ProjectFeedback[]
   reviews        ProjectReview[]
   assets         ProjectAsset[]
+  moduleGate     ModuleGateStatus? @relation("GateProject")
 
   @@index([studentId, status])
   @@index([programId])

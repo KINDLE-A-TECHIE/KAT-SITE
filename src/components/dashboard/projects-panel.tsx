@@ -1233,6 +1233,12 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
   const [activeAssignment, setActiveAssignment] = useState<Assignment | null>(null);
 
+  // My Work — search + pagination
+  const [mySearch, setMySearch] = useState("");
+  const [myCursor, setMyCursor] = useState<string | null>(null);
+  const [myHasMore, setMyHasMore] = useState(false);
+  const [myLoadingMore, setMyLoadingMore] = useState(false);
+
   // Review queue filters + pagination
   const [reviewSearch, setReviewSearch] = useState("");
   const [reviewStatus, setReviewStatus] = useState("SUBMITTED");
@@ -1244,23 +1250,33 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
   const canCreate = role === "STUDENT" || role === "FELLOW";
   const isParent = role === "PARENT";
 
-  // Load own projects + programs
+  // Load own projects + programs (re-runs when search changes, with debounce)
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const [projRes, progRes] = await Promise.all([fetch("/api/projects"), fetch("/api/programs")]);
-      if (projRes.ok) {
-        const p = (await projRes.json()) as { projects?: Project[] };
-        setProjects(p.projects ?? []);
-      }
-      if (progRes.ok) {
-        const p = (await progRes.json()) as { programs?: Program[] };
-        setPrograms(p.programs ?? []);
-      }
-      setLoading(false);
-    };
-    void load();
-  }, []);
+    const timer = setTimeout(() => {
+      void (async () => {
+        setLoading(true);
+        setMyCursor(null);
+        const params = new URLSearchParams({ paginate: "1" });
+        if (mySearch.trim()) params.set("search", mySearch.trim());
+        const [projRes, progRes] = await Promise.all([
+          fetch(`/api/projects?${params.toString()}`),
+          fetch("/api/programs"),
+        ]);
+        if (projRes.ok) {
+          const p = (await projRes.json()) as { projects?: Project[]; hasMore?: boolean; nextCursor?: string | null };
+          setProjects(p.projects ?? []);
+          setMyHasMore(p.hasMore ?? false);
+          setMyCursor(p.nextCursor ?? null);
+        }
+        if (progRes.ok) {
+          const p = (await progRes.json()) as { programs?: Program[] };
+          setPrograms(p.programs ?? []);
+        }
+        setLoading(false);
+      })();
+    }, mySearch ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [mySearch]);
 
   // Load assignments for students/fellows and instructors/admins
   useEffect(() => {
@@ -1311,6 +1327,21 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
       setReviewCursor(data.nextCursor ?? null);
     }
     setReviewLoading(false);
+  };
+
+  const handleLoadMoreMine = async () => {
+    if (!myCursor || myLoadingMore) return;
+    setMyLoadingMore(true);
+    const params = new URLSearchParams({ paginate: "1", cursor: myCursor });
+    if (mySearch.trim()) params.set("search", mySearch.trim());
+    const res = await fetch(`/api/projects?${params.toString()}`);
+    if (res.ok) {
+      const data = (await res.json()) as { projects?: Project[]; hasMore?: boolean; nextCursor?: string | null };
+      setProjects((prev) => [...prev, ...(data.projects ?? [])]);
+      setMyHasMore(data.hasMore ?? false);
+      setMyCursor(data.nextCursor ?? null);
+    }
+    setMyLoadingMore(false);
   };
 
   const handleUpdate = (updated: Project) => {
@@ -1610,6 +1641,19 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
       {/* My Work — assignments at top + portfolio below (or by child for parents) */}
       {tab === "mine" && (
         <div className="space-y-6">
+          {/* Search bar — students only, not parents */}
+          {!isParent && !isReviewer && (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={mySearch}
+                onChange={(e) => setMySearch(e.target.value)}
+                placeholder="Search your projects…"
+                className="h-10 w-full rounded-md border border-slate-200 bg-white pl-8 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              />
+            </div>
+          )}
           {loading || assignmentsLoading ? (
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
           ) : isParent ? (
@@ -1768,8 +1812,17 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                 <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-center dark:border-slate-700">
                   <FolderOpen className="size-10 text-slate-300 dark:text-slate-600" />
                   <div>
-                    <p className="font-medium text-slate-700 dark:text-slate-300">Your portfolio is empty</p>
-                    <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">Hit <strong>New Project</strong> to add your first project</p>
+                    {mySearch ? (
+                      <>
+                        <p className="font-medium text-slate-700 dark:text-slate-300">No projects match your search</p>
+                        <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">Try a different keyword</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-medium text-slate-700 dark:text-slate-300">Your portfolio is empty</p>
+                        <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">Hit <strong>New Project</strong> to add your first project</p>
+                      </>
+                    )}
                   </div>
                 </div>
               ) : projects.length > 0 && (
@@ -1780,33 +1833,52 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                       <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400">My Portfolio</h3>
                     </div>
                   )}
-                  {STATUS_GROUPS.map(({ label, statuses, emptyText }) => {
-                    const group = projects.filter((p) => statuses.includes(p.status));
-                    if (group.length === 0 && !emptyText) return null;
-                    return (
-                      <div key={label}>
-                        <div className="mb-2 flex items-center gap-2">
-                          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</h3>
-                          {group.length > 0 && (
-                            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                              {group.length}
-                            </span>
+                  {mySearch ? (
+                    // When searching — flat list, no status grouping
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {projects.map((p) => (
+                        <div key={p.id} id={`project-${p.id}`}>
+                          <ProjectCard project={p} isReviewer={false} onUpdate={handleUpdate} onDelete={handleDelete} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    STATUS_GROUPS.map(({ label, statuses, emptyText }) => {
+                      const group = projects.filter((p) => statuses.includes(p.status));
+                      if (group.length === 0 && !emptyText) return null;
+                      return (
+                        <div key={label}>
+                          <div className="mb-2 flex items-center gap-2">
+                            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</h3>
+                            {group.length > 0 && (
+                              <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                {group.length}
+                              </span>
+                            )}
+                          </div>
+                          {group.length === 0 ? (
+                            <p className="text-xs text-slate-400 dark:text-slate-500">{emptyText}</p>
+                          ) : (
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                              {group.map((p) => (
+                                <div key={p.id} id={`project-${p.id}`}>
+                                  <ProjectCard project={p} isReviewer={false} onUpdate={handleUpdate} onDelete={handleDelete} />
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
-                        {group.length === 0 ? (
-                          <p className="text-xs text-slate-400 dark:text-slate-500">{emptyText}</p>
-                        ) : (
-                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            {group.map((p) => (
-                              <div key={p.id} id={`project-${p.id}`}>
-                                <ProjectCard project={p} isReviewer={false} onUpdate={handleUpdate} onDelete={handleDelete} />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
+                  {myHasMore && (
+                    <div className="flex justify-center pt-1">
+                      <Button variant="outline" size="sm" onClick={() => void handleLoadMoreMine()} disabled={myLoadingMore}>
+                        {myLoadingMore ? <Loader2 className="mr-2 size-3.5 animate-spin" /> : null}
+                        Load more
+                      </Button>
+                    </div>
+                  )}
                 </>
               )}
             </>
