@@ -77,7 +77,7 @@ export const PROGRAM_TRACKS: ProgramTrack[] = [
 export const FEATURES = [
   {
     title: "Live Tech Classes",
-    description: "Small groups of 6–12 students learning coding, robotics, AI, UI/UX design, and game development with a dedicated mentor. Not videos. Not passive watching. Real builds, every session.",
+    description: "1-on-1 live sessions with a dedicated mentor in coding, robotics, AI, UI/UX design, and game development. Not videos. Not passive watching. Real builds, every session.",
     iconName: "Code2" as const,
     color: "bg-blue-500",
   },
@@ -122,7 +122,7 @@ export const HOW_IT_WORKS = [
   {
     step: "02",
     title: "Learn Live with Expert Mentors",
-    description: "Small groups of 6–12 students. Hands-on training in coding, robotics, AI, design, or game development — with a dedicated mentor guiding every session.",
+    description: "1-on-1 live sessions with a dedicated mentor. Hands-on training in coding, robotics, AI, design, or game development — 2 sessions every week.",
   },
   {
     step: "03",
@@ -188,7 +188,7 @@ export const PRICING_TIERS: PricingTier[] = [
     billingNote: "Billed monthly · Cancel anytime",
     highlight: false,
     includes: [
-      "3 live classes per week",
+      "2 live 1-on-1 classes per week",
       "Block coding, game development & robotics basics",
       "Weekly project assignments",
       "Parent progress dashboard",
@@ -205,7 +205,7 @@ export const PRICING_TIERS: PricingTier[] = [
     billingNote: "Billed monthly · Cancel anytime",
     highlight: true,
     includes: [
-      "3 live classes per week",
+      "2 live 1-on-1 classes per week",
       "HTML, CSS, JavaScript, Python & UI/UX design",
       "Game development & portfolio capstone",
       "Parent progress dashboard",
@@ -223,7 +223,7 @@ export const PRICING_TIERS: PricingTier[] = [
     billingNote: "Billed monthly · Cancel anytime",
     highlight: false,
     includes: [
-      "4 live classes per week",
+      "2 live 1-on-1 classes per week",
       "Fullstack engineering, AI & computer science",
       "Community-impact capstone project",
       "Parent progress dashboard",
@@ -260,7 +260,7 @@ export const FAQ_ITEMS = [
   {
     question: "How many kids are in each class?",
     answer:
-      "We cap every session at 6 to 12 students. That's intentional — it means your child gets direct mentor attention, space to ask questions, and feedback on their actual work, not just a passive lecture.",
+      "Every session is 1-on-1 — your child and their dedicated mentor, no one else. That means full attention, real-time feedback on their work, and a pace that's matched entirely to them.",
   },
   {
     question: "Can I see what my child is learning?",

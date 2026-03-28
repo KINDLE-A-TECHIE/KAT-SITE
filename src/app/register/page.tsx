@@ -109,12 +109,12 @@ function RegisterContent() {
             <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-indigo-600/10 blur-3xl" />
           </div>
 
-          <div className="relative flex items-center gap-3">
+          <Link href="/" className="relative flex items-center gap-3">
             <Image src="/kindle-a-techie.svg" alt="KAT logo" width={40} height={40} className="shrink-0" />
             <span className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-white">
               KAT Learning
             </span>
-          </div>
+          </Link>
 
           <div className="relative space-y-6">
             <div>
@@ -162,12 +162,12 @@ function RegisterContent() {
             className="w-full max-w-sm"
           >
             {/* Mobile logo */}
-            <div className="mb-8 flex items-center gap-2 lg:hidden">
+            <Link href="/" className="mb-8 flex items-center gap-2 lg:hidden">
               <Image src="/kindle-a-techie.svg" alt="KAT logo" width={36} height={36} className="shrink-0" />
               <span className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-900">
                 KAT Learning
               </span>
-            </div>
+            </Link>
 
             <div className="mb-6">
               <h2 className="[font-family:var(--font-space-grotesk)] text-2xl font-bold text-slate-900">

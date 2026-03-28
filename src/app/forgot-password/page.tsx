@@ -53,12 +53,12 @@ export default function ForgotPasswordPage() {
           className="w-full max-w-sm"
         >
           {/* Logo */}
-          <div className="mb-8 flex items-center gap-2">
+          <Link href="/" className="mb-8 flex items-center gap-2">
             <Image src="/kindle-a-techie.svg" alt="KAT logo" width={36} height={36} className="shrink-0" />
             <span className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-900">
               KAT Learning
             </span>
-          </div>
+          </Link>
 
           {sent ? (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center">

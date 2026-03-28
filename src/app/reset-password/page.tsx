@@ -188,12 +188,12 @@ export default function ResetPasswordPage() {
           className="w-full max-w-sm"
         >
           {/* Logo */}
-          <div className="mb-8 flex items-center gap-2">
+          <Link href="/" className="mb-8 flex items-center gap-2">
             <Image src="/kindle-a-techie.svg" alt="KAT logo" width={36} height={36} className="shrink-0" />
             <span className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-900">
               KAT Learning
             </span>
-          </div>
+          </Link>
 
           <Suspense fallback={<div className="h-40 animate-pulse rounded-2xl bg-slate-100" />}>
             <ResetPasswordForm />

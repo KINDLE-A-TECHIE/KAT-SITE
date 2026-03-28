@@ -68,12 +68,12 @@ export function SiteFooter() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <Image src="/kindle-a-techie.svg" alt="KAT logo" width={44} height={44} className="shrink-0" />
               <span className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-900">
                 kindle <span className="bg-gradient-to-r from-[#1E5FAF] to-[#4DB3E6] bg-clip-text text-transparent">a techie</span>
               </span>
-            </div>
+            </Link>
             <p className="mt-3 text-sm leading-relaxed text-slate-500">
               Empowering African kids and teens with world-class tech education,
               live mentorship, and real projects.

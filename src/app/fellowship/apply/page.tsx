@@ -87,7 +87,7 @@ function FellowshipApplyContent() {
       {/* Nav bar */}
       <header className="border-b border-slate-200 bg-white px-6 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <Link href="/#fellowship" className="flex items-center gap-2.5">
+          <Link href="/" className="flex items-center gap-2.5">
             <Image src="/kindle-a-techie.svg" alt="KAT logo" width={32} height={32} />
             <span className="[font-family:var(--font-space-grotesk)] text-sm font-semibold text-slate-900">
               KAT Learning
