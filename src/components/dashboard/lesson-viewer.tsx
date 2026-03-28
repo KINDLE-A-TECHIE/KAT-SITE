@@ -145,6 +145,8 @@ function ContentBlock({
   isCreator,
   isSA,
   userId,
+  programId,
+  moduleId,
   onReview,
 }: {
   content: ContentItem;
@@ -153,6 +155,8 @@ function ContentBlock({
   isCreator: boolean;
   isSA: boolean;
   userId?: string;
+  programId?: string;
+  moduleId?: string;
   onReview: (id: string, action: "PUBLISH" | "REJECT", note?: string) => Promise<void>;
 }) {
   const [showReject, setShowReject] = useState(false);
@@ -234,6 +238,8 @@ function ContentBlock({
             language={content.language}
             isCreator={isCreator}
             userId={userId}
+            programId={programId}
+            moduleId={moduleId}
           />
         )}
       </div>
@@ -495,6 +501,8 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
               isCreator={isCreator}
               isSA={isSA}
               userId={userId}
+              programId={programId}
+              moduleId={lesson.module.id}
               onReview={reviewContent}
             />
           </motion.div>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { zipSync } from "fflate";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -154,47 +155,59 @@ function formatDate(iso: string) {
 // ── File Uploader ─────────────────────────────────────────────────────────────
 
 function FileUploader({ projectId, onUploaded }: { projectId: string; onUploaded: (file: ProjectFile) => void }) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [statusMsg, setStatusMsg] = useState("");
 
-  const handleFiles = async (files: FileList | null) => {
+  // webkitdirectory is not in TS DOM types — set imperatively
+  useEffect(() => {
+    if (folderInputRef.current) folderInputRef.current.setAttribute("webkitdirectory", "");
+  }, []);
+
+  const uploadBlob = async (blob: Blob, name: string, mimeType: string) => {
+    const urlRes = await fetch(`/api/projects/${projectId}/upload-url`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, mimeType, size: blob.size }),
+    });
+    if (!urlRes.ok) {
+      const err = (await urlRes.json()) as { error?: string };
+      throw new Error(err?.error ?? "Could not get upload URL.");
+    }
+    const { uploadUrl, key, publicUrl } = (await urlRes.json()) as { uploadUrl: string; key: string; publicUrl: string };
+
+    const xhr = new XMLHttpRequest();
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
+    });
+    await new Promise<void>((resolve, reject) => {
+      xhr.onload = () => (xhr.status < 300 ? resolve() : reject(new Error(`Upload failed: ${xhr.status}`)));
+      xhr.onerror = () => reject(new Error("Network error"));
+      xhr.open("PUT", uploadUrl);
+      xhr.setRequestHeader("Content-Type", mimeType);
+      xhr.send(blob);
+    });
+
+    const confirmRes = await fetch(`/api/projects/${projectId}/files`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, mimeType, size: blob.size, storageKey: key, url: publicUrl }),
+    });
+    if (!confirmRes.ok) throw new Error("Could not save file record.");
+    const { file: saved } = (await confirmRes.json()) as { file: ProjectFile };
+    return saved;
+  };
+
+  const handleFile = async (files: FileList | null) => {
     if (!files?.length) return;
-    const file = files[0];
+    const file = files[0]!;
     setUploading(true);
     setProgress(0);
+    setStatusMsg(`Uploading ${file.name}…`);
     try {
-      const urlRes = await fetch(`/api/projects/${projectId}/upload-url`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: file.name, mimeType: file.type || "application/octet-stream", size: file.size }),
-      });
-      if (!urlRes.ok) {
-        const err = (await urlRes.json()) as { error?: string };
-        toast.error(err?.error ?? "Could not get upload URL.");
-        return;
-      }
-      const { uploadUrl, key, publicUrl } = (await urlRes.json()) as { uploadUrl: string; key: string; publicUrl: string };
-
-      const xhr = new XMLHttpRequest();
-      xhr.upload.addEventListener("progress", (e) => {
-        if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
-      });
-      await new Promise<void>((resolve, reject) => {
-        xhr.onload = () => xhr.status < 300 ? resolve() : reject(new Error(`Upload failed: ${xhr.status}`));
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
-        xhr.send(file);
-      });
-
-      const confirmRes = await fetch(`/api/projects/${projectId}/files`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: file.name, mimeType: file.type || "application/octet-stream", size: file.size, storageKey: key, url: publicUrl }),
-      });
-      if (!confirmRes.ok) { toast.error("Could not save file record."); return; }
-      const { file: saved } = (await confirmRes.json()) as { file: ProjectFile };
+      const saved = await uploadBlob(file, file.name, file.type || "application/octet-stream");
       toast.success(`${file.name} uploaded!`);
       onUploaded(saved);
     } catch (err) {
@@ -202,35 +215,98 @@ function FileUploader({ projectId, onUploaded }: { projectId: string; onUploaded
     } finally {
       setUploading(false);
       setProgress(0);
-      if (inputRef.current) inputRef.current.value = "";
+      setStatusMsg("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleFolder = async (files: FileList | null) => {
+    const all = Array.from(files ?? []).filter((f) => !f.name.startsWith(".") && f.size > 0);
+    if (!all.length) { toast.error("No files found in that folder."); return; }
+
+    setUploading(true);
+    setProgress(0);
+
+    const folderName = (all[0]!.webkitRelativePath.split("/")[0] ?? "source").replace(/[^a-zA-Z0-9._-]/g, "-");
+    const zipName = `${folderName}.zip`;
+
+    try {
+      setStatusMsg(`Zipping ${all.length} file(s)…`);
+      const encoder = new TextEncoder();
+      const entries: Record<string, Uint8Array> = {};
+      for (const file of all) {
+        const rawPath = file.webkitRelativePath || file.name;
+        const parts = rawPath.split("/");
+        // Strip top-level folder name so paths inside the zip are relative
+        const relativePath = parts.length > 1 ? parts.slice(1).join("/") : parts[0]!;
+        if (!relativePath) continue;
+        entries[relativePath] = encoder.encode(await file.text());
+      }
+      const zipped = zipSync(entries, { level: 6 });
+      const zipBlob = new Blob([zipped.buffer as ArrayBuffer], { type: "application/zip" });
+
+      setStatusMsg(`Uploading ${zipName}…`);
+      const saved = await uploadBlob(zipBlob, zipName, "application/zip");
+      toast.success(`${zipName} uploaded (${all.length} file(s) zipped).`);
+      onUploaded(saved);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+      setProgress(0);
+      setStatusMsg("");
+      if (folderInputRef.current) folderInputRef.current.value = "";
     }
   };
 
   return (
-    <div>
-      <input ref={inputRef} type="file" className="hidden" onChange={(e) => void handleFiles(e.target.files)} />
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={uploading}
-        className="flex w-full cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center transition hover:border-blue-400 hover:bg-blue-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-blue-500 dark:hover:bg-blue-900/10"
-      >
-        {uploading ? (
-          <>
-            <Loader2 className="size-5 animate-spin text-blue-500" />
-            <span className="text-sm text-slate-600 dark:text-slate-400">Uploading… {progress}%</span>
-            <div className="h-1.5 w-40 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-              <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${progress}%` }} />
-            </div>
-          </>
-        ) : (
-          <>
+    <div className="space-y-2">
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="hidden"
+        onChange={(e) => void handleFile(e.target.files)}
+      />
+      <input
+        ref={folderInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(e) => void handleFolder(e.target.files)}
+      />
+
+      {uploading ? (
+        <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-blue-300 bg-blue-50 px-4 py-5 text-center dark:border-blue-700 dark:bg-blue-900/10">
+          <Loader2 className="size-5 animate-spin text-blue-500" />
+          <span className="text-sm text-slate-600 dark:text-slate-400">
+            {statusMsg} {progress > 0 ? `${progress}%` : ""}
+          </span>
+          <div className="h-1.5 w-40 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+            <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-center transition hover:border-blue-400 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-blue-500 dark:hover:bg-blue-900/10"
+          >
             <Upload className="size-5 text-slate-400 dark:text-slate-500" />
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Click to upload a file</span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">Images, videos, PDFs, ZIPs, code · Max 20 MB</span>
-          </>
-        )}
-      </button>
+            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Upload a file</span>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500">Images, PDFs, ZIPs…</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => folderInputRef.current?.click()}
+            className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-center transition hover:border-emerald-400 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-emerald-500 dark:hover:bg-emerald-900/10"
+          >
+            <FolderOpen className="size-5 text-slate-400 dark:text-slate-500" />
+            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Upload folder</span>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500">Zipped automatically</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

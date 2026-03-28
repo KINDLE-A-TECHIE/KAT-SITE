@@ -26,6 +26,7 @@ export async function GET(request: Request) {
   const studentId = url.searchParams.get("studentId");
   const statusFilter = url.searchParams.get("status");
   const programId = url.searchParams.get("programId");
+  const assessmentIdFilter = url.searchParams.get("assessmentId");
   const search = url.searchParams.get("search")?.trim() ?? "";
   const cursor = url.searchParams.get("cursor");
   const paginate = url.searchParams.get("paginate") === "1";
@@ -80,7 +81,11 @@ export async function GET(request: Request) {
     };
   } else {
     // STUDENT / FELLOW — own projects only
-    where = { studentId: userId };
+    where = {
+      studentId: userId,
+      ...(statusFilter ? { status: statusFilter } : {}),
+      ...(assessmentIdFilter ? { assessmentId: assessmentIdFilter } : {}),
+    };
   }
 
   const take = paginate ? PAGE_SIZE + 1 : undefined;

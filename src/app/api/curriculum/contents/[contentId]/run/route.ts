@@ -111,9 +111,12 @@ export async function POST(request: Request, { params }: Params) {
     return fail("Content not published.", 403);
   }
 
-  const body = await request.json() as { code?: string; stdin?: string };
+  const body = await request.json() as { code?: string; stdin?: string; additional_files?: string };
   if (!body.code || typeof body.code !== "string") return fail("code is required.", 400);
   if (body.code.length > 50_000) return fail("Code too long (max 50 000 chars).", 400);
+  if (body.additional_files && typeof body.additional_files !== "string") {
+    return fail("additional_files must be a base64 string.", 400);
+  }
 
   const languageId = JUDGE0_LANGUAGE_MAP[content.language];
   if (!languageId) return fail(`Unsupported language: ${content.language}`, 400);
@@ -131,6 +134,7 @@ export async function POST(request: Request, { params }: Params) {
     source_code: body.code,
     language_id: languageId,
     stdin: body.stdin ?? "",
+    ...(body.additional_files ? { additional_files: body.additional_files } : {}),
   });
 
   try {
