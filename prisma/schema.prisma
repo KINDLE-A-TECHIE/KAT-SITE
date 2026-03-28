@@ -228,8 +228,10 @@ model User {
   curriculumVersionsCreated CurriculumVersion[] @relation("CurriculumVersionCreator")
   lessonContentsCreated     LessonContent[]    @relation("LessonContentCreator")
   lessonContentsReviewed    LessonContent[]    @relation("LessonContentReviewer")
-  hostedPeerSessions        PeerSession[]      @relation("PeerSessionHost")
-  peerSessionParticipations PeerSessionParticipant[]
+  hostedPeerSessions          PeerSession[]      @relation("PeerSessionHost")
+  peerSessionParticipations   PeerSessionParticipant[]
+  playgroundInvitesSent       PlaygroundInvite[] @relation("PlaygroundInvitesSent")
+  playgroundInvitesReceived   PlaygroundInvite[] @relation("PlaygroundInvitesReceived")
   certificatesEarned    Certificate[]        @relation("CertificateRecipient")
   certificatesIssued    Certificate[]        @relation("CertificateIssuer")
   certificatesApproved  Certificate[]        @relation("CertificateApprover")
@@ -1038,9 +1040,10 @@ model LessonContent {
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   lesson       Lesson              @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  createdBy    User                @relation("LessonContentCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  reviewedBy   User?               @relation("LessonContentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
-  peerSessions PeerSession[]
+  createdBy         User                @relation("LessonContentCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  reviewedBy        User?               @relation("LessonContentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  peerSessions      PeerSession[]
+  playgroundInvites PlaygroundInvite[]
 
   @@index([lessonId, sortOrder])
   @@index([reviewStatus, createdAt])
@@ -1060,11 +1063,38 @@ model PeerSession {
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
-  content      LessonContent          @relation(fields: [contentId], references: [id], onDelete: Cascade)
-  host         User                   @relation("PeerSessionHost", fields: [hostId], references: [id])
-  participants PeerSessionParticipant[]
+  content          LessonContent          @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  host             User                   @relation("PeerSessionHost", fields: [hostId], references: [id])
+  participants     PeerSessionParticipant[]
+  playgroundInvites PlaygroundInvite[]
 
   @@index([contentId, status])
+}
+
+model PlaygroundInvite {
+  id          String                 @id @default(cuid())
+  contentId   String
+  invitedById String
+  inviteeId   String
+  sessionId   String?
+  message     String?
+  status      PlaygroundInviteStatus @default(PENDING)
+  createdAt   DateTime               @default(now())
+
+  content   LessonContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  invitedBy User          @relation("PlaygroundInvitesSent",     fields: [invitedById], references: [id], onDelete: Cascade)
+  invitee   User          @relation("PlaygroundInvitesReceived", fields: [inviteeId],   references: [id], onDelete: Cascade)
+  session   PeerSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@unique([contentId, inviteeId])
+  @@index([inviteeId, status])
+  @@index([contentId])
+}
+
+enum PlaygroundInviteStatus {
+  PENDING
+  JOINED
+  DISMISSED
 }
 
 model PeerSessionParticipant {

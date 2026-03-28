@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import {
   AlertCircle, CheckCircle2, ChevronRight, Download, FilePlus,
-  FolderOpen, Play, RotateCcw, Send, Terminal, Users, Wifi, X,
+  FolderOpen, Play, RotateCcw, Send, Terminal, UserPlus, Users, Wifi, X,
 } from "lucide-react";
 import { zipSync } from "fflate";
 import { Button } from "@/components/ui/button";
@@ -165,6 +165,23 @@ type AssignmentMatch = {
   linkedProject: LinkedProject | null;
 };
 
+type EnrolledStudent = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+};
+
+type PlaygroundInvite = {
+  id: string;
+  sessionId: string | null;
+  message: string | null;
+  createdAt: string;
+  invitedBy: { firstName: string; lastName: string };
+  content: { title: string };
+};
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function CodePlaygroundBlock({
@@ -223,6 +240,20 @@ export function CodePlaygroundBlock({
   const [checkingAssignment, setCheckingAssignment] = useState(false);
   const [assignmentMatch, setAssignmentMatch]     = useState<AssignmentMatch | null | "none">(null);
   const assignmentFetched = useRef(false);
+
+  // ── Invite modal state (instructors) ──────────────────────────────────────
+  const [showInviteModal, setShowInviteModal]   = useState(false);
+  const [studentSearch, setStudentSearch]       = useState("");
+  const [studentResults, setStudentResults]     = useState<EnrolledStudent[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<EnrolledStudent[]>([]);
+  const [inviteMessage, setInviteMessage]       = useState("");
+  const [sendingInvites, setSendingInvites]     = useState(false);
+  const [loadingStudents, setLoadingStudents]   = useState(false);
+  const studentSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Pending invite state (students) ───────────────────────────────────────
+  const [pendingInvite, setPendingInvite]       = useState<PlaygroundInvite | null>(null);
+  const [dismissingInvite, setDismissingInvite] = useState(false);
 
   // ── Refs ───────────────────────────────────────────────────────────────────
   const editorRef         = useRef<unknown>(null);
@@ -338,6 +369,35 @@ export function CodePlaygroundBlock({
       .finally(() => setCheckingAssignment(false));
   }, [showSubmitForm, isCreator, moduleId]);
 
+  // ── Student: fetch pending invite for this playground on mount ────────────
+  useEffect(() => {
+    if (isCreator) return;
+    fetch(`/api/playground-invites?contentId=${contentId}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { invite: PlaygroundInvite | null } | null) => {
+        if (data?.invite) setPendingInvite(data.invite);
+      })
+      .catch(() => { /* ignore */ });
+  }, [contentId, isCreator]);
+
+  // ── Instructor: search enrolled students (debounced 300 ms) ───────────────
+  useEffect(() => {
+    if (!showInviteModal || !programId) return;
+    if (studentSearchDebounce.current) clearTimeout(studentSearchDebounce.current);
+    setLoadingStudents(true);
+    studentSearchDebounce.current = setTimeout(() => {
+      const q = encodeURIComponent(studentSearch);
+      fetch(`/api/programs/${programId}/students?search=${q}`)
+        .then((r) => r.ok ? r.json() : null)
+        .then((data: { students: EnrolledStudent[] } | null) => {
+          setStudentResults(data?.students ?? []);
+        })
+        .catch(() => setStudentResults([]))
+        .finally(() => setLoadingStudents(false));
+    }, 300);
+    return () => { if (studentSearchDebounce.current) clearTimeout(studentSearchDebounce.current); };
+  }, [showInviteModal, studentSearch, programId]);
+
   // ── File loading ───────────────────────────────────────────────────────────
 
   const loadFilesFromInput = async (fileList: FileList | null) => {
@@ -402,6 +462,69 @@ export function CodePlaygroundBlock({
     setActiveProjectFile(null);
     setEntryFile(null);
     try { localStorage.removeItem(KEY_PROJECT); } catch { /* ignore */ }
+  };
+
+  // ── Invite helpers ─────────────────────────────────────────────────────────
+
+  const toggleStudent = (s: EnrolledStudent) => {
+    setSelectedStudents((prev) =>
+      prev.some((x) => x.id === s.id) ? prev.filter((x) => x.id !== s.id) : [...prev, s],
+    );
+  };
+
+  const sendInvites = async () => {
+    if (selectedStudents.length === 0) { toast.error("Select at least one student."); return; }
+    setSendingInvites(true);
+    try {
+      const res = await fetch("/api/playground-invites", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contentId,
+          inviteeIds: selectedStudents.map((s) => s.id),
+          ...(peerSessionId ? { sessionId: peerSessionId } : {}),
+          ...(inviteMessage.trim() ? { message: inviteMessage.trim() } : {}),
+        }),
+      });
+      if (!res.ok) { toast.error("Failed to send invites."); return; }
+      const names = selectedStudents.map((s) => s.firstName).join(", ");
+      toast.success(`Invite sent to ${names}.`);
+      setShowInviteModal(false);
+      setSelectedStudents([]);
+      setStudentSearch("");
+      setInviteMessage("");
+    } catch {
+      toast.error("Failed to send invites.");
+    } finally {
+      setSendingInvites(false);
+    }
+  };
+
+  const dismissInvite = async () => {
+    if (!pendingInvite) return;
+    setDismissingInvite(true);
+    try {
+      await fetch(`/api/playground-invites/${pendingInvite.id}`, {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "DISMISSED" }),
+      });
+      setPendingInvite(null);
+    } catch { /* ignore */ } finally {
+      setDismissingInvite(false);
+    }
+  };
+
+  const acceptInviteSession = async () => {
+    if (!pendingInvite?.sessionId) return;
+    // Mark joined then trigger the standard join flow
+    await fetch(`/api/playground-invites/${pendingInvite.id}`, {
+      method:  "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "JOINED" }),
+    }).catch(() => { /* best effort */ });
+    setPendingInvite(null);
+    void joinPeerSession(pendingInvite.sessionId);
   };
 
   // ── Download ───────────────────────────────────────────────────────────────
@@ -800,6 +923,17 @@ export function CodePlaygroundBlock({
               End Session
             </button>
           )}
+          {/* Invite students button (instructors/admins only) */}
+          {isCreator && programId && (
+            <button
+              onClick={() => setShowInviteModal(true)}
+              title="Invite students to this playground"
+              className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300"
+            >
+              <UserPlus className="h-3 w-3" />
+              Invite
+            </button>
+          )}
 
           {/* Hidden file inputs */}
           <input
@@ -885,7 +1019,7 @@ export function CodePlaygroundBlock({
         </div>
       )}
 
-      {/* ── Student join banner ───────────────────────────────────────────────── */}
+      {/* ── Student join banner (open peer session) ──────────────────────────── */}
       {!isCreator && availableSessionId && !inPeerSession && (
         <div className="flex items-center justify-between gap-3 border-b border-emerald-500/30 bg-emerald-950/40 px-4 py-2.5">
           <span className="flex items-center gap-1.5 text-xs text-emerald-400">
@@ -895,6 +1029,41 @@ export function CodePlaygroundBlock({
           <button onClick={() => void joinPeerSession(availableSessionId)} disabled={joiningPeer} className="shrink-0 rounded bg-emerald-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50">
             {joiningPeer ? "Joining…" : "Join Session"}
           </button>
+        </div>
+      )}
+
+      {/* ── Student invite banner (from instructor) ───────────────────────────── */}
+      {!isCreator && pendingInvite && !inPeerSession && (
+        <div className="flex items-center justify-between gap-3 border-b border-violet-500/30 bg-violet-950/40 px-4 py-2.5">
+          <div className="min-w-0">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-violet-300">
+              <UserPlus className="h-3.5 w-3.5 shrink-0" />
+              {pendingInvite.invitedBy.firstName} {pendingInvite.invitedBy.lastName}
+              {pendingInvite.sessionId ? " invited you to a live session" : " assigned you to this playground"}
+            </span>
+            {pendingInvite.message && (
+              <p className="mt-0.5 truncate text-[10px] text-violet-400/70 pl-5">"{pendingInvite.message}"</p>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {pendingInvite.sessionId && (
+              <button
+                onClick={() => void acceptInviteSession()}
+                disabled={joiningPeer}
+                className="rounded bg-violet-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
+              >
+                {joiningPeer ? "Joining…" : "Join Session"}
+              </button>
+            )}
+            <button
+              onClick={() => void dismissInvite()}
+              disabled={dismissingInvite}
+              className="rounded px-2 py-1 text-[10px] text-violet-400/60 transition hover:text-violet-300 disabled:opacity-50"
+              title="Dismiss"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -983,6 +1152,117 @@ export function CodePlaygroundBlock({
               <p className="font-mono text-xs text-slate-500">(no output)</p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Invite Students Modal ─────────────────────────────────────────────── */}
+      {showInviteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-slate-700 bg-[#1e1e1e] p-5 shadow-2xl">
+
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-100">Invite Students</p>
+                <p className="text-[11px] text-slate-400">
+                  {inPeerSession ? "Invite to this live session" : "Assign to this playground"}
+                </p>
+              </div>
+              <button
+                onClick={() => { setShowInviteModal(false); setSelectedStudents([]); setStudentSearch(""); setInviteMessage(""); }}
+                className="rounded p-1 text-slate-500 transition hover:bg-white/10 hover:text-slate-300"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Search */}
+            <input
+              type="text"
+              placeholder="Search by name or email…"
+              value={studentSearch}
+              onChange={(e) => setStudentSearch(e.target.value)}
+              className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              autoFocus
+            />
+
+            {/* Results */}
+            <div className="max-h-52 overflow-y-auto rounded-lg border border-slate-700">
+              {loadingStudents ? (
+                <div className="p-4 text-center text-xs text-slate-500">Searching…</div>
+              ) : studentResults.length === 0 ? (
+                <div className="p-4 text-center text-xs text-slate-500">
+                  {programId ? "No enrolled students found." : "No program linked to this lesson."}
+                </div>
+              ) : (
+                studentResults.map((s) => {
+                  const selected = selectedStudents.some((x) => x.id === s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => toggleStudent(s)}
+                      className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-white/5 ${selected ? "bg-violet-900/30" : ""}`}
+                    >
+                      <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px] font-bold transition ${selected ? "border-violet-500 bg-violet-600 text-white" : "border-slate-600 text-transparent"}`}>
+                        ✓
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-medium text-slate-200">
+                          {s.firstName} {s.lastName}
+                          <span className="ml-1.5 text-[10px] font-normal text-slate-500">{s.role}</span>
+                        </p>
+                        <p className="truncate text-[10px] text-slate-500">{s.email}</p>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Selected chips */}
+            {selectedStudents.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {selectedStudents.map((s) => (
+                  <span key={s.id} className="flex items-center gap-1 rounded-full bg-violet-900/40 px-2.5 py-0.5 text-[11px] text-violet-300">
+                    {s.firstName}
+                    <button onClick={() => toggleStudent(s)} className="ml-0.5 text-violet-400 hover:text-violet-200">
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Optional message */}
+            <textarea
+              placeholder="Optional message (e.g. Practice the loop exercise from today's class)"
+              maxLength={500}
+              rows={2}
+              value={inviteMessage}
+              onChange={(e) => setInviteMessage(e.target.value)}
+              className="w-full resize-none rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+            />
+
+            {inPeerSession && (
+              <p className="flex items-center gap-1.5 rounded-lg bg-emerald-900/30 px-3 py-2 text-[11px] text-emerald-400">
+                <Wifi className="h-3 w-3 shrink-0" />
+                Students will be invited directly into your active live session.
+              </p>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] text-slate-500">{selectedStudents.length} selected</span>
+              <button
+                onClick={() => void sendInvites()}
+                disabled={sendingInvites || selectedStudents.length === 0}
+                className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                {sendingInvites ? "Sending…" : "Send Invite"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
