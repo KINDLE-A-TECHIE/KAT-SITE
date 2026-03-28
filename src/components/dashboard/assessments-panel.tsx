@@ -23,7 +23,7 @@ import {
   type QuestionTypeValue,
   type UserRoleValue,
 } from "@/lib/enums";
-import { ProjectAssessmentView, type AssessmentForProject } from "@/components/dashboard/project-assessment-view";
+import { ProjectAssessmentView } from "@/components/dashboard/project-assessment-view";
 
 type Program = {
   id: string;

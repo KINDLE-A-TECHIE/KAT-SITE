@@ -618,7 +618,7 @@ export function CodePlaygroundBlock({
     void check();
     checkInterval.current = setInterval(() => void check(), 5000);
     return () => { if (checkInterval.current) clearInterval(checkInterval.current); };
-  }, [contentId, isCreator]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [contentId, isCreator]);
 
   // ── Submit code as project ─────────────────────────────────────────────────
 
