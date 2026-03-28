@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import {
   AlertCircle, CheckCircle2, ChevronRight, Download, FilePlus,
-  FolderOpen, Play, RotateCcw, Send, Terminal, UserPlus, Users, Wifi, X,
+  FolderOpen, Globe, Package, Play, RotateCcw, Send, Terminal,
+  UserPlus, Users, Wifi, X,
 } from "lucide-react";
 import { zipSync } from "fflate";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 // Monaco is large — load only on client, never on server
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
-  loading: () => <Skeleton className="h-64 w-full rounded-lg" />,
+  loading: () => <Skeleton className="h-full w-full rounded-none" />,
 });
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -58,7 +59,12 @@ export const SUPPORTED_LANGUAGES = [
   { value: "vbnet",       label: "VB.Net",          monacoLang: "vb" },
   { value: "prolog",      label: "Prolog",          monacoLang: "plaintext" },
   { value: "octave",      label: "Octave",          monacoLang: "matlab" },
+  { value: "html",        label: "HTML",            monacoLang: "html" },
+  { value: "css",         label: "CSS",             monacoLang: "css" },
 ] as const;
+
+// Languages that render in the browser iframe — no Judge0 needed
+const WEB_LANGUAGES = new Set(["html", "css"]);
 
 // Language value → file extension
 const LANG_EXT: Record<string, string> = {
@@ -69,7 +75,7 @@ const LANG_EXT: Record<string, string> = {
   clojure: "clj", elixir: "ex", erlang: "erl", fsharp: "fs", ocaml: "ml",
   groovy: "groovy", d: "d", objectivec: "m", assembly: "asm",
   fortran: "f90", pascal: "pas", cobol: "cob", basic: "bas", prolog: "pl",
-  octave: "m", commonlisp: "lisp", vbnet: "vb",
+  octave: "m", commonlisp: "lisp", vbnet: "vb", html: "html", css: "css",
 };
 
 // File extension → Monaco language (for multi-file syntax highlighting)
@@ -94,6 +100,7 @@ const ENTRY_CANDIDATES: Record<string, string[]> = {
   csharp:     ["Program.cs", "Main.cs", "Solution.cs"],
   go:         ["main.go"],
   rust:       ["main.rs"],
+  html:       ["index.html", "main.html"],
 };
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
@@ -160,7 +167,7 @@ type LinkedProject = {
 };
 
 type AssignmentMatch = {
-  id: string;           // assessmentId
+  id: string;
   title: string;
   linkedProject: LinkedProject | null;
 };
@@ -182,6 +189,15 @@ type PlaygroundInvite = {
   content: { title: string };
 };
 
+// Minimal Pyodide surface we use
+type PyodideInstance = {
+  runPython:              (code: string) => unknown;
+  runPythonAsync:         (code: string) => Promise<unknown>;
+  loadPackagesFromImports:(code: string) => Promise<void>;
+  loadPackage:            (pkg: string | string[]) => Promise<void>;
+  pyimport:               (name: string) => { install: (pkg: string) => Promise<void> };
+};
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function CodePlaygroundBlock({
@@ -201,24 +217,36 @@ export function CodePlaygroundBlock({
   programId?: string;
   moduleId?: string;
 }) {
-  // ── Storage keys (stable — derived from contentId) ─────────────────────────
-  const KEY_CODE       = `kat:pg:${contentId}:code`;
-  const KEY_PROJECT    = `kat:pg:${contentId}:project`;
+  // ── Storage keys ──────────────────────────────────────────────────────────
+  const KEY_CODE    = `kat:pg:${contentId}:code`;
+  const KEY_PROJECT = `kat:pg:${contentId}:project`;
 
   // ── Single-file state ──────────────────────────────────────────────────────
   const [code, setCode] = useState(starterCode);
 
   // ── Multi-file project state ───────────────────────────────────────────────
-  const [projectFiles, setProjectFiles]         = useState<Record<string, string>>({});
+  const [projectFiles, setProjectFiles]           = useState<Record<string, string>>({});
   const [activeProjectFile, setActiveProjectFile] = useState<string | null>(null);
-  const [entryFile, setEntryFile]               = useState<string | null>(null);
+  const [entryFile, setEntryFile]                 = useState<string | null>(null);
 
   // ── Execution state ────────────────────────────────────────────────────────
-  const [running, setRunning]   = useState(false);
-  const [result, setResult]     = useState<RunResult | null>(null);
-  const [error, setError]       = useState<string | null>(null);
+  const [running, setRunning]     = useState(false);
+  const [result, setResult]       = useState<RunResult | null>(null);
+  const [error, setError]         = useState<string | null>(null);
   const [showStdin, setShowStdin] = useState(false);
-  const [stdin, setStdin]       = useState("");
+  const [stdin, setStdin]         = useState("");
+
+  // ── Web preview state ──────────────────────────────────────────────────────
+  // (no extra state needed — iframe uses srcdoc, updated via ref)
+
+  // ── Pyodide state ──────────────────────────────────────────────────────────
+  const [pyodideMode, setPyodideMode]         = useState(false);
+  const [pyodideReady, setPyodideReady]       = useState(false);
+  const [pyodideLoading, setPyodideLoading]   = useState(false);
+  const [showPackages, setShowPackages]       = useState(false);
+  const [packageInput, setPackageInput]       = useState("");
+  const [installingPkg, setInstallingPkg]     = useState(false);
+  const [installedPkgs, setInstalledPkgs]     = useState<string[]>([]);
 
   // ── Peer session state ─────────────────────────────────────────────────────
   const [peerSessionId, setPeerSessionId]         = useState<string | null>(null);
@@ -232,13 +260,12 @@ export function CodePlaygroundBlock({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
 
   // ── Submit state (students only) ───────────────────────────────────────────
-  const [showSubmitForm, setShowSubmitForm]       = useState(false);
-  const [submitTitle, setSubmitTitle]             = useState("");
-  const [submitDesc, setSubmitDesc]               = useState("");
-  const [submitting, setSubmitting]               = useState(false);
-  // Fetched from /api/projects/assignments when submit form opens
+  const [showSubmitForm, setShowSubmitForm]   = useState(false);
+  const [submitTitle, setSubmitTitle]         = useState("");
+  const [submitDesc, setSubmitDesc]           = useState("");
+  const [submitting, setSubmitting]           = useState(false);
   const [checkingAssignment, setCheckingAssignment] = useState(false);
-  const [assignmentMatch, setAssignmentMatch]     = useState<AssignmentMatch | null | "none">(null);
+  const [assignmentMatch, setAssignmentMatch] = useState<AssignmentMatch | null | "none">(null);
   const assignmentFetched = useRef(false);
 
   // ── Invite modal state (instructors) ──────────────────────────────────────
@@ -256,32 +283,41 @@ export function CodePlaygroundBlock({
   const [dismissingInvite, setDismissingInvite] = useState(false);
 
   // ── Refs ───────────────────────────────────────────────────────────────────
-  const editorRef         = useRef<unknown>(null);
-  const runRef            = useRef<() => void>(() => {});
-  const lastLocalEdit     = useRef(0);
-  const pushTimeout       = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pollInterval      = useRef<ReturnType<typeof setInterval> | null>(null);
-  const checkInterval     = useRef<ReturnType<typeof setInterval> | null>(null);
-  const settingFromServer = useRef(false);
-  const peerSessionIdRef  = useRef<string | null>(null);
-  const inPeerSessionRef  = useRef(false);
-  const folderInputRef    = useRef<HTMLInputElement>(null);
-  const fileInputRef      = useRef<HTMLInputElement>(null);
-  const saveDebounce      = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const savedIndicatorTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const editorRef              = useRef<unknown>(null);
+  const runRef                 = useRef<() => void>(() => {});
+  const lastLocalEdit          = useRef(0);
+  const pushTimeout            = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollInterval           = useRef<ReturnType<typeof setInterval> | null>(null);
+  const checkInterval          = useRef<ReturnType<typeof setInterval> | null>(null);
+  const settingFromServer      = useRef(false);
+  const peerSessionIdRef       = useRef<string | null>(null);
+  const inPeerSessionRef       = useRef(false);
+  const folderInputRef         = useRef<HTMLInputElement>(null);
+  const fileInputRef           = useRef<HTMLInputElement>(null);
+  const saveDebounce           = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedIndicatorTimeout  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previewDebounce        = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const iframeRef              = useRef<HTMLIFrameElement>(null);
+  const pyodideRef             = useRef<PyodideInstance | null>(null);
 
   // Keep refs in sync with state
   useEffect(() => { peerSessionIdRef.current = peerSessionId; }, [peerSessionId]);
   useEffect(() => { inPeerSessionRef.current = inPeerSession; }, [inPeerSession]);
 
-  const langConfig     = SUPPORTED_LANGUAGES.find((l) => l.value === language);
-  const monacoLang     = langConfig?.monacoLang ?? "plaintext";
-  const langLabel      = langConfig?.label ?? language;
-  const fileExtension  = LANG_EXT[language] ?? language;
+  const langConfig    = SUPPORTED_LANGUAGES.find((l) => l.value === language);
+  const monacoLang    = langConfig?.monacoLang ?? "plaintext";
+  const langLabel     = langConfig?.label ?? language;
+  const fileExtension = LANG_EXT[language] ?? language;
 
-  // Derived project-mode flags
+  // Derived flags
   const isProjectMode = Object.keys(projectFiles).length > 0;
-  const editorValue   = isProjectMode && activeProjectFile
+  const isPython      = language === "python" || language === "python2";
+
+  // Web mode: html/css always; project mode if it contains an html file
+  const isWebMode = WEB_LANGUAGES.has(language)
+    || (isProjectMode && Object.keys(projectFiles).some((k) => k.endsWith(".html")));
+
+  const editorValue = isProjectMode && activeProjectFile
     ? (projectFiles[activeProjectFile] ?? "")
     : code;
   const activeMonacoLang = isProjectMode && activeProjectFile
@@ -291,10 +327,66 @@ export function CodePlaygroundBlock({
     a === entryFile ? -1 : b === entryFile ? 1 : a.localeCompare(b),
   );
 
+  // ── Build web document from current code / project files ──────────────────
+  const buildWebDoc = useCallback((): string => {
+    if (isProjectMode) {
+      const htmlEntry = Object.entries(projectFiles).find(([k]) => k.endsWith(".html"));
+      if (!htmlEntry) return "<html><body><p style='font-family:sans-serif;padding:16px;color:#888'>No HTML file found in project.</p></body></html>";
+      let html = htmlEntry[1];
+
+      // Inline CSS files that aren't already linked
+      const cssFiles = Object.entries(projectFiles).filter(([k]) => k.endsWith(".css"));
+      if (cssFiles.length) {
+        const css = cssFiles.map(([, v]) => v).join("\n");
+        html = html.includes("</head>")
+          ? html.replace("</head>", `<style>\n${css}\n</style>\n</head>`)
+          : `<style>${css}</style>${html}`;
+      }
+
+      // Inline JS files that aren't already scripted
+      const jsFiles = Object.entries(projectFiles).filter(([k]) => k.endsWith(".js") || k.endsWith(".mjs"));
+      if (jsFiles.length) {
+        const js = jsFiles.map(([, v]) => v).join("\n");
+        html = html.includes("</body>")
+          ? html.replace("</body>", `<script>\n${js}\n</script>\n</body>`)
+          : `${html}<script>${js}</script>`;
+      }
+      return html;
+    }
+
+    if (language === "css") {
+      return `<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>
+body { margin: 16px; font-family: sans-serif; }
+${code}
+</style></head>
+<body>
+  <h1>Heading 1</h1>
+  <h2>Heading 2</h2>
+  <p>A paragraph of sample text. <a href="#">A link</a>.</p>
+  <button>Button</button>
+  <ul><li>List item 1</li><li>List item 2</li><li>List item 3</li></ul>
+  <div class="box">div.box</div>
+</body></html>`;
+    }
+
+    // html — raw
+    return code;
+  }, [isProjectMode, projectFiles, language, code]);
+
+  // ── Live preview auto-update (600 ms debounce) ────────────────────────────
+  useEffect(() => {
+    if (!isWebMode) return;
+    if (previewDebounce.current) clearTimeout(previewDebounce.current);
+    previewDebounce.current = setTimeout(() => {
+      if (iframeRef.current) iframeRef.current.srcdoc = buildWebDoc();
+    }, 600);
+    return () => { if (previewDebounce.current) clearTimeout(previewDebounce.current); };
+  }, [code, projectFiles, isWebMode, buildWebDoc]);
+
   // ── Restore from localStorage on mount ────────────────────────────────────
   useEffect(() => {
     try {
-      // Restore project mode first (takes priority)
       const savedProject = localStorage.getItem(KEY_PROJECT);
       if (savedProject) {
         const parsed = JSON.parse(savedProject) as {
@@ -306,19 +398,15 @@ export function CodePlaygroundBlock({
           setProjectFiles(parsed.files);
           setEntryFile(parsed.entryFile);
           setActiveProjectFile(parsed.activeFile);
-          return; // project mode — skip single-file restore
+          return;
         }
       }
-      // Restore single-file code
       const savedCode = localStorage.getItem(KEY_CODE);
       if (savedCode !== null) setCode(savedCode);
-    } catch { /* localStorage unavailable — private browsing, storage full, etc. */ }
+    } catch { /* localStorage unavailable */ }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Auto-save single-file code (1 s debounce) ─────────────────────────────
-  // Runs inside handleCodeChange for single-file mode.
-
-  // ── Auto-save project mode (1 s debounce) ────────────────────────────────
+  // ── Auto-save project mode (1 s debounce) ─────────────────────────────────
   useEffect(() => {
     if (!isProjectMode) return;
     if (saveDebounce.current) clearTimeout(saveDebounce.current);
@@ -349,6 +437,7 @@ export function CodePlaygroundBlock({
       if (pushTimeout.current)           clearTimeout(pushTimeout.current);
       if (saveDebounce.current)          clearTimeout(saveDebounce.current);
       if (savedIndicatorTimeout.current) clearTimeout(savedIndicatorTimeout.current);
+      if (previewDebounce.current)       clearTimeout(previewDebounce.current);
     };
   }, []);
 
@@ -357,7 +446,6 @@ export function CodePlaygroundBlock({
     if (!showSubmitForm || isCreator || assignmentFetched.current) return;
     assignmentFetched.current = true;
     setCheckingAssignment(true);
-
     fetch("/api/projects/assignments")
       .then((r) => r.ok ? r.json() : null)
       .then((data: { assignments: Array<{ id: string; title: string; module: { id: string } | null; linkedProject: LinkedProject | null }> } | null) => {
@@ -416,17 +504,16 @@ export function CodePlaygroundBlock({
     const cleanFiles = Object.fromEntries(
       Object.entries(newFiles).filter(([p]) => p && !p.includes("__pycache__")),
     );
-    const detected   = detectEntryFile(cleanFiles, language);
-    const firstFile  = Object.keys(cleanFiles)[0] ?? null;
-    const newEntry   = detected ?? entryFile ?? firstFile;
-    const newActive  = activeProjectFile && cleanFiles[activeProjectFile] !== undefined
+    const detected  = detectEntryFile(cleanFiles, language);
+    const firstFile = Object.keys(cleanFiles)[0] ?? null;
+    const newEntry  = detected ?? entryFile ?? firstFile;
+    const newActive = activeProjectFile && cleanFiles[activeProjectFile] !== undefined
       ? activeProjectFile
       : (detected ?? firstFile);
 
     setProjectFiles(cleanFiles);
     setEntryFile(newEntry);
     setActiveProjectFile(newActive);
-    // Clear single-file save since we're now in project mode
     try { localStorage.removeItem(KEY_CODE); } catch { /* ignore */ }
     toast.success(`${Object.keys(cleanFiles).length} file(s) loaded.`);
   };
@@ -464,6 +551,94 @@ export function CodePlaygroundBlock({
     try { localStorage.removeItem(KEY_PROJECT); } catch { /* ignore */ }
   };
 
+  // ── Pyodide helpers ────────────────────────────────────────────────────────
+
+  const initPyodide = async (): Promise<PyodideInstance> => {
+    if (pyodideRef.current) return pyodideRef.current;
+    setPyodideLoading(true);
+    try {
+      if (!document.getElementById("kat-pyodide-script")) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement("script");
+          script.id    = "kat-pyodide-script";
+          script.src   = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js";
+          script.onload  = () => resolve();
+          script.onerror = () => reject(new Error("Failed to fetch Pyodide"));
+          document.head.appendChild(script);
+        });
+      }
+      const instance = await (
+        window as unknown as {
+          loadPyodide: (opts: { indexURL: string }) => Promise<PyodideInstance>;
+        }
+      ).loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/" });
+
+      pyodideRef.current = instance;
+      setPyodideReady(true);
+      return instance;
+    } catch {
+      toast.error("Failed to load Pyodide — check your connection.");
+      setPyodideMode(false);
+      throw new Error("Pyodide load failed");
+    } finally {
+      setPyodideLoading(false);
+    }
+  };
+
+  const installPackage = async () => {
+    const pkg = packageInput.trim();
+    if (!pkg) return;
+    setInstallingPkg(true);
+    try {
+      const py = await initPyodide();
+      await py.loadPackage("micropip");
+      const micropip = py.pyimport("micropip");
+      await micropip.install(pkg);
+      setInstalledPkgs((prev) => [...prev, pkg]);
+      setPackageInput("");
+      toast.success(`${pkg} installed.`);
+    } catch {
+      toast.error(`Failed to install ${pkg}. It may not be available in Pyodide.`);
+    } finally {
+      setInstallingPkg(false);
+    }
+  };
+
+  const runPyodide = async () => {
+    setRunning(true);
+    setResult(null);
+    setError(null);
+    try {
+      const py = await initPyodide();
+      // Auto-load packages detected from imports
+      try { await py.loadPackagesFromImports(code); } catch { /* best effort */ }
+      // Redirect stdout/stderr
+      py.runPython(
+        "import sys\nfrom io import StringIO\nsys.stdout = StringIO()\nsys.stderr = StringIO()",
+      );
+      let pyError: string | null = null;
+      try {
+        await py.runPythonAsync(code);
+      } catch (e) {
+        pyError = String(e);
+      }
+      const stdout = String(py.runPython("sys.stdout.getvalue()") ?? "");
+      const stderr = String(py.runPython("sys.stderr.getvalue()") ?? "");
+      setResult({
+        stdout,
+        stderr: pyError ? `${stderr}${pyError}`.trim() : stderr,
+        exitCode: pyError ? 1 : 0,
+        compileOutput: null,
+        time: null,
+        memory: null,
+      });
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setRunning(false);
+    }
+  };
+
   // ── Invite helpers ─────────────────────────────────────────────────────────
 
   const toggleStudent = (s: EnrolledStudent) => {
@@ -487,8 +662,7 @@ export function CodePlaygroundBlock({
         }),
       });
       if (!res.ok) { toast.error("Failed to send invites."); return; }
-      const names = selectedStudents.map((s) => s.firstName).join(", ");
-      toast.success(`Invite sent to ${names}.`);
+      toast.success(`Invite sent to ${selectedStudents.map((s) => s.firstName).join(", ")}.`);
       setShowInviteModal(false);
       setSelectedStudents([]);
       setStudentSearch("");
@@ -505,22 +679,17 @@ export function CodePlaygroundBlock({
     setDismissingInvite(true);
     try {
       await fetch(`/api/playground-invites/${pendingInvite.id}`, {
-        method:  "PATCH",
-        headers: { "Content-Type": "application/json" },
+        method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "DISMISSED" }),
       });
       setPendingInvite(null);
-    } catch { /* ignore */ } finally {
-      setDismissingInvite(false);
-    }
+    } catch { /* ignore */ } finally { setDismissingInvite(false); }
   };
 
   const acceptInviteSession = async () => {
     if (!pendingInvite?.sessionId) return;
-    // Mark joined then trigger the standard join flow
     await fetch(`/api/playground-invites/${pendingInvite.id}`, {
-      method:  "PATCH",
-      headers: { "Content-Type": "application/json" },
+      method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "JOINED" }),
     }).catch(() => { /* best effort */ });
     setPendingInvite(null);
@@ -546,6 +715,19 @@ export function CodePlaygroundBlock({
   // ── Code execution ─────────────────────────────────────────────────────────
 
   const run = async () => {
+    // Web mode — just refresh the preview iframe
+    if (isWebMode) {
+      if (iframeRef.current) iframeRef.current.srcdoc = buildWebDoc();
+      return;
+    }
+
+    // Python browser mode — use Pyodide
+    if (pyodideMode && isPython) {
+      await runPyodide();
+      return;
+    }
+
+    // Server-side execution via Judge0
     setRunning(true);
     setResult(null);
     setError(null);
@@ -553,7 +735,7 @@ export function CodePlaygroundBlock({
       let requestBody: Record<string, unknown>;
 
       if (isProjectMode && entryFile) {
-        const entryCode   = projectFiles[entryFile] ?? "";
+        const entryCode    = projectFiles[entryFile] ?? "";
         const otherEntries = Object.entries(projectFiles).filter(([p]) => p !== entryFile);
         let additionalFiles: string | undefined;
         if (otherEntries.length > 0) {
@@ -619,12 +801,12 @@ export function CodePlaygroundBlock({
 
     if (isProjectMode && activeProjectFile) {
       setProjectFiles((prev) => ({ ...prev, [activeProjectFile]: newCode }));
-      return; // project-mode auto-save handled by the useEffect above
+      return;
     }
 
     setCode(newCode);
 
-    // Auto-save single-file code
+    // Auto-save single-file
     setSaveState("saving");
     if (saveDebounce.current) clearTimeout(saveDebounce.current);
     saveDebounce.current = setTimeout(() => {
@@ -750,7 +932,6 @@ export function CodePlaygroundBlock({
     if (submitDesc.trim().length < 10) { toast.error("Description must be at least 10 characters."); return; }
     setSubmitting(true);
     try {
-      // Build zip
       const encoder = new TextEncoder();
       let zipBlob: Blob;
       if (isProjectMode && Object.keys(projectFiles).length > 0) {
@@ -768,7 +949,6 @@ export function CodePlaygroundBlock({
         ? assignmentMatch.id
         : undefined;
 
-      // Create project
       const createRes = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -787,7 +967,6 @@ export function CodePlaygroundBlock({
       const { project } = (await createRes.json()) as { project: { id: string } };
       const projectId   = project.id;
 
-      // Get presigned upload URL
       const urlRes = await fetch(`/api/projects/${projectId}/upload-url`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -800,7 +979,6 @@ export function CodePlaygroundBlock({
       }
       const { uploadUrl, key, publicUrl } = (await urlRes.json()) as { uploadUrl: string; key: string; publicUrl: string };
 
-      // Upload to R2
       const uploadRes = await fetch(uploadUrl, {
         method: "PUT",
         headers: { "Content-Type": "application/zip" },
@@ -808,26 +986,20 @@ export function CodePlaygroundBlock({
       });
       if (!uploadRes.ok) { toast.error("Upload to storage failed."); return; }
 
-      // Register file record
       await fetch(`/api/projects/${projectId}/files`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: "source-code.zip", mimeType: "application/zip", size: zipBlob.size, storageKey: key, url: publicUrl }),
       });
 
-      // Mark SUBMITTED
       await fetch(`/api/projects/${projectId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "SUBMITTED" }),
       });
 
-      // Update local assignment match to reflect new submission
       const newLinked: LinkedProject = {
-        id: projectId,
-        title: submitTitle.trim(),
-        status: "SUBMITTED",
-        updatedAt: new Date().toISOString(),
+        id: projectId, title: submitTitle.trim(), status: "SUBMITTED", updatedAt: new Date().toISOString(),
       };
       setAssignmentMatch((prev) =>
         prev && prev !== "none"
@@ -847,24 +1019,28 @@ export function CodePlaygroundBlock({
 
   // ── Derived UI state ───────────────────────────────────────────────────────
 
-  const success      = result && result.exitCode === 0 && !result.stderr;
+  const success = result && result.exitCode === 0 && !result.stderr;
   const linkedProject = typeof assignmentMatch === "object" && assignmentMatch !== null
     ? assignmentMatch.linkedProject
     : null;
 
   const STATUS_LABEL: Record<LinkedProject["status"], string> = {
-    DRAFT:       "Draft",
-    SUBMITTED:   "Under Review",
-    APPROVED:    "Approved ✓",
-    NEEDS_WORK:  "Needs Work",
-    REJECTED:    "Rejected",
+    DRAFT: "Draft", SUBMITTED: "Under Review", APPROVED: "Approved ✓",
+    NEEDS_WORK: "Needs Work", REJECTED: "Rejected",
   };
   const STATUS_COLOR: Record<LinkedProject["status"], string> = {
-    DRAFT:       "bg-slate-100 text-slate-600",
-    SUBMITTED:   "bg-blue-100 text-blue-700",
-    APPROVED:    "bg-emerald-100 text-emerald-700",
-    NEEDS_WORK:  "bg-amber-100 text-amber-700",
-    REJECTED:    "bg-rose-100 text-rose-700",
+    DRAFT:      "bg-slate-100 text-slate-600",
+    SUBMITTED:  "bg-blue-100 text-blue-700",
+    APPROVED:   "bg-emerald-100 text-emerald-700",
+    NEEDS_WORK: "bg-amber-100 text-amber-700",
+    REJECTED:   "bg-rose-100 text-rose-700",
+  };
+
+  const runBtnLabel = () => {
+    if (pyodideLoading) return "Loading…";
+    if (running) return "Running…";
+    if (isWebMode) return "Preview";
+    return "Run";
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -873,11 +1049,13 @@ export function CodePlaygroundBlock({
     <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
 
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-2 border-b border-slate-700 bg-[#1e1e1e] px-4 py-2">
+      <div className="flex items-center justify-between gap-2 border-b border-slate-700 bg-[#1e1e1e] px-3 py-2">
 
-        {/* Left — language / project label + live badge */}
+        {/* Left — language label + badges */}
         <div className="flex min-w-0 items-center gap-2">
-          <Terminal className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+          {isWebMode
+            ? <Globe className="h-3.5 w-3.5 shrink-0 text-sky-400" />
+            : <Terminal className="h-3.5 w-3.5 shrink-0 text-slate-400" />}
           <span className="truncate text-xs font-medium text-slate-300">
             {isProjectMode ? (
               <span className="flex items-center gap-1">
@@ -887,12 +1065,21 @@ export function CodePlaygroundBlock({
               </span>
             ) : langLabel}
           </span>
+          {isWebMode && (
+            <span className="hidden shrink-0 rounded-full bg-sky-500/20 px-2 py-0.5 text-[10px] font-semibold text-sky-400 sm:inline">
+              Live Preview
+            </span>
+          )}
+          {pyodideMode && isPython && !isWebMode && (
+            <span className="hidden shrink-0 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400 sm:inline">
+              Pyodide
+            </span>
+          )}
           {inPeerSession && (
             <span className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
               <Wifi className="h-2.5 w-2.5" /> Live
             </span>
           )}
-          {/* Auto-save indicator */}
           {saveState !== "idle" && (
             <span className={`shrink-0 text-[10px] transition-opacity ${saveState === "saved" ? "text-emerald-500" : "text-slate-500"}`}>
               {saveState === "saving" ? "Saving…" : "Saved"}
@@ -902,6 +1089,31 @@ export function CodePlaygroundBlock({
 
         {/* Right — actions */}
         <div className="flex shrink-0 items-center gap-1">
+
+          {/* Python: Server ↔ Browser toggle */}
+          {isPython && (
+            <button
+              onClick={() => { setPyodideMode((v) => !v); setResult(null); setError(null); }}
+              title={pyodideMode ? "Switch to server execution (Judge0)" : "Switch to browser execution (Pyodide)"}
+              className={`hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium transition sm:flex ${pyodideMode ? "bg-amber-500/20 text-amber-400" : "text-slate-500 hover:bg-white/10 hover:text-slate-300"}`}
+            >
+              <Globe className="h-3 w-3" />
+              {pyodideMode ? "Browser" : "Server"}
+            </button>
+          )}
+
+          {/* Packages panel (Python + Pyodide only) */}
+          {isPython && pyodideMode && (
+            <button
+              onClick={() => setShowPackages((v) => !v)}
+              title="Manage Python packages"
+              className={`hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium transition sm:flex ${showPackages ? "bg-violet-500/20 text-violet-400" : "text-slate-500 hover:bg-white/10 hover:text-slate-300"}`}
+            >
+              <Package className="h-3 w-3" />
+              Packages{installedPkgs.length > 0 ? ` (${installedPkgs.length})` : ""}
+            </button>
+          )}
+
           {/* Peer session controls */}
           {isCreator && !inPeerSession && (
             <button
@@ -923,7 +1135,8 @@ export function CodePlaygroundBlock({
               End Session
             </button>
           )}
-          {/* Invite students button (instructors/admins only) */}
+
+          {/* Invite students (instructor/admin only) */}
           {isCreator && programId && (
             <button
               onClick={() => setShowInviteModal(true)}
@@ -952,23 +1165,41 @@ export function CodePlaygroundBlock({
           />
 
           <button onClick={() => folderInputRef.current?.click()} title="Open project folder" className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300">
-            <FolderOpen className="h-3 w-3" /> Folder
+            <FolderOpen className="h-3 w-3" />
+            <span className="hidden sm:inline">Folder</span>
           </button>
           <button onClick={() => fileInputRef.current?.click()} title="Add files" className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300">
-            <FilePlus className="h-3 w-3" /> Files
+            <FilePlus className="h-3 w-3" />
+            <span className="hidden sm:inline">Files</span>
           </button>
           <button onClick={downloadCode} title={isProjectMode ? "Download project as zip" : `Download as main.${fileExtension}`} className="rounded p-1 text-slate-500 transition hover:bg-white/10 hover:text-slate-300">
             <Download className="h-3.5 w-3.5" />
           </button>
-          <button onClick={() => setShowStdin((v) => !v)} title="Toggle stdin" className={`rounded px-2 py-1 text-[10px] font-medium transition ${showStdin ? "bg-amber-500/20 text-amber-400" : "text-slate-500 hover:bg-white/10 hover:text-slate-300"}`}>
-            stdin
-          </button>
-          <button onClick={reset} title={isProjectMode ? "Close project" : "Reset to starter code"} className="rounded p-1 text-slate-500 transition hover:bg-white/10 hover:text-slate-300">
+          {!isWebMode && (
+            <button
+              onClick={() => setShowStdin((v) => !v)}
+              title="Toggle stdin"
+              className={`rounded px-2 py-1 text-[10px] font-medium transition ${showStdin ? "bg-amber-500/20 text-amber-400" : "text-slate-500 hover:bg-white/10 hover:text-slate-300"}`}
+            >
+              stdin
+            </button>
+          )}
+          <button
+            onClick={reset}
+            title={isProjectMode ? "Close project" : "Reset to starter code"}
+            className="rounded p-1 text-slate-500 transition hover:bg-white/10 hover:text-slate-300"
+          >
             <RotateCcw className="h-3.5 w-3.5" />
           </button>
-          <Button size="sm" onClick={() => void run()} disabled={running} title="Run (Ctrl+Enter)" className="h-7 gap-1.5 bg-emerald-600 px-3 text-xs hover:bg-emerald-700">
+          <Button
+            size="sm"
+            onClick={() => void run()}
+            disabled={running || pyodideLoading}
+            title={isWebMode ? "Refresh preview" : "Run (Ctrl+Enter)"}
+            className="h-7 gap-1.5 bg-emerald-600 px-3 text-xs hover:bg-emerald-700"
+          >
             <Play className="h-3 w-3" />
-            {running ? "Running…" : "Run"}
+            {runBtnLabel()}
           </Button>
         </div>
       </div>
@@ -1042,35 +1273,64 @@ export function CodePlaygroundBlock({
               {pendingInvite.sessionId ? " invited you to a live session" : " assigned you to this playground"}
             </span>
             {pendingInvite.message && (
-              <p className="mt-0.5 truncate text-[10px] text-violet-400/70 pl-5">"{pendingInvite.message}"</p>
+              <p className="mt-0.5 truncate pl-5 text-[10px] text-violet-400/70">"{pendingInvite.message}"</p>
             )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {pendingInvite.sessionId && (
-              <button
-                onClick={() => void acceptInviteSession()}
-                disabled={joiningPeer}
-                className="rounded bg-violet-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
-              >
+              <button onClick={() => void acceptInviteSession()} disabled={joiningPeer} className="rounded bg-violet-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50">
                 {joiningPeer ? "Joining…" : "Join Session"}
               </button>
             )}
-            <button
-              onClick={() => void dismissInvite()}
-              disabled={dismissingInvite}
-              className="rounded px-2 py-1 text-[10px] text-violet-400/60 transition hover:text-violet-300 disabled:opacity-50"
-              title="Dismiss"
-            >
+            <button onClick={() => void dismissInvite()} disabled={dismissingInvite} className="rounded px-2 py-1 text-[10px] text-violet-400/60 transition hover:text-violet-300 disabled:opacity-50" title="Dismiss">
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
       )}
 
+      {/* ── Python Packages panel ─────────────────────────────────────────────── */}
+      {showPackages && isPython && pyodideMode && (
+        <div className="border-b border-slate-700 bg-[#1a1a1a] px-4 py-3">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+            Python Packages — Pyodide
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Package name (e.g. numpy, pandas)"
+              value={packageInput}
+              onChange={(e) => setPackageInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") void installPackage(); }}
+              className="flex-1 rounded-md border border-slate-600 bg-slate-800 px-2.5 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+            />
+            <button
+              onClick={() => void installPackage()}
+              disabled={installingPkg || !packageInput.trim()}
+              className="rounded-md bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
+            >
+              {installingPkg ? "Installing…" : "Install"}
+            </button>
+          </div>
+          {installedPkgs.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {installedPkgs.map((pkg) => (
+                <span key={pkg} className="rounded-full bg-violet-900/40 px-2 py-0.5 text-[10px] text-violet-300">{pkg}</span>
+              ))}
+            </div>
+          )}
+          {!pyodideReady && (
+            <p className="mt-1.5 text-[10px] text-slate-500">
+              Pyodide loads on first run (~10 MB, cached afterwards). Pure-Python packages only.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* ── Stdin panel ───────────────────────────────────────────────────────── */}
-      {showStdin && (
+      {showStdin && !isWebMode && (
         <div className="border-b border-slate-700 bg-[#1e1e1e] px-4 py-2.5">
-          <p className="mb-1.5 text-[10px] font-medium text-slate-500">stdin — input for your program (one value per line)</p>
+          <p className="mb-1.5 text-[10px] font-medium text-slate-500">stdin — one value per line</p>
           <textarea
             value={stdin}
             onChange={(e) => setStdin(e.target.value)}
@@ -1082,85 +1342,131 @@ export function CodePlaygroundBlock({
         </div>
       )}
 
-      {/* ── Monaco Editor ─────────────────────────────────────────────────────── */}
-      <MonacoEditor
-        height="300px"
-        language={activeMonacoLang}
-        value={editorValue}
-        onChange={handleCodeChange}
-        onMount={(editor, monaco) => {
-          editorRef.current = editor;
-          editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => runRef.current());
-        }}
-        theme="vs-dark"
-        options={{
-          fontSize: 13,
-          minimap: { enabled: false },
-          scrollBeyondLastLine: false,
-          lineNumbers: "on",
-          renderLineHighlight: "all",
-          tabSize: 2,
-          wordWrap: "on",
-          padding: { top: 12, bottom: 12 },
-          overviewRulerLanes: 0,
-        }}
-      />
+      {/* ── Split pane: Editor + Output/Preview ──────────────────────────────── */}
+      <div className="flex flex-col lg:h-[500px] lg:flex-row">
 
-      {/* ── Output panel ──────────────────────────────────────────────────────── */}
-      {(result ?? error) && (
-        <div className="border-t border-slate-200 bg-slate-950">
-          <div className={`flex items-center justify-between gap-2 px-4 py-2 text-xs font-medium ${success ? "bg-emerald-950/60 text-emerald-400" : "bg-rose-950/60 text-rose-400"}`}>
-            <span className="flex items-center gap-1.5">
-              {error && !result
-                ? <><AlertCircle className="h-3.5 w-3.5" /> Service error</>
-                : success
-                  ? <><CheckCircle2 className="h-3.5 w-3.5" /> Exited with code 0</>
-                  : <><AlertCircle className="h-3.5 w-3.5" /> Exited with code {result?.exitCode ?? 1}</>}
-            </span>
-            {result && (result.time ?? result.memory) && (
-              <span className="flex items-center gap-2 text-slate-500">
-                {result.time   && <span>{result.time}s</span>}
-                {result.memory && <span>{Math.round(result.memory / 1024)} KB</span>}
-              </span>
-            )}
-          </div>
-          {result?.compileOutput && (
-            <div className="border-b border-slate-800 px-4 py-3">
-              <p className="mb-1 text-xs font-medium text-slate-500">Compiler output</p>
-              <pre className="whitespace-pre-wrap font-mono text-xs text-amber-300">{result.compileOutput}</pre>
+        {/* Editor pane */}
+        <div className="h-[420px] lg:h-full lg:flex-1">
+          <MonacoEditor
+            height="100%"
+            language={activeMonacoLang}
+            value={editorValue}
+            onChange={handleCodeChange}
+            onMount={(editor, monaco) => {
+              editorRef.current = editor;
+              editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => runRef.current());
+            }}
+            theme="vs-dark"
+            options={{
+              fontSize: 13,
+              minimap: { enabled: false },
+              scrollBeyondLastLine: false,
+              lineNumbers: "on",
+              renderLineHighlight: "all",
+              tabSize: 2,
+              wordWrap: "on",
+              padding: { top: 12, bottom: 12 },
+              overviewRulerLanes: 0,
+            }}
+          />
+        </div>
+
+        {/* Output / Preview pane */}
+        <div className="flex h-[320px] flex-col border-t border-slate-700 lg:h-full lg:w-[45%] lg:border-l lg:border-t-0">
+          {isWebMode ? (
+            /* ── Web Preview ── */
+            <div className="flex h-full flex-col">
+              <div className="flex shrink-0 items-center gap-2 border-b border-slate-800 bg-[#1a1a1a] px-3 py-1.5">
+                <Globe className="h-3 w-3 text-sky-400" />
+                <span className="text-[10px] font-medium text-slate-400">Preview</span>
+                <button
+                  onClick={() => { if (iframeRef.current) iframeRef.current.srcdoc = buildWebDoc(); }}
+                  title="Refresh preview"
+                  className="ml-auto text-[10px] text-slate-500 transition hover:text-slate-300"
+                >
+                  ↺ Refresh
+                </button>
+              </div>
+              <iframe
+                ref={iframeRef}
+                title="Web Preview"
+                sandbox="allow-scripts"
+                className="flex-1 w-full bg-white"
+                srcDoc={buildWebDoc()}
+              />
             </div>
-          )}
-          {result?.stdout && (
-            <div className="px-4 py-3">
-              <p className="mb-1 text-xs font-medium text-slate-500">stdout</p>
-              <pre className="whitespace-pre-wrap font-mono text-xs text-emerald-300">{result.stdout}</pre>
-            </div>
-          )}
-          {result?.stderr && (
-            <div className="border-t border-slate-800 px-4 py-3">
-              <p className="mb-1 text-xs font-medium text-slate-500">stderr</p>
-              <pre className="whitespace-pre-wrap font-mono text-xs text-rose-400">{result.stderr}</pre>
-            </div>
-          )}
-          {error && (
-            <div className="px-4 py-3">
-              <pre className="whitespace-pre-wrap font-mono text-xs text-rose-400">{error}</pre>
-            </div>
-          )}
-          {result && !result.stdout && !result.stderr && !result.compileOutput && !error && (
-            <div className="px-4 py-3">
-              <p className="font-mono text-xs text-slate-500">(no output)</p>
+          ) : (
+            /* ── Terminal Output ── */
+            <div className="flex h-full flex-col bg-slate-950">
+              <div className="flex shrink-0 items-center gap-2 border-b border-slate-800 bg-[#1a1a1a] px-3 py-1.5">
+                <Terminal className="h-3 w-3 text-slate-500" />
+                <span className="text-[10px] font-medium text-slate-400">Output</span>
+                {result && (
+                  <span className={`ml-auto text-[10px] font-semibold ${success ? "text-emerald-400" : "text-rose-400"}`}>
+                    {success ? "✓ Exit 0" : `✗ Exit ${result.exitCode}`}
+                  </span>
+                )}
+                {result && (result.time ?? result.memory) && (
+                  <span className="flex items-center gap-2 text-[10px] text-slate-500">
+                    {result.time   && <span>{result.time}s</span>}
+                    {result.memory && <span>{Math.round(result.memory / 1024)} KB</span>}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 overflow-auto">
+                {!result && !error && !running && (
+                  <div className="flex h-full items-center justify-center px-4 text-center">
+                    <p className="text-xs text-slate-600">
+                      {pyodideMode && isPython ? "Browser execution via Pyodide" : "Press Run or Ctrl+Enter"}
+                    </p>
+                  </div>
+                )}
+                {running && (
+                  <div className="flex h-full items-center justify-center">
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                      {pyodideLoading ? "Loading Pyodide…" : "Running…"}
+                    </div>
+                  </div>
+                )}
+                {(result ?? error) && !running && (
+                  <div className="p-4 space-y-3">
+                    {result?.compileOutput && (
+                      <div>
+                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Compiler</p>
+                        <pre className="whitespace-pre-wrap font-mono text-xs text-amber-300">{result.compileOutput}</pre>
+                      </div>
+                    )}
+                    {result?.stdout && (
+                      <div>
+                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-500">stdout</p>
+                        <pre className="whitespace-pre-wrap font-mono text-xs text-emerald-300">{result.stdout}</pre>
+                      </div>
+                    )}
+                    {result?.stderr && (
+                      <div>
+                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-500">stderr</p>
+                        <pre className="whitespace-pre-wrap font-mono text-xs text-rose-400">{result.stderr}</pre>
+                      </div>
+                    )}
+                    {error && (
+                      <pre className="whitespace-pre-wrap font-mono text-xs text-rose-400">{error}</pre>
+                    )}
+                    {result && !result.stdout && !result.stderr && !result.compileOutput && !error && (
+                      <p className="font-mono text-xs text-slate-600">(no output)</p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
-      )}
+      </div>
 
       {/* ── Invite Students Modal ─────────────────────────────────────────────── */}
       {showInviteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-slate-700 bg-[#1e1e1e] p-5 shadow-2xl">
-
-            {/* Header */}
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-100">Invite Students</p>
@@ -1176,7 +1482,6 @@ export function CodePlaygroundBlock({
               </button>
             </div>
 
-            {/* Search */}
             <input
               type="text"
               placeholder="Search by name or email…"
@@ -1186,7 +1491,6 @@ export function CodePlaygroundBlock({
               autoFocus
             />
 
-            {/* Results */}
             <div className="max-h-52 overflow-y-auto rounded-lg border border-slate-700">
               {loadingStudents ? (
                 <div className="p-4 text-center text-xs text-slate-500">Searching…</div>
@@ -1219,7 +1523,6 @@ export function CodePlaygroundBlock({
               )}
             </div>
 
-            {/* Selected chips */}
             {selectedStudents.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {selectedStudents.map((s) => (
@@ -1233,7 +1536,6 @@ export function CodePlaygroundBlock({
               </div>
             )}
 
-            {/* Optional message */}
             <textarea
               placeholder="Optional message (e.g. Practice the loop exercise from today's class)"
               maxLength={500}
@@ -1250,7 +1552,6 @@ export function CodePlaygroundBlock({
               </p>
             )}
 
-            {/* Actions */}
             <div className="flex items-center justify-between gap-3">
               <span className="text-[11px] text-slate-500">{selectedStudents.length} selected</span>
               <button
@@ -1270,7 +1571,6 @@ export function CodePlaygroundBlock({
       {!isCreator && (
         <div className="border-t border-slate-200 dark:border-slate-700">
 
-          {/* Prior submission status card */}
           {linkedProject && !showSubmitForm && (
             <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-900/40">
               <div className="flex items-center gap-2 text-xs">
@@ -1291,7 +1591,6 @@ export function CodePlaygroundBlock({
             </div>
           )}
 
-          {/* Submit form */}
           {showSubmitForm ? (
             <div className="space-y-2.5 px-4 py-3">
               <div className="flex items-center justify-between">
@@ -1340,7 +1639,6 @@ export function CodePlaygroundBlock({
               </div>
             </div>
           ) : !linkedProject ? (
-            /* Call-to-action when no prior submission */
             <button
               onClick={() => setShowSubmitForm(true)}
               className="flex w-full items-center justify-center gap-1.5 px-4 py-2 text-xs text-slate-500 transition hover:bg-slate-50 hover:text-blue-600 dark:hover:bg-slate-800/50 dark:hover:text-blue-400"
