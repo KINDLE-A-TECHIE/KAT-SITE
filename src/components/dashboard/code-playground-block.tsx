@@ -5,8 +5,8 @@ import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import {
   AlertCircle, CheckCircle2, ChevronRight, Download, FilePlus,
-  FolderOpen, Globe, Package, Play, RotateCcw, Send, Terminal,
-  UserPlus, Users, Wifi, X,
+  FolderOpen, Globe, Maximize2, Minimize2, Package, Play, RotateCcw,
+  Send, Terminal, UserPlus, Users, Wifi, X,
 } from "lucide-react";
 import { zipSync } from "fflate";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,799 @@ export const SUPPORTED_LANGUAGES = [
 
 // Languages that render in the browser iframe — no Judge0 needed
 const WEB_LANGUAGES = new Set(["html", "css"]);
+
+// ── Turtle shim — injected into Pyodide's sys.modules before user code runs ──
+// Implements the standard turtle API on top of an HTML5 Canvas via JS interop.
+const TURTLE_SHIM = `
+import sys as _sys, types as _types, math as _math
+
+try:
+    from js import document as _doc
+    _el  = _doc.getElementById('kat-turtle-canvas')
+    _ctx = _el.getContext('2d')
+    _W   = int(_el.width)
+    _H   = int(_el.height)
+    _OK  = True
+except Exception:
+    _OK = False
+    _W  = 480
+    _H  = 360
+
+class _State:
+    def __init__(self):
+        self.x   = 0.0;  self.y  = 0.0;  self.a   = 90.0
+        self.pen = True; self.pc = 'black'; self.fc = 'black'
+        self.bg  = 'white'; self.ps = 1
+        self.fl  = False; self.fp = []; self.vis = True
+
+_s = _State()
+
+def _cv(x, y):
+    return _W / 2 + x, _H / 2 - y
+
+def _clr():
+    if not _OK: return
+    _ctx.clearRect(0, 0, _W, _H)
+    _ctx.fillStyle = _s.bg
+    _ctx.fillRect(0, 0, _W, _H)
+
+_clr()
+
+def _stroke(x1, y1, x2, y2):
+    if not (_OK and _s.pen): return
+    cx1, cy1 = _cv(x1, y1); cx2, cy2 = _cv(x2, y2)
+    _ctx.beginPath(); _ctx.moveTo(cx1, cy1); _ctx.lineTo(cx2, cy2)
+    _ctx.strokeStyle = _s.pc; _ctx.lineWidth = _s.ps; _ctx.stroke()
+
+def _mv(d):
+    r = _math.radians(_s.a)
+    nx = _s.x + d * _math.cos(r); ny = _s.y + d * _math.sin(r)
+    _stroke(_s.x, _s.y, nx, ny)
+    if _s.fl: _s.fp.append(_cv(nx, ny))
+    _s.x = nx; _s.y = ny
+
+def forward(d): _mv(d)
+def fd(d): _mv(d)
+def backward(d): _mv(-d)
+def bk(d): _mv(-d)
+def back(d): _mv(-d)
+def right(a): _s.a -= a
+def rt(a): right(a)
+def left(a): _s.a += a
+def lt(a): left(a)
+
+def goto(x, y=None):
+    if y is None: x, y = x[0], x[1]
+    ox, oy = _s.x, _s.y; _s.x = float(x); _s.y = float(y)
+    _stroke(ox, oy, _s.x, _s.y)
+    if _s.fl: _s.fp.append(_cv(_s.x, _s.y))
+
+def setpos(x, y=None): goto(x, y)
+def setposition(x, y=None): goto(x, y)
+def setx(x): goto(x, _s.y)
+def sety(y): goto(_s.x, y)
+
+def home():
+    goto(0, 0); _s.a = 90.0
+
+def pos():      return (_s.x, _s.y)
+def position(): return pos()
+def xcor():     return _s.x
+def ycor():     return _s.y
+def heading():  return _s.a % 360
+
+def setheading(a): _s.a = float(a)
+def seth(a): setheading(a)
+
+def towards(x, y=None):
+    if y is None: x, y = x[0], x[1]
+    return _math.degrees(_math.atan2(y - _s.y, x - _s.x)) % 360
+
+def distance(x, y=None):
+    if y is None: x, y = x[0], x[1]
+    return _math.hypot(x - _s.x, y - _s.y)
+
+def penup():  _s.pen = False
+def pu():     penup()
+def up():     penup()
+def pendown(): _s.pen = True
+def pd():     pendown()
+def down():   pendown()
+def isdown(): return _s.pen
+
+def pencolor(*a):
+    if   len(a) == 1: _s.pc = a[0]
+    elif len(a) == 3: _s.pc = 'rgb({},{},{})'.format(int(a[0]*255), int(a[1]*255), int(a[2]*255))
+    else: return _s.pc
+
+def fillcolor(*a):
+    if   len(a) == 1: _s.fc = a[0]
+    elif len(a) == 3: _s.fc = 'rgb({},{},{})'.format(int(a[0]*255), int(a[1]*255), int(a[2]*255))
+    else: return _s.fc
+
+def color(*a):
+    if   len(a) == 1: pencolor(a[0]);    fillcolor(a[0])
+    elif len(a) == 2: pencolor(a[0]);    fillcolor(a[1])
+    elif len(a) == 3: pencolor(*a);      fillcolor(*a)
+    else:             return (_s.pc, _s.fc)
+
+def pensize(w=None):
+    if w is None: return _s.ps
+    _s.ps = w
+def width(w=None): return pensize(w)
+def speed(s=None):
+    if s is None: return 6
+def begin_fill():
+    _s.fl = True; _s.fp = [_cv(_s.x, _s.y)]
+
+def end_fill():
+    if not (_OK and _s.fl): _s.fl = False; return
+    pts = _s.fp
+    if len(pts) < 2: _s.fl = False; return
+    _ctx.beginPath(); _ctx.moveTo(pts[0][0], pts[0][1])
+    for px, py in pts[1:]: _ctx.lineTo(px, py)
+    _ctx.closePath(); _ctx.fillStyle = _s.fc; _ctx.fill()
+    _s.fl = False; _s.fp = []
+
+def dot(sz=None, *col):
+    if not _OK: return
+    if sz is None: sz = max(4, _s.ps + 4)
+    c = col[0] if col else _s.pc
+    cx, cy = _cv(_s.x, _s.y)
+    _ctx.beginPath(); _ctx.arc(cx, cy, sz / 2, 0, 2 * _math.pi)
+    _ctx.fillStyle = c; _ctx.fill()
+
+def circle(r, extent=None, steps=None):
+    if extent is None: extent = 360
+    n = steps or max(int(abs(r) * abs(extent) / _math.pi / 8), 8)
+    sa = float(extent) / n
+    dist = 2 * abs(r) * _math.sin(_math.radians(abs(sa) / 2))
+    sign = 1 if r >= 0 else -1
+    left(sign * sa / 2)
+    for _ in range(n):
+        forward(dist)
+        left(sign * sa)
+    left(-sign * sa / 2)
+
+def write(txt, move=False, align='left', font=('Arial', 12, 'normal')):
+    if not _OK: return
+    cx, cy = _cv(_s.x, _s.y)
+    fn  = font[0] if font else 'Arial'
+    fs  = font[1] if len(font) > 1 else 12
+    fst = font[2] if len(font) > 2 else 'normal'
+    _ctx.font = '{} {}px {}'.format(fst, fs, fn)
+    _ctx.fillStyle = _s.pc
+    _ctx.fillText(str(txt), cx, cy)
+
+def stamp():       pass
+def shape(s=None): pass
+
+def clear():
+    global _s
+    saved_bg = _s.bg
+    _s = _State(); _s.bg = saved_bg
+    if _OK: _clr()
+
+def reset():
+    global _s
+    _s = _State()
+    if _OK: _clr()
+
+def clearscreen(): reset()
+def hideturtle():  _s.vis = False
+def ht():          hideturtle()
+def showturtle():  _s.vis = True
+def st():          showturtle()
+def isvisible():   return _s.vis
+
+def bgcolor(c=None):
+    if c is None: return _s.bg
+    _s.bg = c
+    if _OK:
+        _ctx.fillStyle = c
+        _ctx.fillRect(0, 0, _W, _H)
+
+def title(t):         pass
+def done():           pass
+def mainloop():       pass
+def bye():            pass
+def exitonclick():    pass
+def tracer(*a, **kw): pass
+def update():         pass
+def delay(d=None):    pass
+def setup(*a, **kw):  pass
+def screensize(*a, **kw): pass
+def mode(m=None):     pass
+def window_width():   return _W
+def window_height():  return _H
+
+class Turtle:
+    def forward(self, d):              forward(d)
+    def fd(self, d):                   forward(d)
+    def backward(self, d):             backward(d)
+    def bk(self, d):                   backward(d)
+    def back(self, d):                 backward(d)
+    def right(self, a):                right(a)
+    def rt(self, a):                   right(a)
+    def left(self, a):                 left(a)
+    def lt(self, a):                   left(a)
+    def goto(self, x, y=None):         goto(x, y)
+    def setpos(self, x, y=None):       goto(x, y)
+    def setposition(self, x, y=None):  goto(x, y)
+    def setx(self, x):                 setx(x)
+    def sety(self, y):                 sety(y)
+    def setheading(self, a):           setheading(a)
+    def seth(self, a):                 setheading(a)
+    def home(self):                    home()
+    def pos(self):                     return pos()
+    def position(self):                return pos()
+    def xcor(self):                    return xcor()
+    def ycor(self):                    return ycor()
+    def heading(self):                 return heading()
+    def towards(self, x, y=None):      return towards(x, y)
+    def distance(self, x, y=None):     return distance(x, y)
+    def penup(self):                   penup()
+    def pu(self):                      penup()
+    def up(self):                      penup()
+    def pendown(self):                 pendown()
+    def pd(self):                      pendown()
+    def down(self):                    pendown()
+    def isdown(self):                  return isdown()
+    def pencolor(self, *a):            pencolor(*a)
+    def fillcolor(self, *a):           fillcolor(*a)
+    def color(self, *a):               color(*a)
+    def pensize(self, w=None):         return pensize(w)
+    def width(self, w=None):           return pensize(w)
+    def speed(self, s=None):           pass
+    def begin_fill(self):              begin_fill()
+    def end_fill(self):                end_fill()
+    def dot(self, sz=None, *c):        dot(sz, *c)
+    def circle(self, r, e=None, s=None): circle(r, e, s)
+    def write(self, t, move=False, align='left', font=('Arial',12,'normal')): write(t, move, align, font)
+    def clear(self):                   clear()
+    def reset(self):                   reset()
+    def stamp(self):                   pass
+    def shape(self, s=None):           pass
+    def hideturtle(self):              hideturtle()
+    def ht(self):                      hideturtle()
+    def showturtle(self):              showturtle()
+    def st(self):                      showturtle()
+    def isvisible(self):               return isvisible()
+    def __repr__(self):                return '<Turtle>'
+
+class _Screen:
+    def bgcolor(self, c=None):           return bgcolor(c)
+    def title(self, t):                  pass
+    def setup(self, *a, **kw):           pass
+    def tracer(self, *a, **kw):          pass
+    def update(self):                    pass
+    def mainloop(self):                  pass
+    def exitonclick(self):               pass
+    def bye(self):                       pass
+    def window_width(self):              return _W
+    def window_height(self):             return _H
+    def screensize(self, *a, **kw):      pass
+    def delay(self, d=None):             pass
+    def mode(self, m=None):              pass
+    def listen(self, *a, **kw):          pass
+    def onkey(self, *a, **kw):           pass
+    def onkeypress(self, *a, **kw):      pass
+    def onkeyrelease(self, *a, **kw):    pass
+    def onclick(self, *a, **kw):         pass
+    def ontimer(self, *a, **kw):         pass
+    def setworldcoordinates(self, *a):   pass
+    def __repr__(self):                  return '<Screen>'
+
+def Screen():    return _Screen()
+def getscreen(): return _Screen()
+
+_m = _types.ModuleType('turtle')
+_m.__dict__.update({k: v for k, v in list(globals().items()) if not k.startswith('_')})
+_m.Turtle    = Turtle
+_m._Screen   = _Screen
+_m.Screen    = Screen
+_m.getscreen = getscreen
+_sys.modules['turtle'] = _m
+`;
+
+// ── Pygame shim — canvas-backed pygame API for Pyodide ────────────────────────
+const PYGAME_SHIM = `
+import sys as _sys, types as _types, math as _math
+
+try:
+    from js import document as _doc
+    _canvas = _doc.getElementById('kat-turtle-canvas')
+    _ctx    = _canvas.getContext('2d')
+    _W      = int(_canvas.width)
+    _H      = int(_canvas.height)
+    _OK     = True
+except Exception:
+    _OK = False
+    _W, _H  = 480, 360
+
+_frame   = 0
+_MAX_FRM = 500   # ~8 s at 60 fps — enough to see the result
+
+# ── Color helpers ───────────────────────────────────────────────────────────────
+def _css(c):
+    if isinstance(c, str): return c
+    if hasattr(c, 'r'): return f'rgba({int(c.r)},{int(c.g)},{int(c.b)},{int(getattr(c,"a",255))/255:.3f})'
+    r,g,b = int(c[0]),int(c[1]),int(c[2])
+    a = int(c[3]) if len(c)>3 else 255
+    return f'rgb({r},{g},{b})' if a==255 else f'rgba({r},{g},{b},{a/255:.3f})'
+
+# ── Constants ───────────────────────────────────────────────────────────────────
+QUIT=12; KEYDOWN=2; KEYUP=3; MOUSEBUTTONDOWN=5; MOUSEBUTTONUP=6; MOUSEMOTION=4
+K_UP=273; K_DOWN=274; K_LEFT=276; K_RIGHT=275; K_SPACE=32; K_RETURN=13
+K_ESCAPE=27; K_a=97; K_b=98; K_c=99; K_d=100; K_e=101; K_f=102
+K_g=103; K_h=104; K_i=105; K_j=106; K_k=107; K_l=108; K_m=109
+K_n=110; K_o=111; K_p=112; K_q=113; K_r=114; K_s=115; K_t=116
+K_u=117; K_v=118; K_w=119; K_x=120; K_y=121; K_z=122
+K_0=48; K_1=49; K_2=50; K_3=51; K_4=52; K_5=53; K_6=54; K_7=55; K_8=56; K_9=57
+RESIZABLE=1; FULLSCREEN=2; NOFRAME=4; DOUBLEBUF=1; HWSURFACE=1
+SRCALPHA=65536
+
+# ── Color class ─────────────────────────────────────────────────────────────────
+class Color:
+    def __init__(self,r,g=0,b=0,a=255):
+        if isinstance(r,(list,tuple)): r,g,b=int(r[0]),int(r[1]),int(r[2]); a=int(r[3]) if len(r)>3 else 255
+        self.r=int(r); self.g=int(g); self.b=int(b); self.a=int(a)
+    def __iter__(self): return iter((self.r,self.g,self.b,self.a))
+    def __len__(self): return 4
+    def __getitem__(self,i): return (self.r,self.g,self.b,self.a)[i]
+    def __repr__(self): return f'Color({self.r},{self.g},{self.b},{self.a})'
+
+# ── Rect class ──────────────────────────────────────────────────────────────────
+class Rect:
+    def __init__(self,x,y=0,w=0,h=0):
+        if isinstance(x,(list,tuple)) and isinstance(y,(list,tuple)): x,y,w,h=int(x[0]),int(x[1]),int(y[0]),int(y[1])
+        elif isinstance(x,(list,tuple)): x,y,w,h=int(x[0]),int(x[1]),int(x[2]),int(x[3])
+        self.x=int(x); self.y=int(y); self.width=int(w); self.height=int(h)
+        self._sync()
+    def _sync(self):
+        self.left=self.x; self.top=self.y; self.right=self.x+self.width; self.bottom=self.y+self.height
+        self.centerx=self.x+self.width//2; self.centery=self.y+self.height//2
+        self.center=(self.centerx,self.centery); self.topleft=(self.x,self.y)
+        self.topright=(self.right,self.top); self.bottomleft=(self.left,self.bottom)
+        self.bottomright=(self.right,self.bottom); self.midleft=(self.left,self.centery)
+        self.midright=(self.right,self.centery); self.midtop=(self.centerx,self.top)
+        self.midbottom=(self.centerx,self.bottom); self.size=(self.width,self.height)
+    def __repr__(self): return f'Rect({self.x},{self.y},{self.width},{self.height})'
+    def colliderect(self,o):
+        if isinstance(o,(list,tuple)): o=Rect(*o)
+        return not(self.right<=o.left or o.right<=self.left or self.bottom<=o.top or o.bottom<=self.top)
+    def collidepoint(self,x,y=None):
+        if y is None: x,y=x[0],x[1]
+        return self.left<=x<=self.right and self.top<=y<=self.bottom
+    def inflate(self,dx,dy): return Rect(self.x-dx//2,self.y-dy//2,self.width+dx,self.height+dy)
+    def move(self,dx,dy): return Rect(self.x+dx,self.y+dy,self.width,self.height)
+    def clip(self,o):
+        if isinstance(o,(list,tuple)): o=Rect(*o)
+        x=max(self.x,o.x); y=max(self.y,o.y)
+        return Rect(x,y,max(0,min(self.right,o.right)-x),max(0,min(self.bottom,o.bottom)-y))
+    def copy(self): return Rect(self.x,self.y,self.width,self.height)
+    def contains(self,o): return self.left<=o.left and self.top<=o.top and self.right>=o.right and self.bottom>=o.bottom
+
+# ── Surface class ───────────────────────────────────────────────────────────────
+class Surface:
+    def __init__(self,size,flags=0,depth=0,masks=None):
+        self._w=max(1,int(size[0])); self._h=max(1,int(size[1]))
+        if _OK:
+            self._el=_doc.createElement('canvas')
+            self._el.width=self._w; self._el.height=self._h
+            self._c=self._el.getContext('2d')
+        self._alpha=255
+    def fill(self,color,rect=None):
+        if not _OK: return
+        self._c.fillStyle=_css(color)
+        if rect:
+            r=rect if hasattr(rect,'x') else Rect(*rect)
+            self._c.fillRect(r.x,r.y,r.width,r.height)
+        else: self._c.fillRect(0,0,self._w,self._h)
+    def blit(self,src,dest,area=None):
+        if not _OK: return Rect(0,0,src._w,src._h)
+        dx=int(dest[0]) if isinstance(dest,(list,tuple)) else int(dest.x)
+        dy=int(dest[1]) if isinstance(dest,(list,tuple)) else int(dest.y)
+        self._c.drawImage(src._el,dx,dy)
+        return Rect(dx,dy,src._w,src._h)
+    def get_width(self): return self._w
+    def get_height(self): return self._h
+    def get_size(self): return (self._w,self._h)
+    def get_rect(self,**kw):
+        r=Rect(0,0,self._w,self._h)
+        for k,v in kw.items():
+            if k=='center': r.x=int(v[0])-self._w//2; r.y=int(v[1])-self._h//2
+            elif k=='topleft': r.x=int(v[0]); r.y=int(v[1])
+            elif k=='topright': r.x=int(v[0])-self._w; r.y=int(v[1])
+            elif k=='centerx': r.x=int(v)-self._w//2
+            elif k=='centery': r.y=int(v)-self._h//2
+            elif k=='midtop': r.x=int(v[0])-self._w//2; r.y=int(v[1])
+        r._sync(); return r
+    def convert(self): return self
+    def convert_alpha(self): return self
+    def set_alpha(self,a): self._alpha=a
+    def get_alpha(self): return self._alpha
+    def copy(self):
+        s=Surface((self._w,self._h))
+        if _OK: s._c.drawImage(self._el,0,0)
+        return s
+    def subsurface(self,rect):
+        if isinstance(rect,(list,tuple)): rect=Rect(*rect)
+        s=Surface((rect.width,rect.height))
+        if _OK: s._c.drawImage(self._el,rect.x,rect.y,rect.width,rect.height,0,0,rect.width,rect.height)
+        return s
+
+# ── Event class ─────────────────────────────────────────────────────────────────
+class _Event:
+    def __init__(self,t,**kw): self.type=t; self.__dict__.update(kw)
+
+class _EventModule:
+    def get(self,*a):
+        global _frame; _frame+=1
+        if _frame>=_MAX_FRM: return [_Event(QUIT)]
+        return []
+    def pump(self): pass
+    def clear(self): pass
+    def set_allowed(self,*a): pass
+    def set_blocked(self,*a): pass
+    def post(self,e): pass
+    def wait(self): return _Event(0)
+    def peek(self,*a): return False
+    Event=_Event
+
+# ── Clock ───────────────────────────────────────────────────────────────────────
+class _Clock:
+    def tick(self,fps=60): return 16
+    def tick_busy_loop(self,fps=60): return 16
+    def get_fps(self): return 60
+    def get_time(self): return 16
+    def get_rawtime(self): return 16
+
+class _TimeModule:
+    def Clock(self): return _Clock()
+    def delay(self,ms): pass
+    def wait(self,ms): return ms
+    def get_ticks(self): return _frame*16
+    def set_timer(self,*a): pass
+
+# ── Display ──────────────────────────────────────────────────────────────────────
+class _DisplayModule:
+    _screen=None
+    def set_mode(self,size,flags=0,depth=0):
+        s=Surface((min(int(size[0]),_W),min(int(size[1]),_H)))
+        self._screen=s; return s
+    def set_caption(self,t,i=None): pass
+    def get_caption(self): return ('',)
+    def flip(self):
+        if _OK and self._screen: _ctx.drawImage(self._screen._el,0,0)
+    def update(self,rect=None): self.flip()
+    def get_surface(self): return self._screen
+    def get_init(self): return True
+    def list_modes(self): return [(800,600),(640,480),(480,360)]
+    def toggle_fullscreen(self): pass
+    def iconify(self): pass
+    def set_icon(self,*a): pass
+    def Info(self): return type('Info',(),{'current_w':_W,'current_h':_H})()
+
+# ── Draw ────────────────────────────────────────────────────────────────────────
+class _DrawModule:
+    def _surf_ctx(self,s): return s._c if _OK else None
+    def rect(self,s,c,r,w=0):
+        if not _OK: return Rect(0,0,0,0)
+        if isinstance(r,(list,tuple)): r=Rect(*r)
+        s._c.beginPath(); s._c.rect(r.x,r.y,r.width,r.height)
+        if w==0: s._c.fillStyle=_css(c); s._c.fill()
+        else: s._c.strokeStyle=_css(c); s._c.lineWidth=w; s._c.stroke()
+        return Rect(r.x,r.y,r.width,r.height)
+    def circle(self,s,c,pos,rad,w=0):
+        if not _OK: return Rect(0,0,0,0)
+        s._c.beginPath(); s._c.arc(int(pos[0]),int(pos[1]),abs(rad),0,2*_math.pi)
+        if w==0: s._c.fillStyle=_css(c); s._c.fill()
+        else: s._c.strokeStyle=_css(c); s._c.lineWidth=max(1,w); s._c.stroke()
+        return Rect(int(pos[0])-rad,int(pos[1])-rad,rad*2,rad*2)
+    def line(self,s,c,p1,p2,w=1):
+        if not _OK: return Rect(0,0,0,0)
+        s._c.beginPath(); s._c.moveTo(int(p1[0]),int(p1[1])); s._c.lineTo(int(p2[0]),int(p2[1]))
+        s._c.strokeStyle=_css(c); s._c.lineWidth=max(1,w); s._c.stroke()
+        return Rect(min(p1[0],p2[0]),min(p1[1],p2[1]),abs(p2[0]-p1[0]),abs(p2[1]-p1[1]))
+    def lines(self,s,c,closed,pts,w=1):
+        if not _OK or len(pts)<2: return Rect(0,0,0,0)
+        s._c.beginPath(); s._c.moveTo(int(pts[0][0]),int(pts[0][1]))
+        for p in pts[1:]: s._c.lineTo(int(p[0]),int(p[1]))
+        if closed: s._c.closePath()
+        s._c.strokeStyle=_css(c); s._c.lineWidth=max(1,w); s._c.stroke()
+        xs=[p[0] for p in pts]; ys=[p[1] for p in pts]
+        return Rect(min(xs),min(ys),max(xs)-min(xs),max(ys)-min(ys))
+    def aaline(self,s,c,p1,p2,blend=1): return self.line(s,c,p1,p2,1)
+    def aalines(self,s,c,closed,pts,blend=1): return self.lines(s,c,closed,pts,1)
+    def polygon(self,s,c,pts,w=0):
+        if not _OK or len(pts)<3: return Rect(0,0,0,0)
+        s._c.beginPath(); s._c.moveTo(int(pts[0][0]),int(pts[0][1]))
+        for p in pts[1:]: s._c.lineTo(int(p[0]),int(p[1]))
+        s._c.closePath()
+        if w==0: s._c.fillStyle=_css(c); s._c.fill()
+        else: s._c.strokeStyle=_css(c); s._c.lineWidth=max(1,w); s._c.stroke()
+        xs=[p[0] for p in pts]; ys=[p[1] for p in pts]
+        return Rect(min(xs),min(ys),max(xs)-min(xs),max(ys)-min(ys))
+    def ellipse(self,s,c,r,w=0):
+        if not _OK: return Rect(0,0,0,0)
+        if isinstance(r,(list,tuple)): r=Rect(*r)
+        cx=r.x+r.width/2; cy=r.y+r.height/2
+        s._c.beginPath(); s._c.ellipse(cx,cy,r.width/2,r.height/2,0,0,2*_math.pi)
+        if w==0: s._c.fillStyle=_css(c); s._c.fill()
+        else: s._c.strokeStyle=_css(c); s._c.lineWidth=max(1,w); s._c.stroke()
+        return r
+    def arc(self,s,c,r,a1,a2,w=1):
+        if not _OK: return Rect(0,0,0,0)
+        if isinstance(r,(list,tuple)): r=Rect(*r)
+        cx=r.x+r.width/2; cy=r.y+r.height/2; rad=min(r.width,r.height)/2
+        s._c.beginPath(); s._c.arc(cx,cy,rad,-a2,-a1)
+        s._c.strokeStyle=_css(c); s._c.lineWidth=max(1,w); s._c.stroke()
+        return r
+
+# ── Font ────────────────────────────────────────────────────────────────────────
+class _FontObj:
+    def __init__(self,size=16,bold=False,italic=False):
+        self._sz=int(size); self._bold=bold; self._italic=italic
+    def render(self,text,aa,c,bg=None):
+        txt=str(text); w=max(1,int(self._sz*0.65*len(txt))+8); h=self._sz+8
+        s=Surface((w,h))
+        if _OK:
+            if bg: s._c.fillStyle=_css(bg); s._c.fillRect(0,0,w,h)
+            style=('bold ' if self._bold else '')+('italic ' if self._italic else '')
+            s._c.font=f'{style}{self._sz}px Arial'
+            s._c.fillStyle=_css(c); s._c.fillText(txt,2,self._sz+2)
+        return s
+    def size(self,t): return (int(self._sz*0.65*len(str(t)))+8,self._sz+8)
+    def get_height(self): return self._sz
+    def get_linesize(self): return self._sz+4
+    def get_ascent(self): return self._sz
+    def get_descent(self): return 2
+
+class _FontModule:
+    def init(self): pass
+    def quit(self): pass
+    def get_init(self): return True
+    def get_default_font(self): return 'Arial'
+    def get_fonts(self): return ['arial','courier','times']
+    def match_font(self,n,bold=False,italic=False): return n
+    def SysFont(self,name,size,bold=False,italic=False): return _FontObj(size,bold,italic)
+    def Font(self,path,size): return _FontObj(size)
+
+# ── Key / Mouse ─────────────────────────────────────────────────────────────────
+class _KeyModule:
+    def get_pressed(self): return {}
+    def get_mods(self): return 0
+    def set_repeat(self,*a): pass
+    def name(self,k): return str(k)
+    def key_code(self,n): return 0
+
+class _MouseModule:
+    def get_pos(self): return (0,0)
+    def get_pressed(self,buttons=3): return (False,False,False)
+    def get_rel(self): return (0,0)
+    def set_visible(self,v): pass
+    def set_pos(self,p): pass
+
+# ── Mixer (no-op) ───────────────────────────────────────────────────────────────
+class _Sound:
+    def __init__(self,*a,**kw): pass
+    def play(self,loops=0,maxtime=0,fade_ms=0): pass
+    def stop(self): pass
+    def set_volume(self,v): pass
+    def get_volume(self): return 1.0
+    def fadeout(self,ms): pass
+
+class _Music:
+    def load(self,*a): pass
+    def play(self,loops=0,start=0.0): pass
+    def stop(self): pass
+    def pause(self): pass
+    def unpause(self): pass
+    def fadeout(self,ms): pass
+    def set_volume(self,v): pass
+    def get_volume(self): return 1.0
+    def get_busy(self): return False
+    def set_pos(self,pos): pass
+    def rewind(self): pass
+
+class _MixerModule:
+    music=_Music()
+    def init(self,*a,**kw): pass
+    def quit(self): pass
+    def get_init(self): return False
+    def pre_init(self,*a,**kw): pass
+    def Sound(self,*a,**kw): return _Sound()
+    def find_channel(self,force=False): return None
+    def get_num_channels(self): return 0
+    def set_num_channels(self,n): pass
+    def set_reserved(self,n): pass
+    def stop(self): pass
+    def pause(self): pass
+    def unpause(self): pass
+    def fadeout(self,ms): pass
+    def get_busy(self): return False
+
+# ── Image (stubs) ───────────────────────────────────────────────────────────────
+class _ImageModule:
+    def load(self,path): return Surface((32,32))
+    def save(self,s,path): pass
+    def fromstring(self,*a): return Surface((1,1))
+    def tostring(self,*a): return b''
+    def frombuffer(self,*a): return Surface((1,1))
+
+# ── Transform ───────────────────────────────────────────────────────────────────
+class _TransformModule:
+    def scale(self,s,size):
+        n=Surface(size)
+        if _OK: n._c.drawImage(s._el,0,0,size[0],size[1])
+        return n
+    def scale2x(self,s): return self.scale(s,(s._w*2,s._h*2))
+    def rotate(self,s,angle): return s.copy()
+    def rotozoom(self,s,angle,scale): return s.copy()
+    def flip(self,s,x,y): return s.copy()
+    def smoothscale(self,s,size): return self.scale(s,size)
+    def chop(self,s,rect): return s.copy()
+
+# ── Assemble module ──────────────────────────────────────────────────────────────
+display  = _DisplayModule()
+draw     = _DrawModule()
+event    = _EventModule()
+time     = _TimeModule()
+font     = _FontModule()
+key      = _KeyModule()
+mouse    = _MouseModule()
+mixer    = _MixerModule()
+image    = _ImageModule()
+transform= _TransformModule()
+
+def init(*a,**kw):
+    font.init()
+def quit(): pass
+def get_init(): return True
+def get_error(): return ''
+def get_ticks(): return _frame*16
+def version_info(): return (2,0,0)
+
+_m = _types.ModuleType('pygame')
+_exports = {k:v for k,v in list(globals().items()) if not k.startswith('_')}
+_m.__dict__.update(_exports)
+for _n in ['display','draw','event','time','font','key','mouse','mixer','image','transform',
+           'Color','Rect','Surface','QUIT','KEYDOWN','KEYUP','MOUSEBUTTONDOWN','MOUSEBUTTONUP',
+           'MOUSEMOTION','RESIZABLE','FULLSCREEN','NOFRAME','DOUBLEBUF','HWSURFACE','SRCALPHA']:
+    setattr(_m,_n,globals()[_n])
+
+_sys.modules['pygame']           = _m
+_sys.modules['pygame.display']   = type(_m)('pygame.display'); _sys.modules['pygame.display'].__dict__.update(display.__class__.__dict__)
+_sys.modules['pygame.draw']      = type(_m)('pygame.draw')
+_sys.modules['pygame.font']      = type(_m)('pygame.font'); _sys.modules['pygame.font'].__dict__.update(vars(font))
+_sys.modules['pygame.time']      = type(_m)('pygame.time')
+_sys.modules['pygame.event']     = type(_m)('pygame.event')
+_sys.modules['pygame.key']       = type(_m)('pygame.key')
+_sys.modules['pygame.mouse']     = type(_m)('pygame.mouse')
+_sys.modules['pygame.mixer']     = type(_m)('pygame.mixer')
+_sys.modules['pygame.image']     = type(_m)('pygame.image')
+_sys.modules['pygame.transform'] = type(_m)('pygame.transform')
+_sys.modules['pygame.locals']    = _m
+`;
+
+// ── Pygame Zero shim ─────────────────────────────────────────────────────────────
+const PGZERO_SHIM = `
+import sys as _sys, types as _types
+_pg = _sys.modules.get('pygame')
+if not _pg:
+    raise ImportError('pygame shim must be loaded before pgzrun')
+
+_W = _pg.display._DisplayModule and 480
+try:
+    from js import document as _doc
+    _cv = _doc.getElementById('kat-turtle-canvas')
+    _W  = int(_cv.width); _H = int(_cv.height)
+except Exception:
+    _W = 480; _H = 360
+
+# Pygame Zero screen object
+class _PgzDraw:
+    def __init__(self,surf): self._s=surf
+    def circle(self,pos,radius,color,width=1):
+        _pg.draw.circle(self._s,color,pos,radius,width)
+    def filled_circle(self,pos,radius,color):
+        _pg.draw.circle(self._s,color,pos,radius,0)
+    def rect(self,rect,color,width=1):
+        r=_pg.Rect(*rect) if isinstance(rect,(list,tuple)) else rect
+        _pg.draw.rect(self._s,color,r,width)
+    def filled_rect(self,rect,color):
+        r=_pg.Rect(*rect) if isinstance(rect,(list,tuple)) else rect
+        _pg.draw.rect(self._s,color,r,0)
+    def line(self,start,end,color,width=1):
+        _pg.draw.line(self._s,color,start,end,width)
+    def lines(self,pts,color,closed=False,width=1):
+        _pg.draw.lines(self._s,color,closed,pts,width)
+    def polygon(self,pts,color,width=0):
+        _pg.draw.polygon(self._s,color,pts,width)
+    def text(self,txt,pos=None,color='white',fontsize=24,**kw):
+        f=_pg.font.SysFont('Arial',fontsize)
+        s=f.render(str(txt),True,color)
+        dest=pos if pos else (_W//2-s.get_width()//2,_H//2-s.get_height()//2)
+        self._s.blit(s,dest)
+    def textbox(self,txt,rect,color='white',fontsize=20):
+        r=_pg.Rect(*rect) if isinstance(rect,(list,tuple)) else rect
+        self.text(txt,(r.x,r.y),color,fontsize)
+
+class _PgzScreen:
+    def __init__(self,surf):
+        self._surf=surf
+        self.draw=_PgzDraw(surf)
+        self.width=surf._w; self.height=surf._h
+    def fill(self,color): self._surf.fill(color)
+    def clear(self): self._surf.fill((0,0,0))
+    def blit(self,img,pos):
+        if isinstance(img,str): img=_pg.image.load(img)
+        self._surf.blit(img,pos)
+    def surface(self): return self._surf
+
+class _Keyboard:
+    def __getattr__(self,n): return False
+
+class _Mouse:
+    pos=(0,0)
+    def __getattr__(self,n): return False
+
+class _Actor:
+    def __init__(self,img,pos=None,**kw):
+        self.image=img; self.pos=pos or (_W//2,_H//2)
+        self.x=self.pos[0]; self.y=self.pos[1]
+        self.angle=0; self.width=64; self.height=64
+        self._surf=_pg.Surface((64,64))
+        self._surf.fill((80,80,200))
+    def draw(self):
+        import __main__ as _main
+        s=getattr(_main,'screen',None)
+        if s: s._surf.blit(self._surf,(int(self.x-32),int(self.y-32)))
+    @property
+    def left(self): return self.x-self.width//2
+    @property
+    def right(self): return self.x+self.width//2
+    @property
+    def top(self): return self.y-self.height//2
+    @property
+    def bottom(self): return self.y+self.height//2
+    def colliderect(self,o): return abs(self.x-o.x)<(self.width+o.width)//2 and abs(self.y-o.y)<(self.height+o.height)//2
+    def distance_to(self,o):
+        import math
+        ox,oy=(o.x,o.y) if hasattr(o,'x') else o
+        return math.hypot(self.x-ox,self.y-oy)
+
+_MAX_FRAMES=500
+
+def go():
+    import __main__ as _main
+    _surf=_pg.display.set_mode((_W,_H))
+    _scr=_PgzScreen(_surf)
+    _main.screen=_scr
+    _main.keyboard=_Keyboard()
+    _main.mouse=_Mouse()
+    _draw_fn=getattr(_main,'draw',None)
+    _update_fn=getattr(_main,'update',None)
+    for _i in range(_MAX_FRAMES):
+        if _update_fn:
+            import inspect
+            try:
+                sig=inspect.signature(_update_fn)
+                if len(sig.parameters)>0: _update_fn(1/60)
+                else: _update_fn()
+            except Exception: pass
+        if _draw_fn:
+            try: _draw_fn()
+            except Exception: pass
+        _pg.display.flip()
+
+_m=_types.ModuleType('pgzrun')
+_m.go=go; _m.Actor=_Actor
+_sys.modules['pgzrun']=_m
+_sys.modules['pgzero']=_m
+_sys.modules['pgzero.runner']=_m
+`;
 
 // Language value → file extension
 const LANG_EXT: Record<string, string> = {
@@ -247,6 +1040,9 @@ export function CodePlaygroundBlock({
   const [packageInput, setPackageInput]       = useState("");
   const [installingPkg, setInstallingPkg]     = useState(false);
   const [installedPkgs, setInstalledPkgs]     = useState<string[]>([]);
+  const [outputTab, setOutputTab]             = useState<"output" | "turtle">("output");
+  const [previewFullscreen, setPreviewFullscreen] = useState(false);
+  const [turtleFullscreen, setTurtleFullscreen]   = useState(false);
 
   // ── Peer session state ─────────────────────────────────────────────────────
   const [peerSessionId, setPeerSessionId]         = useState<string | null>(null);
@@ -299,6 +1095,8 @@ export function CodePlaygroundBlock({
   const previewDebounce        = useRef<ReturnType<typeof setTimeout> | null>(null);
   const iframeRef              = useRef<HTMLIFrameElement>(null);
   const pyodideRef             = useRef<PyodideInstance | null>(null);
+  const turtleCanvasRef        = useRef<HTMLCanvasElement>(null);
+  const turtleShimInjected     = useRef(false);
 
   // Keep refs in sync with state
   useEffect(() => { peerSessionIdRef.current = peerSessionId; }, [peerSessionId]);
@@ -574,6 +1372,7 @@ ${code}
       ).loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/" });
 
       pyodideRef.current = instance;
+      turtleShimInjected.current = false; // fresh instance — shim must be re-injected
       setPyodideReady(true);
       return instance;
     } catch {
@@ -608,10 +1407,35 @@ ${code}
     setRunning(true);
     setResult(null);
     setError(null);
+
+    const usesTurtle = /\bimport\s+turtle\b|from\s+turtle\s+import/.test(code);
+    const usesPygame  = /\bimport\s+pygame\b|from\s+pygame\s+import/.test(code);
+    const usesPgzrun  = /\bimport\s+pgzrun\b|from\s+pgzrun\s+import/.test(code);
+    const usesCanvas  = usesTurtle || usesPygame || usesPgzrun;
+
+    // Switch to the correct output tab before running
+    setOutputTab(usesCanvas ? "turtle" : "output");
+
     try {
       const py = await initPyodide();
-      // Auto-load packages detected from imports
+
+      // Always clear the canvas and re-inject shims so state is fresh each run
+      if (usesCanvas) {
+        const canvas = turtleCanvasRef.current;
+        if (canvas) {
+          const ctx = canvas.getContext("2d");
+          if (ctx) { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+        }
+      }
+      if (usesTurtle) await py.runPythonAsync(TURTLE_SHIM);
+      if (usesPygame || usesPgzrun) {
+        await py.runPythonAsync(PYGAME_SHIM);
+        if (usesPgzrun) await py.runPythonAsync(PGZERO_SHIM);
+      }
+
+      // Auto-load packages detected from imports (skip canvas libs — handled by shims)
       try { await py.loadPackagesFromImports(code); } catch { /* best effort */ }
+
       // Redirect stdout/stderr
       py.runPython(
         "import sys\nfrom io import StringIO\nsys.stdout = StringIO()\nsys.stderr = StringIO()",
@@ -1212,10 +2036,14 @@ ${code}
             const isEntry  = path === entryFile;
             const basename = path.split("/").pop() ?? path;
             return (
-              <button
+              // div instead of button — avoids illegal nested <button> which breaks inner click handlers
+              <div
                 key={path}
+                role="button"
+                tabIndex={0}
                 onClick={() => setActiveProjectFile(path)}
-                className={`group flex shrink-0 items-center gap-1.5 border-r border-slate-700 px-3 py-1.5 text-[11px] transition ${isActive ? "bg-[#1e1e1e] text-slate-200" : "text-slate-500 hover:bg-[#2d2d2d] hover:text-slate-300"}`}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setActiveProjectFile(path); }}
+                className={`group flex shrink-0 cursor-pointer items-center gap-1.5 border-r border-slate-700 px-3 py-1.5 text-[11px] transition ${isActive ? "bg-[#1e1e1e] text-slate-200" : "text-slate-500 hover:bg-[#2d2d2d] hover:text-slate-300"}`}
               >
                 {isEntry ? (
                   <span title="Entry point" className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm bg-emerald-600 text-[8px] font-bold text-white">▶</span>
@@ -1226,7 +2054,7 @@ ${code}
                 <button onClick={(e) => { e.stopPropagation(); removeFile(path); }} title="Remove file" className="ml-0.5 shrink-0 rounded text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100">
                   <X className="h-2.5 w-2.5" />
                 </button>
-              </button>
+              </div>
             );
           })}
           <button onClick={createNewFile} title="New file" className="shrink-0 px-2 py-1.5 text-slate-600 transition hover:text-slate-300">
@@ -1375,45 +2203,141 @@ ${code}
         <div className="flex h-[320px] flex-col border-t border-slate-700 lg:h-full lg:w-[45%] lg:border-l lg:border-t-0">
           {isWebMode ? (
             /* ── Web Preview ── */
-            <div className="flex h-full flex-col">
-              <div className="flex shrink-0 items-center gap-2 border-b border-slate-800 bg-[#1a1a1a] px-3 py-1.5">
-                <Globe className="h-3 w-3 text-sky-400" />
-                <span className="text-[10px] font-medium text-slate-400">Preview</span>
-                <button
-                  onClick={() => { if (iframeRef.current) iframeRef.current.srcdoc = buildWebDoc(); }}
-                  title="Refresh preview"
-                  className="ml-auto text-[10px] text-slate-500 transition hover:text-slate-300"
-                >
-                  ↺ Refresh
-                </button>
+            <>
+              {/* Fullscreen backdrop — closes on click outside */}
+              {previewFullscreen && (
+                <div
+                  className="fixed inset-0 z-[59] bg-black/40"
+                  onClick={() => setPreviewFullscreen(false)}
+                />
+              )}
+              <div
+                className={
+                  previewFullscreen
+                    ? "fixed inset-4 z-[60] flex flex-col overflow-hidden rounded-xl border border-slate-700 shadow-2xl sm:inset-8"
+                    : "flex h-full flex-col"
+                }
+              >
+                <div className="flex shrink-0 items-center gap-2 border-b border-slate-800 bg-[#1a1a1a] px-3 py-1.5">
+                  <Globe className="h-3 w-3 text-sky-400" />
+                  <span className="text-[10px] font-medium text-slate-400">Preview</span>
+                  <button
+                    onClick={() => { if (iframeRef.current) iframeRef.current.srcdoc = buildWebDoc(); }}
+                    title="Refresh preview"
+                    className="ml-auto text-[10px] text-slate-500 transition hover:text-slate-300"
+                  >
+                    ↺ Refresh
+                  </button>
+                  <button
+                    onClick={() => setPreviewFullscreen((v) => !v)}
+                    title={previewFullscreen ? "Exit fullscreen" : "Fullscreen preview"}
+                    className="rounded p-0.5 text-slate-500 transition hover:bg-white/10 hover:text-slate-200"
+                  >
+                    {previewFullscreen
+                      ? <Minimize2 className="h-3.5 w-3.5" />
+                      : <Maximize2 className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+                <iframe
+                  ref={iframeRef}
+                  title="Web Preview"
+                  sandbox="allow-scripts"
+                  className="flex-1 w-full bg-white"
+                  srcDoc={buildWebDoc()}
+                />
               </div>
-              <iframe
-                ref={iframeRef}
-                title="Web Preview"
-                sandbox="allow-scripts"
-                className="flex-1 w-full bg-white"
-                srcDoc={buildWebDoc()}
-              />
-            </div>
+            </>
           ) : (
-            /* ── Terminal Output ── */
+            /* ── Terminal Output + Turtle Canvas ── */
             <div className="flex h-full flex-col bg-slate-950">
-              <div className="flex shrink-0 items-center gap-2 border-b border-slate-800 bg-[#1a1a1a] px-3 py-1.5">
-                <Terminal className="h-3 w-3 text-slate-500" />
-                <span className="text-[10px] font-medium text-slate-400">Output</span>
-                {result && (
-                  <span className={`ml-auto text-[10px] font-semibold ${success ? "text-emerald-400" : "text-rose-400"}`}>
-                    {success ? "✓ Exit 0" : `✗ Exit ${result.exitCode}`}
-                  </span>
-                )}
-                {result && (result.time ?? result.memory) && (
-                  <span className="flex items-center gap-2 text-[10px] text-slate-500">
-                    {result.time   && <span>{result.time}s</span>}
-                    {result.memory && <span>{Math.round(result.memory / 1024)} KB</span>}
-                  </span>
-                )}
+
+              {/* Tab bar — only when Python + Pyodide */}
+              {isPython && pyodideMode ? (
+                <div className="flex shrink-0 items-center border-b border-slate-800 bg-[#1a1a1a]">
+                  <button
+                    onClick={() => setOutputTab("output")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition border-b-2 ${outputTab === "output" ? "border-emerald-500 text-slate-200" : "border-transparent text-slate-500 hover:text-slate-300"}`}
+                  >
+                    <Terminal className="h-3 w-3" />
+                    Output
+                    {result && (
+                      <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${result.exitCode === 0 && !result.stderr ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"}`}>
+                        {result.exitCode === 0 && !result.stderr ? "✓" : "✗"}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setOutputTab("turtle")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition border-b-2 ${outputTab === "turtle" ? "border-emerald-500 text-slate-200" : "border-transparent text-slate-500 hover:text-slate-300"}`}
+                  >
+                    {/\bimport\s+pgzrun\b|from\s+pgzrun\s+import/.test(code)
+                      ? "🎮 Pygame Zero"
+                      : /\bimport\s+pygame\b|from\s+pygame\s+import/.test(code)
+                        ? "🎮 Pygame"
+                        : "🐢 Turtle"}
+                  </button>
+                  {outputTab === "turtle" && (
+                    <button
+                      onClick={() => setTurtleFullscreen((v) => !v)}
+                      title={turtleFullscreen ? "Exit fullscreen" : "Fullscreen canvas"}
+                      className="ml-auto rounded p-1 text-slate-500 transition hover:bg-white/10 hover:text-slate-200"
+                    >
+                      {turtleFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                    </button>
+                  )}
+                  {result && (result.time ?? result.memory) && (
+                    <span className="ml-auto flex items-center gap-2 px-3 text-[10px] text-slate-500">
+                      {result.time   && <span>{result.time}s</span>}
+                      {result.memory && <span>{Math.round(result.memory / 1024)} KB</span>}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="flex shrink-0 items-center gap-2 border-b border-slate-800 bg-[#1a1a1a] px-3 py-1.5">
+                  <Terminal className="h-3 w-3 text-slate-500" />
+                  <span className="text-[10px] font-medium text-slate-400">Output</span>
+                  {result && (
+                    <span className={`ml-auto text-[10px] font-semibold ${success ? "text-emerald-400" : "text-rose-400"}`}>
+                      {success ? "✓ Exit 0" : `✗ Exit ${result.exitCode}`}
+                    </span>
+                  )}
+                  {result && (result.time ?? result.memory) && (
+                    <span className="flex items-center gap-2 text-[10px] text-slate-500">
+                      {result.time   && <span>{result.time}s</span>}
+                      {result.memory && <span>{Math.round(result.memory / 1024)} KB</span>}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Turtle canvas — always in DOM so Pyodide can find it; hidden when tab not active */}
+              {turtleFullscreen && outputTab === "turtle" && isPython && pyodideMode && (
+                <div
+                  className="fixed inset-0 z-[59] bg-black/40"
+                  onClick={() => setTurtleFullscreen(false)}
+                />
+              )}
+              <div
+                className={
+                  turtleFullscreen && outputTab === "turtle" && isPython && pyodideMode
+                    ? "fixed inset-4 z-[60] flex items-center justify-center overflow-auto rounded-xl border border-slate-700 bg-white shadow-2xl sm:inset-8"
+                    : outputTab === "turtle" && isPython && pyodideMode
+                      ? "flex-1 overflow-auto bg-white flex items-start justify-center"
+                      : "hidden"
+                }
+              >
+                <canvas
+                  ref={turtleCanvasRef}
+                  id="kat-turtle-canvas"
+                  width={480}
+                  height={360}
+                  className="block"
+                  style={{ background: "#fff" }}
+                />
               </div>
-              <div className="flex-1 overflow-auto">
+
+              {/* Terminal output — hidden when turtle tab is active */}
+              <div className={`flex-1 overflow-auto ${outputTab === "turtle" && isPython && pyodideMode ? "hidden" : ""}`}>
                 {!result && !error && !running && (
                   <div className="flex h-full items-center justify-center px-4 text-center">
                     <p className="text-xs text-slate-600">
