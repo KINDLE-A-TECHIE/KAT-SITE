@@ -34,8 +34,8 @@ export function HeroSection({ enrollments, passRate }: HeroSectionProps) {
 
         {/* Left: Text content */}
         <div className="space-y-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-sm font-medium text-[var(--kat-primary-blue)]">
-            <Sparkles className="size-3.5" />
+          <div className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-1.5 text-sm font-medium text-[var(--kat-primary-blue)] sm:rounded-full">
+            <Sparkles className="size-3.5 shrink-0" />
             Africa&apos;s technology education platform for ages 8–19
           </div>
 
@@ -55,14 +55,15 @@ export function HeroSection({ enrollments, passRate }: HeroSectionProps) {
           </div>
 
           {/* Star rating + trust */}
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <div className="flex">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="size-4 fill-amber-400 text-amber-400" />
-              ))}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+            <div className="flex items-center gap-1.5">
+              <div className="flex">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="size-4 fill-amber-400 text-amber-400" />
+                ))}
+              </div>
+              <span className="font-semibold text-[var(--kat-text-primary)]">4.9</span>
             </div>
-            <span className="font-semibold text-[var(--kat-text-primary)]">4.9</span>
-            <span className="text-[var(--kat-text-secondary)]">·</span>
             <span className="text-[var(--kat-text-secondary)]">
               Trusted by{" "}
               <strong className="text-[var(--kat-text-primary)]">{displayEnrollments} students</strong>{" "}
