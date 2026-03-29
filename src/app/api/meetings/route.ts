@@ -170,7 +170,7 @@ export async function DELETE(request: Request) {
 
   const meeting = await prisma.meeting.findUnique({
     where: { id: meetingId },
-    select: { id: true, hostId: true, status: true, organizationId: true },
+    select: { id: true, hostId: true, status: true, organizationId: true, recordingStatus: true },
   });
   if (!meeting) return fail("Meeting not found.", 404);
 
@@ -181,6 +181,15 @@ export async function DELETE(request: Request) {
   if (!isSuperAdmin && !(isHost && isAdminOrInstructor)) return fail("Forbidden", 403);
   if (meeting.status !== MeetingStatus.ENDED && meeting.status !== MeetingStatus.CANCELLED) {
     return fail("Only ended or cancelled meetings can be removed.", 400);
+  }
+
+  // If a recording is available, preserve the meeting record so the recording library retains it.
+  // Remove all participants instead — the meeting disappears from everyone's list since the
+  // regular meetings query filters by participant membership, but the recording library query
+  // filters by org/status/recordingMode and will still find it.
+  if (meeting.recordingStatus === MeetingRecordingStatus.AVAILABLE) {
+    await prisma.meetingParticipant.deleteMany({ where: { meetingId } });
+    return ok({ meetingId });
   }
 
   await prisma.meeting.delete({ where: { id: meetingId } });
