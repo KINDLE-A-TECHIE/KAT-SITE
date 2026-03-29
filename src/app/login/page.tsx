@@ -74,9 +74,8 @@ function LoginContent() {
       turnstileToken: turnstileToken ?? "",
       redirect: false,
     });
-    setLoading(false);
-
     if (result?.error) {
+      setLoading(false);
       setTurnstileToken(null);
       setTurnstileKey((k) => k + 1);
       if (result.error.includes("Too many")) {
@@ -87,9 +86,10 @@ function LoginContent() {
       return;
     }
 
+    // Keep loading=true so the button stays disabled during navigation.
+    // Do NOT call router.refresh() — it races with push() and cancels the redirect.
     toast.success("Welcome back.");
     router.push(redirectTo);
-    router.refresh();
   });
 
   return (
