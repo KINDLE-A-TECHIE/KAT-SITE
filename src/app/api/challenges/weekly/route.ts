@@ -31,7 +31,6 @@ export async function GET() {
         programId: { in: programIds },
         type: CHALLENGE,
         published: true,
-        verificationStatus: "APPROVED",
         // Only show global challenges (no module) or challenges for modules the student has reached
         OR: [
           { moduleId: null },

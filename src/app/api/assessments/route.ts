@@ -196,7 +196,13 @@ export async function POST(request: Request) {
         totalPoints,
         dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : undefined,
         published: parsed.data.published ?? false,
-        verificationStatus: AssessmentVerificationStatus.PENDING,
+        // Challenges are created by trusted CREATOR_ROLES and don't require a separate
+        // verification step — auto-approve them so they're immediately visible to students
+        // once published. Other assessment types remain PENDING until reviewed.
+        verificationStatus:
+          parsed.data.type === "CHALLENGE"
+            ? AssessmentVerificationStatus.APPROVED
+            : AssessmentVerificationStatus.PENDING,
         verifiedById: null,
         verifiedAt: null,
         verificationNote: null,
