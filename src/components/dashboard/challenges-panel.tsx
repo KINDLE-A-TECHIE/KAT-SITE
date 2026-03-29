@@ -141,7 +141,7 @@ function LeaderboardDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-[calc(100%-2rem)] sm:max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Trophy className="size-5 text-amber-500" />
@@ -174,25 +174,25 @@ function LeaderboardDialog({
 
             {/* Top 3 podium */}
             {entries.length >= 3 && (
-              <div className="mb-4 flex items-end justify-center gap-3 pt-2">
+              <div className="mb-4 flex items-end justify-center gap-2 pt-2">
                 {/* 2nd */}
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-2xl">🥈</span>
-                  <div className="flex h-16 w-20 items-end justify-center rounded-t-xl bg-slate-200 dark:bg-slate-700 pb-2 text-center text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  <span className="text-xl sm:text-2xl">🥈</span>
+                  <div className="flex h-14 w-16 sm:h-16 sm:w-20 items-end justify-center rounded-t-xl bg-slate-200 dark:bg-slate-700 pb-2 text-center text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-300 truncate px-1">
                     {entries[1]?.firstName}
                   </div>
                 </div>
                 {/* 1st */}
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-3xl">🥇</span>
-                  <div className="flex h-24 w-24 items-end justify-center rounded-t-xl bg-amber-300 dark:bg-amber-600 pb-2 text-center text-sm font-bold text-amber-900 dark:text-amber-100">
+                  <span className="text-2xl sm:text-3xl">🥇</span>
+                  <div className="flex h-20 w-20 sm:h-24 sm:w-24 items-end justify-center rounded-t-xl bg-amber-300 dark:bg-amber-600 pb-2 text-center text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-100 truncate px-1">
                     {entries[0]?.firstName}
                   </div>
                 </div>
                 {/* 3rd */}
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-2xl">🥉</span>
-                  <div className="flex h-12 w-20 items-end justify-center rounded-t-xl bg-orange-200 dark:bg-orange-800 pb-2 text-center text-xs font-semibold text-orange-800 dark:text-orange-200">
+                  <span className="text-xl sm:text-2xl">🥉</span>
+                  <div className="flex h-11 w-16 sm:h-12 sm:w-20 items-end justify-center rounded-t-xl bg-orange-200 dark:bg-orange-800 pb-2 text-center text-[10px] sm:text-xs font-semibold text-orange-800 dark:text-orange-200 truncate px-1">
                     {entries[2]?.firstName}
                   </div>
                 </div>
@@ -306,7 +306,7 @@ function SubmitDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-[calc(100%-2rem)] sm:max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Flame className="size-5 text-orange-500" />
@@ -458,7 +458,7 @@ function CreateChallengeDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-[calc(100%-2rem)] sm:max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Flame className="size-5 text-orange-500" />
@@ -585,7 +585,7 @@ function ChallengeCard({
         animate={{ opacity: 1, y: 0 }}
         className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 border-l-4 ${accent}`}
       >
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           {/* Top meta row */}
           <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
             {challenge.weekNumber && (
@@ -769,7 +769,7 @@ export function ChallengesPanel({ role }: Props) {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0D1F45] via-[#1E5FAF] to-violet-600 px-6 py-6 text-white"
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0D1F45] via-[#1E5FAF] to-violet-600 px-4 py-5 sm:px-6 sm:py-6 text-white"
           >
             {/* Background blobs */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -790,7 +790,7 @@ export function ChallengesPanel({ role }: Props) {
                     </span>
                   )}
                 </div>
-                <h2 className="[font-family:var(--font-space-grotesk)] text-xl font-bold leading-snug">
+                <h2 className="[font-family:var(--font-space-grotesk)] text-lg sm:text-xl font-bold leading-snug">
                   {featured.title}
                 </h2>
                 {featured.module && (
@@ -820,14 +820,14 @@ export function ChallengesPanel({ role }: Props) {
       </AnimatePresence>
 
       {/* ── Toolbar ── */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-2">
         {/* Tabs */}
         <div className="flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
           {(["active", "past"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`rounded-lg px-3 py-1.5 text-xs sm:px-4 sm:text-sm font-medium transition-colors ${
                 tab === t
                   ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100"
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
@@ -839,9 +839,10 @@ export function ChallengesPanel({ role }: Props) {
         </div>
 
         {isManager && (
-          <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
+          <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5 shrink-0">
             <PlusCircle className="size-3.5" />
-            New Challenge
+            <span className="hidden sm:inline">New Challenge</span>
+            <span className="sm:hidden">New</span>
           </Button>
         )}
       </div>

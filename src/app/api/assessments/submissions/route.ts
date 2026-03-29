@@ -122,6 +122,17 @@ export async function POST(request: Request) {
       return fail("You are not enrolled in this program.", 403);
     }
 
+    // If this challenge is scoped to a module, the student must have reached it
+    if (assessment.type === "CHALLENGE" && assessment.moduleId) {
+      const gateStatus = await prisma.moduleGateStatus.findFirst({
+        where: { userId: session.user.id, moduleId: assessment.moduleId },
+        select: { id: true },
+      });
+      if (!gateStatus) {
+        return fail("You have not reached the module for this challenge.", 403);
+      }
+    }
+
     // Check for existing submission — assessments close after being taken
     const existingSubmissions = await prisma.assessmentSubmission.findMany({
       where: { assessmentId: assessment.id, studentId: session.user.id },

@@ -12,12 +12,19 @@ export async function GET() {
   const { id: userId, role, organizationId } = session.user;
 
   if (role === "STUDENT" || role === "FELLOW") {
-    const enrollments = await prisma.enrollment.findMany({
-      where: { userId, status: "ACTIVE" },
-      select: { programId: true, id: true },
-    });
+    const [enrollments, gateStatuses] = await Promise.all([
+      prisma.enrollment.findMany({
+        where: { userId, status: "ACTIVE" },
+        select: { programId: true, id: true },
+      }),
+      prisma.moduleGateStatus.findMany({
+        where: { userId },
+        select: { moduleId: true },
+      }),
+    ]);
 
     const programIds = enrollments.map((e) => e.programId);
+    const unlockedModuleIds = gateStatuses.map((g) => g.moduleId);
 
     const challenges = await prisma.assessment.findMany({
       where: {
@@ -25,6 +32,11 @@ export async function GET() {
         type: CHALLENGE,
         published: true,
         verificationStatus: "APPROVED",
+        // Only show global challenges (no module) or challenges for modules the student has reached
+        OR: [
+          { moduleId: null },
+          { moduleId: { in: unlockedModuleIds } },
+        ],
       },
       include: {
         program: { select: { id: true, name: true } },

@@ -311,20 +311,39 @@ export async function PATCH(request: Request) {
       },
     });
 
-    // When a CHALLENGE is approved and published, notify all enrolled students
+    // When a CHALLENGE is approved and published, notify eligible students.
+    // If the challenge is scoped to a module, only students who have reached
+    // that module receive the notification; otherwise notify all active enrollees.
     if (
       parsed.data.action === "APPROVE" &&
       assessment.type === "CHALLENGE" &&
       assessment.published
     ) {
-      const enrollments = await prisma.enrollment.findMany({
-        where: { programId: assessment.programId, status: "ACTIVE" },
-        select: { userId: true },
-      });
-      if (enrollments.length > 0) {
+      let recipientIds: string[];
+
+      if (assessment.moduleId) {
+        // Module-scoped: only students who have a gate status for this module
+        const gateStatuses = await prisma.moduleGateStatus.findMany({
+          where: {
+            moduleId: assessment.moduleId,
+            enrollment: { programId: assessment.programId, status: "ACTIVE" },
+          },
+          select: { userId: true },
+        });
+        recipientIds = gateStatuses.map((g) => g.userId);
+      } else {
+        // Global challenge: notify all active enrollees
+        const enrollments = await prisma.enrollment.findMany({
+          where: { programId: assessment.programId, status: "ACTIVE" },
+          select: { userId: true },
+        });
+        recipientIds = enrollments.map((e) => e.userId);
+      }
+
+      if (recipientIds.length > 0) {
         await prisma.notification.createMany({
-          data: enrollments.map((e) => ({
-            recipientId: e.userId,
+          data: recipientIds.map((userId) => ({
+            recipientId: userId,
             creatorId: session.user.id,
             type: NotificationType.INFO,
             title: "New challenge available",
