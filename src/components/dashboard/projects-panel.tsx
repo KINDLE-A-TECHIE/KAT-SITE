@@ -113,17 +113,17 @@ const STATUS_CONFIG = {
   APPROVED: {
     label: "Approved",
     className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-    description: "Great work!",
+    description: "Accepted — share your portfolio link!",
   },
   NEEDS_WORK: {
     label: "Needs Work",
     className: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-    description: "Review feedback and resubmit",
+    description: "Open to read feedback, then resubmit",
   },
   REJECTED: {
-    label: "Rejected",
+    label: "Not Accepted",
     className: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
-    description: "See feedback below",
+    description: "Open to read feedback — you can still resubmit",
   },
 };
 
@@ -136,10 +136,10 @@ const STATUS_ACCENT: Record<Project["status"], string> = {
 };
 
 const STATUS_GROUPS: { label: string; statuses: Project["status"][]; emptyText: string }[] = [
-  { label: "Needs Attention", statuses: ["NEEDS_WORK"], emptyText: "" },
+  { label: "Needs Attention", statuses: ["NEEDS_WORK", "REJECTED"], emptyText: "" },
   { label: "Drafts", statuses: ["DRAFT"], emptyText: "No drafts." },
   { label: "Under Review", statuses: ["SUBMITTED"], emptyText: "Nothing pending review." },
-  { label: "Completed", statuses: ["APPROVED", "REJECTED"], emptyText: "No completed projects yet." },
+  { label: "Completed", statuses: ["APPROVED"], emptyText: "No completed projects yet." },
 ];
 
 function formatBytes(bytes: number) {
@@ -402,8 +402,8 @@ function ProjectCard({
   const [editForm, setEditForm] = useState({ title: p.title, description: p.description ?? "", tags: p.tags.join(", "), deployedUrl: p.deployedUrl ?? "", howToUse: p.howToUse ?? "" });
 
   const cfg = STATUS_CONFIG[p.status];
-  const canEdit = p.status === "DRAFT" || p.status === "NEEDS_WORK";
-  const canSubmit = p.status === "DRAFT" || p.status === "NEEDS_WORK";
+  const canEdit = p.status === "DRAFT" || p.status === "NEEDS_WORK" || p.status === "REJECTED";
+  const canSubmit = p.status === "DRAFT" || p.status === "NEEDS_WORK" || p.status === "REJECTED";
   const canRetract = p.status === "SUBMITTED";
 
   const patch = async (data: Record<string, unknown>, successMsg: string) => {
@@ -445,6 +445,7 @@ function ProjectCard({
   };
 
   const handleRetract = async () => {
+    if (!confirm("Retract submission? This will move the project back to draft so you can edit and resubmit.")) return;
     await patch({ status: "DRAFT" }, "Submission retracted — back to draft.");
     setSubmitting(false);
   };
@@ -628,7 +629,7 @@ function ProjectCard({
       )}
 
       {/* Card body */}
-      <div className="p-4">
+      <div className="p-3 sm:p-4">
 
         {/* Student name (reviewer/parent view) */}
         {p.student && (
@@ -705,21 +706,11 @@ function ProjectCard({
               )}
               <span className="text-slate-300 dark:text-slate-600">{formatDate(p.updatedAt)}</span>
             </div>
-            {!isReviewer && !readOnly && (canSubmit || canRetract) && (
-              <div className="flex shrink-0 gap-1.5">
-                {canSubmit && (
-                  <Button size="sm" onClick={() => void handleSubmit()} disabled={submitting} className="h-8 gap-1 px-3 text-xs sm:h-7">
-                    {submitting ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}
-                    Submit
-                  </Button>
-                )}
-                {canRetract && (
-                  <Button size="sm" variant="outline" onClick={() => void handleRetract()} disabled={submitting} className="h-8 gap-1 px-3 text-xs sm:h-7">
-                    {submitting ? <Loader2 className="size-3 animate-spin" /> : <Undo2 className="size-3" />}
-                    Retract
-                  </Button>
-                )}
-              </div>
+            {!isReviewer && !readOnly && canRetract && (
+              <Button size="sm" variant="outline" onClick={() => void handleRetract()} disabled={submitting} className="h-8 shrink-0 gap-1 px-3 text-xs sm:h-7">
+                {submitting ? <Loader2 className="size-3 animate-spin" /> : <Undo2 className="size-3" />}
+                Retract
+              </Button>
             )}
           </div>
         )}
@@ -734,25 +725,7 @@ function ProjectCard({
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="space-y-4 border-t border-slate-100 p-4 dark:border-slate-800">
-
-              {/* Description + tags (read view only) */}
-              {!editing && (
-                <>
-                  {p.description && (
-                    <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">{p.description}</p>
-                  )}
-                  {p.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {p.tags.map((tag) => (
-                        <span key={tag} className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
-                          <Tag className="size-2.5" />{tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
+            <div className="space-y-4 border-t border-slate-100 p-3 sm:p-4 dark:border-slate-800">
 
               {/* Edit form */}
               {editing ? (
@@ -839,6 +812,15 @@ function ProjectCard({
               ) : (
                 <>
                   {p.description && <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">{p.description}</p>}
+                  {p.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {p.tags.map((tag) => (
+                        <span key={tag} className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
+                          <Tag className="size-2.5" />{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {p.howToUse && (
                     <div>
                       <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">How to Use</p>
@@ -914,9 +896,9 @@ function ProjectCard({
                     {p.feedback.map((fb) => (
                       <div key={fb.id} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
                         <div className="mb-1 flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{fb.author.firstName} {fb.author.lastName}</span>
-                            <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(fb.createdAt)}</span>
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="truncate text-xs font-medium text-slate-700 dark:text-slate-300">{fb.author.firstName} {fb.author.lastName}</span>
+                            <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{formatDate(fb.createdAt)}</span>
                           </div>
                           {isReviewer && (
                             <div className="flex shrink-0 items-center gap-1">
@@ -980,7 +962,12 @@ function ProjectCard({
               {/* Instructor assets (reviewer view) */}
               {isReviewer && !editing && (
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Project Assets</p>
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Project Assets</p>
+                    {p.status === "APPROVED" && (
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500 italic">Editable after approval</span>
+                    )}
+                  </div>
                   {(p.assets ?? []).length > 0 && (
                     <div className="mb-2 space-y-1.5">
                       {(p.assets ?? []).map((asset) => (
@@ -1165,7 +1152,7 @@ function NewProjectForm({ programs, onCreated, assignment, onCancelAssignment }:
   // ── Step 2: upload files (optional) ────────────────────────────────────────
   if (created) {
     return (
-      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 dark:border-slate-700 dark:bg-slate-900">
         <div>
           <h3 className="font-semibold text-slate-900 dark:text-slate-100">Upload Files</h3>
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
@@ -1200,7 +1187,7 @@ function NewProjectForm({ programs, onCreated, assignment, onCancelAssignment }:
 
   // ── Step 1: project details ─────────────────────────────────────────────────
   return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 dark:border-slate-700 dark:bg-slate-900">
       <div className="flex items-start justify-between gap-3">
         <h3 className="font-semibold text-slate-900 dark:text-slate-100">
           {assignment ? "Start Assignment" : "New Project"}
@@ -1276,7 +1263,7 @@ function NewProjectDialog({ open, onClose, programs, onCreated, assignment }: {
 }) {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[92vh] max-w-lg overflow-y-auto">
+      <DialogContent className="max-h-[92vh] max-w-[calc(100%-2rem)] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {assignment ? <><Briefcase className="size-4 text-amber-500" />Start Assignment</> : <><Plus className="size-4" />New Project</>}
@@ -1299,7 +1286,9 @@ function NewProjectDialog({ open, onClose, programs, onCreated, assignment }: {
 // ── Main Panel ────────────────────────────────────────────────────────────────
 
 export function ProjectsPanel({ role }: { role: UserRoleValue }) {
-  const [tab, setTab] = useState<"mine" | "assignments" | "review">("mine");
+  const [tab, setTab] = useState<"mine" | "assignments" | "review">(
+    role === "INSTRUCTOR" || role === "ADMIN" || role === "SUPER_ADMIN" ? "review" : "mine"
+  );
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -1452,13 +1441,12 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
 
   const tabs = [
     { key: "mine" as const, label: isParent ? "Children's Projects" : "My Work", show: !isReviewer },
-    { key: "assignments" as const, label: "Assignments", show: isReviewer },
+    { key: "assignments" as const, label: "Assignments", show: !isParent },
     { key: "review" as const, label: "Review Queue", show: isReviewer },
   ].filter((t) => t.show);
 
-  // Pending assignments (not started yet)
+  // Pending assignments (not started) — shown in My Work as action reminders
   const pendingAssignments = assignments.filter((a) => !a.linkedProject);
-  const inProgressAssignments = assignments.filter((a) => a.linkedProject && a.linkedProject.status !== "APPROVED");
 
   return (
     <div className="space-y-4">
@@ -1515,6 +1503,8 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
               </p>
               <Link
                 href="/dashboard/assessments"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-1.5 rounded-lg bg-[#0D1F45] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#162d5e]"
               >
                 <Plus className="size-3.5" />
@@ -1537,6 +1527,8 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
               {isReviewer && (
                 <Link
                   href="/dashboard/assessments"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="mt-1 flex items-center gap-1.5 rounded-lg bg-[#0D1F45] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#162d5e]"
                 >
                   <Plus className="size-3.5" />
@@ -1544,16 +1536,13 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                 </Link>
               )}
             </div>
-          ) : (
+          ) : isReviewer ? (
+            /* ── Instructor view: manage all assignments ── */
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {assignments.map((a) => {
-                const linked = a.linkedProject;
-                const statusConfig = linked ? STATUS_CONFIG[linked.status as Project["status"]] : null;
-                const fileCount = (linked?.files.length ?? 0) + (linked?.assets.length ?? 0);
                 const dueMs = a.dueDate ? new Date(a.dueDate).getTime() - Date.now() : null;
                 const dueDays = dueMs !== null ? Math.ceil(dueMs / 86_400_000) : null;
                 const urgent = dueDays !== null && dueDays <= 3 && dueDays >= 0;
-
                 return (
                   <motion.div
                     key={a.id}
@@ -1562,7 +1551,6 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                     className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
                   >
                     <div className="p-4">
-                      {/* Badges */}
                       <div className="mb-2 flex flex-wrap items-center gap-1.5">
                         <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                           {a.program.name}
@@ -1578,16 +1566,14 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                           </span>
                         )}
                       </div>
-
                       <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-900 leading-snug dark:text-slate-100">
                         {a.title}
                       </h3>
                       {a.description && (
-                        <p className="mt-1 line-clamp-1 text-sm text-slate-500 leading-relaxed dark:text-slate-400 sm:line-clamp-2">
+                        <p className="mt-1 line-clamp-2 text-sm text-slate-500 leading-relaxed dark:text-slate-400">
                           {a.description}
                         </p>
                       )}
-
                       <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
                         <span className="flex items-center gap-1">
                           <Star className="size-3.5 text-amber-400" />
@@ -1599,58 +1585,158 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                             {dueDays === null ? "" : dueDays < 0 ? "Ended" : dueDays === 0 ? "Due today!" : dueDays === 1 ? "Due tomorrow" : `${dueDays} days left`}
                           </span>
                         )}
-                        {isReviewer && a._count && (
+                        {a._count && (
                           <span className="flex items-center gap-1">
                             <FolderOpen className="size-3.5" />
-                            {a._count.projects} submitted
+                            {a._count.projects} project{a._count.projects !== 1 ? "s" : ""}
                           </span>
                         )}
                       </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
+            /* ── Student view: full assignment history with status ── */
+            (() => {
+              const notStarted = assignments.filter((a) => !a.linkedProject);
+              const inProgress = assignments.filter((a) => a.linkedProject && a.linkedProject.status !== "APPROVED");
+              const completed = assignments.filter((a) => a.linkedProject?.status === "APPROVED");
 
-                      {/* Linked project status (student view) */}
-                      {linked && statusConfig && canCreate && (
+              const AssignmentCard = ({ a, accent }: { a: Assignment; accent?: string }) => {
+                const linked = a.linkedProject;
+                const statusConfig = linked ? STATUS_CONFIG[linked.status as Project["status"]] : null;
+                const fileCount = (linked?.files.length ?? 0) + (linked?.assets.length ?? 0);
+                const dueMs = a.dueDate ? new Date(a.dueDate).getTime() - Date.now() : null;
+                const dueDays = dueMs !== null ? Math.ceil(dueMs / 86_400_000) : null;
+                const overdue = dueDays !== null && dueDays < 0;
+                const urgent = dueDays !== null && dueDays <= 3 && dueDays >= 0;
+                return (
+                  <motion.div
+                    key={a.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-slate-900 ${accent ?? "border-slate-200 dark:border-slate-700"}`}
+                  >
+                    <div className="p-4">
+                      <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                        <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                          {a.program.name}
+                        </span>
+                        {a.module && (
+                          <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-medium text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                            {a.module.title}
+                          </span>
+                        )}
+                        {a.weekNumber && (
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            Week {a.weekNumber}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-900 leading-snug dark:text-slate-100">
+                        {a.title}
+                      </h3>
+                      {a.description && (
+                        <p className="mt-1 line-clamp-2 text-sm text-slate-500 leading-relaxed dark:text-slate-400">
+                          {a.description}
+                        </p>
+                      )}
+                      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <Star className="size-3.5 text-amber-400" />
+                          {a.totalPoints} pts
+                        </span>
+                        {a.dueDate && (
+                          <span className={`flex items-center gap-1 font-medium ${overdue ? "text-red-500 dark:text-red-400" : urgent ? "text-orange-500 dark:text-orange-400" : ""}`}>
+                            <Clock className="size-3.5" />
+                            {dueDays === null ? "" : dueDays < 0 ? `Overdue by ${Math.abs(dueDays)}d` : dueDays === 0 ? "Due today!" : dueDays === 1 ? "Due tomorrow" : `${dueDays} days left`}
+                          </span>
+                        )}
+                      </div>
+                      {linked && statusConfig && (
                         <div className="mt-3 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800">
-                          <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusConfig.className}`}>
+                          <span className={`inline-block shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusConfig.className}`}>
                             {statusConfig.label}
                           </span>
-                          <span className="text-xs text-slate-500 dark:text-slate-400">{statusConfig.description}</span>
+                          <span className="min-w-0 truncate text-xs text-slate-500 dark:text-slate-400">{statusConfig.description}</span>
                           {fileCount > 0 && (
-                            <span className="ml-auto flex items-center gap-1 text-xs text-slate-400">
-                              <FileText className="size-3.5" />{fileCount} file{fileCount !== 1 ? "s" : ""}
+                            <span className="ml-auto flex shrink-0 items-center gap-1 text-xs text-slate-400">
+                              <FileText className="size-3.5" />{fileCount}
                             </span>
                           )}
                         </div>
                       )}
                     </div>
-
-                    {/* Footer */}
-                    {canCreate && (
-                      <div className="flex items-center gap-2 border-t border-slate-100 bg-slate-50/50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-800/30">
-                        {linked ? (
-                          <>
-                            <button
-                              onClick={() => setTab("mine")}
-                              className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
-                            >
-                              View my project →
-                            </button>
-                          </>
-                        ) : (
-                          <Button
-                            size="sm"
-                            className="h-7 gap-1.5 px-3 text-xs"
-                            onClick={() => { setActiveAssignment(a); setNewProjectOpen(true); }}
-                          >
-                            <Plus className="size-3.5" />
-                            Start Project
-                          </Button>
-                        )}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2 border-t border-slate-100 bg-slate-50/50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-800/30">
+                      {linked ? (
+                        <button
+                          onClick={() => setTab("mine")}
+                          className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                          View in My Work →
+                        </button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="h-7 gap-1.5 px-3 text-xs"
+                          onClick={() => { setActiveAssignment(a); setNewProjectOpen(true); }}
+                        >
+                          <Plus className="size-3.5" />
+                          Start Project
+                        </Button>
+                      )}
+                    </div>
                   </motion.div>
                 );
-              })}
-            </div>
+              };
+
+              return (
+                <div className="space-y-6">
+                  {notStarted.length > 0 && (
+                    <div>
+                      <div className="mb-3 flex items-center gap-2">
+                        <h3 className="text-xs font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">Not Started</h3>
+                        <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">{notStarted.length}</span>
+                      </div>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {notStarted.map((a) => <AssignmentCard key={a.id} a={a} accent="border-amber-200 dark:border-amber-800/50" />)}
+                      </div>
+                    </div>
+                  )}
+                  {inProgress.length > 0 && (
+                    <div>
+                      <div className="mb-3 flex items-center gap-2">
+                        <h3 className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">In Progress</h3>
+                        <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">{inProgress.length}</span>
+                      </div>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {inProgress.map((a) => <AssignmentCard key={a.id} a={a} />)}
+                      </div>
+                    </div>
+                  )}
+                  {completed.length > 0 && (
+                    <div>
+                      <div className="mb-3 flex items-center gap-2">
+                        <h3 className="text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Completed</h3>
+                        <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">{completed.length}</span>
+                      </div>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {completed.map((a) => <AssignmentCard key={a.id} a={a} accent="border-emerald-200 dark:border-emerald-800/50" />)}
+                      </div>
+                    </div>
+                  )}
+                  {notStarted.length === 0 && inProgress.length === 0 && completed.length === 0 && (
+                    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-200 py-16 text-center dark:border-slate-700">
+                      <BookMarked className="size-10 text-slate-300 dark:text-slate-600" />
+                      <p className="font-medium text-slate-600 dark:text-slate-400">No assignments yet</p>
+                      <p className="text-sm text-slate-400">Your instructor hasn&apos;t assigned any projects yet.</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()
           )}
         </div>
       )}
@@ -1689,7 +1775,13 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
             <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-12 text-center dark:border-slate-700">
               <CheckCircle2 className="size-10 text-emerald-300 dark:text-emerald-700" />
               <p className="font-medium text-slate-700 dark:text-slate-300">
-                {reviewSearch ? "No projects match your search" : "All caught up — no projects pending review"}
+                {reviewSearch
+                  ? "No projects match your search"
+                  : reviewStatus === "SUBMITTED"
+                  ? "All caught up — no submissions waiting for review"
+                  : reviewStatus === "all"
+                  ? "No projects in the queue yet"
+                  : `No projects with status "${STATUS_CONFIG[reviewStatus as Project["status"]]?.label ?? reviewStatus}"`}
               </p>
             </div>
           ) : (
@@ -1770,22 +1862,27 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
             // ── Student / Fellow: assignments first, then portfolio ──────────
             <>
               {/* Pending assignments — amber accent cards */}
-              {(pendingAssignments.length > 0 || inProgressAssignments.length > 0) && (
+              {pendingAssignments.length > 0 && (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <BookMarked className="size-4 text-amber-500" />
-                    <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-                      Assignments
-                      <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                        {pendingAssignments.length + inProgressAssignments.length}
-                      </span>
-                    </h3>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <BookMarked className="size-4 text-amber-500" />
+                      <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                        To Do
+                        <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                          {pendingAssignments.length}
+                        </span>
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() => setTab("assignments")}
+                      className="text-xs font-medium text-amber-600 hover:underline dark:text-amber-400"
+                    >
+                      View all assignments →
+                    </button>
                   </div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {[...pendingAssignments, ...inProgressAssignments].map((a) => {
-                      const linked = a.linkedProject;
-                      const statusConfig = linked ? STATUS_CONFIG[linked.status as Project["status"]] : null;
-                      const fileCount = (linked?.files.length ?? 0) + (linked?.assets.length ?? 0);
+                    {pendingAssignments.map((a) => {
                       const dueMs = a.dueDate ? new Date(a.dueDate).getTime() - Date.now() : null;
                       const dueDays = dueMs !== null ? Math.ceil(dueMs / 86_400_000) : null;
                       const overdue = dueDays !== null && dueDays < 0;
@@ -1799,7 +1896,6 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                           className="overflow-hidden rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm dark:border-amber-800/50 dark:from-amber-950/30 dark:to-orange-950/20"
                         >
                           <div className="p-4">
-                            {/* Program / module badges */}
                             <div className="mb-2 flex flex-wrap items-center gap-1.5">
                               <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
                                 {a.program.name}
@@ -1815,7 +1911,6 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                                 </span>
                               )}
                             </div>
-
                             <h3 className="[font-family:var(--font-space-grotesk)] font-semibold leading-snug text-slate-900 dark:text-slate-100">
                               {a.title}
                             </h3>
@@ -1824,7 +1919,6 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                                 {a.description}
                               </p>
                             )}
-
                             <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
                               <span className="flex items-center gap-1">
                                 <Star className="size-3.5 text-amber-400" />
@@ -1837,45 +1931,16 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                                 </span>
                               )}
                             </div>
-
-                            {/* Linked project status */}
-                            {linked && statusConfig && (
-                              <div className="mt-3 flex items-center gap-2 rounded-lg bg-white/60 px-3 py-2 dark:bg-slate-800/40">
-                                <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusConfig.className}`}>
-                                  {statusConfig.label}
-                                </span>
-                                <span className="text-xs text-slate-500 dark:text-slate-400">{statusConfig.description}</span>
-                                {fileCount > 0 && (
-                                  <span className="ml-auto flex items-center gap-1 text-xs text-slate-400">
-                                    <FileText className="size-3.5" />{fileCount}
-                                  </span>
-                                )}
-                              </div>
-                            )}
                           </div>
-
-                          {/* CTA footer */}
                           <div className="flex items-center gap-2 border-t border-amber-200/60 bg-white/40 px-4 py-2.5 dark:border-amber-800/30 dark:bg-slate-800/20">
-                            {linked ? (
-                              <button
-                                onClick={() => {
-                                  const el = document.getElementById(`project-${linked.id}`);
-                                  el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                                }}
-                                className="text-xs font-medium text-amber-700 hover:underline dark:text-amber-400"
-                              >
-                                View my submission →
-                              </button>
-                            ) : (
-                              <Button
-                                size="sm"
-                                className="h-7 gap-1.5 border-amber-400 bg-amber-500 px-3 text-xs text-white hover:bg-amber-600 dark:border-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500"
-                                onClick={() => { setActiveAssignment(a); setNewProjectOpen(true); }}
-                              >
-                                <Plus className="size-3.5" />
-                                Start Project
-                              </Button>
-                            )}
+                            <Button
+                              size="sm"
+                              className="h-7 gap-1.5 border-amber-400 bg-amber-500 px-3 text-xs text-white hover:bg-amber-600 dark:border-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500"
+                              onClick={() => { setActiveAssignment(a); setNewProjectOpen(true); }}
+                            >
+                              <Plus className="size-3.5" />
+                              Start Project
+                            </Button>
                           </div>
                         </motion.div>
                       );
@@ -1885,7 +1950,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
               )}
 
               {/* Portfolio sections grouped by status */}
-              {projects.length === 0 && pendingAssignments.length === 0 && inProgressAssignments.length === 0 ? (
+              {projects.length === 0 && pendingAssignments.length === 0 ? (
                 <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-center dark:border-slate-700">
                   <FolderOpen className="size-10 text-slate-300 dark:text-slate-600" />
                   <div>
@@ -1904,7 +1969,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                 </div>
               ) : projects.length > 0 && (
                 <>
-                  {(pendingAssignments.length > 0 || inProgressAssignments.length > 0) && (
+                  {pendingAssignments.length > 0 && (
                     <div className="flex items-center gap-2">
                       <Briefcase className="size-4 text-slate-400" />
                       <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400">My Portfolio</h3>

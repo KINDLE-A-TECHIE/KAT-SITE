@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { UserRole } from "@prisma/client";
+import { NotificationType, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -93,10 +93,12 @@ export async function PATCH(request: Request, { params }: Params) {
   const { status: newStatus, ...fields } = parsed.data;
   const hasFieldEdits = Object.keys(fields).length > 0;
   const isRetract = newStatus === "DRAFT" && project.status === "SUBMITTED";
-  const isSubmit = newStatus === "SUBMITTED" && (project.status === "DRAFT" || project.status === "NEEDS_WORK");
+  const isSubmit = newStatus === "SUBMITTED" && (
+    project.status === "DRAFT" || project.status === "NEEDS_WORK" || project.status === "REJECTED"
+  );
 
-  // Field edits only allowed on DRAFT or NEEDS_WORK
-  if (hasFieldEdits && project.status !== "DRAFT" && project.status !== "NEEDS_WORK") {
+  // Field edits only allowed on DRAFT, NEEDS_WORK, or REJECTED
+  if (hasFieldEdits && project.status !== "DRAFT" && project.status !== "NEEDS_WORK" && project.status !== "REJECTED") {
     return fail("Cannot edit a submitted or reviewed project.", 400);
   }
   // Status transitions: only submit or retract
@@ -125,6 +127,28 @@ export async function PATCH(request: Request, { params }: Params) {
       },
     },
   });
+
+  // Notify instructors in the org that a new submission is waiting for review
+  if (isSubmit && session.user.organizationId) {
+    const instructors = await prisma.user.findMany({
+      where: { organizationId: session.user.organizationId, role: UserRole.INSTRUCTOR },
+      select: { id: true },
+    });
+    if (instructors.length > 0) {
+      await prisma.notification.createMany({
+        data: instructors.map((i) => ({
+          recipientId: i.id,
+          creatorId: session.user.id,
+          type: NotificationType.INFO,
+          title: "Project submitted for review",
+          body: JSON.stringify({
+            text: `A student submitted "${project.title}" for review. Open the Review Queue to assess it.`,
+            targetPath: "/dashboard/projects",
+          }),
+        })),
+      });
+    }
+  }
 
   return ok({ project: updated });
 }
