@@ -5,8 +5,8 @@ import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import {
   AlertCircle, CheckCircle2, ChevronRight, Download, FilePlus,
-  FolderOpen, Globe, Maximize2, Minimize2, Package, Play, RotateCcw,
-  Send, Terminal, UserPlus, Users, Wifi, X,
+  FolderOpen, Globe, Maximize2, Minimize2, MoreHorizontal, Package,
+  Play, RotateCcw, Send, Terminal, UserPlus, Users, Wifi, X,
 } from "lucide-react";
 import { zipSync } from "fflate";
 import { Button } from "@/components/ui/button";
@@ -1043,6 +1043,7 @@ export function CodePlaygroundBlock({
   const [outputTab, setOutputTab]             = useState<"output" | "turtle">("output");
   const [previewFullscreen, setPreviewFullscreen] = useState(false);
   const [turtleFullscreen, setTurtleFullscreen]   = useState(false);
+  const [showMoreMenu, setShowMoreMenu]           = useState(false);
 
   // ── Peer session state ─────────────────────────────────────────────────────
   const [peerSessionId, setPeerSessionId]         = useState<string | null>(null);
@@ -1914,6 +1915,14 @@ ${code}
         {/* Right — actions */}
         <div className="flex shrink-0 items-center gap-1">
 
+          {/* Hidden file inputs */}
+          <input ref={fileInputRef} type="file" multiple className="hidden"
+            onChange={(e) => void loadFilesFromInput(e.target.files).then(() => { e.target.value = ""; })} />
+          <input ref={folderInputRef} type="file" multiple className="hidden"
+            onChange={(e) => void loadFilesFromInput(e.target.files).then(() => { e.target.value = ""; })} />
+
+          {/* ── Desktop-only secondary controls ── */}
+
           {/* Python: Server ↔ Browser toggle */}
           {isPython && (
             <button
@@ -1926,7 +1935,7 @@ ${code}
             </button>
           )}
 
-          {/* Packages panel (Python + Pyodide only) */}
+          {/* Packages panel */}
           {isPython && pyodideMode && (
             <button
               onClick={() => setShowPackages((v) => !v)}
@@ -1934,93 +1943,146 @@ ${code}
               className={`hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium transition sm:flex ${showPackages ? "bg-violet-500/20 text-violet-400" : "text-slate-500 hover:bg-white/10 hover:text-slate-300"}`}
             >
               <Package className="h-3 w-3" />
-              Packages{installedPkgs.length > 0 ? ` (${installedPkgs.length})` : ""}
+              <span>Packages{installedPkgs.length > 0 ? ` (${installedPkgs.length})` : ""}</span>
             </button>
           )}
 
           {/* Peer session controls */}
           {isCreator && !inPeerSession && (
-            <button
-              onClick={() => void startPeerSession()}
-              disabled={startingPeer}
+            <button onClick={() => void startPeerSession()} disabled={startingPeer}
               title="Start peer programming session"
-              className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300 disabled:opacity-50"
-            >
+              className="hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300 disabled:opacity-50 sm:flex">
               <Users className="h-3 w-3" />
               {startingPeer ? "Starting…" : "Peer"}
             </button>
           )}
           {isCreator && inPeerSession && (
-            <button
-              onClick={() => void endPeerSession()}
-              title="End peer session"
-              className="rounded px-2 py-1 text-[10px] font-medium text-rose-400 transition hover:bg-white/10"
-            >
+            <button onClick={() => void endPeerSession()} title="End peer session"
+              className="hidden rounded px-2 py-1 text-[10px] font-medium text-rose-400 transition hover:bg-white/10 sm:block">
               End Session
             </button>
           )}
 
-          {/* Invite students (instructor/admin only) */}
+          {/* Invite students */}
           {isCreator && programId && (
-            <button
-              onClick={() => setShowInviteModal(true)}
-              title="Invite students to this playground"
-              className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300"
-            >
+            <button onClick={() => setShowInviteModal(true)} title="Invite students to this playground"
+              className="hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300 sm:flex">
               <UserPlus className="h-3 w-3" />
               Invite
             </button>
           )}
 
-          {/* Hidden file inputs */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            className="hidden"
-            onChange={(e) => void loadFilesFromInput(e.target.files).then(() => { e.target.value = ""; })}
-          />
-          <input
-            ref={folderInputRef}
-            type="file"
-            multiple
-            className="hidden"
-            onChange={(e) => void loadFilesFromInput(e.target.files).then(() => { e.target.value = ""; })}
-          />
-
-          <button onClick={() => folderInputRef.current?.click()} title="Open project folder" className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300">
+          <button onClick={() => folderInputRef.current?.click()} title="Open project folder"
+            className="hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300 sm:flex">
             <FolderOpen className="h-3 w-3" />
-            <span className="hidden sm:inline">Folder</span>
+            <span>Folder</span>
           </button>
-          <button onClick={() => fileInputRef.current?.click()} title="Add files" className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300">
+          <button onClick={() => fileInputRef.current?.click()} title="Add files"
+            className="hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300 sm:flex">
             <FilePlus className="h-3 w-3" />
-            <span className="hidden sm:inline">Files</span>
+            <span>Files</span>
           </button>
-          <button onClick={downloadCode} title={isProjectMode ? "Download project as zip" : `Download as main.${fileExtension}`} className="rounded p-1 text-slate-500 transition hover:bg-white/10 hover:text-slate-300">
+          <button onClick={downloadCode} title="Download"
+            className="hidden rounded p-1 text-slate-500 transition hover:bg-white/10 hover:text-slate-300 sm:block">
             <Download className="h-3.5 w-3.5" />
           </button>
           {!isWebMode && (
-            <button
-              onClick={() => setShowStdin((v) => !v)}
-              title="Toggle stdin"
-              className={`rounded px-2 py-1 text-[10px] font-medium transition ${showStdin ? "bg-amber-500/20 text-amber-400" : "text-slate-500 hover:bg-white/10 hover:text-slate-300"}`}
-            >
+            <button onClick={() => setShowStdin((v) => !v)} title="Toggle stdin"
+              className={`hidden rounded px-2 py-1 text-[10px] font-medium transition sm:block ${showStdin ? "bg-amber-500/20 text-amber-400" : "text-slate-500 hover:bg-white/10 hover:text-slate-300"}`}>
               stdin
             </button>
           )}
-          <button
-            onClick={reset}
-            title={isProjectMode ? "Close project" : "Reset to starter code"}
-            className="rounded p-1 text-slate-500 transition hover:bg-white/10 hover:text-slate-300"
-          >
+          <button onClick={reset} title={isProjectMode ? "Close project" : "Reset to starter code"}
+            className="hidden rounded p-1 text-slate-500 transition hover:bg-white/10 hover:text-slate-300 sm:block">
             <RotateCcw className="h-3.5 w-3.5" />
           </button>
+
+          {/* ── Mobile: … overflow menu ── */}
+          <div className="relative sm:hidden">
+            <button
+              onClick={() => setShowMoreMenu((v) => !v)}
+              title="More options"
+              className="rounded p-1.5 text-slate-500 transition hover:bg-white/10 hover:text-slate-300"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+            {showMoreMenu && (
+              <>
+                <div className="fixed inset-0 z-[40]" onClick={() => setShowMoreMenu(false)} />
+                <div className="absolute right-0 top-full z-[41] mt-1 w-44 overflow-hidden rounded-lg border border-slate-700 bg-[#1e1e1e] shadow-xl">
+                  {isPython && (
+                    <button onClick={() => { setPyodideMode((v) => !v); setResult(null); setError(null); setShowMoreMenu(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5">
+                      <Globe className="h-3.5 w-3.5 shrink-0" />
+                      {pyodideMode ? "Switch to Server" : "Switch to Browser"}
+                    </button>
+                  )}
+                  {isPython && pyodideMode && (
+                    <button onClick={() => { setShowPackages((v) => !v); setShowMoreMenu(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5">
+                      <Package className="h-3.5 w-3.5 shrink-0" />
+                      Packages{installedPkgs.length > 0 ? ` (${installedPkgs.length})` : ""}
+                    </button>
+                  )}
+                  {isCreator && !inPeerSession && (
+                    <button onClick={() => { void startPeerSession(); setShowMoreMenu(false); }} disabled={startingPeer}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5 disabled:opacity-50">
+                      <Users className="h-3.5 w-3.5 shrink-0" />
+                      {startingPeer ? "Starting…" : "Start Peer Session"}
+                    </button>
+                  )}
+                  {isCreator && inPeerSession && (
+                    <button onClick={() => { void endPeerSession(); setShowMoreMenu(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-rose-400 hover:bg-white/5">
+                      <Users className="h-3.5 w-3.5 shrink-0" />
+                      End Peer Session
+                    </button>
+                  )}
+                  {isCreator && programId && (
+                    <button onClick={() => { setShowInviteModal(true); setShowMoreMenu(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5">
+                      <UserPlus className="h-3.5 w-3.5 shrink-0" />
+                      Invite Students
+                    </button>
+                  )}
+                  <button onClick={() => { folderInputRef.current?.click(); setShowMoreMenu(false); }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5">
+                    <FolderOpen className="h-3.5 w-3.5 shrink-0" />
+                    Open Folder
+                  </button>
+                  <button onClick={() => { fileInputRef.current?.click(); setShowMoreMenu(false); }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5">
+                    <FilePlus className="h-3.5 w-3.5 shrink-0" />
+                    Add Files
+                  </button>
+                  <button onClick={() => { downloadCode(); setShowMoreMenu(false); }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5">
+                    <Download className="h-3.5 w-3.5 shrink-0" />
+                    Download
+                  </button>
+                  {!isWebMode && (
+                    <button onClick={() => { setShowStdin((v) => !v); setShowMoreMenu(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5">
+                      <Terminal className="h-3.5 w-3.5 shrink-0" />
+                      {showStdin ? "Hide stdin" : "Show stdin"}
+                    </button>
+                  )}
+                  <button onClick={() => { reset(); setShowMoreMenu(false); }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-rose-400 hover:bg-white/5">
+                    <RotateCcw className="h-3.5 w-3.5 shrink-0" />
+                    Reset
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
           <Button
             size="sm"
             onClick={() => void run()}
             disabled={running || pyodideLoading}
             title={isWebMode ? "Refresh preview" : "Run (Ctrl+Enter)"}
-            className="h-7 gap-1.5 bg-emerald-600 px-3 text-xs hover:bg-emerald-700"
+            className="h-8 gap-1.5 bg-emerald-600 px-3 text-xs hover:bg-emerald-700 sm:h-7"
           >
             <Play className="h-3 w-3" />
             {runBtnLabel()}
@@ -2050,7 +2112,7 @@ ${code}
                 ) : (
                   <button onClick={(e) => { e.stopPropagation(); setEntryFile(path); }} title="Set as entry point" className="h-3.5 w-3.5 shrink-0 rounded-sm text-[8px] text-slate-600 opacity-0 transition hover:bg-emerald-600/30 hover:text-emerald-400 group-hover:opacity-100">▶</button>
                 )}
-                <span className="max-w-[120px] truncate" title={path}>{basename}</span>
+                <span className="max-w-[72px] truncate sm:max-w-[120px]" title={path}>{basename}</span>
                 <button onClick={(e) => { e.stopPropagation(); removeFile(path); }} title="Remove file" className="ml-0.5 shrink-0 rounded text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100">
                   <X className="h-2.5 w-2.5" />
                 </button>
@@ -2068,7 +2130,7 @@ ${code}
 
       {/* ── Participants strip (peer session) ────────────────────────────────── */}
       {inPeerSession && peerParticipants.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-700 bg-[#1a1a1a] px-4 py-1.5">
+        <div className="flex items-center gap-1.5 overflow-x-auto border-b border-slate-700 bg-[#1a1a1a] px-4 py-1.5 scrollbar-none">
           <Users className="h-3 w-3 shrink-0 text-slate-500" />
           {peerParticipants.map((p) => (
             <span key={p.userId} className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${p.userId === userId ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-700 text-slate-400"}`}>
@@ -2171,10 +2233,10 @@ ${code}
       )}
 
       {/* ── Split pane: Editor + Output/Preview ──────────────────────────────── */}
-      <div className="flex flex-col lg:h-[500px] lg:flex-row">
+      <div className="flex flex-col lg:h-[540px] lg:flex-row">
 
         {/* Editor pane */}
-        <div className="h-[420px] lg:h-full lg:flex-1">
+        <div className="h-[300px] sm:h-[380px] lg:h-full lg:flex-1">
           <MonacoEditor
             height="100%"
             language={activeMonacoLang}
@@ -2200,7 +2262,7 @@ ${code}
         </div>
 
         {/* Output / Preview pane */}
-        <div className="flex h-[320px] flex-col border-t border-slate-700 lg:h-full lg:w-[45%] lg:border-l lg:border-t-0">
+        <div className="flex h-[260px] flex-col border-t border-slate-700 sm:h-[300px] lg:h-full lg:w-[45%] lg:border-l lg:border-t-0">
           {isWebMode ? (
             /* ── Web Preview ── */
             <>
@@ -2214,7 +2276,7 @@ ${code}
               <div
                 className={
                   previewFullscreen
-                    ? "fixed inset-4 z-[60] flex flex-col overflow-hidden rounded-xl border border-slate-700 shadow-2xl sm:inset-8"
+                    ? "fixed inset-1 z-[60] flex flex-col overflow-hidden rounded-xl border border-slate-700 shadow-2xl sm:inset-4 md:inset-8"
                     : "flex h-full flex-col"
                 }
               >
@@ -2320,7 +2382,7 @@ ${code}
               <div
                 className={
                   turtleFullscreen && outputTab === "turtle" && isPython && pyodideMode
-                    ? "fixed inset-4 z-[60] flex items-center justify-center overflow-auto rounded-xl border border-slate-700 bg-white shadow-2xl sm:inset-8"
+                    ? "fixed inset-1 z-[60] flex items-center justify-center overflow-auto rounded-xl border border-slate-700 bg-white shadow-2xl sm:inset-4 md:inset-8"
                     : outputTab === "turtle" && isPython && pyodideMode
                       ? "flex-1 overflow-auto bg-white flex items-start justify-center"
                       : "hidden"
@@ -2331,8 +2393,8 @@ ${code}
                   id="kat-turtle-canvas"
                   width={480}
                   height={360}
-                  className="block"
-                  style={{ background: "#fff" }}
+                  className="block max-w-full"
+                  style={{ background: "#fff", height: "auto" }}
                 />
               </div>
 
@@ -2390,7 +2452,7 @@ ${code}
       {/* ── Invite Students Modal ─────────────────────────────────────────────── */}
       {showInviteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-slate-700 bg-[#1e1e1e] p-5 shadow-2xl">
+          <div className="flex w-full max-w-[calc(100%-2rem)] flex-col gap-4 rounded-2xl border border-slate-700 bg-[#1e1e1e] p-4 shadow-2xl sm:max-w-md sm:p-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-100">Invite Students</p>

@@ -612,7 +612,7 @@ function ProjectCard({
 
       {/* Cover image */}
       {p.coverImageUrl && !editing && (
-        <div className="relative h-44 w-full overflow-hidden">
+        <div className="relative h-32 w-full overflow-hidden sm:h-44">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={p.coverImageUrl} alt={`${p.title} cover`} className="h-full w-full object-cover" />
           {canEdit && (
@@ -651,7 +651,7 @@ function ProjectCard({
               <h3 className="[font-family:var(--font-space-grotesk)] text-base font-bold leading-snug text-slate-900 dark:text-slate-100">{p.title}</h3>
             </button>
           )}
-          <div className="flex shrink-0 items-center gap-0.5">
+          <div className="flex shrink-0 items-center gap-1">
             {canEdit && !editing && (
               <button
                 onClick={() => { setEditing(true); setExpanded(true); }}
@@ -693,7 +693,7 @@ function ProjectCard({
 
         {/* Meta row */}
         {!editing && (
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+          <div className="flex flex-col gap-2 border-t border-slate-100 pt-3 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
               <span className="flex items-center gap-1">
                 <FileText className="size-3" />{p.files.length} file{p.files.length !== 1 ? "s" : ""}
@@ -708,13 +708,13 @@ function ProjectCard({
             {!isReviewer && !readOnly && (canSubmit || canRetract) && (
               <div className="flex shrink-0 gap-1.5">
                 {canSubmit && (
-                  <Button size="sm" onClick={() => void handleSubmit()} disabled={submitting} className="h-7 gap-1 px-3 text-xs">
+                  <Button size="sm" onClick={() => void handleSubmit()} disabled={submitting} className="h-8 gap-1 px-3 text-xs sm:h-7">
                     {submitting ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}
                     Submit
                   </Button>
                 )}
                 {canRetract && (
-                  <Button size="sm" variant="outline" onClick={() => void handleRetract()} disabled={submitting} className="h-7 gap-1 px-3 text-xs">
+                  <Button size="sm" variant="outline" onClick={() => void handleRetract()} disabled={submitting} className="h-8 gap-1 px-3 text-xs sm:h-7">
                     {submitting ? <Loader2 className="size-3 animate-spin" /> : <Undo2 className="size-3" />}
                     Retract
                   </Button>
@@ -874,18 +874,18 @@ function ProjectCard({
                             </a>
                             <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{formatBytes(file.size)}</span>
                           </div>
-                          <div className="flex shrink-0 items-center gap-0.5">
+                          <div className="flex shrink-0 items-center gap-1">
                             {readOnly && (
                               <a
                                 href={file.url}
                                 download={file.name}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+                                className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
                                 title="Download file"
                               >
                                 <Upload className="size-3 rotate-180" />
-                                Download
+                                <span className="hidden sm:inline">Download</span>
                               </a>
                             )}
                             {canEdit && (
@@ -919,7 +919,7 @@ function ProjectCard({
                             <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(fb.createdAt)}</span>
                           </div>
                           {isReviewer && (
-                            <div className="flex shrink-0 items-center gap-0.5">
+                            <div className="flex shrink-0 items-center gap-1">
                               {editingFeedbackId === fb.id ? (
                                 <>
                                   <button onClick={() => void handleSaveFeedback(fb.id)} className="flex size-8 items-center justify-center rounded text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 touch-manipulation" title="Save">
@@ -1489,7 +1489,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
       {tabs.length > 1 && (
         <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/50">
           {tabs.map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)} className={`flex-1 rounded-lg px-3 py-2.5 text-sm font-medium transition touch-manipulation ${tab === t.key ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>
+            <button key={t.key} onClick={() => setTab(t.key)} className={`flex-1 rounded-lg px-2 py-2 text-xs font-medium transition touch-manipulation sm:px-3 sm:py-2.5 sm:text-sm ${tab === t.key ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>
               {t.label}
             </button>
           ))}
@@ -1518,7 +1518,8 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                 className="flex items-center gap-1.5 rounded-lg bg-[#0D1F45] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#162d5e]"
               >
                 <Plus className="size-3.5" />
-                New Assignment
+                <span className="hidden sm:inline">New Assignment</span>
+                <span className="sm:hidden">New</span>
               </Link>
             </div>
           )}
@@ -1582,7 +1583,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                         {a.title}
                       </h3>
                       {a.description && (
-                        <p className="mt-1 line-clamp-2 text-sm text-slate-500 leading-relaxed dark:text-slate-400">
+                        <p className="mt-1 line-clamp-1 text-sm text-slate-500 leading-relaxed dark:text-slate-400 sm:line-clamp-2">
                           {a.description}
                         </p>
                       )}
