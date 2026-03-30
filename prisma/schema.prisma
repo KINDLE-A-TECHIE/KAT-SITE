@@ -245,6 +245,7 @@ model User {
   projectFeedback       ProjectFeedback[]   @relation("ProjectFeedbackAuthor")
   projectReviews        ProjectReview[]     @relation("ProjectReviewer")
   projectAssets         ProjectAsset[]      @relation("ProjectAssetUploader")
+  assessmentResources   AssessmentResource[] @relation("AssessmentResourceUploader")
   moduleGateStatuses    ModuleGateStatus[]  @relation("UserModuleGates")
   moduleGateSignOffs    ModuleGateStatus[]  @relation("GateSignOff")
 }
@@ -509,9 +510,27 @@ model Assessment {
   submissions        AssessmentSubmission[]
   retakeGrants       RetakeGrant[]
   projects           Project[]
+  resources          AssessmentResource[]
 
   @@index([programId, moduleId, published, verificationStatus])
   @@index([verificationStatus, verifiedAt])
+}
+
+model AssessmentResource {
+  id           String     @id @default(cuid())
+  assessmentId String
+  uploaderId   String
+  name         String
+  mimeType     String
+  size         Int
+  storageKey   String
+  url          String
+  description  String?
+  uploadedAt   DateTime   @default(now())
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  uploader     User       @relation("AssessmentResourceUploader", fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
 }
 
 model AssessmentQuestion {

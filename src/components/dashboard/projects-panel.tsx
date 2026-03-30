@@ -83,6 +83,15 @@ type Project = {
   student?: { id: string; firstName: string; lastName: string };
 };
 type Program = { id: string; name: string };
+type AssessmentResource = {
+  id: string;
+  name: string;
+  url: string;
+  mimeType: string;
+  size: number;
+  description: string | null;
+};
+
 type Assignment = {
   id: string;
   title: string;
@@ -93,6 +102,7 @@ type Assignment = {
   dueDate: string | null;
   program: { id: string; name: string };
   module: { id: string; title: string } | null;
+  resources: AssessmentResource[];
   linkedProject: { id: string; title: string; status: string; updatedAt: string; files: { id: string }[]; assets: { id: string }[] } | null;
   _count?: { projects: number; submissions: number };
 };
@@ -371,6 +381,77 @@ function AssetUploader({ projectId, onUploaded }: { projectId: string; onUploade
       >
         {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
         {uploading ? "Uploading asset…" : "Upload asset file"}
+      </button>
+    </div>
+  );
+}
+
+// ── Assessment Resource Uploader ─────────────────────────────────────────────
+
+function AssessmentResourceUploader({
+  assessmentId,
+  onUploaded,
+}: {
+  assessmentId: string;
+  onUploaded: (resource: AssessmentResource) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [desc, setDesc] = useState("");
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const urlRes = await fetch(`/api/assessments/${assessmentId}/resources/upload-url`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: file.name, mimeType: file.type || "application/octet-stream", size: file.size }),
+      });
+      if (!urlRes.ok) {
+        const err = (await urlRes.json()) as { error?: string };
+        toast.error(err?.error ?? "Could not get upload URL.");
+        return;
+      }
+      const { uploadUrl, key, publicUrl } = (await urlRes.json()) as { uploadUrl: string; key: string; publicUrl: string };
+
+      await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type || "application/octet-stream" } });
+
+      const confirmRes = await fetch(`/api/assessments/${assessmentId}/resources`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: file.name, mimeType: file.type || "application/octet-stream", size: file.size, storageKey: key, url: publicUrl, description: desc || undefined }),
+      });
+      if (!confirmRes.ok) { toast.error("Could not save resource."); return; }
+      const { resource } = (await confirmRes.json()) as { resource: AssessmentResource };
+      toast.success(`${file.name} uploaded!`);
+      onUploaded(resource);
+      setDesc("");
+      if (inputRef.current) inputRef.current.value = "";
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Input
+        value={desc}
+        onChange={(e) => setDesc(e.target.value)}
+        placeholder="Resource description (optional)…"
+        className="text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+        maxLength={500}
+      />
+      <input ref={inputRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { void handleUpload(f); } }} />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-violet-300 bg-violet-50 px-4 py-2.5 text-sm text-violet-600 transition hover:border-violet-400 hover:bg-violet-100 disabled:opacity-50 dark:border-violet-700 dark:bg-violet-900/20 dark:text-violet-300"
+      >
+        {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+        {uploading ? "Uploading…" : "Upload reference file"}
       </button>
     </div>
   );
@@ -959,36 +1040,28 @@ function ProjectCard({
                 </div>
               )}
 
-              {/* Instructor assets (reviewer view) */}
-              {isReviewer && !editing && (
+              {/* Reviewer assets (read-only) */}
+              {isReviewer && !editing && (p.assets ?? []).length > 0 && (
                 <div>
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Project Assets</p>
-                    {p.status === "APPROVED" && (
-                      <span className="text-[11px] text-slate-400 dark:text-slate-500 italic">Editable after approval</span>
-                    )}
-                  </div>
-                  {(p.assets ?? []).length > 0 && (
-                    <div className="mb-2 space-y-1.5">
-                      {(p.assets ?? []).map((asset) => (
-                        <div key={asset.id} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <FileText className="size-4 shrink-0 text-slate-400" />
-                            <div className="min-w-0">
-                              <a href={asset.url} download={asset.name} target="_blank" rel="noopener noreferrer" className="block truncate text-sm text-blue-600 hover:underline dark:text-blue-400">
-                                {asset.name}
-                              </a>
-                              {asset.description && <p className="truncate text-xs text-slate-400 dark:text-slate-500">{asset.description}</p>}
-                            </div>
-                          </div>
-                          <button onClick={() => void handleDeleteAsset(asset.id)} className="shrink-0 rounded p-2 text-rose-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20 touch-manipulation">
-                            <Trash2 className="size-4" />
-                          </button>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Project Assets</p>
+                  <div className="space-y-1.5">
+                    {(p.assets ?? []).map((asset) => (
+                      <a
+                        key={asset.id}
+                        href={asset.url}
+                        download={asset.name}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2.5 text-sm text-blue-600 hover:bg-blue-50 dark:bg-slate-800 dark:text-blue-400 dark:hover:bg-slate-700"
+                      >
+                        <FileText className="size-4 shrink-0 text-slate-400" />
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{asset.name}</p>
+                          {asset.description && <p className="truncate text-xs text-slate-400 dark:text-slate-500">{asset.description}</p>}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                  <AssetUploader projectId={p.id} onUploaded={(asset) => { const merged = { ...p, assets: [...(p.assets ?? []), asset] }; setP(merged); onUpdate(merged); }} />
+                      </a>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -1024,28 +1097,49 @@ function ProjectCard({
                 </div>
               )}
 
-              {/* Student assets view */}
-              {!isReviewer && !editing && (p.assets ?? []).length > 0 && (
+              {/* Student assets */}
+              {!isReviewer && !editing && (canEdit || (p.assets ?? []).length > 0) && (
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Project Assets</p>
-                  <div className="space-y-1.5">
-                    {(p.assets ?? []).map((asset) => (
-                      <a
-                        key={asset.id}
-                        href={asset.url}
-                        download={asset.name}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2.5 text-sm text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300"
-                      >
-                        <FileText className="size-4 shrink-0" />
-                        <div className="min-w-0">
-                          <p className="truncate font-medium">{asset.name}</p>
-                          {asset.description && <p className="truncate text-xs text-blue-400 dark:text-blue-500">{asset.description}</p>}
+                  {(p.assets ?? []).length > 0 && (
+                    <div className="mb-2 space-y-1.5">
+                      {(p.assets ?? []).map((asset) => (
+                        <div key={asset.id} className="flex items-center justify-between gap-2 rounded-lg bg-blue-50 px-3 py-2.5 dark:bg-blue-900/20">
+                          <a
+                            href={asset.url}
+                            download={asset.name}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex min-w-0 items-center gap-2 text-sm text-blue-600 hover:underline dark:text-blue-300"
+                          >
+                            <FileText className="size-4 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="truncate font-medium">{asset.name}</p>
+                              {asset.description && <p className="truncate text-xs text-blue-400 dark:text-blue-500">{asset.description}</p>}
+                            </div>
+                          </a>
+                          {canEdit && (
+                            <button
+                              onClick={() => void handleDeleteAsset(asset.id)}
+                              className="shrink-0 rounded p-1.5 text-rose-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20 touch-manipulation"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          )}
                         </div>
-                      </a>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
+                  {canEdit && (
+                    <AssetUploader
+                      projectId={p.id}
+                      onUploaded={(asset) => {
+                        const merged = { ...p, assets: [...(p.assets ?? []), asset] };
+                        setP(merged);
+                        onUpdate(merged);
+                      }}
+                    />
+                  )}
                 </div>
               )}
 
@@ -1199,12 +1293,35 @@ function NewProjectForm({ programs, onCreated, assignment, onCancelAssignment }:
         )}
       </div>
       {assignment && (
-        <div className="flex items-start gap-2 rounded-lg bg-blue-50 px-3 py-2.5 dark:bg-blue-900/20">
-          <Briefcase className="mt-0.5 size-4 shrink-0 text-blue-500" />
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">Assignment: {assignment.title}</p>
-            {assignment.description && <p className="mt-0.5 line-clamp-2 text-xs text-blue-600 dark:text-blue-500">{assignment.description}</p>}
+        <div className="rounded-lg bg-blue-50 px-3 py-2.5 dark:bg-blue-900/20">
+          <div className="flex items-start gap-2">
+            <Briefcase className="mt-0.5 size-4 shrink-0 text-blue-500" />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">Assignment: {assignment.title}</p>
+              {assignment.description && <p className="mt-0.5 line-clamp-2 text-xs text-blue-600 dark:text-blue-500">{assignment.description}</p>}
+            </div>
           </div>
+          {assignment.resources.length > 0 && (
+            <div className="mt-2.5 border-t border-blue-100 pt-2.5 dark:border-blue-800/40">
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">Reference Files</p>
+              <div className="space-y-1">
+                {assignment.resources.map((r) => (
+                  <a
+                    key={r.id}
+                    href={r.url}
+                    download={r.name}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 rounded-md bg-violet-50 px-2.5 py-1.5 text-xs text-violet-700 hover:bg-violet-100 dark:bg-violet-900/20 dark:text-violet-300"
+                  >
+                    <FileText className="size-3 shrink-0" />
+                    <span className="truncate font-medium">{r.name}</span>
+                    {r.description && <span className="ml-auto shrink-0 truncate text-violet-500 dark:text-violet-400">{r.description}</span>}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1538,11 +1655,24 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
             </div>
           ) : isReviewer ? (
             /* ── Instructor view: manage all assignments ── */
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {assignments.map((a) => {
+            (() => {
+              const InstructorAssignmentCard = ({ a }: { a: Assignment }) => {
+                const [resources, setResources] = useState<AssessmentResource[]>(a.resources);
+                const [showResources, setShowResources] = useState(false);
                 const dueMs = a.dueDate ? new Date(a.dueDate).getTime() - Date.now() : null;
                 const dueDays = dueMs !== null ? Math.ceil(dueMs / 86_400_000) : null;
                 const urgent = dueDays !== null && dueDays <= 3 && dueDays >= 0;
+
+                const handleDeleteResource = async (resourceId: string) => {
+                  const res = await fetch(`/api/assessments/${a.id}/resources/${resourceId}`, { method: "DELETE" });
+                  if (res.ok) {
+                    setResources((prev) => prev.filter((r) => r.id !== resourceId));
+                    toast.success("Resource removed.");
+                  } else {
+                    toast.error("Could not remove resource.");
+                  }
+                };
+
                 return (
                   <motion.div
                     key={a.id}
@@ -1593,10 +1723,82 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                         )}
                       </div>
                     </div>
+
+                    {/* Resources section */}
+                    <div className="border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => setShowResources((v) => !v)}
+                        className="flex w-full items-center justify-between px-4 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <FileText className="size-3.5 text-violet-500" />
+                          Reference Files
+                          {resources.length > 0 && (
+                            <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
+                              {resources.length}
+                            </span>
+                          )}
+                        </span>
+                        {showResources ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                      </button>
+
+                      <AnimatePresence>
+                        {showResources && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="space-y-3 px-4 pb-4 pt-1">
+                              {resources.length > 0 && (
+                                <div className="space-y-1.5">
+                                  {resources.map((r) => (
+                                    <div key={r.id} className="flex items-center justify-between gap-2 rounded-lg bg-violet-50 px-3 py-2 dark:bg-violet-900/20">
+                                      <a
+                                        href={r.url}
+                                        download={r.name}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex min-w-0 items-center gap-2 text-sm text-violet-700 hover:underline dark:text-violet-300"
+                                      >
+                                        <FileText className="size-3.5 shrink-0" />
+                                        <div className="min-w-0">
+                                          <p className="truncate font-medium">{r.name}</p>
+                                          {r.description && <p className="truncate text-xs text-violet-500 dark:text-violet-400">{r.description}</p>}
+                                        </div>
+                                      </a>
+                                      <button
+                                        onClick={() => void handleDeleteResource(r.id)}
+                                        className="shrink-0 rounded p-1.5 text-rose-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20 touch-manipulation"
+                                      >
+                                        <Trash2 className="size-3.5" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <AssessmentResourceUploader
+                                assessmentId={a.id}
+                                onUploaded={(r) => setResources((prev) => [...prev, r])}
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </motion.div>
                 );
-              })}
-            </div>
+              };
+
+              return (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {assignments.map((a) => <InstructorAssignmentCard key={a.id} a={a} />)}
+                </div>
+              );
+            })()
           ) : (
             /* ── Student view: full assignment history with status ── */
             (() => {
@@ -1666,6 +1868,33 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                               <FileText className="size-3.5" />{fileCount}
                             </span>
                           )}
+                        </div>
+                      )}
+
+                      {/* Reference files from instructor */}
+                      {a.resources.length > 0 && (
+                        <div className="mt-3">
+                          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">
+                            Reference Files
+                          </p>
+                          <div className="space-y-1">
+                            {a.resources.map((r) => (
+                              <a
+                                key={r.id}
+                                href={r.url}
+                                download={r.name}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 rounded-lg bg-violet-50 px-3 py-2 text-sm text-violet-700 hover:bg-violet-100 dark:bg-violet-900/20 dark:text-violet-300 dark:hover:bg-violet-900/30"
+                              >
+                                <FileText className="size-3.5 shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="truncate font-medium">{r.name}</p>
+                                  {r.description && <p className="truncate text-xs text-violet-500 dark:text-violet-400">{r.description}</p>}
+                                </div>
+                              </a>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>

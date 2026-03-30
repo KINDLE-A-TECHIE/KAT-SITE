@@ -19,9 +19,9 @@ export async function DELETE(_req: Request, { params }: Params) {
   if (!asset || asset.projectId !== projectId) return fail("Asset not found.", 404);
 
   const role = session.user.role;
-  const isAdmin = role === UserRole.SUPER_ADMIN || role === UserRole.ADMIN;
+  const isSuperAdmin = role === UserRole.SUPER_ADMIN;
   const isOwner = asset.uploaderId === session.user.id;
-  if (!isOwner && !isAdmin) return fail("Forbidden", 403);
+  if (!isOwner && !isSuperAdmin) return fail("Forbidden", 403);
 
   await deleteR2Object(asset.storageKey).catch(() => {});
   await prisma.projectAsset.delete({ where: { id: assetId } });

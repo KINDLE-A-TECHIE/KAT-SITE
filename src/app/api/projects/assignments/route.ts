@@ -27,6 +27,10 @@ export async function GET() {
       include: {
         program: { select: { id: true, name: true } },
         module: { select: { id: true, title: true } },
+        resources: {
+          select: { id: true, name: true, url: true, mimeType: true, size: true, description: true },
+          orderBy: { uploadedAt: "asc" },
+        },
         projects: {
           where: { studentId: userId },
           select: {
@@ -54,6 +58,7 @@ export async function GET() {
       dueDate: a.dueDate?.toISOString() ?? null,
       program: a.program,
       module: a.module,
+      resources: a.resources,
       linkedProject: a.projects[0] ?? null,
     }));
 
@@ -69,6 +74,10 @@ export async function GET() {
     include: {
       program: { select: { id: true, name: true } },
       module: { select: { id: true, title: true } },
+      resources: {
+        select: { id: true, name: true, url: true, mimeType: true, size: true, description: true },
+        orderBy: { uploadedAt: "asc" },
+      },
       _count: { select: { projects: true, submissions: true } },
     },
     orderBy: { createdAt: "desc" },
@@ -84,6 +93,7 @@ export async function GET() {
     dueDate: a.dueDate?.toISOString() ?? null,
     program: a.program,
     module: a.module,
+    resources: a.resources,
     linkedProject: null,
     _count: a._count,
   }));

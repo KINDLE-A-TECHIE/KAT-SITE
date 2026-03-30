@@ -21,17 +21,24 @@ export async function POST(request: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
 
-  const role = session.user.role;
-  const canUploadAsset =
-    role === UserRole.INSTRUCTOR || role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN;
-  if (!canUploadAsset) return fail("Only instructors and admins can upload project assets.", 403);
-
   const { projectId } = await params;
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    select: { id: true, student: { select: { organizationId: true } } },
+    select: { id: true, studentId: true, status: true },
   });
   if (!project) return fail("Project not found.", 404);
+
+  const role = session.user.role;
+  const isOwner = project.studentId === session.user.id;
+  const isSuperAdmin = role === UserRole.SUPER_ADMIN;
+
+  // Only the project owner can upload assets, and only when the project is in an editable state.
+  if (!isOwner && !isSuperAdmin) return fail("Only the project owner can upload assets.", 403);
+
+  const EDITABLE_STATUSES = ["DRAFT", "NEEDS_WORK", "REJECTED"];
+  if (!isSuperAdmin && !EDITABLE_STATUSES.includes(project.status)) {
+    return fail("Assets cannot be uploaded while the project is under review or already approved.", 403);
+  }
 
   if (projectUploadLimiter) {
     const { success, reset } = await projectUploadLimiter.limit(session.user.id);
