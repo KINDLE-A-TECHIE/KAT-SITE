@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -8,7 +8,10 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
+  ExternalLink,
+  FileUp,
   Flame,
+  Link2,
   Loader2,
   PlusCircle,
   Star,
@@ -19,45 +22,69 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { DateInput } from "@/components/ui/date-input";
 import { Textarea } from "@/components/ui/textarea";
-import type { AssessmentTypeValue, UserRoleValue } from "@/lib/enums";
+import type { UserRoleValue } from "@/lib/enums";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
 type Program = { id: string; name: string };
 type Module = { id: string; title: string };
-type Question = { id: string; prompt: string; type: string; points: number };
+
+type MySubmission = {
+  id: string;
+  score: number | null;
+  feedback: string | null;
+  gradedAt: string | null;
+  submittedAt: string;
+  linkUrl: string | null;
+  fileUrl: string | null;
+  fileName: string | null;
+  note: string | null;
+};
 
 type Challenge = {
   id: string;
   title: string;
   description: string | null;
   weekNumber: number | null;
-  totalPoints: number;
-  passScore: number;
+  points: number;
   dueDate: string | null;
   published: boolean;
-  verificationStatus: string;
   program: Program;
   module: Module | null;
-  questions: Question[];
-  submissions: { id: string; status: string; totalScore: number; submittedAt: string; attemptNumber: number }[];
+  createdBy?: { firstName: string; lastName: string };
+  // For learners — their own submission (max 1)
+  submissions?: MySubmission[];
   _count: { submissions: number };
 };
 
 type LeaderboardEntry = {
   rank: number;
   studentId: string;
-  firstName: string;
-  lastName: string;
-  avatarUrl: string | null;
+  studentName: string;
   score: number;
-  totalPoints: number;
+  maxPoints: number;
   submittedAt: string;
   isCurrentUser: boolean;
+};
+
+type ManagerSubmission = {
+  id: string;
+  studentId: string;
+  linkUrl: string | null;
+  fileUrl: string | null;
+  fileName: string | null;
+  note: string | null;
+  score: number | null;
+  feedback: string | null;
+  gradedAt: string | null;
+  submittedAt: string;
+  student: { id: string; firstName: string; lastName: string; email: string };
+  gradedBy: { id: string; firstName: string; lastName: string } | null;
 };
 
 type Props = { role: UserRoleValue };
@@ -77,14 +104,14 @@ const CARD_ACCENTS = [
 
 const MEDAL: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
 
-const RANK_TITLE = (score: number, total: number): string => {
+function rankTitle(score: number, total: number): string {
   const pct = total > 0 ? score / total : 0;
   if (pct >= 1) return "Perfect Score! 🌟";
   if (pct >= 0.9) return "Code Wizard 🧙";
   if (pct >= 0.75) return "Bug Slayer ⚔️";
   if (pct >= 0.6) return "Loop Master 🔄";
   return "Rising Star ✨";
-};
+}
 
 const LEARNER_ROLES: UserRoleValue[] = ["STUDENT", "FELLOW"];
 const MANAGER_ROLES: UserRoleValue[] = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR"];
@@ -111,7 +138,7 @@ function isActive(c: Challenge) {
   return new Date(c.dueDate).getTime() > Date.now();
 }
 
-// ── Leaderboard ──────────────────────────────────────────────────────────────
+// ── Leaderboard Dialog ───────────────────────────────────────────────────────
 
 function LeaderboardDialog({
   challenge,
@@ -123,21 +150,23 @@ function LeaderboardDialog({
   onClose: () => void;
 }) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [totalSubmissions, setTotalSubmissions] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [currentUserRank, setCurrentUserRank] = useState<number | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    fetch(`/api/challenges/leaderboard?assessmentId=${challenge.id}`)
+    fetch(`/api/challenges/${challenge.id}/leaderboard`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { leaderboard: LeaderboardEntry[]; currentUserRank: number | null }) => {
+      .then((d: { leaderboard: LeaderboardEntry[]; totalSubmissions: number }) => {
         setEntries(d.leaderboard);
-        setCurrentUserRank(d.currentUserRank);
+        setTotalSubmissions(d.totalSubmissions);
       })
       .catch(() => toast.error("Could not load leaderboard"))
       .finally(() => setLoading(false));
   }, [open, challenge.id]);
+
+  const myEntry = entries.find((e) => e.isCurrentUser);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -148,7 +177,7 @@ function LeaderboardDialog({
             Challenge Champions
           </DialogTitle>
           <DialogDescription className="text-xs text-slate-500">
-            {challenge.title} · {challenge._count.submissions} participant{challenge._count.submissions !== 1 ? "s" : ""}
+            {challenge.title} · {totalSubmissions} participant{totalSubmissions !== 1 ? "s" : ""}
           </DialogDescription>
         </DialogHeader>
 
@@ -161,41 +190,42 @@ function LeaderboardDialog({
         ) : entries.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
             <span className="text-4xl">🌱</span>
-            <p className="font-medium text-slate-600 dark:text-slate-400">No submissions yet</p>
-            <p className="text-sm text-slate-400">Be the first on the board!</p>
+            <p className="font-medium text-slate-600 dark:text-slate-400">No graded submissions yet</p>
+            <p className="text-sm text-slate-400">Scores appear here once graded!</p>
           </div>
         ) : (
           <div className="space-y-2 pt-1">
-            {currentUserRank && currentUserRank > 5 && (
+            {/* My position badge if not in top visible */}
+            {myEntry && myEntry.rank > 5 && (
               <p className="rounded-lg bg-blue-50 px-3 py-2 text-center text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                You&apos;re ranked #{currentUserRank} — keep going! 💪
+                You&apos;re ranked #{myEntry.rank} — keep going! 💪
               </p>
             )}
 
             {/* Top 3 podium */}
             {entries.length >= 3 && (
               <div className="mb-4 flex items-end justify-center gap-2 pt-2">
-                {/* 2nd */}
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-xl sm:text-2xl">🥈</span>
-                  <div className="flex h-14 w-16 sm:h-16 sm:w-20 items-end justify-center rounded-t-xl bg-slate-200 dark:bg-slate-700 pb-2 text-center text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-300 truncate px-1">
-                    {entries[1]?.firstName}
-                  </div>
-                </div>
-                {/* 1st */}
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-2xl sm:text-3xl">🥇</span>
-                  <div className="flex h-20 w-20 sm:h-24 sm:w-24 items-end justify-center rounded-t-xl bg-amber-300 dark:bg-amber-600 pb-2 text-center text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-100 truncate px-1">
-                    {entries[0]?.firstName}
-                  </div>
-                </div>
-                {/* 3rd */}
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-xl sm:text-2xl">🥉</span>
-                  <div className="flex h-11 w-16 sm:h-12 sm:w-20 items-end justify-center rounded-t-xl bg-orange-200 dark:bg-orange-800 pb-2 text-center text-[10px] sm:text-xs font-semibold text-orange-800 dark:text-orange-200 truncate px-1">
-                    {entries[2]?.firstName}
-                  </div>
-                </div>
+                {[entries[1], entries[0], entries[2]].map((e, idx) => {
+                  const heights = ["h-16 sm:h-20", "h-24 sm:h-28", "h-12 sm:h-16"];
+                  const bgs = [
+                    "bg-slate-200 dark:bg-slate-700",
+                    "bg-amber-300 dark:bg-amber-600",
+                    "bg-orange-200 dark:bg-orange-800",
+                  ];
+                  const medals = ["🥈", "🥇", "🥉"];
+                  if (!e) return null;
+                  const firstName = e.studentName.split(" ")[0] ?? e.studentName;
+                  return (
+                    <div key={e.studentId} className="flex flex-col items-center gap-1">
+                      <span className={`text-${idx === 1 ? "2xl sm:text-3xl" : "xl sm:text-2xl"}`}>{medals[idx]}</span>
+                      <div
+                        className={`flex ${heights[idx]} w-16 sm:w-20 items-end justify-center rounded-t-xl ${bgs[idx]} pb-2 text-center text-[10px] sm:text-xs font-bold truncate px-1`}
+                      >
+                        <span className="truncate">{firstName}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -211,36 +241,30 @@ function LeaderboardDialog({
                     : "bg-slate-50 dark:bg-slate-800/50"
                 }`}
               >
-                {/* Rank */}
-                <span className="w-6 text-center text-base">
+                <span className="w-6 shrink-0 text-center text-base">
                   {e.rank <= 3 ? MEDAL[e.rank] : <span className="text-xs font-bold text-slate-400">#{e.rank}</span>}
                 </span>
 
-                {/* Avatar initial */}
                 <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-violet-500 text-[11px] font-bold text-white">
-                  {e.firstName.charAt(0).toUpperCase()}
-                  {e.lastName.charAt(0).toUpperCase()}
+                  {e.studentName.slice(0, 2).toUpperCase()}
                 </div>
 
-                {/* Name + title */}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {e.firstName} {e.isCurrentUser ? "(You)" : ""}
+                    {e.studentName}{e.isCurrentUser && " (You)"}
                   </p>
-                  <p className="text-[10px] text-slate-400">{RANK_TITLE(e.score, e.totalPoints)}</p>
+                  <p className="text-[10px] text-slate-400">{rankTitle(e.score, e.maxPoints)}</p>
                 </div>
 
-                {/* Score */}
                 <div className="text-right">
                   <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
                     {e.score}
-                    <span className="text-[10px] font-normal text-slate-400">/{e.totalPoints}</span>
+                    <span className="text-[10px] font-normal text-slate-400">/{e.maxPoints}</span>
                   </p>
-                  {/* Score bar */}
                   <div className="mt-0.5 h-1.5 w-16 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-blue-400 to-violet-500 transition-all"
-                      style={{ width: `${Math.round((e.score / Math.max(e.totalPoints, 1)) * 100)}%` }}
+                      style={{ width: `${Math.round((e.score / Math.max(e.maxPoints, 1)) * 100)}%` }}
                     />
                   </div>
                 </div>
@@ -266,24 +290,93 @@ function SubmitDialog({
   onClose: () => void;
   onSubmitted: () => void;
 }) {
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [tab, setTab] = useState<"link" | "file">("link");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [note, setNote] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function reset() {
+    setTab("link");
+    setLinkUrl("");
+    setNote("");
+    setFile(null);
+    setUploadProgress(0);
+  }
+
+  function handleClose() {
+    if (!submitting && !uploading) { reset(); onClose(); }
+  }
 
   async function handleSubmit() {
-    if (challenge.questions.some((q) => !answers[q.id]?.trim())) {
-      toast.error("Please answer all questions before submitting.");
+    if (tab === "link" && !linkUrl.trim()) {
+      toast.error("Please paste a link to your work.");
+      return;
+    }
+    if (tab === "file" && !file) {
+      toast.error("Please select a file to upload.");
       return;
     }
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/assessments/submissions", {
+      let payload: Record<string, unknown> = { note: note.trim() || undefined };
+
+      if (tab === "link") {
+        payload.linkUrl = linkUrl.trim();
+      } else if (tab === "file" && file) {
+        // Step 1: Get presigned upload URL
+        setUploading(true);
+        const urlRes = await fetch(`/api/challenges/${challenge.id}/submissions/upload-url`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: file.name, mimeType: file.type, size: file.size }),
+        });
+
+        if (!urlRes.ok) {
+          const err = (await urlRes.json()) as { error?: string };
+          toast.error(err.error ?? "Failed to get upload URL");
+          return;
+        }
+
+        const { uploadUrl, key, publicUrl } = (await urlRes.json()) as {
+          uploadUrl: string;
+          key: string;
+          publicUrl: string;
+        };
+
+        // Step 2: Upload to R2
+        const xhr = new XMLHttpRequest();
+        await new Promise<void>((resolve, reject) => {
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
+          };
+          xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error("Upload failed")));
+          xhr.onerror = () => reject(new Error("Upload failed"));
+          xhr.open("PUT", uploadUrl);
+          xhr.setRequestHeader("Content-Type", file.type);
+          xhr.send(file);
+        });
+
+        setUploading(false);
+        payload = {
+          ...payload,
+          fileUrl: publicUrl,
+          fileKey: key,
+          fileName: file.name,
+          fileMimeType: file.type,
+          fileSize: file.size,
+        };
+      }
+
+      // Step 3: Submit challenge
+      const res = await fetch(`/api/challenges/${challenge.id}/submissions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          assessmentId: challenge.id,
-          answers: challenge.questions.map((q) => ({ questionId: q.id, value: answers[q.id] ?? "" })),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -294,23 +387,25 @@ function SubmitDialog({
 
       toast.success("Challenge submitted! 🎉 Check the leaderboard!");
       onSubmitted();
+      reset();
       onClose();
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
+      setUploading(false);
     }
   }
 
-  const hasSubmission = challenge.submissions.length > 0;
+  const busy = submitting || uploading;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="max-h-[90vh] max-w-[calc(100%-2rem)] sm:max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Flame className="size-5 text-orange-500" />
-            {hasSubmission ? "Resubmit Challenge" : "Enter the Challenge!"}
+            Enter the Challenge!
           </DialogTitle>
           <DialogDescription className="text-sm text-slate-500">
             {challenge.title}
@@ -328,34 +423,362 @@ function SubmitDialog({
           </p>
         )}
 
-        <div className="space-y-4">
-          {challenge.questions.map((q, i) => (
-            <div key={q.id}>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                {i + 1}. {q.prompt}
-                <span className="ml-1.5 text-xs font-normal text-slate-400">({q.points} pts)</span>
-              </label>
-              <Textarea
-                placeholder="Type your answer here…"
-                className="min-h-[80px] resize-y text-sm"
-                value={answers[q.id] ?? ""}
-                onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
-              />
-            </div>
+        {/* Tab switcher */}
+        <div className="flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+          {(["link", "file"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              disabled={busy}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-sm font-medium transition-colors ${
+                tab === t
+                  ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100"
+                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+              }`}
+            >
+              {t === "link" ? <Link2 className="size-3.5" /> : <FileUp className="size-3.5" />}
+              {t === "link" ? "Submit a Link" : "Upload a File"}
+            </button>
           ))}
         </div>
 
+        <div className="space-y-3">
+          {tab === "link" ? (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Your work URL <span className="text-rose-400">*</span>
+              </label>
+              <Input
+                placeholder="https://github.com/you/project or https://..."
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                disabled={busy}
+              />
+              <p className="mt-1 text-xs text-slate-400">
+                Paste a link to your GitHub repo, Vercel deployment, Codepen, or any live demo.
+              </p>
+            </div>
+          ) : (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Upload your file <span className="text-rose-400">*</span>
+              </label>
+              <div
+                onClick={() => !busy && fileRef.current?.click()}
+                className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 py-8 text-center transition hover:border-blue-400 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:bg-blue-900/20 ${busy ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                <FileUp className="size-8 text-slate-400" />
+                {file ? (
+                  <div>
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{file.name}</p>
+                    <p className="text-xs text-slate-400">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Click to choose a file</p>
+                    <p className="text-xs text-slate-400">Max 50 MB</p>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={fileRef}
+                type="file"
+                className="hidden"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+              {uploading && (
+                <div className="mt-2">
+                  <div className="mb-1 flex justify-between text-xs text-slate-500">
+                    <span>Uploading…</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                    <div
+                      className="h-full rounded-full bg-blue-500 transition-all"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Add a note <span className="text-slate-400 font-normal">(optional)</span>
+            </label>
+            <Textarea
+              placeholder="Tell your instructor what you built and how it works…"
+              className="min-h-[80px] resize-y text-sm"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              disabled={busy}
+            />
+          </div>
+        </div>
+
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={submitting}>
+          <Button variant="outline" size="sm" onClick={handleClose} disabled={busy}>
             Cancel
           </Button>
-          <Button size="sm" onClick={() => void handleSubmit()} disabled={submitting} className="gap-1.5">
-            {submitting ? <Loader2 className="size-3.5 animate-spin" /> : <Zap className="size-3.5" />}
-            {submitting ? "Submitting…" : hasSubmission ? "Resubmit" : "Submit Challenge"}
+          <Button size="sm" onClick={() => void handleSubmit()} disabled={busy} className="gap-1.5">
+            {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Zap className="size-3.5" />}
+            {busy ? (uploading ? "Uploading…" : "Submitting…") : "Submit Challenge"}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ── Grade Submissions Dialog ─────────────────────────────────────────────────
+
+function GradeSubmissionsDialog({
+  challenge,
+  open,
+  onClose,
+}: {
+  challenge: Challenge;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [submissions, setSubmissions] = useState<ManagerSubmission[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [grades, setGrades] = useState<Record<string, { score: string; feedback: string }>>({});
+  const [saving, setSaving] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    fetch(`/api/challenges/${challenge.id}/submissions`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d: { submissions: ManagerSubmission[] }) => setSubmissions(d.submissions))
+      .catch(() => toast.error("Could not load submissions"))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    if (open) void load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  function setGrade(subId: string, key: "score" | "feedback", value: string) {
+    setGrades((prev) => ({
+      ...prev,
+      [subId]: { score: prev[subId]?.score ?? "", feedback: prev[subId]?.feedback ?? "", [key]: value },
+    }));
+  }
+
+  async function handleGrade(subId: string) {
+    const grade = grades[subId];
+    const score = parseInt(grade?.score ?? "", 10);
+    if (isNaN(score) || score < 0) {
+      toast.error("Enter a valid score.");
+      return;
+    }
+
+    setSaving(subId);
+    try {
+      const res = await fetch(`/api/challenges/${challenge.id}/submissions/${subId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ score, feedback: grade?.feedback?.trim() || undefined }),
+      });
+
+      if (!res.ok) {
+        const err = (await res.json()) as { error?: string };
+        toast.error(err.error ?? "Failed to save grade");
+        return;
+      }
+
+      toast.success("Grade saved! 🎯");
+      void load();
+      setGrades((prev) => {
+        const next = { ...prev };
+        delete next[subId];
+        return next;
+      });
+    } catch {
+      toast.error("Something went wrong.");
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  const ungraded = submissions.filter((s) => s.score === null);
+  const graded = submissions.filter((s) => s.score !== null);
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-[calc(100%-2rem)] sm:max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Star className="size-5 text-amber-500" />
+            Grade Submissions
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-500">
+            {challenge.title} · {submissions.length} submission{submissions.length !== 1 ? "s" : ""}
+          </DialogDescription>
+        </DialogHeader>
+
+        {loading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+          </div>
+        ) : submissions.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-10 text-center">
+            <span className="text-4xl">📭</span>
+            <p className="font-medium text-slate-600 dark:text-slate-400">No submissions yet</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {ungraded.length > 0 && (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Awaiting Grade ({ungraded.length})
+                </p>
+                <div className="space-y-3">
+                  {ungraded.map((sub) => (
+                    <SubmissionGradeCard
+                      key={sub.id}
+                      sub={sub}
+                      challenge={challenge}
+                      grade={grades[sub.id] ?? { score: "", feedback: "" }}
+                      onGradeChange={(k, v) => setGrade(sub.id, k, v)}
+                      onSave={() => void handleGrade(sub.id)}
+                      saving={saving === sub.id}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {graded.length > 0 && (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Graded ({graded.length})
+                </p>
+                <div className="space-y-3">
+                  {graded.map((sub) => (
+                    <SubmissionGradeCard
+                      key={sub.id}
+                      sub={sub}
+                      challenge={challenge}
+                      grade={grades[sub.id] ?? { score: String(sub.score ?? ""), feedback: sub.feedback ?? "" }}
+                      onGradeChange={(k, v) => setGrade(sub.id, k, v)}
+                      onSave={() => void handleGrade(sub.id)}
+                      saving={saving === sub.id}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SubmissionGradeCard({
+  sub,
+  challenge,
+  grade,
+  onGradeChange,
+  onSave,
+  saving,
+}: {
+  sub: ManagerSubmission;
+  challenge: Challenge;
+  grade: { score: string; feedback: string };
+  onGradeChange: (key: "score" | "feedback", value: string) => void;
+  onSave: () => void;
+  saving: boolean;
+}) {
+  const isGraded = sub.score !== null;
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-violet-500 text-[11px] font-bold text-white">
+            {sub.student.firstName.charAt(0)}{sub.student.lastName.charAt(0)}
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              {sub.student.firstName} {sub.student.lastName}
+            </p>
+            <p className="text-[11px] text-slate-400">{sub.student.email}</p>
+          </div>
+        </div>
+        {isGraded && (
+          <Badge variant="secondary" className="shrink-0 text-xs">
+            {sub.score}/{challenge.points} pts
+          </Badge>
+        )}
+      </div>
+
+      {/* Submission content */}
+      <div className="mb-2 space-y-1.5">
+        {sub.linkUrl && (
+          <a
+            href={sub.linkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm text-blue-600 hover:underline dark:bg-slate-700 dark:text-blue-400"
+          >
+            <ExternalLink className="size-3.5 shrink-0" />
+            <span className="truncate">{sub.linkUrl}</span>
+          </a>
+        )}
+        {sub.fileUrl && sub.fileName && (
+          <a
+            href={sub.fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm text-blue-600 hover:underline dark:bg-slate-700 dark:text-blue-400"
+          >
+            <FileUp className="size-3.5 shrink-0" />
+            <span className="truncate">{sub.fileName}</span>
+          </a>
+        )}
+        {sub.note && (
+          <p className="rounded-lg bg-white px-3 py-2 text-xs text-slate-600 dark:bg-slate-700 dark:text-slate-300 italic">
+            &ldquo;{sub.note}&rdquo;
+          </p>
+        )}
+      </div>
+
+      {/* Grade form */}
+      <div className="flex items-start gap-2">
+        <div className="w-24 shrink-0">
+          <label className="mb-1 block text-[11px] font-medium text-slate-500">Score / {challenge.points}</label>
+          <Input
+            type="number"
+            min="0"
+            max={challenge.points}
+            placeholder="0"
+            className="h-8 text-sm"
+            value={grade.score}
+            onChange={(e) => onGradeChange("score", e.target.value)}
+          />
+        </div>
+        <div className="flex-1">
+          <label className="mb-1 block text-[11px] font-medium text-slate-500">Feedback (optional)</label>
+          <Input
+            placeholder="Great work! Try..."
+            className="h-8 text-sm"
+            value={grade.feedback}
+            onChange={(e) => onGradeChange("feedback", e.target.value)}
+          />
+        </div>
+        <div className="mt-5">
+          <Button size="sm" className="h-8 px-3 text-xs gap-1" onClick={onSave} disabled={saving}>
+            {saving ? <Loader2 className="size-3 animate-spin" /> : <CheckCircle2 className="size-3" />}
+            {isGraded ? "Update" : "Grade"}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -380,10 +803,9 @@ function CreateChallengeDialog({
     title: "",
     description: "",
     weekNumber: "",
-    totalPoints: "100",
-    passScore: "50",
+    points: "100",
     dueDate: "",
-    prompt: "Share your work — paste a link, describe what you built, or show your code.",
+    published: true,
   });
 
   useEffect(() => {
@@ -394,7 +816,7 @@ function CreateChallengeDialog({
       .catch(() => {});
   }, [open]);
 
-  const set = useCallback((k: keyof typeof form, v: string) => {
+  const set = useCallback(<K extends keyof typeof form>(k: K, v: (typeof form)[K]) => {
     setForm((p) => ({ ...p, [k]: v }));
   }, []);
 
@@ -405,38 +827,29 @@ function CreateChallengeDialog({
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d: { modules: Module[] }) => setModules(d.modules ?? []))
       .catch(() => setModules([]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.programId, set]);
 
   async function handleSave() {
-    if (!form.programId || !form.title.trim() || !form.prompt.trim()) {
-      toast.error("Please fill in program, title, and the challenge question.");
+    if (!form.programId || !form.title.trim()) {
+      toast.error("Please fill in program and title.");
       return;
     }
 
     setSaving(true);
     try {
-      const res = await fetch("/api/assessments", {
+      const res = await fetch("/api/challenges", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           programId: form.programId,
-          moduleId: form.moduleId && form.moduleId !== "none" ? form.moduleId : null,
+          moduleId: form.moduleId !== "none" ? form.moduleId : null,
           title: form.title.trim(),
           description: form.description.trim() || null,
-          type: "CHALLENGE" as AssessmentTypeValue,
           weekNumber: form.weekNumber ? parseInt(form.weekNumber, 10) : null,
-          totalPoints: parseInt(form.totalPoints, 10) || 100,
-          passScore: parseInt(form.passScore, 10) || 50,
-          dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : undefined,
-          published: true,
-          questions: [
-            {
-              prompt: form.prompt.trim(),
-              type: "OPEN_ENDED",
-              points: parseInt(form.totalPoints, 10) || 100,
-              options: [],
-            },
-          ],
+          points: parseInt(form.points, 10) || 100,
+          dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+          published: form.published,
         }),
       });
 
@@ -464,84 +877,107 @@ function CreateChallengeDialog({
             <Flame className="size-5 text-orange-500" />
             New Weekly Challenge
           </DialogTitle>
-          <DialogDescription>Create a challenge for a program module. Students can submit and compete on the leaderboard.</DialogDescription>
+          <DialogDescription>
+            Create a challenge for a program. Students submit links or files and compete on the leaderboard.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Program *</label>
-              <Select value={form.programId} onValueChange={(v) => set("programId", v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select program" />
-                </SelectTrigger>
-                <SelectContent>
-                  {programs.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="col-span-2">
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Program *</label>
+            <Select value={form.programId} onValueChange={(v) => set("programId", v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select program" />
+              </SelectTrigger>
+              <SelectContent>
+                {programs.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <div className="col-span-2">
-              <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Module (optional)</label>
-              <Select value={form.moduleId} onValueChange={(v) => set("moduleId", v)} disabled={!form.programId || modules.length === 0}>
-                <SelectTrigger>
-                  <SelectValue placeholder={modules.length === 0 ? "No modules yet" : "Select module"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— No specific module —</SelectItem>
-                  {modules.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="col-span-2">
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Module (optional)</label>
+            <Select
+              value={form.moduleId}
+              onValueChange={(v) => set("moduleId", v)}
+              disabled={!form.programId || modules.length === 0}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={modules.length === 0 ? "No modules yet" : "Select module"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— All enrolled students —</SelectItem>
+                {modules.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="mt-1 text-[11px] text-slate-400">
+              {form.moduleId === "none"
+                ? "All active enrollees can see this challenge."
+                : "Only students who've reached this module can see it."}
+            </p>
+          </div>
 
-            <div className="col-span-2">
-              <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Challenge Title *</label>
-              <Input placeholder="e.g. Build a Calculator App" value={form.title} onChange={(e) => set("title", e.target.value)} />
-            </div>
+          <div className="col-span-2">
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Challenge Title *</label>
+            <Input
+              placeholder="e.g. Build a Calculator App"
+              value={form.title}
+              onChange={(e) => set("title", e.target.value)}
+            />
+          </div>
 
-            <div className="col-span-2">
-              <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Description</label>
-              <Textarea
-                placeholder="Describe the challenge and what students should build…"
-                className="min-h-[70px] resize-y text-sm"
-                value={form.description}
-                onChange={(e) => set("description", e.target.value)}
-              />
-            </div>
+          <div className="col-span-2">
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Description</label>
+            <Textarea
+              placeholder="Describe what students should build, submit, or demonstrate…"
+              className="min-h-[70px] resize-y text-sm"
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+            />
+          </div>
 
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Week #</label>
-              <Input type="number" min="1" placeholder="e.g. 3" value={form.weekNumber} onChange={(e) => set("weekNumber", e.target.value)} />
-            </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Week #</label>
+            <Input
+              type="number"
+              min="1"
+              placeholder="e.g. 3"
+              value={form.weekNumber}
+              onChange={(e) => set("weekNumber", e.target.value)}
+            />
+          </div>
 
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Due Date</label>
-              <DateInput value={form.dueDate} onChange={(e) => set("dueDate", e.target.value)} />
-            </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Points</label>
+            <Input
+              type="number"
+              min="1"
+              value={form.points}
+              onChange={(e) => set("points", e.target.value)}
+            />
+          </div>
 
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Total Points</label>
-              <Input type="number" min="1" value={form.totalPoints} onChange={(e) => set("totalPoints", e.target.value)} />
-            </div>
+          <div className="col-span-2">
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Due Date</label>
+            <DateInput value={form.dueDate} onChange={(e) => set("dueDate", e.target.value)} />
+          </div>
 
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Pass Score</label>
-              <Input type="number" min="0" value={form.passScore} onChange={(e) => set("passScore", e.target.value)} />
-            </div>
-
-            <div className="col-span-2">
-              <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Submission Prompt *</label>
-              <Textarea
-                placeholder="What should students submit?"
-                className="min-h-[60px] resize-y text-sm"
-                value={form.prompt}
-                onChange={(e) => set("prompt", e.target.value)}
-              />
-            </div>
+          <div className="col-span-2 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800">
+            <input
+              id="published-toggle"
+              type="checkbox"
+              checked={form.published}
+              onChange={(e) => set("published", e.target.checked)}
+              className="rounded"
+            />
+            <label htmlFor="published-toggle" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+              Publish immediately
+            </label>
+            <span className="text-xs text-slate-400">(students get notified right away)</span>
           </div>
         </div>
 
@@ -570,12 +1006,13 @@ function ChallengeCard({
 }) {
   const [submitOpen, setSubmitOpen] = useState(false);
   const [boardOpen, setBoardOpen] = useState(false);
+  const [gradeOpen, setGradeOpen] = useState(false);
 
   const accent = accentColor(challenge.id);
   const due = formatDue(challenge.dueDate);
-  const mySubmission = challenge.submissions[0] ?? null;
+  const mySubmission = challenge.submissions?.[0] ?? null;
   const submitted = !!mySubmission;
-  const graded = mySubmission?.status === "GRADED";
+  const graded = mySubmission?.gradedAt !== null && mySubmission?.score !== null;
   const active = isActive(challenge);
 
   return (
@@ -607,6 +1044,11 @@ function ChallengeCard({
                 {due.label}
               </span>
             )}
+            {!challenge.published && (
+              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                Draft
+              </span>
+            )}
           </div>
 
           {/* Title */}
@@ -625,7 +1067,7 @@ function ChallengeCard({
           <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
             <span className="flex items-center gap-1">
               <Star className="size-3.5 text-amber-400" />
-              {challenge.totalPoints} pts
+              {challenge.points} pts
             </span>
             {!active && (
               <span className="flex items-center gap-1">
@@ -645,38 +1087,43 @@ function ChallengeCard({
             </span>
           </div>
 
-          {/* My result (if graded) */}
+          {/* My result (graded) */}
           {graded && mySubmission && (
             <div className="mt-3 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 dark:bg-emerald-900/20">
               <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                  Your score: {mySubmission.totalScore}/{challenge.totalPoints}
+                  Your score: {mySubmission.score}/{challenge.points}
                 </p>
                 <p className="text-[10px] text-emerald-600 dark:text-emerald-500">
-                  {RANK_TITLE(mySubmission.totalScore, challenge.totalPoints)}
+                  {rankTitle(mySubmission.score!, challenge.points)}
                 </p>
+                {mySubmission.feedback && (
+                  <p className="mt-0.5 text-[10px] text-slate-500 italic">&ldquo;{mySubmission.feedback}&rdquo;</p>
+                )}
               </div>
               <div className="h-2 w-20 overflow-hidden rounded-full bg-emerald-200 dark:bg-emerald-800">
                 <div
                   className="h-full rounded-full bg-emerald-500 transition-all"
-                  style={{ width: `${Math.round((mySubmission.totalScore / Math.max(challenge.totalPoints, 1)) * 100)}%` }}
+                  style={{ width: `${Math.round((mySubmission.score! / Math.max(challenge.points, 1)) * 100)}%` }}
                 />
               </div>
             </div>
           )}
 
-          {/* Submitted but not yet graded */}
+          {/* Submitted, awaiting grade */}
           {submitted && !graded && (
             <div className="mt-3 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 dark:bg-blue-900/20">
               <CheckCircle2 className="size-4 shrink-0 text-blue-500" />
-              <p className="text-xs font-medium text-blue-700 dark:text-blue-400">Submitted — waiting to be graded</p>
+              <p className="text-xs font-medium text-blue-700 dark:text-blue-400">
+                Submitted{mySubmission?.linkUrl ? " · link" : mySubmission?.fileName ? ` · ${mySubmission.fileName}` : ""} — awaiting grade
+              </p>
             </div>
           )}
         </div>
 
         {/* Footer actions */}
-        <div className="flex items-center gap-2 border-t border-slate-100 bg-slate-50/50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-800/30">
+        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 bg-slate-50/50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-800/30">
           <button
             onClick={() => setBoardOpen(true)}
             className="flex items-center gap-1 text-xs font-medium text-slate-500 transition hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400"
@@ -687,40 +1134,75 @@ function ChallengeCard({
 
           <div className="flex-1" />
 
-          {isLearner && active && (
+          {!isLearner && (
             <Button
               size="sm"
-              variant={submitted ? "outline" : "default"}
+              variant="outline"
+              onClick={() => setGradeOpen(true)}
+              className="h-7 gap-1.5 px-3 text-xs"
+            >
+              <Star className="size-3" />
+              Grade ({challenge._count.submissions})
+            </Button>
+          )}
+
+          {isLearner && active && !submitted && (
+            <Button
+              size="sm"
               onClick={() => setSubmitOpen(true)}
               className="h-7 gap-1.5 px-3 text-xs"
             >
-              {submitted ? (
-                <>
-                  <ChevronRight className="size-3" />
-                  Resubmit
-                </>
-              ) : (
-                <>
-                  <Zap className="size-3.5" />
-                  Enter Challenge
-                </>
-              )}
+              <Zap className="size-3.5" />
+              Enter Challenge
+            </Button>
+          )}
+
+          {isLearner && submitted && mySubmission?.linkUrl && (
+            <a
+              href={mySubmission.linkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-blue-600"
+            >
+              <ExternalLink className="size-3.5" />
+              Your Submission
+            </a>
+          )}
+
+          {isLearner && active && submitted && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setSubmitOpen(true)}
+              className="h-7 gap-1 px-3 text-xs"
+            >
+              <ChevronRight className="size-3" />
+              Resubmit
             </Button>
           )}
         </div>
       </motion.div>
 
-      <SubmitDialog
-        challenge={challenge}
-        open={submitOpen}
-        onClose={() => setSubmitOpen(false)}
-        onSubmitted={onRefresh}
-      />
+      {isLearner && (
+        <SubmitDialog
+          challenge={challenge}
+          open={submitOpen}
+          onClose={() => setSubmitOpen(false)}
+          onSubmitted={onRefresh}
+        />
+      )}
       <LeaderboardDialog
         challenge={challenge}
         open={boardOpen}
         onClose={() => setBoardOpen(false)}
       />
+      {!isLearner && (
+        <GradeSubmissionsDialog
+          challenge={challenge}
+          open={gradeOpen}
+          onClose={() => setGradeOpen(false)}
+        />
+      )}
     </>
   );
 }
@@ -739,7 +1221,7 @@ export function ChallengesPanel({ role }: Props) {
   async function load() {
     setLoading(true);
     try {
-      const res = await fetch("/api/challenges/weekly");
+      const res = await fetch("/api/challenges");
       if (!res.ok) throw new Error();
       const data = (await res.json()) as { challenges: Challenge[] };
       setChallenges(data.challenges ?? []);
@@ -756,12 +1238,11 @@ export function ChallengesPanel({ role }: Props) {
   const past = challenges.filter((c) => !isActive(c));
   const displayed = tab === "active" ? active : past;
 
-  // Featured challenge (first active with a due date or just first active)
   const featured = active.find((c) => c.dueDate) ?? active[0] ?? null;
 
   return (
     <div className="space-y-5">
-      {/* ── Hero banner for active featured challenge (learners only) ── */}
+      {/* ── Hero banner (learners only, when there's an active challenge) ── */}
       <AnimatePresence>
         {isLearner && featured && (
           <motion.div
@@ -771,7 +1252,6 @@ export function ChallengesPanel({ role }: Props) {
             exit={{ opacity: 0 }}
             className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0D1F45] via-[#1E5FAF] to-violet-600 px-4 py-5 sm:px-6 sm:py-6 text-white"
           >
-            {/* Background blobs */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
               <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
               <div className="absolute -bottom-8 left-10 h-32 w-32 rounded-full bg-blue-300/10 blur-2xl" />
@@ -807,7 +1287,7 @@ export function ChallengesPanel({ role }: Props) {
               <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
                 <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold">
                   <Star className="size-4 text-amber-300" />
-                  {featured.totalPoints} pts
+                  {featured.points} pts
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-blue-200">
                   <Users className="size-3.5" />
@@ -821,7 +1301,6 @@ export function ChallengesPanel({ role }: Props) {
 
       {/* ── Toolbar ── */}
       <div className="flex items-center justify-between gap-2">
-        {/* Tabs */}
         <div className="flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
           {(["active", "past"] as const).map((t) => (
             <button
@@ -833,7 +1312,9 @@ export function ChallengesPanel({ role }: Props) {
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
               }`}
             >
-              {t === "active" ? `Active${active.length > 0 ? ` (${active.length})` : ""}` : `Past${past.length > 0 ? ` (${past.length})` : ""}`}
+              {t === "active"
+                ? `Active${active.length > 0 ? ` (${active.length})` : ""}`
+                : `Past${past.length > 0 ? ` (${past.length})` : ""}`}
             </button>
           ))}
         </div>
@@ -863,7 +1344,7 @@ export function ChallengesPanel({ role }: Props) {
           {isManager && tab === "active" && (
             <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)} className="mt-1 gap-1.5">
               <PlusCircle className="size-3.5" />
-              Create one
+              Create the first one
             </Button>
           )}
           {isLearner && tab === "active" && (

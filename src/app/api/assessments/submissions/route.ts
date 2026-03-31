@@ -109,9 +109,14 @@ export async function POST(request: Request) {
       },
     });
 
+    if (!assessment || !assessment.published) {
+      return fail("Assessment is not available.", 404);
+    }
+
+    // Challenges are auto-approved on creation; other assessment types require
+    // explicit super-admin approval before students can submit.
     if (
-      !assessment ||
-      !assessment.published ||
+      assessment.type !== "CHALLENGE" &&
       assessment.verificationStatus !== AssessmentVerificationStatus.APPROVED
     ) {
       return fail("Assessment is not available.", 404);

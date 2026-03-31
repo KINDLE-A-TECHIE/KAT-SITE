@@ -159,6 +159,7 @@ model Organization {
   meetings          Meeting[]
   curricula         Curriculum[]
   discountCodes     DiscountCode[]
+  challenges        Challenge[]
 }
 
 model OrganizationCode {
@@ -244,10 +245,13 @@ model User {
   projects              Project[]           @relation("StudentProjects")
   projectFeedback       ProjectFeedback[]   @relation("ProjectFeedbackAuthor")
   projectReviews        ProjectReview[]     @relation("ProjectReviewer")
-  projectAssets         ProjectAsset[]      @relation("ProjectAssetUploader")
-  assessmentResources   AssessmentResource[] @relation("AssessmentResourceUploader")
-  moduleGateStatuses    ModuleGateStatus[]  @relation("UserModuleGates")
-  moduleGateSignOffs    ModuleGateStatus[]  @relation("GateSignOff")
+  projectAssets              ProjectAsset[]         @relation("ProjectAssetUploader")
+  assessmentResources        AssessmentResource[]   @relation("AssessmentResourceUploader")
+  moduleGateStatuses         ModuleGateStatus[]     @relation("UserModuleGates")
+  moduleGateSignOffs         ModuleGateStatus[]     @relation("GateSignOff")
+  createdChallenges          Challenge[]            @relation("ChallengeCreator")
+  challengeSubmissions       ChallengeSubmission[]  @relation("ChallengeSubmitter")
+  gradedChallengeSubmissions ChallengeSubmission[]  @relation("ChallengeGrader")
 }
 
 model SuperAdminInvite {
@@ -421,7 +425,8 @@ model Program {
   curriculum      Curriculum?
   discountCodes   DiscountCode[]
   certificates    Certificate[]
-  projects              Project[]
+  projects        Project[]
+  challenges      Challenge[]
 
   @@index([organizationId])
 }
@@ -940,6 +945,7 @@ model Module {
   assessments   Assessment[]
   badge         Badge?
   gateStatuses  ModuleGateStatus[]
+  challenges    Challenge[]
 
   @@index([versionId, sortOrder])
 }
@@ -1276,4 +1282,55 @@ model ProjectAsset {
   uploader    User     @relation("ProjectAssetUploader", fields: [uploaderId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+}
+
+model Challenge {
+  id             String                @id @default(cuid())
+  organizationId String?
+  programId      String
+  moduleId       String?
+  title          String
+  description    String?               @db.Text
+  weekNumber     Int?
+  dueDate        DateTime?
+  points         Int                   @default(100)
+  published      Boolean               @default(false)
+  createdById    String
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  organization   Organization?         @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  program        Program               @relation(fields: [programId], references: [id], onDelete: Cascade)
+  module         Module?               @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  createdBy      User                  @relation("ChallengeCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  submissions    ChallengeSubmission[]
+
+  @@index([programId, moduleId, published])
+  @@index([organizationId])
+}
+
+model ChallengeSubmission {
+  id           String    @id @default(cuid())
+  challengeId  String
+  studentId    String
+  linkUrl      String?
+  fileUrl      String?
+  fileKey      String?
+  fileName     String?
+  fileMimeType String?
+  fileSize     Int?
+  note         String?   @db.Text
+  score        Int?
+  feedback     String?   @db.Text
+  gradedById   String?
+  gradedAt     DateTime?
+  submittedAt  DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  challenge    Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  student      User      @relation("ChallengeSubmitter", fields: [studentId], references: [id], onDelete: Cascade)
+  gradedBy     User?     @relation("ChallengeGrader", fields: [gradedById], references: [id], onDelete: SetNull)
+
+  @@unique([challengeId, studentId])
+  @@index([challengeId])
+  @@index([studentId])
+  @@index([challengeId, score])
 }
