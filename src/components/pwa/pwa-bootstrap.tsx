@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Download, Share, X } from "lucide-react";
+import { Share, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type BeforeInstallPromptEvent = Event & {
@@ -130,11 +130,14 @@ export function PwaBootstrap() {
     return () => clearTimeout(t);
   }, []);
 
-  // Chrome/Android/Desktop: capture beforeinstallprompt, show after delay
+  // Mobile only: intercept beforeinstallprompt to show our custom banner.
+  // On desktop we do NOT call preventDefault() — the browser shows its own
+  // native install button in the address bar, which is the clean Vercel-style UX.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
 
     const handleBeforeInstallPrompt = (event: Event) => {
+      if (!isMobile()) return; // desktop: let browser handle it natively
       event.preventDefault();
       if (isDismissed()) return;
       const promptEvent = event as BeforeInstallPromptEvent;
@@ -209,8 +212,7 @@ export function PwaBootstrap() {
             disabled={installing}
             className="mt-2 flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-white/25 active:scale-95 disabled:opacity-60"
           >
-            <Download className="size-3.5" />
-            {installing ? "Installing…" : "Install"}
+            {installing ? "Installing…" : "Add to Home Screen"}
           </button>
         </InstallBanner>
       )}
