@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Calendar, CheckCircle2, ChevronRight, Clock, ExternalLink,
+  Calendar, CheckCircle2, Clock, ExternalLink,
   FileUp, Flame, Link2, Loader2, PlusCircle, Star, Trophy,
   Users, Zap, Eye, EyeOff, Trash2, Medal, Send,
 } from "lucide-react";
@@ -222,9 +222,6 @@ function SubmitDialog({ challenge, open, onClose, onSubmitted }: {
   const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const existing = challenge.submissions?.[0] ?? null;
-  const alreadySubmitted = !!existing;
-
   function reset() { setLinkUrl(""); setNote(""); setFile(null); setTab("link"); }
 
   async function handleSubmit() {
@@ -288,7 +285,7 @@ function SubmitDialog({ challenge, open, onClose, onSubmitted }: {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Flame className="size-5 text-orange-500" />
-            {alreadySubmitted ? "Update Your Submission" : "Enter the Challenge!"}
+            Enter the Challenge!
           </DialogTitle>
           <DialogDescription className="text-sm text-slate-500">
             {challenge.title}
@@ -306,15 +303,6 @@ function SubmitDialog({ challenge, open, onClose, onSubmitted }: {
           </p>
         )}
 
-        {alreadySubmitted && (
-          <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 dark:border-blue-900/30 dark:bg-blue-900/20">
-            <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">You already submitted this challenge</p>
-            {existing.score !== null
-              ? <p className="mt-0.5 text-xs text-blue-600">Score: {existing.score}/{challenge.points}</p>
-              : <p className="mt-0.5 text-xs text-blue-500">Awaiting grading</p>
-            }
-          </div>
-        )}
 
         <div className="flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
           {([["link", Link2, "Share a Link"], ["file", FileUp, "Upload a File"]] as const).map(([t, Icon, label]) => (
@@ -369,7 +357,7 @@ function SubmitDialog({ challenge, open, onClose, onSubmitted }: {
           <Button variant="outline" size="sm" onClick={() => { reset(); onClose(); }} disabled={submitting}>Cancel</Button>
           <Button size="sm" onClick={() => void handleSubmit()} disabled={submitting || uploading} className="gap-1.5">
             {(submitting || uploading) ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
-            {uploading ? "Uploading…" : submitting ? "Submitting…" : alreadySubmitted ? "Update Submission" : "Submit Challenge"}
+            {uploading ? "Uploading…" : submitting ? "Submitting…" : "Submit Challenge"}
           </Button>
         </div>
       </DialogContent>
@@ -796,9 +784,9 @@ function ChallengeCard({ challenge, isLearner, onRefresh }: {
             </>
           )}
 
-          {isLearner && challenge.published && isActive && (
-            <Button size="sm" variant={submitted ? "outline" : "default"} onClick={() => setSubmitOpen(true)} className="h-7 gap-1.5 px-3 text-xs">
-              {submitted ? <><ChevronRight className="size-3" />Update</> : <><Zap className="size-3.5" />Enter Challenge</>}
+          {isLearner && challenge.published && isActive && !submitted && (
+            <Button size="sm" onClick={() => setSubmitOpen(true)} className="h-7 gap-1.5 px-3 text-xs">
+              <Zap className="size-3.5" />Enter Challenge
             </Button>
           )}
         </div>

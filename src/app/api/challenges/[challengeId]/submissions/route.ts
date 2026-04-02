@@ -81,47 +81,54 @@ export async function POST(request: Request, { params }: Params) {
     if (!gateStatus) return fail("You have not reached the module for this challenge.", 403);
   }
 
-  // Check for existing submission
-  const existing = await prisma.challengeSubmission.findUnique({
-    where: { challengeId_studentId: { challengeId, studentId: session.user.id } },
-    select: { id: true },
-  });
-  if (existing) return fail("You have already submitted to this challenge.", 409);
-
   const body = await request.json() as unknown;
   const parsed = submitSchema.safeParse(body);
   if (!parsed.success) return fail("Invalid submission.", 400, parsed.error.flatten());
 
-  const submission = await prisma.challengeSubmission.create({
-    data: {
-      challengeId,
-      studentId: session.user.id,
-      linkUrl: parsed.data.linkUrl ?? null,
-      fileUrl: parsed.data.fileUrl ?? null,
-      fileKey: parsed.data.fileKey ?? null,
-      fileName: parsed.data.fileName ?? null,
-      fileMimeType: parsed.data.fileMimeType ?? null,
-      fileSize: parsed.data.fileSize ?? null,
-      note: parsed.data.note ?? null,
-    },
+  const isNew = !(await prisma.challengeSubmission.findUnique({
+    where: { challengeId_studentId: { challengeId, studentId: session.user.id } },
+    select: { id: true },
+  }));
+
+  const submissionData = {
+    linkUrl: parsed.data.linkUrl ?? null,
+    fileUrl: parsed.data.fileUrl ?? null,
+    fileKey: parsed.data.fileKey ?? null,
+    fileName: parsed.data.fileName ?? null,
+    fileMimeType: parsed.data.fileMimeType ?? null,
+    fileSize: parsed.data.fileSize ?? null,
+    note: parsed.data.note ?? null,
+    // Reset grading on resubmit so the instructor re-reviews
+    score: null,
+    feedback: null,
+    gradedById: null,
+    gradedAt: null,
+    submittedAt: new Date(),
+  };
+
+  const submission = await prisma.challengeSubmission.upsert({
+    where: { challengeId_studentId: { challengeId, studentId: session.user.id } },
+    create: { challengeId, studentId: session.user.id, ...submissionData },
+    update: submissionData,
     include: {
       student: { select: { id: true, firstName: true, lastName: true } },
     },
   });
 
-  // Notify student that submission was received
   await prisma.notification.create({
     data: {
       recipientId: session.user.id,
       creatorId: session.user.id,
       type: NotificationType.SUCCESS,
-      title: "Challenge submitted!",
+      title: isNew ? "Challenge submitted!" : "Submission updated!",
       body: JSON.stringify({
-        text: `Your submission for "${challenge.title}" is in. Check back for your score on the leaderboard!`,
+        text: isNew
+          ? `Your submission for "${challenge.title}" is in. Check back for your score on the leaderboard!`
+          : `Your submission for "${challenge.title}" has been updated.`,
         targetPath: "/dashboard/challenges",
       }),
     },
   });
 
-  return ok({ submission }, 201);
+  return ok({ submission }, isNew ? 201 : 200);
 }
