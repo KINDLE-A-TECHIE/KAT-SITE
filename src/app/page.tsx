@@ -103,6 +103,25 @@ async function getOpenCohorts() {
   }
 }
 
+async function getApprovedTestimonials() {
+  try {
+    return await prisma.testimonial.findMany({
+      where: { status: "APPROVED", featuredOnPage: true },
+      select: {
+        id: true,
+        quote: true,
+        rating: true,
+        childName: true,
+        author: { select: { firstName: true, lastName: true, avatarUrl: true } },
+      },
+      orderBy: { submittedAt: "desc" },
+      take: 12,
+    });
+  } catch {
+    return [];
+  }
+}
+
 async function getLiveStats() {
   try {
     const [enrollmentCount, gradedCount] = await Promise.all([
@@ -136,7 +155,11 @@ async function getLiveStats() {
 }
 
 export default async function HomePage() {
-  const [stats, openCohorts] = await Promise.all([getLiveStats(), getOpenCohorts()]);
+  const [stats, openCohorts, testimonials] = await Promise.all([
+    getLiveStats(),
+    getOpenCohorts(),
+    getApprovedTestimonials(),
+  ]);
   return (
     <>
       <script
@@ -154,6 +177,7 @@ export default async function HomePage() {
         enrollments={stats.enrollments}
         passRate={stats.passRate}
         openCohorts={openCohorts}
+        testimonials={testimonials}
       />
     </>
   );

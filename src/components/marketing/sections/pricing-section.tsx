@@ -14,7 +14,7 @@ export function PricingSection() {
           Simple pricing. No surprises.
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-[var(--kat-text-secondary)]">
-          Billed monthly per track — pause or cancel anytime. Register to see your track&apos;s price. Scholarships are available every cohort.
+          Billed monthly per track. Register to see your track&apos;s price. Scholarships are available every cohort.
         </p>
       </div>
 

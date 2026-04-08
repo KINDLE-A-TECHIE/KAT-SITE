@@ -1,4 +1,4 @@
-import { EnrollmentStatus, UserRole } from "@prisma/client";
+import { EnrollmentPeriodReason, EnrollmentStatus, UserRole } from "@prisma/client";
 import { z } from "zod";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
@@ -95,6 +95,21 @@ export async function POST(request: Request) {
       ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
       : undefined;
 
+    // Check if a prior enrollment exists (could be suspended/dropped)
+    const existing = await prisma.enrollment.findUnique({
+      where: { userId_programId: { userId: targetUserId, programId: parsed.data.programId } },
+      select: { id: true, status: true },
+    });
+
+    const isReactivation = !!existing && existing.status !== EnrollmentStatus.ACTIVE;
+    const isFirstTime = !existing;
+
+    const startReason: EnrollmentPeriodReason = isFirstTime
+      ? EnrollmentPeriodReason.INITIAL
+      : isReactivation
+        ? (isBillingWaived ? EnrollmentPeriodReason.WAIVED : EnrollmentPeriodReason.REACTIVATION)
+        : (isBillingWaived ? EnrollmentPeriodReason.WAIVED : EnrollmentPeriodReason.MANUAL);
+
     const enrollment = await prisma.enrollment.upsert({
       where: {
         userId_programId: {
@@ -119,6 +134,15 @@ export async function POST(request: Request) {
         user: { select: { id: true, firstName: true, lastName: true } },
         program: { select: { id: true, name: true } },
       },
+    });
+
+    // Open a new enrollment period (close any stale open period first)
+    await prisma.enrollmentPeriod.updateMany({
+      where: { enrollmentId: enrollment.id, endedAt: null },
+      data: { endedAt: new Date(), endReason: "MANUAL" },
+    });
+    await prisma.enrollmentPeriod.create({
+      data: { enrollmentId: enrollment.id, startReason },
     });
 
     await trackEvent({

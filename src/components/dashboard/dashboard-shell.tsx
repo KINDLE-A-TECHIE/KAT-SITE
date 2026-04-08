@@ -20,6 +20,7 @@ import {
   LineChart,
   LogOut,
   MessageSquare,
+  Quote,
   ScrollText,
   Settings,
   ShieldAlert,
@@ -46,8 +47,9 @@ type DashboardShellProps = {
 
 const CORE_NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
   { href: "/dashboard/profile", label: "Profile", icon: UserCircle },
+  { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
+
 ];
 
 const LEARNING_NAV = [
@@ -78,6 +80,7 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
         { href: "/dashboard/fellows/applications", label: "Applications", icon: FileText },
         { href: "/dashboard/cohorts", label: "Cohorts", icon: UsersRound },
         { href: "/dashboard/super-admin-invites", label: "Access", icon: ShieldAlert },
+        { href: "/dashboard/testimonials", label: "Testimonials", icon: Quote },
       ];
     case "ADMIN":
       return [
@@ -96,6 +99,7 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
         { href: "/dashboard/grades", label: "Children's Grades", icon: Award },
         { href: "/dashboard/projects", label: "Children's Projects", icon: FolderOpen },
         { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
+        { href: "/dashboard/testimonials", label: "Testimonials", icon: Quote },
       ];
     case "STUDENT":
       return [
@@ -171,7 +175,7 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
     fetch("/api/users/avatar", { signal: controller.signal, cache: "no-store" })
       .then((r) => (r.ok ? (r.json() as Promise<{ avatarUrl?: string | null }>) : Promise.reject()))
       .then((p) => { if (active) setAvatarUrl(p.avatarUrl ?? null); })
-      .catch(() => {});
+      .catch(() => { });
     return () => { active = false; controller.abort(); };
   }, []);
 

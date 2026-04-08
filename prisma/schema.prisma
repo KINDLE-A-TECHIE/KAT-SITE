@@ -252,6 +252,8 @@ model User {
   createdChallenges          Challenge[]            @relation("ChallengeCreator")
   challengeSubmissions       ChallengeSubmission[]  @relation("ChallengeSubmitter")
   gradedChallengeSubmissions ChallengeSubmission[]  @relation("ChallengeGrader")
+  testimonials               Testimonial[]          @relation("TestimonialAuthor")
+  reviewedTestimonials       Testimonial[]          @relation("TestimonialReviewer")
 }
 
 model SuperAdminInvite {
@@ -468,9 +470,41 @@ model Enrollment {
   payments           Payment[]
   submissions        AssessmentSubmission[]
   moduleGateStatuses ModuleGateStatus[]
+  periods            EnrollmentPeriod[]
 
   @@unique([userId, programId])
   @@index([programId])
+}
+
+enum EnrollmentPeriodReason {
+  INITIAL          // first-time enrollment
+  PAYMENT          // renewed via payment
+  WAIVED           // staff-waived enrollment or renewal
+  REACTIVATION     // resumed after suspension
+  MANUAL           // staff manually reactivated
+}
+
+enum EnrollmentPeriodEndReason {
+  PAYMENT_PENDING  // period ended, awaiting payment (grace started)
+  SUSPENDED        // grace expired, access cut off
+  COMPLETED        // student completed the program
+  DROPPED          // voluntarily unenrolled
+  MANUAL           // staff action
+}
+
+model EnrollmentPeriod {
+  id           String                     @id @default(cuid())
+  enrollmentId String
+  startedAt    DateTime                   @default(now())
+  endedAt      DateTime?                  // null = currently active period
+  startReason  EnrollmentPeriodReason
+  endReason    EnrollmentPeriodEndReason? // null while period is open
+  createdAt    DateTime                   @default(now())
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@index([enrollmentId])
+  @@index([enrollmentId, endedAt])
 }
 
 model Mentorship {
@@ -1333,4 +1367,32 @@ model ChallengeSubmission {
   @@index([challengeId])
   @@index([studentId])
   @@index([challengeId, score])
+}
+
+enum TestimonialStatus {
+  PENDING   // awaiting super-admin review
+  APPROVED  // shown on landing page
+  REJECTED  // declined, not shown
+}
+
+model Testimonial {
+  id             String            @id @default(cuid())
+  authorId       String
+  quote          String            @db.Text
+  rating         Int               // 1–5 stars
+  childName      String?           // first name of child being referred to (optional)
+  programName    String?           // program the child is in (denormalised for display)
+  status         TestimonialStatus @default(PENDING)
+  reviewedById   String?
+  reviewedAt     DateTime?
+  rejectionNote  String?           @db.Text
+  featuredOnPage Boolean           @default(true)  // super-admin can unfeature without deleting
+  submittedAt    DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  author     User  @relation("TestimonialAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("TestimonialReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, featuredOnPage])
+  @@index([authorId])
 }

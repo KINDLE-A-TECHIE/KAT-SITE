@@ -27,13 +27,22 @@ type OpenCohort = {
   program: { id: string; name: string; level: string; description: string | null };
 };
 
+type DbTestimonial = {
+  id: string;
+  quote: string;
+  rating: number;
+  childName: string | null;
+  author: { firstName: string; lastName: string; avatarUrl: string | null };
+};
+
 type LandingPageProps = {
   enrollments: number;
   passRate: number;
   openCohorts: OpenCohort[];
+  testimonials?: DbTestimonial[];
 };
 
-export function LandingPage({ enrollments, passRate, openCohorts }: LandingPageProps) {
+export function LandingPage({ enrollments, passRate, openCohorts, testimonials }: LandingPageProps) {
   return (
     <main style={DESIGN_TOKENS as CSSProperties} className="relative overflow-x-clip">
       {/* Background blobs */}
@@ -52,7 +61,7 @@ export function LandingPage({ enrollments, passRate, openCohorts }: LandingPageP
       <TracksSection />
       <FellowshipSection cohorts={openCohorts} />
       <EventsSection />
-      <TestimonialsSection />
+      <TestimonialsSection testimonials={testimonials} />
       <PricingSection />
       <FaqSection />
       <CtaSection />

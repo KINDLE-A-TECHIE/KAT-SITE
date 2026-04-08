@@ -113,6 +113,11 @@ export async function POST(request: Request) {
         where: { id: enrollment.id },
         data: { status: "SUSPENDED" },
       });
+      // Close the current enrollment period
+      await prisma.enrollmentPeriod.updateMany({
+        where: { enrollmentId: enrollment.id, endedAt: null },
+        data: { endedAt: now, endReason: "SUSPENDED" },
+      });
 
       const title = `Enrolment suspended — ${program.name}`;
       const text  = `${student.firstName}'s access to ${program.name} has been suspended due to non-payment. Pay now to restore access.`;
@@ -141,6 +146,11 @@ export async function POST(request: Request) {
       enrollment.status === "ACTIVE" &&
       withinWindow(periodEnd, now, -1, 0)
     ) {
+      // Mark the current period as payment-pending (grace has started)
+      await prisma.enrollmentPeriod.updateMany({
+        where: { enrollmentId: enrollment.id, endedAt: null },
+        data: { endedAt: now, endReason: "PAYMENT_PENDING" },
+      });
       const title = `4-day grace period started — ${program.name}`;
       const text  = `${student.firstName}'s ${program.name} enrolment expired. You have 4 days to pay before access is suspended.`;
       for (const r of recipients) {

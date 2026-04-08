@@ -185,7 +185,7 @@ export const PRICING_TIERS: PricingTier[] = [
     label: "Junior Explorers",
     ages: "Ages 8–11",
     monthlyLabel: "Register to see pricing",
-    billingNote: "Billed monthly · Cancel anytime",
+    billingNote: "Billed monthly",
     highlight: false,
     includes: [
       "2 live 1-on-1 classes per week",
@@ -202,7 +202,7 @@ export const PRICING_TIERS: PricingTier[] = [
     label: "Teen Builders",
     ages: "Ages 12–15",
     monthlyLabel: "Register to see pricing",
-    billingNote: "Billed monthly · Cancel anytime",
+    billingNote: "Billed monthly",
     highlight: true,
     includes: [
       "2 live 1-on-1 classes per week",
@@ -220,7 +220,7 @@ export const PRICING_TIERS: PricingTier[] = [
     label: "Future Innovators",
     ages: "Ages 16–19",
     monthlyLabel: "Register to see pricing",
-    billingNote: "Billed monthly · Cancel anytime",
+    billingNote: "Billed monthly",
     highlight: false,
     includes: [
       "2 live 1-on-1 classes per week",
