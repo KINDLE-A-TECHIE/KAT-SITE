@@ -63,7 +63,7 @@ function LoginContent() {
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
-    mode: "onChange",
+    mode: "onTouched",
   });
 
   const onSubmit = form.handleSubmit(async (values) => {

@@ -49,7 +49,7 @@ function RegisterContent() {
   const selectedRole = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: { firstName: "", lastName: "", email: "", password: "", role: "STUDENT" },
-    mode: "onChange",
+    mode: "onTouched",
   });
 
   const form = selectedRole;

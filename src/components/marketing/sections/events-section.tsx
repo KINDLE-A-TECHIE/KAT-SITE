@@ -11,7 +11,7 @@ const MODE_STYLES: Record<string, string> = {
 
 export function EventsSection() {
   return (
-    <section className="kat-page kat-defer pb-16 sm:pb-20">
+    <section className="kat-page kat-defer pt-16 pb-16 sm:pt-24 sm:pb-20">
       <div className="mb-10 text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--kat-primary-blue)]">
           Beyond the Classroom
