@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     }
     const testimonials = await prisma.testimonial.findMany({
       include: {
-        author: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+        author: { select: { id: true, firstName: true, lastName: true, profile: { select: { avatarUrl: true } } } },
         reviewedBy: { select: { firstName: true, lastName: true } },
       },
       orderBy: [{ status: "asc" }, { submittedAt: "desc" }],
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
   const testimonials = await prisma.testimonial.findMany({
     where: { status: "APPROVED", featuredOnPage: true },
     include: {
-      author: { select: { firstName: true, lastName: true, avatarUrl: true } },
+      author: { select: { firstName: true, lastName: true, profile: { select: { avatarUrl: true } } } },
     },
     orderBy: { submittedAt: "desc" },
     take: 12,

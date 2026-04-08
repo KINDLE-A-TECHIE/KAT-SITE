@@ -32,7 +32,7 @@ type DbTestimonial = {
   quote: string;
   rating: number;
   childName: string | null;
-  author: { firstName: string; lastName: string; avatarUrl: string | null };
+  author: { firstName: string; lastName: string; profile: { avatarUrl: string | null } | null };
 };
 
 type LandingPageProps = {

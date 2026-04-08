@@ -6,7 +6,7 @@ type DbTestimonial = {
   quote: string;
   rating: number;
   childName: string | null;
-  author: { firstName: string; lastName: string; avatarUrl: string | null };
+  author: { firstName: string; lastName: string; profile: { avatarUrl: string | null } | null };
 };
 
 type TestimonialsSectionProps = {
@@ -47,10 +47,10 @@ export function TestimonialsSection({ testimonials }: TestimonialsSectionProps) 
                     &ldquo;{t.quote}&rdquo;
                   </p>
                   <div className="mt-5 flex items-center gap-3 border-t border-[var(--kat-border)] pt-4">
-                    {t.author.avatarUrl ? (
+                    {t.author.profile?.avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={t.author.avatarUrl}
+                        src={t.author.profile.avatarUrl}
                         alt={fullName}
                         className="size-9 shrink-0 rounded-full object-cover"
                       />

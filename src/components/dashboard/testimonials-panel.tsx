@@ -23,7 +23,7 @@ type Testimonial = {
   featuredOnPage: boolean;
   rejectionNote: string | null;
   submittedAt: string;
-  author?: { id: string; firstName: string; lastName: string; avatarUrl: string | null };
+  author?: { id: string; firstName: string; lastName: string; profile: { avatarUrl: string | null } | null };
   reviewedBy?: { firstName: string; lastName: string } | null;
 };
 

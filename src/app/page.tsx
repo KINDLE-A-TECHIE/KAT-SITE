@@ -112,7 +112,7 @@ async function getApprovedTestimonials() {
         quote: true,
         rating: true,
         childName: true,
-        author: { select: { firstName: true, lastName: true, avatarUrl: true } },
+        author: { select: { firstName: true, lastName: true, profile: { select: { avatarUrl: true } } } },
       },
       orderBy: { submittedAt: "desc" },
       take: 12,
