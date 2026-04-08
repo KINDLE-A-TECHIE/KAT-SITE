@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type TestimonialStatus = "PENDING" | "APPROVED" | "REJECTED";
+type ReviewAction = "approve" | "reject" | "feature" | "unfeature";
 
 type Testimonial = {
   id: string;
@@ -65,13 +66,204 @@ function getInitials(firstName: string, lastName: string) {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 }
 
+// ── Admin sub-components (must be top-level to satisfy react-hooks/static-components) ──
+
+type TestimonialCardProps = {
+  t: Testimonial;
+  busy: string | null;
+  onAction: (id: string, act: ReviewAction) => void;
+  onRejectOpen: (t: Testimonial) => void;
+  onDeleteOpen: (t: Testimonial) => void;
+};
+
+function TestimonialCard({ t, busy, onAction, onRejectOpen, onDeleteOpen }: TestimonialCardProps) {
+  const isBusy = busy === t.id;
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.97 }}
+      className="kat-card space-y-3"
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
+          {t.author && (
+            <div
+              className="flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+              style={{ background: "var(--kat-gradient)" }}
+            >
+              {getInitials(t.author.firstName, t.author.lastName)}
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
+              {t.author ? `${t.author.firstName} ${t.author.lastName}` : "Unknown"}
+            </p>
+            {t.childName && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">re: {t.childName}</p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLES[t.status]}`}>
+            {t.status}
+          </span>
+          {t.featuredOnPage && t.status === "APPROVED" && (
+            <span className="inline-block rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
+              Featured
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Quote */}
+      <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 italic">
+        &ldquo;{t.quote}&rdquo;
+      </p>
+      <div className="flex items-center gap-3">
+        <StarRating rating={t.rating} />
+        <span className="text-xs text-slate-400">
+          {new Date(t.submittedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+        </span>
+      </div>
+
+      {t.rejectionNote && (
+        <p className="text-xs text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 rounded-lg px-3 py-2">
+          Rejection note: {t.rejectionNote}
+        </p>
+      )}
+
+      {/* Actions */}
+      <div className="flex flex-wrap gap-2 pt-1">
+        {t.status === "PENDING" && (
+          <>
+            <Button
+              size="sm"
+              className="kat-btn-primary h-8 text-xs"
+              disabled={isBusy}
+              onClick={() => onAction(t.id, "approve")}
+            >
+              {isBusy ? <Loader2 className="size-3 animate-spin mr-1" /> : <Check className="size-3 mr-1" />}
+              Approve
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/30"
+              disabled={isBusy}
+              onClick={() => onRejectOpen(t)}
+            >
+              <X className="size-3 mr-1" />
+              Reject
+            </Button>
+          </>
+        )}
+        {t.status === "APPROVED" && (
+          <>
+            {t.featuredOnPage ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs"
+                disabled={isBusy}
+                onClick={() => onAction(t.id, "unfeature")}
+              >
+                {isBusy && <Loader2 className="size-3 animate-spin mr-1" />}
+                Unfeature
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs border-sky-300 text-sky-600 hover:bg-sky-50 dark:border-sky-700 dark:text-sky-400"
+                disabled={isBusy}
+                onClick={() => onAction(t.id, "feature")}
+              >
+                {isBusy && <Loader2 className="size-3 animate-spin mr-1" />}
+                Feature
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/30"
+              disabled={isBusy}
+              onClick={() => onRejectOpen(t)}
+            >
+              <X className="size-3 mr-1" />
+              Reject
+            </Button>
+          </>
+        )}
+        {t.status === "REJECTED" && (
+          <Button
+            size="sm"
+            className="kat-btn-primary h-8 text-xs"
+            disabled={isBusy}
+            onClick={() => onAction(t.id, "approve")}
+          >
+            {isBusy ? <Loader2 className="size-3 animate-spin mr-1" /> : <Check className="size-3 mr-1" />}
+            Approve
+          </Button>
+        )}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 text-xs text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 ml-auto"
+          disabled={isBusy}
+          onClick={() => onDeleteOpen(t)}
+        >
+          <Trash2 className="size-3 mr-1" />
+          Delete
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
+
+type SectionProps = {
+  title: string;
+  items: Testimonial[];
+  busy: string | null;
+  onAction: (id: string, act: ReviewAction) => void;
+  onRejectOpen: (t: Testimonial) => void;
+  onDeleteOpen: (t: Testimonial) => void;
+};
+
+function TestimonialSection({ title, items, busy, onAction, onRejectOpen, onDeleteOpen }: SectionProps) {
+  if (items.length === 0) return null;
+  return (
+    <div className="space-y-3">
+      <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+        {title}{" "}
+        <span className="ml-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs">
+          {items.length}
+        </span>
+      </h3>
+      <AnimatePresence>
+        {items.map((t) => (
+          <TestimonialCard
+            key={t.id}
+            t={t}
+            busy={busy}
+            onAction={onAction}
+            onRejectOpen={onRejectOpen}
+            onDeleteOpen={onDeleteOpen}
+          />
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ── PARENT VIEW ───────────────────────────────────────────────────────────────
 
 export function ParentTestimonialsPanel() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // form state
   const [quote, setQuote] = useState("");
   const [rating, setRating] = useState(5);
   const [childName, setChildName] = useState("");
@@ -122,7 +314,6 @@ export function ParentTestimonialsPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Existing testimonial status */}
       <AnimatePresence>
         {existing && (
           <motion.div
@@ -150,9 +341,7 @@ export function ParentTestimonialsPanel() {
                 <div className="mt-2 flex items-center gap-3">
                   <StarRating rating={existing.rating} />
                   {existing.childName && (
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      re: {existing.childName}
-                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">re: {existing.childName}</span>
                   )}
                 </div>
                 {existing.rejectionNote && (
@@ -171,7 +360,6 @@ export function ParentTestimonialsPanel() {
         )}
       </AnimatePresence>
 
-      {/* Submit form */}
       {canSubmit && (
         <div className="kat-card space-y-5">
           <div>
@@ -183,7 +371,6 @@ export function ParentTestimonialsPanel() {
             </p>
           </div>
 
-          {/* Star rating */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
               Rating
@@ -191,7 +378,6 @@ export function ParentTestimonialsPanel() {
             <StarRating rating={rating} interactive onChange={setRating} />
           </div>
 
-          {/* Child name */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
               Child&apos;s first name <span className="normal-case font-normal">(optional)</span>
@@ -206,7 +392,6 @@ export function ParentTestimonialsPanel() {
             />
           </div>
 
-          {/* Quote */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
               Your testimonial
@@ -246,19 +431,15 @@ export function ParentTestimonialsPanel() {
 
 // ── SUPER-ADMIN VIEW ──────────────────────────────────────────────────────────
 
-type ReviewAction = "approve" | "reject" | "feature" | "unfeature";
-
 export function AdminTestimonialsPanel() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<string | null>(null); // testimonialId being actioned
+  const [busy, setBusy] = useState<string | null>(null);
 
-  // Reject dialog
   const [rejectTarget, setRejectTarget] = useState<Testimonial | null>(null);
   const [rejectionNote, setRejectionNote] = useState("");
   const [rejecting, setRejecting] = useState(false);
 
-  // Delete confirm
   const [deleteTarget, setDeleteTarget] = useState<Testimonial | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -274,7 +455,7 @@ export function AdminTestimonialsPanel() {
 
   useEffect(() => { void load(); }, []);
 
-  const action = async (testimonialId: string, act: ReviewAction, note?: string) => {
+  const handleAction = async (testimonialId: string, act: ReviewAction, note?: string) => {
     setBusy(testimonialId);
     const res = await fetch(`/api/testimonials/${testimonialId}`, {
       method: "PATCH",
@@ -294,10 +475,15 @@ export function AdminTestimonialsPanel() {
     await load();
   };
 
+  const handleRejectOpen = (t: Testimonial) => {
+    setRejectTarget(t);
+    setRejectionNote("");
+  };
+
   const handleReject = async () => {
     if (!rejectTarget) return;
     setRejecting(true);
-    await action(rejectTarget.id, "reject", rejectionNote.trim() || undefined);
+    await handleAction(rejectTarget.id, "reject", rejectionNote.trim() || undefined);
     setRejecting(false);
     setRejectTarget(null);
     setRejectionNote("");
@@ -315,9 +501,9 @@ export function AdminTestimonialsPanel() {
     await load();
   };
 
-  const pending   = testimonials.filter((t) => t.status === "PENDING");
-  const approved  = testimonials.filter((t) => t.status === "APPROVED");
-  const rejected  = testimonials.filter((t) => t.status === "REJECTED");
+  const pending  = testimonials.filter((t) => t.status === "PENDING");
+  const approved = testimonials.filter((t) => t.status === "APPROVED");
+  const rejected = testimonials.filter((t) => t.status === "REJECTED");
 
   if (loading) {
     return (
@@ -336,174 +522,33 @@ export function AdminTestimonialsPanel() {
     );
   }
 
-  const TestimonialCard = ({ t }: { t: Testimonial }) => {
-    const isBusy = busy === t.id;
-    return (
-      <motion.div
-        key={t.id}
-        layout
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.97 }}
-        className="kat-card space-y-3"
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3 min-w-0">
-            {t.author ? (
-              <div
-                className="flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                style={{ background: "var(--kat-gradient)" }}
-              >
-                {getInitials(t.author.firstName, t.author.lastName)}
-              </div>
-            ) : null}
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
-                {t.author ? `${t.author.firstName} ${t.author.lastName}` : "Unknown"}
-              </p>
-              {t.childName && (
-                <p className="text-xs text-slate-500 dark:text-slate-400">re: {t.childName}</p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLES[t.status]}`}>
-              {t.status}
-            </span>
-            {t.featuredOnPage && t.status === "APPROVED" && (
-              <span className="inline-block rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
-                Featured
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Quote */}
-        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 italic">
-          &ldquo;{t.quote}&rdquo;
-        </p>
-        <div className="flex items-center gap-3">
-          <StarRating rating={t.rating} />
-          <span className="text-xs text-slate-400">
-            {new Date(t.submittedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-          </span>
-        </div>
-
-        {t.rejectionNote && (
-          <p className="text-xs text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 rounded-lg px-3 py-2">
-            Rejection note: {t.rejectionNote}
-          </p>
-        )}
-
-        {/* Actions */}
-        <div className="flex flex-wrap gap-2 pt-1">
-          {t.status === "PENDING" && (
-            <>
-              <Button
-                size="sm"
-                className="kat-btn-primary h-8 text-xs"
-                disabled={isBusy}
-                onClick={() => action(t.id, "approve")}
-              >
-                {isBusy ? <Loader2 className="size-3 animate-spin mr-1" /> : <Check className="size-3 mr-1" />}
-                Approve
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/30"
-                disabled={isBusy}
-                onClick={() => { setRejectTarget(t); setRejectionNote(""); }}
-              >
-                <X className="size-3 mr-1" />
-                Reject
-              </Button>
-            </>
-          )}
-          {t.status === "APPROVED" && (
-            <>
-              {t.featuredOnPage ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-8 text-xs"
-                  disabled={isBusy}
-                  onClick={() => action(t.id, "unfeature")}
-                >
-                  {isBusy ? <Loader2 className="size-3 animate-spin mr-1" /> : null}
-                  Unfeature
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-8 text-xs border-sky-300 text-sky-600 hover:bg-sky-50 dark:border-sky-700 dark:text-sky-400"
-                  disabled={isBusy}
-                  onClick={() => action(t.id, "feature")}
-                >
-                  {isBusy ? <Loader2 className="size-3 animate-spin mr-1" /> : null}
-                  Feature
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/30"
-                disabled={isBusy}
-                onClick={() => { setRejectTarget(t); setRejectionNote(""); }}
-              >
-                <X className="size-3 mr-1" />
-                Reject
-              </Button>
-            </>
-          )}
-          {t.status === "REJECTED" && (
-            <Button
-              size="sm"
-              className="kat-btn-primary h-8 text-xs"
-              disabled={isBusy}
-              onClick={() => action(t.id, "approve")}
-            >
-              {isBusy ? <Loader2 className="size-3 animate-spin mr-1" /> : <Check className="size-3 mr-1" />}
-              Approve
-            </Button>
-          )}
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-8 text-xs text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 ml-auto"
-            disabled={isBusy}
-            onClick={() => setDeleteTarget(t)}
-          >
-            <Trash2 className="size-3 mr-1" />
-            Delete
-          </Button>
-        </div>
-      </motion.div>
-    );
-  };
-
-  const Section = ({ title, items, count }: { title: string; items: Testimonial[]; count: number }) => {
-    if (items.length === 0) return null;
-    return (
-      <div className="space-y-3">
-        <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-          {title} <span className="ml-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs">{count}</span>
-        </h3>
-        <AnimatePresence>
-          {items.map((t) => <TestimonialCard key={t.id} t={t} />)}
-        </AnimatePresence>
-      </div>
-    );
-  };
-
   return (
     <>
       <div className="space-y-8">
-        <Section title="Pending Review" items={pending} count={pending.length} />
-        <Section title="Approved" items={approved} count={approved.length} />
-        <Section title="Rejected" items={rejected} count={rejected.length} />
+        <TestimonialSection
+          title="Pending Review"
+          items={pending}
+          busy={busy}
+          onAction={handleAction}
+          onRejectOpen={handleRejectOpen}
+          onDeleteOpen={setDeleteTarget}
+        />
+        <TestimonialSection
+          title="Approved"
+          items={approved}
+          busy={busy}
+          onAction={handleAction}
+          onRejectOpen={handleRejectOpen}
+          onDeleteOpen={setDeleteTarget}
+        />
+        <TestimonialSection
+          title="Rejected"
+          items={rejected}
+          busy={busy}
+          onAction={handleAction}
+          onRejectOpen={handleRejectOpen}
+          onDeleteOpen={setDeleteTarget}
+        />
       </div>
 
       {/* Reject dialog */}
@@ -533,7 +578,7 @@ export function AdminTestimonialsPanel() {
                 onClick={handleReject}
                 disabled={rejecting}
               >
-                {rejecting ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
+                {rejecting && <Loader2 className="size-4 animate-spin mr-2" />}
                 Reject
               </Button>
             </div>
