@@ -38,7 +38,7 @@ cp .env.example .env.local
 # See "Environment Variables" section below
 
 # 3. Push schema to database
-npx prisma migrate dev
+npx prisma db push
 
 # 4. Seed demo data
 npx prisma db seed
@@ -155,11 +155,17 @@ All seed accounts use the password `Passw0rd!`
 - Auto-grading for objective questions; manual grading queue for open-ended responses
 
 ### Weekly Challenges
-- Instructors and admins create weekly coding challenges per program module
-- Students submit open-ended responses (link, description, or code)
-- Real-time leaderboard per challenge showing ranked scores and a top-3 podium
-- Featured challenge hero banner for learners; active/past tab split
-- Scores displayed with rank titles (Perfect Score, Code Wizard, Bug Slayer, etc.)
+- Dedicated challenge system, separate from assessments
+- Scoped to programs and optionally to specific modules — only enrolled students who have reached the module can see and enter the challenge
+- Admins and instructors create challenges with title, description, week number, points, due date, and module scope
+- Challenges can be saved as drafts and published when ready; publishing notifies all eligible students in-app
+- Students submit once (final) — either a link (GitHub, CodePen, live demo) or a file upload (up to 50 MB via R2)
+- Optional notes field for students to describe their work
+- Instructors grade each submission with a score and feedback; student is notified when graded
+- Per-challenge leaderboard ranked by score with a top-3 podium, score bars, and rank titles (Perfect Score, Code Wizard, Bug Slayer, etc.)
+- Featured challenge hero banner for learners on the active tab
+- Manager view has Active / Draft / Past tabs with inline Publish/Unpublish and Delete per challenge
+- PWA install: desktop users see the browser's native address-bar install button; mobile users see a custom banner after 5 seconds
 
 ### Projects
 - Students create standalone or program-linked projects with a required description and optional "How to Use" guide
@@ -220,7 +226,9 @@ All seed accounts use the password `Passw0rd!`
 - Analytics event tracking with monthly aggregation
 - Partner enquiry form at `/partners` with email notification to `hello@kindleatechie.com`
 - Dark mode scoped to the dashboard — marketing and auth pages are always light
-- PWA: service worker, offline fallback, web manifest
+- PWA: service worker, offline fallback, web manifest; desktop uses the browser's native install button, mobile gets a custom install banner
+- Meetings panel: ended meetings with available recordings are preserved in the recording library when removed from the active list
+- Project assignments: instructors can attach reference asset files to project assessments for students to download
 
 ---
 
@@ -295,7 +303,7 @@ src/
       auth/               # NextAuth, password reset, forgot-password
       badges/             # Badge queries
       certificates/       # Certificate issuance and verification
-      challenges/         # Weekly challenge list and leaderboard
+      challenges/         # Challenge CRUD, submissions, grading, leaderboard (scoped to program/module)
       cohorts/            # Cohort management
       cron/               # Scheduled job endpoints
       curriculum/         # Versioned curriculum builder
