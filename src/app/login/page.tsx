@@ -87,7 +87,7 @@ function LoginContent() {
 
     toast.success("Welcome back.");
     // Hard navigation so the middleware re-evaluates the session cookie from scratch.
-    window.location.href = redirectTo;
+    window.location.assign(redirectTo);
   });
 
   return (
