@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,7 +45,6 @@ function GoogleIcon() {
 type LoginValues = z.infer<typeof loginSchema>;
 
 function LoginContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") ?? "/dashboard";
   const [loading, setLoading] = useState(false);
@@ -86,10 +85,9 @@ function LoginContent() {
       return;
     }
 
-    // Keep loading=true so the button stays disabled during navigation.
-    // Do NOT call router.refresh() — it races with push() and cancels the redirect.
     toast.success("Welcome back.");
-    router.push(redirectTo);
+    // Hard navigation so the middleware re-evaluates the session cookie from scratch.
+    window.location.href = redirectTo;
   });
 
   return (
