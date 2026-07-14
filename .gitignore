@@ -8,7 +8,13 @@ coverage
 .env.*.local
 !.env.example
 
-prisma/migrations
+# NOTE: prisma/migrations is deliberately NOT ignored.
+#
+# It used to be, and that single line was the root of a serious problem: migrations were never
+# shared, so nobody could rebuild the database from them. Drift accumulated invisibly until a fresh
+# deploy needed 139 corrective statements to match schema.prisma, which meant production could not
+# be recreated from its own history. Migrations ARE the schema's history. They belong in git.
+
 *.log
 
 .vercel
