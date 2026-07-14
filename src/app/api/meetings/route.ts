@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { createMeetingSchema } from "@/lib/validators";
 import { buildJitsiBaseUrl, generateRoomName, getMeetingStatus, isJitsiConfigured } from "@/lib/jitsi";
 import { trackEvent } from "@/lib/analytics";
+import { orgScope } from "@/lib/tenant";
 
 const HOST_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR, UserRole.FELLOW];
 const RECORDING_VIEW_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN];
@@ -29,7 +30,7 @@ export async function GET(request: Request) {
   const meetings = await prisma.meeting.findMany({
     where: canLoadOrgRecordings
       ? {
-          organizationId: session.user.organizationId ?? undefined,
+          ...orgScope(session.user.organizationId),
           status: MeetingStatus.ENDED,
           recordingMode: { not: MeetingRecordingMode.NONE },
         }
@@ -100,7 +101,7 @@ export async function POST(request: Request) {
 
   const meeting = await prisma.meeting.create({
     data: {
-      organizationId: session.user.organizationId ?? undefined,
+      organizationId: session.user.organizationId,
       cohortId: parsed.data.cohortId,
       hostId: session.user.id,
       title: parsed.data.title,
@@ -184,7 +185,7 @@ export async function DELETE(request: Request) {
   }
 
   // If a recording is available, preserve the meeting record so the recording library retains it.
-  // Remove all participants instead — the meeting disappears from everyone's list since the
+  // Remove all participants instead, the meeting disappears from everyone's list since the
   // regular meetings query filters by participant membership, but the recording library query
   // filters by org/status/recordingMode and will still find it.
   if (meeting.recordingStatus === MeetingRecordingStatus.AVAILABLE) {

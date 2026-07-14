@@ -80,7 +80,7 @@ export async function GET(request: Request) {
       ...searchFilter,
     };
   } else {
-    // STUDENT / FELLOW — own projects only
+    // STUDENT / FELLOW, own projects only
     where = {
       studentId: userId,
       ...(statusFilter ? { status: statusFilter } : {}),

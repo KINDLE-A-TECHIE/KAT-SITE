@@ -6,7 +6,7 @@ export const revalidate = 300;
 
 export const metadata = {
   title: "Student Projects | KAT Learning",
-  description: "See what KAT students have built — real projects from real learners.",
+  description: "See what KAT students have built, real projects from real learners.",
 };
 
 type ShowcaseProject = {

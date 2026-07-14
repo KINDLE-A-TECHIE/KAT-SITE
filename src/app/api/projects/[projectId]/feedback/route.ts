@@ -39,7 +39,7 @@ export async function POST(request: Request, { params }: Params) {
     include: { author: { select: { id: true, firstName: true, lastName: true, role: true } } },
   });
 
-  // Notify the student — but not if they somehow left feedback on their own project
+  // Notify the student, but not if they somehow left feedback on their own project
   if (project.studentId !== session.user.id) {
     await prisma.notification.create({
       data: {

@@ -30,13 +30,13 @@ async function compressImage(input: Buffer): Promise<Buffer> {
   const lossless = await pipeline.clone().webp({ lossless: true }).toBuffer();
   if (lossless.byteLength <= TARGET_SIZE) return lossless;
 
-  // Step down quality until it fits — 85 → 75 → 65 → 60
+  // Step down quality until it fits, 85 → 75 → 65 → 60
   for (const quality of [85, 75, 65, 60]) {
     const attempt = await pipeline.clone().webp({ quality, effort: 6 }).toBuffer();
     if (attempt.byteLength <= TARGET_SIZE) return attempt;
   }
 
-  // Last resort — quality 60 regardless of size (still well under 5 MB for any sane photo)
+  // Last resort, quality 60 regardless of size (still well under 5 MB for any sane photo)
   return pipeline.clone().webp({ quality: 60, effort: 6 }).toBuffer();
 }
 
@@ -67,7 +67,7 @@ export async function GET() {
   );
 }
 
-/** Upload avatar — receives raw file bytes, stores in R2, saves URL to DB. */
+/** Upload avatar, receives raw file bytes, stores in R2, saves URL to DB. */
 export async function POST(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
     if (raw.byteLength > MAX_INPUT_SIZE) return fail("File too large (max 20 MB).", 400);
     if (raw.byteLength === 0) return fail("Empty file received.", 400);
 
-    // Compress with sharp — strip EXIF, resize if needed, encode as WebP
+    // Compress with sharp, strip EXIF, resize if needed, encode as WebP
     const compressed = await compressImage(raw);
 
     const key = `avatars/${session.user.id}/${randomUUID()}.webp`;
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
   }
 }
 
-/** Remove avatar — clears DB and deletes R2 object. */
+/** Remove avatar, clears DB and deletes R2 object. */
 export async function DELETE() {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);

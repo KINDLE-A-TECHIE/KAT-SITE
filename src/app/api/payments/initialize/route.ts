@@ -165,7 +165,7 @@ export async function POST(request: Request) {
         return fail("Invalid enrollment for this program.", 400);
       }
     } else {
-      // No enrollmentId supplied — find or create one for the target user.
+      // No enrollmentId supplied, find or create one for the target user.
       const existing = await prisma.enrollment.findUnique({
         where: { userId_programId: { userId: targetUserId, programId: parsed.data.programId } },
         select: { id: true },

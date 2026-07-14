@@ -12,7 +12,7 @@ const participantSelect = {
   user: { select: { id: true, firstName: true, lastName: true } },
 };
 
-// PATCH /api/peer-sessions/[sessionId] — push updated code from a participant
+// PATCH /api/peer-sessions/[sessionId], push updated code from a participant
 export async function PATCH(request: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -49,7 +49,7 @@ export async function PATCH(request: Request, { params }: Params) {
   return ok({ ok: true });
 }
 
-// DELETE /api/peer-sessions/[sessionId] — end the session (host or admin+)
+// DELETE /api/peer-sessions/[sessionId], end the session (host or admin+)
 export async function DELETE(_request: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);

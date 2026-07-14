@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { LegalLayout } from "../legal-layout";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — KAT Learning",
+  title: "Terms of Service. KAT Learning",
   description: "The terms that govern your use of the KAT Learning platform.",
 };
 
@@ -65,7 +65,7 @@ export default function TermsPage() {
       <ul>
         <li>Share your account or class access with anyone outside your enrolled household</li>
         <li>Record, redistribute, or publish live class sessions without written permission</li>
-        <li>Upload content that is harmful, abusive, or inappropriate — especially given that
+        <li>Upload content that is harmful, abusive, or inappropriate, especially given that
           children use this platform</li>
         <li>Attempt to access parts of the platform you are not authorised to use</li>
         <li>Use the platform for any commercial purpose without our written consent</li>
@@ -80,14 +80,14 @@ export default function TermsPage() {
         <li>
           Projects and portfolio work created by students belong to the students. By submitting
           work to the platform, students grant us a limited licence to display it within the
-          platform (e.g., on a student profile or in a showcase) — nothing more.
+          platform (e.g., on a student profile or in a showcase), nothing more.
         </li>
       </ul>
 
       <h2>5. Code of conduct</h2>
       <p>
-        KAT Learning is a safe learning environment for children and teens. All users — students,
-        parents, instructors, and fellows — are expected to treat one another with respect. We
+        KAT Learning is a safe learning environment for children and teens. All users, students,
+        parents, instructors, and fellows, are expected to treat one another with respect. We
         reserve the right to suspend or remove any account that engages in bullying, harassment,
         hate speech, or any behaviour that harms other users.
       </p>

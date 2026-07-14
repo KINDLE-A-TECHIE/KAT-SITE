@@ -131,7 +131,7 @@ export default async function ReceiptPage({ params }: Props) {
                 <tr>
                   <td className="px-4 py-3 text-slate-500">Program</td>
                   <td className="px-4 py-3 text-right font-medium text-slate-800">
-                    {payment.program?.name ?? "—"}
+                    {payment.program?.name ?? ", "}
                   </td>
                 </tr>
                 <tr>

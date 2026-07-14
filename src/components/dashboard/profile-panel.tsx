@@ -98,7 +98,7 @@ type ProfileApiUser = {
   };
 };
 
-const MAX_AVATAR_FILE_SIZE = 20 * 1024 * 1024; // 20 MB — server compresses to <5 MB
+const MAX_AVATAR_FILE_SIZE = 20 * 1024 * 1024; // 20 MB, server compresses to <5 MB
 const VISIBILITY_OPTIONS: { label: string; value: ProfileVisibilityValue }[] = [
   { label: "Only me", value: "PRIVATE" },
   { label: "Institution members", value: "ORG" },
@@ -349,7 +349,7 @@ export function ProfilePanel() {
         data = (await res.json()) as typeof data;
       } catch {
         // Server returned non-JSON (e.g. HTML error page)
-        toast.error("Server error — check console for details.");
+        toast.error("Server error, check console for details.");
         return;
       }
       if (!res.ok) {

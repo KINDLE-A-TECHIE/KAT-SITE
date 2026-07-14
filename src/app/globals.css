@@ -228,7 +228,7 @@
   }
 }
 
-/* Respect user's reduced-motion preference — disable all animations */
+/* Respect user's reduced-motion preference, disable all animations */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

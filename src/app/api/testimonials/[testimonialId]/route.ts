@@ -11,7 +11,7 @@ const reviewSchema = z.object({
   rejectionNote: z.string().trim().max(500).optional(),
 });
 
-// PATCH — super-admin reviews a testimonial
+// PATCH, super-admin reviews a testimonial
 export async function PATCH(request: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -42,7 +42,7 @@ export async function PATCH(request: Request, { params }: Params) {
       updateData = { status: "APPROVED", featuredOnPage: true, reviewedById: session.user.id, reviewedAt: now, rejectionNote: null };
       notifyAuthor = true;
       notifTitle = "Your testimonial is live! 🎉";
-      notifText = "Thank you — your testimonial has been approved and is now featured on the KAT website.";
+      notifText = "Thank you, your testimonial has been approved and is now featured on the KAT website.";
       notifType = NotificationType.SUCCESS;
       break;
     case "reject":
@@ -86,7 +86,7 @@ export async function PATCH(request: Request, { params }: Params) {
   return ok({ testimonial: updated });
 }
 
-// DELETE — super-admin hard-deletes a testimonial
+// DELETE, super-admin hard-deletes a testimonial
 export async function DELETE(_req: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);

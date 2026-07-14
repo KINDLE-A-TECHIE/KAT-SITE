@@ -123,7 +123,7 @@ const STATUS_CONFIG = {
   APPROVED: {
     label: "Approved",
     className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-    description: "Accepted — share your portfolio link!",
+    description: "Accepted, share your portfolio link!",
   },
   NEEDS_WORK: {
     label: "Needs Work",
@@ -133,7 +133,7 @@ const STATUS_CONFIG = {
   REJECTED: {
     label: "Not Accepted",
     className: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
-    description: "Open to read feedback — you can still resubmit",
+    description: "Open to read feedback, you can still resubmit",
   },
 };
 
@@ -171,7 +171,7 @@ function FileUploader({ projectId, onUploaded }: { projectId: string; onUploaded
   const [progress, setProgress] = useState(0);
   const [statusMsg, setStatusMsg] = useState("");
 
-  // webkitdirectory is not in TS DOM types — set imperatively
+  // webkitdirectory is not in TS DOM types, set imperatively
   useEffect(() => {
     if (folderInputRef.current) folderInputRef.current.setAttribute("webkitdirectory", "");
   }, []);
@@ -527,7 +527,7 @@ function ProjectCard({
 
   const handleRetract = async () => {
     if (!confirm("Retract submission? This will move the project back to draft so you can edit and resubmit.")) return;
-    await patch({ status: "DRAFT" }, "Submission retracted — back to draft.");
+    await patch({ status: "DRAFT" }, "Submission retracted, back to draft.");
     setSubmitting(false);
   };
 
@@ -1250,7 +1250,7 @@ function NewProjectForm({ programs, onCreated, assignment, onCancelAssignment }:
         <div>
           <h3 className="font-semibold text-slate-900 dark:text-slate-100">Upload Files</h3>
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-            Add files to <span className="font-medium">{created.title}</span> — this is optional. You can also add them later from your project.
+            Add files to <span className="font-medium">{created.title}</span>, this is optional. You can also add them later from your project.
           </p>
         </div>
 
@@ -1415,7 +1415,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
   const [activeAssignment, setActiveAssignment] = useState<Assignment | null>(null);
 
-  // My Work — search + pagination
+  // My Work, search + pagination
   const [mySearch, setMySearch] = useState("");
   const [myCursor, setMyCursor] = useState<string | null>(null);
   const [myHasMore, setMyHasMore] = useState(false);
@@ -1562,7 +1562,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
     { key: "review" as const, label: "Review Queue", show: isReviewer },
   ].filter((t) => t.show);
 
-  // Pending assignments (not started) — shown in My Work as action reminders
+  // Pending assignments (not started), shown in My Work as action reminders
   const pendingAssignments = assignments.filter((a) => !a.linkedProject);
 
   return (
@@ -1590,7 +1590,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
         )}
       </div>
 
-      {/* Tabs — only for reviewers; students get a single merged view */}
+      {/* Tabs, only for reviewers; students get a single merged view */}
       {tabs.length > 1 && (
         <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/50">
           {tabs.map((t) => (
@@ -1639,7 +1639,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
               <BookMarked className="size-10 text-slate-300 dark:text-slate-600" />
               <p className="font-medium text-slate-600 dark:text-slate-400">No project assignments yet</p>
               <p className="text-sm text-slate-400">
-                {isReviewer ? "Create a PROJECT-type assessment — it will appear here for enrolled students." : "Your instructor hasn't assigned any projects yet."}
+                {isReviewer ? "Create a PROJECT-type assessment, it will appear here for enrolled students." : "Your instructor hasn't assigned any projects yet."}
               </p>
               {isReviewer && (
                 <Link
@@ -2007,7 +2007,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                 {reviewSearch
                   ? "No projects match your search"
                   : reviewStatus === "SUBMITTED"
-                  ? "All caught up — no submissions waiting for review"
+                  ? "All caught up, no submissions waiting for review"
                   : reviewStatus === "all"
                   ? "No projects in the queue yet"
                   : `No projects with status "${STATUS_CONFIG[reviewStatus as Project["status"]]?.label ?? reviewStatus}"`}
@@ -2036,10 +2036,10 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
         </div>
       )}
 
-      {/* My Work — assignments at top + portfolio below (or by child for parents) */}
+      {/* My Work, assignments at top + portfolio below (or by child for parents) */}
       {tab === "mine" && (
         <div className="space-y-6">
-          {/* Search bar — students only, not parents */}
+          {/* Search bar, students only, not parents */}
           {!isParent && !isReviewer && (
             <div className="relative">
               <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
@@ -2090,7 +2090,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
           ) : (
             // ── Student / Fellow: assignments first, then portfolio ──────────
             <>
-              {/* Pending assignments — amber accent cards */}
+              {/* Pending assignments, amber accent cards */}
               {pendingAssignments.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
@@ -2205,7 +2205,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                     </div>
                   )}
                   {mySearch ? (
-                    // When searching — flat list, no status grouping
+                    // When searching, flat list, no status grouping
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {projects.map((p) => (
                         <div key={p.id} id={`project-${p.id}`}>

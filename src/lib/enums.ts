@@ -5,6 +5,8 @@ export const USER_ROLES = [
   "FELLOW",
   "STUDENT",
   "PARENT",
+  "SCHOOL_STAFF",
+  "SCHOOL_STUDENT",
 ] as const;
 
 export type UserRoleValue = (typeof USER_ROLES)[number];
@@ -48,7 +50,7 @@ export type LessonContentTypeValue = (typeof LESSON_CONTENT_TYPES)[number];
 export const CONTENT_REVIEW_STATUSES = ["PENDING_REVIEW", "PUBLISHED", "REJECTED"] as const;
 export type ContentReviewStatusValue = (typeof CONTENT_REVIEW_STATUSES)[number];
 
-// Certificate / program level display helpers — shared across dashboard and public pages
+// Certificate / program level display helpers, shared across dashboard and public pages
 export const PROGRAM_LEVEL_LABEL: Record<string, string> = {
   BEGINNER:     "Beginner",
   INTERMEDIATE: "Intermediate",

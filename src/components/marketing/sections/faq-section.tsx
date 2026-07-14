@@ -16,7 +16,7 @@ export function FaqSection() {
           Questions parents always ask
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-[var(--kat-text-secondary)]">
-          Everything that matters before you sign up — answered honestly.
+          Everything that matters before you sign up, answered honestly.
         </p>
       </div>
 

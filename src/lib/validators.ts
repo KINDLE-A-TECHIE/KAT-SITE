@@ -389,3 +389,157 @@ export const validateDiscountCodeSchema = z.object({
   code:      z.string().trim().toUpperCase(),
   programId: z.string().cuid(),
 });
+
+// ─────────────────────────────────────────────────────────────── partners
+
+export const partnerInquirySchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  organization: z.string().trim().min(2).max(200),
+  type: z.enum(["SCHOOL", "CORPORATE", "GOVERNMENT", "OTHER"]),
+  email: z.string().trim().email().max(200).toLowerCase(),
+  phone: z.string().trim().max(40).optional(),
+  programs: z.array(z.string().trim().min(1).max(80)).max(20).optional().default([]),
+  message: z.string().trim().min(1).max(5000),
+});
+
+export const partnerInquiryStatusUpdateSchema = z.object({
+  id: z.string().trim().min(1).max(64),
+  status: z.enum(["NEW", "CONTACTED", "APPROVED", "ARCHIVED"]),
+});
+
+// ─────────────────────────────────────────────────────────────── school
+
+/**
+ * NOTE the deliberate absence of `schoolId` in every schema below: the school is derived from the
+ * caller's session (requireActiveSchool) or their API key, never accepted from the request.
+ * Trusting a body-supplied schoolId would be a tenant-escalation hole.
+ */
+const NERDC_LEVELS = ["PRIMARY_1_3", "PRIMARY_4_6", "JSS", "SSS"] as const;
+
+export const schoolClassCreateSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  nerdcLevel: z.enum(NERDC_LEVELS),
+  term: z.string().trim().min(1).max(40),
+  teacherId: z.string().trim().min(1).max(64).nullable().optional(),
+});
+
+export const schoolClassUpdateSchema = z.object({
+  id: z.string().trim().min(1).max(64),
+  name: z.string().trim().min(1).max(120).optional(),
+  nerdcLevel: z.enum(NERDC_LEVELS).optional(),
+  term: z.string().trim().min(1).max(40).optional(),
+  teacherId: z.string().trim().min(1).max(64).nullable().optional(),
+  /** null unassigns the course. Locked once students are enrolled. */
+  programId: z.string().trim().min(1).max(64).nullable().optional(),
+  /**
+   * Acknowledges that the outgoing teacher has un-attested units and will lose access to the class,
+   * and therefore any ability to attest the teaching she actually did, the moment the handover
+   * completes. Without this, such a change is refused with 409 and the list.
+   */
+  confirmHandover: z.boolean().optional(),
+});
+
+/** A teacher assigning the SCHOOL course their own class delivers. */
+export const schoolClassCourseSchema = z.object({
+  id: z.string().trim().min(1).max(64),
+  programId: z.string().trim().min(1).max(64).nullable(),
+});
+
+/**
+ * A school admin confirming seats for a term.
+ *
+ * NOTE the deliberate absence of `amount` and `pricePerSeat`: the amount is computed server-side as
+ * seatCount x School.pricePerSeat. Accepting a price from the request would let a school invoice
+ * itself for a token amount and self-issue a licence.
+ */
+export const schoolInvoiceCreateSchema = z.object({
+  term: z.string().trim().min(1).max(40),
+  seatCount: z.coerce.number().int().min(1).max(100_000),
+});
+
+export const schoolInvoiceVerifySchema = z.object({
+  reference: z.string().trim().min(1).max(120),
+});
+
+/**
+ * A teacher attesting they delivered a scheme unit to their class.
+ * No `markedById`: that is taken from the session, so an attestation is always attributed to the
+ * person who actually made it.
+ */
+export const schoolUnitDeliverySchema = z.object({
+  classId: z.string().trim().min(1).max(64),
+  moduleId: z.string().trim().min(1).max(64),
+  delivered: z.boolean(),
+  /**
+   * What the teacher is actually claiming. FIRST_HAND ("I taught this") is the default and the only
+   * option on a class that has never changed hands. SUCCESSOR ("my predecessor taught this, and I am
+   * recording it") is a deliberately weaker claim, signed under the successor's OWN name. The
+   * predecessor being credited is derived from the class's teacher history, never sent here.
+   */
+  basis: z.enum(["FIRST_HAND", "SUCCESSOR"]).optional(),
+});
+
+/** Max roster rows per import: bounds the transaction and the request body. */
+export const ROSTER_MAX_ROWS = 500;
+
+/**
+ * One roster row. Children may have no email of their own, so a row is just a name plus an optional
+ * guardian address. The student's account email is synthesised server-side; the CSV never supplies it.
+ */
+export const rosterRowSchema = z.object({
+  name: z.string().trim().min(2, "Name is too short.").max(120),
+  /**
+   * The school's OWN opaque id for the pupil (their register number). It is the handle a school uses
+   * to name a child when minting an embed launch token, and the reason the mint endpoint never has
+   * to accept a name or an email (which would make it an enumeration oracle).
+   */
+  externalRef: z
+    .string()
+    .trim()
+    .max(128)
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  guardianEmail: z
+    .string()
+    .trim()
+    .email("Not a valid email address.")
+    .max(200)
+    .toLowerCase()
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+});
+
+/**
+ * Roster import payload. The CSV text is sent in the POST BODY, never a query string, so no child's
+ * name ever appears in a URL, log line, or referrer.
+ */
+export const rosterImportSchema = z.object({
+  schoolClassId: z.string().trim().min(1).max(64),
+  csv: z.string().min(1).max(200_000),
+});
+
+/**
+ * Provision a School (+ its first SCHOOL_ADMIN) from an approved SCHOOL inquiry.
+ * `mode: "existing"` links an existing user by email; `mode: "create"` creates the account and
+ * emails a setup link (first/last name required in that case).
+ */
+export const schoolProvisionSchema = z
+  .object({
+    inquiryId: z.string().trim().min(1).max(64),
+    schoolName: z.string().trim().min(2).max(200),
+    slug: z
+      .string()
+      .trim()
+      .min(2)
+      .max(64)
+      .regex(/^[a-z0-9-]+$/, "Lowercase letters, numbers and hyphens only."),
+    pricePerSeat: z.coerce.number().min(0).max(1_000_000).optional(),
+    adminMode: z.enum(["existing", "create"]),
+    adminEmail: z.string().trim().email().max(200).toLowerCase(),
+    adminFirstName: z.string().trim().min(1).max(100).optional(),
+    adminLastName: z.string().trim().min(1).max(100).optional(),
+  })
+  .refine(
+    (d) => d.adminMode !== "create" || (d.adminFirstName && d.adminLastName),
+    { message: "First and last name are required when creating the account." },
+  );

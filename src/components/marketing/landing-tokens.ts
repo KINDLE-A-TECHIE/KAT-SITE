@@ -40,13 +40,13 @@ export const PROGRAM_TRACKS: ProgramTrack[] = [
     id: "explorers",
     label: "Junior Explorers",
     ages: "Ages 8–11",
-    summary: "Your child starts from day one — building games, animations, and early robotics projects. We cover block coding, game development, and creative technology. Zero boredom. Maximum curiosity. No experience needed.",
+    summary: "Your child starts from day one, building games, animations, and early robotics projects. We cover block coding, game development and creative technology. No experience needed.",
     modules: [
       { title: "Block Coding and Logic", progress: 92 },
       { title: "Game Design & Story Projects", progress: 80 },
       { title: "Early Web & Robotics Basics", progress: 63 },
     ],
-    project: "Create and share an original interactive game or animated story — their very first real build.",
+    project: "Create and share an original interactive game or animated story, their very first real build.",
   },
   {
     id: "builders",
@@ -58,13 +58,13 @@ export const PROGRAM_TRACKS: ProgramTrack[] = [
       { title: "Python & Game Development", progress: 74 },
       { title: "API and Team Projects", progress: 59 },
     ],
-    project: "Ship a live portfolio site, one API-powered app, and a designed UI prototype — all built from scratch.",
+    project: "Ship a live portfolio site, one API-powered app, and a designed UI prototype, all built from scratch.",
   },
   {
     id: "innovators",
     label: "Future Innovators",
     ages: "Ages 16–19",
-    summary: "Fullstack engineering, artificial intelligence, computer science, and product leadership. For teens who want to build things that matter — and lead others doing the same.",
+    summary: "Fullstack engineering, artificial intelligence, computer science, and product leadership. For teens who want to build things that matter, and lead others doing the same.",
     modules: [
       { title: "Fullstack Engineering & AI", progress: 71 },
       { title: "Leadership and Mentorship", progress: 62 },
@@ -77,37 +77,37 @@ export const PROGRAM_TRACKS: ProgramTrack[] = [
 export const FEATURES = [
   {
     title: "Live Tech Classes",
-    description: "1-on-1 live sessions with a dedicated mentor in coding, robotics, AI, UI/UX design, and game development. Not videos. Not passive watching. Real builds, every session.",
+    description: "1-on-1 live sessions with a dedicated mentor in coding, robotics, AI, UI/UX design, and game development. No recorded videos. Your child builds something in every session.",
     iconName: "Code2" as const,
     color: "bg-blue-500",
   },
   {
     title: "Parent Visibility",
-    description: "See your child's attendance, current project, and mentor feedback — without having to ask them. Full clarity, one simple dashboard.",
+    description: "See your child's attendance, current project, and mentor feedback, without having to ask them. It is all on one dashboard.",
     iconName: "Shield" as const,
     color: "bg-indigo-500",
   },
   {
     title: "Build Real Projects",
-    description: "No textbook exercises. Students build games, apps, websites, robots, and UI designs — real work across every discipline they can show anyone.",
+    description: "No textbook exercises. Students build games, apps, websites, robots, and UI designs, Real work they can show anyone.",
     iconName: "Layers3" as const,
     color: "bg-sky-500",
   },
   {
     title: "Mastery-Based Learning",
-    description: "Students advance by demonstrating real understanding through assessments, projects, and instructor reviews — not just showing up. Every learner builds skills with confidence.",
+    description: "Students advance by demonstrating real understanding through assessments, projects and instructor reviews. Attendance alone does not advance them.",
     iconName: "Brain" as const,
     color: "bg-violet-500",
   },
   {
     title: "Weekly Challenges",
-    description: "Coding missions, friendly leaderboards, and peer shoutouts give students something exciting to race toward every single week.",
+    description: "Coding missions, friendly leaderboards, and peer shoutouts give students something to aim for each week.",
     iconName: "Flame" as const,
     color: "bg-orange-500",
   },
   {
     title: "Path to Fellowship",
-    description: "The best learners don't just graduate — they become KAT Fellows, mentoring juniors, leading impact projects, and building their own legacy.",
+    description: "The best learners go on to become KAT Fellows. They mentor juniors, lead impact projects and build something of their own.",
     iconName: "Compass" as const,
     color: "bg-emerald-500",
   },
@@ -122,7 +122,7 @@ export const HOW_IT_WORKS = [
   {
     step: "02",
     title: "Learn Live with Expert Mentors",
-    description: "1-on-1 live sessions with a dedicated mentor. Hands-on training in coding, robotics, AI, design, or game development — 2 sessions every week.",
+    description: "1-on-1 live sessions with a dedicated mentor. Hands-on training in coding, robotics, AI, design, or game development, 2 sessions every week.",
   },
   {
     step: "03",
@@ -138,7 +138,7 @@ export const TESTIMONIALS = [
     location: "Lagos, Nigeria",
     initials: "AO",
     quote:
-      "My daughter went from 'coding is boring' to building her own portfolio site in 8 weeks. The mentors genuinely care — it shows.",
+      "My daughter went from 'coding is boring' to building her own portfolio site in 8 weeks. The mentors genuinely care, it shows.",
     stars: 5,
   },
   {
@@ -147,7 +147,7 @@ export const TESTIMONIALS = [
     location: "Abuja, Nigeria",
     initials: "CA",
     quote:
-      "KAT taught me real skills, not just theory. I shipped my first API project, built a portfolio, and got accepted into a fellowship — all in one year.",
+      "KAT taught me real skills, not just theory. I shipped my first API project, built a portfolio, and got accepted into a fellowship, all in one year.",
     stars: 5,
   },
   {
@@ -156,7 +156,7 @@ export const TESTIMONIALS = [
     location: "Port Harcourt, Nigeria",
     initials: "FB",
     quote:
-      "The parent dashboard is everything. I can see exactly what Temi is working on, how he scored, and what his mentor said — every single week.",
+      "The parent dashboard is everything. I can see exactly what Temi is working on, how he scored, and what his mentor said, every single week.",
     stars: 5,
   },
 ];
@@ -240,12 +240,12 @@ export const FAQ_ITEMS = [
   {
     question: "My child has never coded before. Will they keep up?",
     answer:
-      "Absolutely. Junior Explorers and Teen Builders are built from zero — no prior experience needed. Our mentors are trained to make the first few sessions fun and pressure-free. Most kids are building something they're proud of within the first two weeks.",
+      "Absolutely. Junior Explorers and Teen Builders are built from zero, no prior experience needed. Our mentors are trained to make the first few sessions fun and pressure-free. Most kids are building something they're proud of within the first two weeks.",
   },
   {
     question: "What subjects does KAT teach?",
     answer:
-      "KAT covers coding, robotics, artificial intelligence, UI/UX design, game development, and computer science. Subjects are introduced progressively — younger students explore block coding, game design, and creative technology; teens move into web development, Python, and UI/UX; older students tackle fullstack engineering, AI, and computer science leadership.",
+      "KAT covers coding, robotics, artificial intelligence, UI/UX design, game development, and computer science. Subjects are introduced progressively, younger students explore block coding, game design, and creative technology; teens move into web development, Python, and UI/UX; older students tackle fullstack engineering, AI, and computer science leadership.",
   },
   {
     question: "What ages do you accept?",
@@ -255,17 +255,17 @@ export const FAQ_ITEMS = [
   {
     question: "How does pricing work?",
     answer:
-      "Enrollment is billed monthly per track. A parent registers, selects the right track, and pays to activate their child's access. Exact pricing is shown at registration. Scholarship spots are available every cohort — apply and mention financial support needs.",
+      "Enrollment is billed monthly per track. A parent registers, selects the right track, and pays to activate their child's access. Exact pricing is shown at registration. Scholarship spots are available every cohort, apply and mention financial support needs.",
   },
   {
     question: "How many kids are in each class?",
     answer:
-      "Every session is 1-on-1 — your child and their dedicated mentor, no one else. That means full attention, real-time feedback on their work, and a pace that's matched entirely to them.",
+      "Every session is 1-on-1, your child and their dedicated mentor, no one else. That means full attention, real-time feedback on their work, and a pace that's matched entirely to them.",
   },
   {
     question: "Can I see what my child is learning?",
     answer:
-      "Yes — every parent account includes a full dashboard: class attendance, project submissions, assessment scores, and what their mentor said. You'll always know exactly how your child is progressing.",
+      "Yes, every parent account includes a full dashboard: class attendance, project submissions, assessment scores, and what their mentor said. You'll always know exactly how your child is progressing.",
   },
   {
     question: "What device does my child need?",
@@ -275,7 +275,7 @@ export const FAQ_ITEMS = [
   {
     question: "What happens when they finish a track?",
     answer:
-      "Younger students move up to the next track when they're ready. Students who complete Future Innovators are eligible for the KAT Fellowship — transitioning from learner to mentor, leading real community-impact projects.",
+      "Younger students move up to the next track when they're ready. Students who complete Future Innovators are eligible for the KAT Fellowship, transitioning from learner to mentor, leading real community-impact projects.",
   },
   {
     question: "Does KAT run any physical or in-person events?",
@@ -304,7 +304,7 @@ export const EVENTS = [
   {
     title: "School Programmes",
     description:
-      "Coding clubs, tech labs, and after-school programmes delivered inside partner schools — with KAT mentors, curriculum, and tools included.",
+      "Coding clubs, tech labs, and after-school programmes delivered inside partner schools, with KAT mentors, curriculum, and tools included.",
     modes: ["Physical", "Hybrid"] as const,
     iconName: "School" as const,
     color: "bg-emerald-500",
@@ -312,3 +312,16 @@ export const EVENTS = [
 ];
 
 export const SIDEBAR_ITEMS = ["My Classes", "Projects", "Challenges", "Messages", "Badges"];
+
+
+/**
+ * A real, APPROVED student build, shown in the landing marquee.
+ *
+ * Real records only. If there are none, the band does not render. Nothing is ever invented.
+ */
+export type Build = {
+  id: string;
+  firstName: string;
+  title: string;
+  program?: string | null;
+};

@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const cookieStore = await cookies();
   cookieStore.set("oauth_register_role", role, {
     httpOnly: true,
-    maxAge: 300, // 5 minutes — enough to complete OAuth flow
+    maxAge: 300, // 5 minutes, enough to complete OAuth flow
     path: "/",
     sameSite: "lax",
   });

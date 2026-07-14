@@ -103,7 +103,7 @@ async function main() {
     create: { userId: student.id, programId: program.id },
   });
 
-  // ── Fellow application (approved — links fellow to cohort) ───────────────────
+  // ── Fellow application (approved, links fellow to cohort) ───────────────────
   await prisma.fellowApplication.upsert({
     where: { applicantId_cohortId: { applicantId: fellow.id, cohortId: cohort.id } },
     update: { status: "APPROVED", reviewedAt: new Date("2026-01-05T10:00:00Z"), reviewedById: admin.id },

@@ -45,7 +45,7 @@ export async function POST(_req: Request, { params }: Params) {
   });
   if (!enrollment) return fail("Not enrolled in this program.", 403);
 
-  // Upsert progress (idempotent — safe to call multiple times)
+  // Upsert progress (idempotent, safe to call multiple times)
   await prisma.lessonProgress.upsert({
     where: { userId_lessonId: { userId: session.user.id, lessonId } },
     create: { userId: session.user.id, lessonId },
@@ -62,7 +62,7 @@ export async function POST(_req: Request, { params }: Params) {
     });
 
     if (completedCount === moduleLessonIds.length) {
-      // All lessons done — award badge (upsert so it's idempotent)
+      // All lessons done, award badge (upsert so it's idempotent)
       const badge = lesson.module.badge;
       const existing = await prisma.userBadge.findUnique({
         where: { userId_badgeId: { userId: session.user.id, badgeId: badge.id } },

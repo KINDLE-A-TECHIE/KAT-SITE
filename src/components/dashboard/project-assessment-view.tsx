@@ -93,7 +93,7 @@ export function ProjectAssessmentView({ assessment }: { assessment: AssessmentFo
   // Submit
   const [submitting, setSubmitting] = useState(false);
 
-  // webkitdirectory — set imperatively
+  // webkitdirectory, set imperatively
   useEffect(() => {
     if (folderInputRef.current) folderInputRef.current.setAttribute("webkitdirectory", "");
   }, []);
@@ -483,12 +483,12 @@ export function ProjectAssessmentView({ assessment }: { assessment: AssessmentFo
             </div>
           )}
 
-          {/* APPROVED — gate passed */}
+          {/* APPROVED, gate passed */}
           {project.status === "APPROVED" && (
             <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-emerald-700 dark:text-emerald-400">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               <span>
-                Project approved — <strong>project gate passed</strong> for this module.
+                Project approved, <strong>project gate passed</strong> for this module.
               </span>
             </div>
           )}
@@ -518,7 +518,7 @@ export function ProjectAssessmentView({ assessment }: { assessment: AssessmentFo
             </div>
           )}
 
-          {/* SUBMITTED — waiting */}
+          {/* SUBMITTED, waiting */}
           {project.status === "SUBMITTED" && (
             <div className="flex items-center gap-2 px-3 py-2 text-xs text-blue-600 dark:text-blue-400">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />

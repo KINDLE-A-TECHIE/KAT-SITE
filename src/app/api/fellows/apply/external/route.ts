@@ -73,7 +73,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Store application with guest details only — no account created yet
+    // Store application with guest details only, no account created yet
     if (existingGuest) {
       // Re-application after rejection
       await prisma.fellowApplication.update({

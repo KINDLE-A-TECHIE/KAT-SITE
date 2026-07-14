@@ -479,7 +479,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-200 py-16 text-center dark:border-slate-700">
           <span className="text-5xl">📚</span>
           <p className="font-medium text-slate-600 dark:text-slate-400">
-            {isCreator ? "No content yet — add your first block below." : "Nothing here yet. Check back soon!"}
+            {isCreator ? "No content yet, add your first block below." : "Nothing here yet. Check back soon!"}
           </p>
         </div>
       )}
@@ -561,7 +561,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
         </motion.div>
       )}
 
-      {/* Floating navigation pill — appears once the hero scrolls out of view */}
+      {/* Floating navigation pill, appears once the hero scrolls out of view */}
       <AnimatePresence>
         {showStickyNav && !isCreator && (prevLesson ?? nextLesson) && (
           <motion.div

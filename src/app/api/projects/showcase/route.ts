@@ -1,7 +1,7 @@
 import { ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 
-// Public endpoint — no auth required
+// Public endpoint, no auth required
 export const revalidate = 300; // 5-minute ISR
 
 export async function GET() {

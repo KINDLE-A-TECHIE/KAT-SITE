@@ -114,7 +114,7 @@ function FellowshipApplyContent() {
               </h1>
               <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-500">
                 {requiresPayment
-                  ? "Check your email — we've sent you a link to set up your account and pay the application fee."
+                  ? "Check your email, we've sent you a link to set up your account and pay the application fee."
                   : "Check your email for confirmation. We'll review your application and get back to you soon."}
               </p>
               <Button
@@ -146,7 +146,7 @@ function FellowshipApplyContent() {
                       <span className="font-semibold text-white">
                         ₦{Number(cohort.externalApplicationFee).toLocaleString("en-NG")}
                       </span>{" "}
-                      — payable after submission
+                      payable after submission
                     </p>
                   )}
                 </div>
@@ -173,7 +173,7 @@ function FellowshipApplyContent() {
                       Your Details
                     </h2>
                     <p className="mt-1 text-sm text-slate-500">
-                      We'll create a KAT account for you automatically — no sign-up needed.
+                      We'll create a KAT account for you automatically, no sign-up needed.
                     </p>
                   </div>
 

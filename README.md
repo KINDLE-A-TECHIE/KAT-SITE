@@ -1,4 +1,4 @@
-# KAT — Kindle A Techie
+# KAT. Kindle A Techie
 
 A Learning Management System (LMS) for KAT Academy, serving students aged 8–19 across Africa. Built with Next.js 15, TypeScript, Prisma, Jitsi Meet and PostgreSQL.
 
@@ -64,7 +64,7 @@ NEXTAUTH_SECRET=       # openssl rand -base64 32
 
 # ── Paystack ──────────────────────────────────────────────────────────────────
 PAYSTACK_SECRET_KEY=
-PAYSTACK_WEBHOOK_SECRET=   # Required — webhook signature verification
+PAYSTACK_WEBHOOK_SECRET=   # Required, webhook signature verification
 
 # ── Cloudflare R2 (file uploads) ──────────────────────────────────────────────
 R2_ACCOUNT_ID=
@@ -91,7 +91,7 @@ JUDGE0_API_URL=            # Your Judge0 VPS URL, e.g. https://code.yourdomain.c
 JUDGE0_API_KEY=            # X-Auth-Token from judge0.conf (AUTHN_TOKEN)
 
 # ── Cloudflare Turnstile (bot protection) ─────────────────────────────────────
-NEXT_PUBLIC_TURNSTILE_SITE_KEY=   # From Cloudflare dashboard — shown on login/register
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=   # From Cloudflare dashboard, shown on login/register
 TURNSTILE_SECRET_KEY=             # Server-side verification secret
 
 # ── Rate Limiting (Upstash Redis) ─────────────────────────────────────────────
@@ -102,7 +102,7 @@ UPSTASH_REDIS_REST_TOKEN=
 CRON_SECRET=           # Shared secret for securing cron endpoints
 
 # ── Gemini (AI enrollment chat) ───────────────────────────────────────────────
-GEMINI_API_KEY=                  # Google AI Studio key — enables the Kemi enrollment assistant
+GEMINI_API_KEY=                  # Google AI Studio key, enables the Kemi enrollment assistant
 
 # ── Optional ──────────────────────────────────────────────────────────────────
 REDIS_URL=                       # Enables Redis pub/sub for multi-instance realtime messaging
@@ -137,8 +137,8 @@ All seed accounts use the password `Passw0rd!`
 ### Curriculum
 - Versioned curriculum builder: Programs → Versions → Modules → Lessons → Content Blocks
 - Content types: rich text, YouTube/external video, document links, code playground
-- Multi-block content queue — stage multiple blocks before submitting for review
-- Content review workflow — instructors submit, admins/Super Admin approve or reject
+- Multi-block content queue, stage multiple blocks before submitting for review
+- Content review workflow, instructors submit, admins/Super Admin approve or reject
 - Lesson progress tracking: completion recorded per learner, module badge auto-awarded when all lessons done
 - Prev/Next lesson navigation across module boundaries with a floating bottom nav pill
 - Scroll-aware progress dots in the lesson header track the active content block
@@ -156,10 +156,10 @@ All seed accounts use the password `Passw0rd!`
 
 ### Weekly Challenges
 - Dedicated challenge system, separate from assessments
-- Scoped to programs and optionally to specific modules — only enrolled students who have reached the module can see and enter the challenge
+- Scoped to programs and optionally to specific modules, only enrolled students who have reached the module can see and enter the challenge
 - Admins and instructors create challenges with title, description, week number, points, due date, and module scope
 - Challenges can be saved as drafts and published when ready; publishing notifies all eligible students in-app
-- Students submit once (final) — either a link (GitHub, CodePen, live demo) or a file upload (up to 50 MB via R2)
+- Students submit once (final), either a link (GitHub, CodePen, live demo) or a file upload (up to 50 MB via R2)
 - Optional notes field for students to describe their work
 - Instructors grade each submission with a score and feedback; student is notified when graded
 - Per-challenge leaderboard ranked by score with a top-3 podium, score bars, and rank titles (Perfect Score, Code Wizard, Bug Slayer, etc.)
@@ -225,7 +225,7 @@ All seed accounts use the password `Passw0rd!`
 - Cohort management with fellow applications (including external/guest applicants)
 - Analytics event tracking with monthly aggregation
 - Partner enquiry form at `/partners` with email notification to `hello@kindleatechie.com`
-- Dark mode scoped to the dashboard — marketing and auth pages are always light
+- Dark mode scoped to the dashboard, marketing and auth pages are always light
 - PWA: service worker, offline fallback, web manifest; desktop uses the browser's native install button, mobile gets a custom install banner
 - Meetings panel: ended meetings with available recordings are preserved in the recording library when removed from the active list
 - Project assignments: instructors can attach reference asset files to project assessments for students to download

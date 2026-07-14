@@ -23,7 +23,13 @@ export async function generatePresignedUploadUrl(
   expiresInSeconds = 900,
 ): Promise<string> {
   const command = new PutObjectCommand({ Bucket: BUCKET, Key: key, ContentType: contentType });
-  return getSignedUrl(r2Client, command, { expiresIn: expiresInSeconds });
+  // @aws-sdk/client-s3 and @aws-sdk/s3-request-presigner resolve different copies of @smithy/types,
+  // so the S3Client they each describe is nominally incompatible. The runtime object is the same one.
+  return getSignedUrl(
+    r2Client as unknown as Parameters<typeof getSignedUrl>[0],
+    command,
+    { expiresIn: expiresInSeconds },
+  );
 }
 
 export async function uploadToR2(key: string, body: Buffer, contentType: string): Promise<void> {

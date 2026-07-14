@@ -1,10 +1,11 @@
-import { AssessmentVerificationStatus, NotificationType, UserRole } from "@prisma/client";
+import { CourseAudience, AssessmentVerificationStatus, NotificationType, UserRole } from "@prisma/client";
 import { z } from "zod";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAssessmentSchema } from "@/lib/validators";
 import { trackEvent } from "@/lib/analytics";
+import { orgScope } from "@/lib/tenant";
 
 const CREATOR_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
 const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW];
@@ -25,13 +26,12 @@ export async function GET() {
   if (CREATOR_ROLES.includes(role)) {
     const assessments = await prisma.assessment.findMany({
       where: {
+        // Scoped to B2C programmes. This query keys on the PROGRAM, not the student's role, so a
+        // role fix alone would not stop a KAT instructor seeing a school's pupils' work.
+        program: { audience: CourseAudience.B2C },
         OR: [
           { createdById: session.user.id },
-          {
-            program: {
-              organizationId: session.user.organizationId ?? undefined,
-            },
-          },
+          { program: orgScope(session.user.organizationId) },
         ],
       },
       orderBy: { createdAt: "desc" },
@@ -197,7 +197,7 @@ export async function POST(request: Request) {
         dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : undefined,
         published: parsed.data.published ?? false,
         // Challenges are created by trusted CREATOR_ROLES and don't require a separate
-        // verification step — auto-approve them so they're immediately visible to students
+        // verification step, auto-approve them so they're immediately visible to students
         // once published. Other assessment types remain PENDING until reviewed.
         verificationStatus:
           parsed.data.type === "CHALLENGE"

@@ -6,7 +6,7 @@ import { retakeGrantSchema } from "@/lib/validators";
 
 const GRANTER_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
 
-// POST — grant a retake to a student for an assessment
+// POST, grant a retake to a student for an assessment
 export async function POST(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
   return ok({ grant }, 201);
 }
 
-// GET — list retake grants (graders see grants for their assessments; SA sees all)
+// GET, list retake grants (graders see grants for their assessments; SA sees all)
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -104,7 +104,7 @@ export async function GET(request: Request) {
   return ok({ grants });
 }
 
-// DELETE — cancel an unused retake grant
+// DELETE, cancel an unused retake grant
 export async function DELETE(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);

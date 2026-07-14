@@ -207,7 +207,7 @@ function ReviewCard({
               )}
             </div>
 
-            {/* Review actions — only for PENDING_REVIEW */}
+            {/* Review actions, only for PENDING_REVIEW */}
             {content.reviewStatus === "PENDING_REVIEW" && (
               <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-800">
                 {!showReject ? (

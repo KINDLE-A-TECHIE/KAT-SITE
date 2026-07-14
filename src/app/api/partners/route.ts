@@ -56,7 +56,7 @@ export async function POST(req: Request) {
   await sendEmail({
     to: PARTNER_NOTIFY_EMAIL,
     replyTo: inquiry.email,
-    subject: `Partnership enquiry from ${inquiry.name} — ${inquiry.organization}`,
+    subject: `Partnership enquiry from ${inquiry.name}, ${inquiry.organization}`,
     html,
     text,
   });

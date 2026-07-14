@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { LegalLayout } from "../legal-layout";
 
 export const metadata: Metadata = {
-  title: "Cookie Policy — KAT Learning",
+  title: "Cookie Policy. KAT Learning",
   description: "How KAT Learning uses cookies on its platform.",
 };
 
@@ -16,7 +16,7 @@ export default function CookiesPage() {
       <h2>What are cookies?</h2>
       <p>
         Cookies are small text files stored on your device when you visit a website. They allow the
-        site to remember information about your visit — like whether you are logged in — so you do
+        site to remember information about your visit, like whether you are logged in, so you do
         not have to repeat yourself on every page load.
       </p>
 
@@ -35,7 +35,7 @@ export default function CookiesPage() {
       </p>
       <ul>
         <li><strong>Name:</strong> <code>next-auth.session-token</code> (or <code>__Secure-next-auth.session-token</code> on HTTPS)</li>
-        <li><strong>Purpose:</strong> Authentication — identifies your active session</li>
+        <li><strong>Purpose:</strong> Authentication, identifies your active session</li>
         <li><strong>Duration:</strong> Until sign-out or session expiry</li>
         <li><strong>Third-party:</strong> No</li>
       </ul>
@@ -60,7 +60,7 @@ export default function CookiesPage() {
       </p>
       <ul>
         <li><strong>Name:</strong> <code>sidebar_state</code></li>
-        <li><strong>Purpose:</strong> UI preference — remembers sidebar open/closed state</li>
+        <li><strong>Purpose:</strong> UI preference, remembers sidebar open/closed state</li>
         <li><strong>Duration:</strong> 7 days</li>
         <li><strong>Third-party:</strong> No</li>
       </ul>
@@ -77,7 +77,7 @@ export default function CookiesPage() {
         All three cookies are strictly necessary for the platform to function. The session cookie
         is required to stay logged in. You can block cookies in your browser settings, but doing so
         will prevent you from using the platform. Because we use no optional or tracking cookies,
-        we do not display a cookie consent banner — there is nothing to opt out of.
+        we do not display a cookie consent banner, there is nothing to opt out of.
       </p>
 
       <h2>Changes to this policy</h2>

@@ -25,7 +25,7 @@ export const metadata: Metadata = {
       { url: "/kindle-a-techie.svg", type: "image/svg+xml" },
     ],
     apple: [
-      // iOS "Add to Home Screen" icon — must be PNG, 180×180
+      // iOS "Add to Home Screen" icon, must be PNG, 180×180
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },

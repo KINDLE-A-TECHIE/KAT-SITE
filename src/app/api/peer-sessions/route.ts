@@ -12,7 +12,7 @@ const participantSelect = {
   user: { select: { id: true, firstName: true, lastName: true } },
 };
 
-// GET /api/peer-sessions?contentId=xxx — fetch active session for a content block
+// GET /api/peer-sessions?contentId=xxx, fetch active session for a content block
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
   return ok({ session: peerSession });
 }
 
-// POST /api/peer-sessions — start a new peer session (instructor/admin only)
+// POST /api/peer-sessions, start a new peer session (instructor/admin only)
 export async function POST(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);

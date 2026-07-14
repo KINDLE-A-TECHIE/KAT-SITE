@@ -6,7 +6,7 @@ import { trackEvent } from "@/lib/analytics";
 
 /**
  * GET /api/super-admin/promote?email=xxx
- * Look up an existing user by email — returns name + current role.
+ * Look up an existing user by email, returns name + current role.
  *
  * POST /api/super-admin/promote { userId }
  * Promote an existing user to SUPER_ADMIN.

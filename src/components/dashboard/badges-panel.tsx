@@ -64,7 +64,7 @@ export function BadgesPanel() {
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-200 py-16 text-center dark:border-slate-700">
           <span className="text-5xl">🏅</span>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            No badges yet — complete a module to earn your first one.
+            No badges yet, complete a module to earn your first one.
           </p>
         </div>
       ) : (
@@ -103,7 +103,7 @@ export function BadgesPanel() {
                       {eb.badge.module.title}
                     </p>
 
-                    {/* Earned date — appears on hover */}
+                    {/* Earned date, appears on hover */}
                     <p className="text-[10px] text-slate-400 dark:text-slate-500">
                       Earned {formatDate(eb.earnedAt)}
                     </p>

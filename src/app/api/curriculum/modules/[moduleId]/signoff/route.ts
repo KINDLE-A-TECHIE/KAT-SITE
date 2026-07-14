@@ -74,7 +74,7 @@ export async function POST(request: Request, { params }: Params) {
       type: NotificationType.SUCCESS,
       title: "Instructor evaluation passed",
       body: JSON.stringify({
-        text: `Your instructor signed off on "${moduleRecord.title}". ${result.allGatesPassed ? "All gates are now complete — the next module is unlocked!" : "Check your remaining gates to unlock the next module."}`,
+        text: `Your instructor signed off on "${moduleRecord.title}". ${result.allGatesPassed ? "All gates are now complete, the next module is unlocked!" : "Check your remaining gates to unlock the next module."}`,
         targetPath: `/dashboard/curriculum/${programId}`,
       }),
     },

@@ -22,7 +22,7 @@ const confirmSchema = z.object({
   url: z.string().url(),
 });
 
-/** POST /api/projects/[projectId]/cover-image/upload-url — get presigned URL */
+/** POST /api/projects/[projectId]/cover-image/upload-url, get presigned URL */
 export async function POST(request: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -58,7 +58,7 @@ export async function POST(request: Request, { params }: Params) {
   return ok({ uploadUrl, key, publicUrl });
 }
 
-/** PATCH /api/projects/[projectId]/cover-image — confirm upload and save to project */
+/** PATCH /api/projects/[projectId]/cover-image, confirm upload and save to project */
 export async function PATCH(request: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -89,7 +89,7 @@ export async function PATCH(request: Request, { params }: Params) {
   return ok({ coverImageUrl: updated.coverImageUrl });
 }
 
-/** DELETE /api/projects/[projectId]/cover-image — remove cover image */
+/** DELETE /api/projects/[projectId]/cover-image, remove cover image */
 export async function DELETE(_req: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);

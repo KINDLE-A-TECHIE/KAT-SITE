@@ -16,7 +16,7 @@ async function ensureGateRecord(userId: string, moduleId: string, enrollmentId: 
 /**
  * If all three gates are PASSED, seals the record by setting
  * allGatesPassed = true and allGatesPassedAt = now().
- * Safe to call multiple times — idempotent.
+ * Safe to call multiple times, idempotent.
  */
 async function checkAndSealGates(userId: string, moduleId: string) {
   const record = await prisma.moduleGateStatus.findUnique({

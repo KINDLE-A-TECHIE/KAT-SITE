@@ -2,7 +2,7 @@ import { EnrollmentStatus } from "@prisma/client";
 import { ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 
-// Public endpoint — no auth required.
+// Public endpoint, no auth required.
 // Returns live platform stats for the landing page.
 // Cached at the edge for 1 hour to avoid hammering the DB.
 export const revalidate = 3600;

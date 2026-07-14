@@ -55,7 +55,7 @@ export async function PATCH(request: Request, { params }: Params) {
     }),
   ]);
 
-  // Fire-and-forget email — don't let email failure block the response
+  // Fire-and-forget email, don't let email failure block the response
   const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
   const projectUrl = `${baseUrl}/dashboard/projects`;
   const latestFeedback = project.feedback[0]?.body;
@@ -80,7 +80,7 @@ export async function PATCH(request: Request, { params }: Params) {
   // In-app notification to the student
   const notifText =
     parsed.data.status === "APPROVED"
-      ? `Your project "${project.title}" has been approved — great work!`
+      ? `Your project "${project.title}" has been approved, great work!`
       : parsed.data.status === "NEEDS_WORK"
       ? `Your project "${project.title}" needs revisions. Check the feedback and resubmit.`
       : `Your project "${project.title}" was not accepted. See feedback for details.`;

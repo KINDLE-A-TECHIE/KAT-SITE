@@ -2,8 +2,9 @@ import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ADMIN_ROLES } from "@/lib/roles";
+import { ADMIN_ROLES, SCHOOL_ROLES } from "@/lib/roles";
 import { buildVisibleProfilePreview } from "@/lib/profile-visibility";
+import { b2cUserScope } from "@/lib/tenant";
 
 const DEFAULT_CONTACTS_LIMIT = 50;
 const MAX_CONTACTS_LIMIT = 200;
@@ -35,6 +36,9 @@ function canMessageSync(
   mentorshipTargetIds: Set<string> | null,
   senderIsEnrolled = true,
 ): boolean {
+  // Mirrors canMessageUser: messaging never crosses the school boundary, in either direction, not
+  // even for a SUPER_ADMIN.
+  if (SCHOOL_ROLES.includes(senderRole) || SCHOOL_ROLES.includes(recipientRole)) return false;
   if (senderRole === UserRole.SUPER_ADMIN) return true;
   if (ADMIN_ROLES.includes(senderRole)) return true;
 
@@ -117,7 +121,10 @@ export async function GET(request: Request) {
   }
 
   const users = await prisma.user.findMany({
-    where: { id: { not: session.user.id } },
+    // b2cUserScope: school accounts never appear in the B2C directory. Without it, an INSTRUCTOR's
+    // contact picker enumerated every STUDENT in the organization, which once schools shared that
+    // organization meant every school's children.
+    where: { id: { not: session.user.id }, ...b2cUserScope },
     select: {
       id: true,
       firstName: true,
@@ -161,7 +168,7 @@ export async function GET(request: Request) {
     orderBy: [{ role: "asc" }, { firstName: "asc" }],
   });
 
-  // Permission filtering — fully synchronous, zero extra DB queries
+  // Permission filtering, fully synchronous, zero extra DB queries
   const allowedUsers = users.filter((user) =>
     canMessageSync(senderRole, user.role, user.id, mentorshipTargetIds, senderIsEnrolled),
   );

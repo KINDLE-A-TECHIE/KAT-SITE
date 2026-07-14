@@ -3,7 +3,7 @@ import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// PATCH — approve or reject a pending certificate (SUPER_ADMIN only)
+// PATCH, approve or reject a pending certificate (SUPER_ADMIN only)
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -82,7 +82,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   return ok({ certificate: updated });
 }
 
-// DELETE — revoke a certificate (SUPER_ADMIN / ADMIN only)
+// DELETE, revoke a certificate (SUPER_ADMIN / ADMIN only)
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);

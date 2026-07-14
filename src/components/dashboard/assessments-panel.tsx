@@ -1026,7 +1026,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     <p className="text-xs text-slate-600 dark:text-slate-400">
                       {assessment.program?.name}
                       {assessment.module && <span className="text-slate-400 dark:text-slate-500"> · {assessment.module.title}</span>}
-                      {" "}— Pass: {assessment.passScore}/{assessment.totalPoints}
+                      {" "},  Pass: {assessment.passScore}/{assessment.totalPoints}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -1078,7 +1078,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     return (
                       <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/40">
                         <p className={`text-sm font-semibold ${passed ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
-                          {passed ? "✓ Passed" : "✗ Not passed"} — Attempt #{latestSub.attemptNumber}
+                          {passed ? "✓ Passed" : "✗ Not passed"}. Attempt #{latestSub.attemptNumber}
                         </p>
                         <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                           Score: {latestSub.totalScore}/{assessment.totalPoints} · {latestSub.status === "IN_REVIEW" ? "Awaiting manual review" : "Graded"}
@@ -1094,7 +1094,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     <div className="mt-3 space-y-3 border-t border-slate-100 pt-3 dark:border-slate-800">
                       {hasRetakeGrant && (
                         <div className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-                          Retake available — Attempt #{(latestSub?.attemptNumber ?? 0) + 1}
+                          Retake available. Attempt #{(latestSub?.attemptNumber ?? 0) + 1}
                         </div>
                       )}
                       {assessment.questions.map((question) => (

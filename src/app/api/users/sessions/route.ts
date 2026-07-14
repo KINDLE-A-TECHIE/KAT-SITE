@@ -2,7 +2,7 @@ import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// GET — list all active sessions for the current user
+// GET, list all active sessions for the current user
 export async function GET() {
   const session = await getServerAuthSession();
   if (!session?.user?.id) {
@@ -18,7 +18,7 @@ export async function GET() {
   return ok({ sessions, currentToken: session.user.sessionToken ?? null });
 }
 
-// DELETE — revoke all sessions except the current one (or all if ?all=true)
+// DELETE, revoke all sessions except the current one (or all if ?all=true)
 export async function DELETE(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) {

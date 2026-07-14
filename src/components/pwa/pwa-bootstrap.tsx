@@ -131,7 +131,7 @@ export function PwaBootstrap() {
   }, []);
 
   // Mobile only: intercept beforeinstallprompt to show our custom banner.
-  // On desktop we do NOT call preventDefault() — the browser shows its own
+  // On desktop we do NOT call preventDefault(), the browser shows its own
   // native install button in the address bar, which is the clean Vercel-style UX.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;

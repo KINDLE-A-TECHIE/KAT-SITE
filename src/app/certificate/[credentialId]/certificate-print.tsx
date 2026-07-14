@@ -65,7 +65,7 @@ export function CertificatePrint({
             padding: 0 !important;
             background: white !important;
           }
-          /* Hide toolbar only — keep cert-bg so cert-root stays visible */
+          /* Hide toolbar only, keep cert-bg so cert-root stays visible */
           #no-print { display: none !important; }
           /* Strip the grey wrapper without hiding it */
           #cert-bg {
@@ -185,7 +185,7 @@ export function CertificatePrint({
             </div>
           ))}
 
-          {/* ══ Left column — branding strip ═══════════════════════ */}
+          {/* ══ Left column, branding strip ═══════════════════════ */}
           <div
             className="absolute inset-y-0 left-0 flex w-[23%] flex-col items-center justify-between py-8"
             style={{ background: "linear-gradient(180deg, #0D1F45 0%, #132B5E 100%)" }}
@@ -278,7 +278,7 @@ export function CertificatePrint({
               {programName}
             </h2>
 
-            {/* Bottom row — date, verified seal, issuer */}
+            {/* Bottom row, date, verified seal, issuer */}
             <div className="mt-5 flex w-full items-end justify-between">
               <div className="text-left">
                 <div className="mb-1 w-28 border-b border-slate-300" />

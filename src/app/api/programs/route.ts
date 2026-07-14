@@ -3,6 +3,7 @@ import { z } from "zod";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { orgScope } from "@/lib/tenant";
 
 const createProgramSchema = z.object({
   name:            z.string().trim().min(3).max(150),
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
 
   const programs = await prisma.program.findMany({
     where: {
-      organizationId: session?.user.organizationId ?? undefined,
+      ...orgScope(session?.user.organizationId),
       isActive: includeInactive ? undefined : true,
     },
     include: {

@@ -123,7 +123,7 @@ function scoreRisk(input: {
     score += 1;
   }
 
-  // Upcoming meetings — fellows are in scheduled cohorts so 0 meetings is a strong signal
+  // Upcoming meetings, fellows are in scheduled cohorts so 0 meetings is a strong signal
   if (input.upcomingMeetings === 0) {
     score += input.role === UserRole.FELLOW ? 3 : 1;
   }
@@ -139,14 +139,14 @@ function scoreRisk(input: {
     score += 1;
   }
 
-  // Overdue assessments — missed deadlines
+  // Overdue assessments, missed deadlines
   if (input.overdueAssessments >= 3) {
     score += 4;
   } else if (input.overdueAssessments >= 1) {
     score += 2;
   }
 
-  // Academic performance — low pass rate
+  // Academic performance, low pass rate
   if (input.passRate !== null) {
     if (input.passRate < 40) {
       score += 4;
@@ -157,7 +157,7 @@ function scoreRisk(input: {
     }
   }
 
-  // Academic inactivity — days since last submission
+  // Academic inactivity, days since last submission
   // Students can register at any time; fellows have a cohort schedule.
   // Both benefit from submission recency checks.
   if (input.daysSinceLastSubmission !== null) {
@@ -208,6 +208,9 @@ export async function getUserAnalytics(userId: string, rangeDays = 30) {
     FELLOW: "Assessments Submitted",
     STUDENT: "Assessments Submitted",
     PARENT: "Linked Students",
+    // School accounts have no B2C activity to summarise; their work lives in the school product.
+    SCHOOL_STAFF: "Messages Sent",
+    SCHOOL_STUDENT: "Assessments Submitted",
   };
 
   const activityLabel = activityLabelByRole[resolvedRole];
@@ -492,6 +495,8 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
       FELLOW: 0,
       STUDENT: 0,
       PARENT: 0,
+      SCHOOL_STAFF: 0,
+      SCHOOL_STUDENT: 0,
     },
   );
 
@@ -693,7 +698,7 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
       return {
         cohortId: cohort.id,
         name: cohort.name,
-        programName: cohort.program?.name ?? "—",
+        programName: cohort.program?.name ?? ", ",
         enrollments: fellowCount,
         completionRate: 0,
         meetingAttendanceRate,

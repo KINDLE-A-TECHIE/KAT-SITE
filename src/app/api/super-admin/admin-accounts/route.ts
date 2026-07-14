@@ -4,6 +4,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { trackEvent } from "@/lib/analytics";
 import { adminAccountDeleteSchema, adminAccountUpdateSchema } from "@/lib/validators";
+import { orgScope } from "@/lib/tenant";
 
 function ensureSuperAdmin(role: UserRole) {
   if (role !== UserRole.SUPER_ADMIN) {
@@ -26,7 +27,7 @@ export async function GET() {
   const admins = await prisma.user.findMany({
     where: {
       role: { in: [UserRole.ADMIN, UserRole.INSTRUCTOR] },
-      organizationId: session.user.organizationId ?? undefined,
+      ...orgScope(session.user.organizationId),
     },
     orderBy: { createdAt: "desc" },
     select: {
@@ -110,7 +111,7 @@ export async function PATCH(request: Request) {
       });
       await trackEvent({
         userId: session.user.id,
-        organizationId: session.user.organizationId ?? undefined,
+        organizationId: session.user.organizationId,
         eventType: "auth",
         eventName: parsed.data.action === "enable-retakes" ? "retakes_enabled" : "retakes_disabled",
         payload: { adminId: target.id, role: target.role },
@@ -123,7 +124,7 @@ export async function PATCH(request: Request) {
       });
       await trackEvent({
         userId: session.user.id,
-        organizationId: session.user.organizationId ?? undefined,
+        organizationId: session.user.organizationId,
         eventType: "auth",
         eventName: nextIsActive ? "admin_account_activated" : "admin_account_held",
         payload: { adminId: target.id, role: target.role },
@@ -169,7 +170,7 @@ export async function DELETE(request: Request) {
 
     await trackEvent({
       userId: session.user.id,
-      organizationId: session.user.organizationId ?? undefined,
+      organizationId: session.user.organizationId,
       eventType: "auth",
       eventName: "admin_account_removed",
       payload: { adminId: target.id, role: target.role },

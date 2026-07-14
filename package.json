@@ -12,7 +12,9 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
-    "backfill:meeting-join-urls": "tsx prisma/backfill-meeting-join-urls.ts"
+    "backfill:meeting-join-urls": "tsx prisma/backfill-meeting-join-urls.ts",
+    "test": "vitest run --exclude \"**/integration/**\" --exclude \"**/node_modules/**\" --exclude \"**/e2e/**\"",
+    "test:integration": "vitest run src/__tests__/integration --testTimeout=60000 --hookTimeout=120000"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",

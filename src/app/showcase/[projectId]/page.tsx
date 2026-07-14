@@ -36,9 +36,9 @@ async function getProject(projectId: string): Promise<PublicProject | null> {
 export async function generateMetadata({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
   const project = await getProject(projectId);
-  if (!project) return { title: "Project Not Found — KAT Learning" };
+  if (!project) return { title: "Project Not Found. KAT Learning" };
   return {
-    title: `${project.title} — KAT Learning`,
+    title: `${project.title}. KAT Learning`,
     description: project.description ?? `A project by ${project.student.firstName} ${project.student.lastName}`,
     openGraph: project.coverImageUrl ? { images: [{ url: project.coverImageUrl }] } : undefined,
   };

@@ -56,7 +56,7 @@ function LoginContent() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     await signIn("google", { callbackUrl: redirectTo });
-    // Page will redirect — no need to setGoogleLoading(false)
+    // Page will redirect, no need to setGoogleLoading(false)
   };
 
   const form = useForm<LoginValues>({
@@ -93,7 +93,7 @@ function LoginContent() {
   return (
     <div className="flex min-h-screen flex-col">
       <main className="flex flex-1">
-        {/* Left panel — branding */}
+        {/* Left panel, branding */}
         <div className="relative hidden lg:flex lg:w-[45%] flex-col justify-between overflow-hidden bg-kat-dark p-10">
           {/* Background decoration */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -130,7 +130,7 @@ function LoginContent() {
           </p>
         </div>
 
-        {/* Right panel — form */}
+        {/* Right panel, form */}
         <div className="flex flex-1 items-center justify-center bg-slate-50 px-4 py-8 sm:px-6 sm:py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

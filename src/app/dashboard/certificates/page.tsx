@@ -21,7 +21,7 @@ export default async function CertificatesPage() {
         subtitle={
           canIssue
             ? "Issue certificates to students and fellows who have completed a programme."
-            : "Your earned certificates — view, download, or share them with the world."
+            : "Your earned certificates, view, download, or share them with the world."
         }
       />
       <div className="kat-card">

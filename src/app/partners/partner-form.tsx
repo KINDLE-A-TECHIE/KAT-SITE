@@ -185,7 +185,7 @@ export function PartnerForm() {
         <textarea
           required
           rows={4}
-          placeholder="Describe what you're hoping to achieve through this partnership — e.g. number of students, target age range, timeline, any specific programmes in mind."
+          placeholder="Describe what you're hoping to achieve through this partnership, e.g. number of students, target age range, timeline, any specific programmes in mind."
           className={`${inputCls} resize-none`}
           value={form.message}
           onChange={set("message")}

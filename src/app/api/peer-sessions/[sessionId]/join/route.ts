@@ -11,7 +11,7 @@ const participantSelect = {
   user: { select: { id: true, firstName: true, lastName: true } },
 };
 
-// POST /api/peer-sessions/[sessionId]/join — join an active peer session
+// POST /api/peer-sessions/[sessionId]/join, join an active peer session
 export async function POST(_request: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -25,7 +25,7 @@ export async function POST(_request: Request, { params }: Params) {
   if (!peerSession) return fail("Session not found.", 404);
   if (peerSession.status !== "ACTIVE") return fail("Session is no longer active.", 400);
 
-  // Upsert participant (idempotent — rejoining is fine)
+  // Upsert participant (idempotent, rejoining is fine)
   await prisma.peerSessionParticipant.upsert({
     where: { sessionId_userId: { sessionId, userId: session.user.id } },
     create: { sessionId, userId: session.user.id },

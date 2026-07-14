@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { NotificationType, UserRole } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkChallengeProgram, notifyEligibleStudents } from "@/lib/challenges";
 
 const MANAGER_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
 const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW];
@@ -105,6 +106,11 @@ export async function POST(request: Request) {
   });
   if (!program) return fail("Program not found.", 404);
 
+  // Challenges are B2C. Attaching one to a SCHOOL programme would notify that school's children
+  // about a surface they cannot reach.
+  const audienceProblem = await checkChallengeProgram(parsed.data.programId);
+  if (audienceProblem) return fail(audienceProblem, 422);
+
   if (
     session.user.role !== UserRole.SUPER_ADMIN &&
     program.organizationId !== session.user.organizationId
@@ -148,47 +154,4 @@ export async function POST(request: Request) {
   }
 
   return ok({ challenge }, 201);
-}
-
-export async function notifyEligibleStudents(
-  challengeId: string,
-  programId: string,
-  moduleId: string | null,
-  creatorId: string,
-  challengeTitle: string,
-) {
-  let recipientIds: string[];
-
-  if (moduleId) {
-    const gateStatuses = await prisma.moduleGateStatus.findMany({
-      where: {
-        moduleId,
-        enrollment: { programId, status: "ACTIVE" },
-      },
-      select: { userId: true },
-    });
-    recipientIds = gateStatuses.map((g) => g.userId);
-  } else {
-    const enrollments = await prisma.enrollment.findMany({
-      where: { programId, status: "ACTIVE" },
-      select: { userId: true },
-    });
-    recipientIds = enrollments.map((e) => e.userId);
-  }
-
-  if (recipientIds.length > 0) {
-    await prisma.notification.createMany({
-      data: recipientIds.map((recipientId) => ({
-        recipientId,
-        creatorId,
-        type: NotificationType.INFO,
-        title: "🔥 New challenge dropped!",
-        body: JSON.stringify({
-          text: `A new challenge is live: "${challengeTitle}". Head to Challenges to compete!`,
-          targetPath: "/dashboard/challenges",
-        }),
-      })),
-      skipDuplicates: true,
-    });
-  }
 }

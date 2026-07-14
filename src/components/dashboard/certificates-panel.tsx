@@ -195,8 +195,8 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
           {canIssue
             ? isSuperAdmin
               ? "Issue and manage certificates for your learners."
-              : "Request certificates for your learners — they require super admin approval."
-            : "Your earned certificates — view, download, or share them."}
+              : "Request certificates for your learners, they require super admin approval."
+            : "Your earned certificates, view, download, or share them."}
         </p>
         {canIssue && (
           <Button
@@ -210,7 +210,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
         )}
       </div>
 
-      {/* Status filter tabs — issuers only */}
+      {/* Status filter tabs, issuers only */}
       {canIssue && (
         <div className="flex w-fit items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800/60">
           {FILTER_TABS.map((tab) => (
@@ -422,7 +422,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
               <span className="font-semibold text-slate-800 dark:text-slate-200">
                 {rejectTarget?.user.firstName} {rejectTarget?.user.lastName}
               </span>{" "}
-              — {rejectTarget?.program.name}.
+              {rejectTarget?.program.name}.
             </p>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600 dark:text-slate-400">

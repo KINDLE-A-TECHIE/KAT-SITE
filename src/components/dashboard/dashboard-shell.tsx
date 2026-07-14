@@ -141,6 +141,8 @@ const ROLE_LABEL: Record<UserRoleValue, string> = {
   FELLOW: "Fellow",
   STUDENT: "Student",
   PARENT: "Parent",
+  SCHOOL_STAFF: "School Staff",
+  SCHOOL_STUDENT: "School Student",
 };
 
 function getInitials(firstName: string, lastName: string) {
@@ -217,7 +219,7 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
 
         {/* ── Sidebar ─────────────────────────────────────────────── */}
         <aside className="h-fit overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 print:hidden">
-          {/* Brand — desktop only (top bar serves this role on mobile) */}
+          {/* Brand, desktop only (top bar serves this role on mobile) */}
           <Link href="/" className="hidden items-center gap-2.5 border-b border-slate-100 px-4 py-4 dark:border-slate-800 lg:flex">
             <Image src="/kindle-a-techie.svg" alt="KAT logo" width={30} height={30} className="shrink-0" />
             <span className="[font-family:var(--font-space-grotesk)] text-sm font-semibold text-slate-900 dark:text-slate-100">
@@ -225,7 +227,7 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
             </span>
           </Link>
 
-          {/* User card — desktop only (top bar shows avatar on mobile) */}
+          {/* User card, desktop only (top bar shows avatar on mobile) */}
           <div className="mx-3 my-3 hidden items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800 lg:flex">
             <Avatar className="size-9 shrink-0 border border-slate-200">
               <AvatarImage src={avatarUrl ?? undefined} alt={`${displayFirstName} ${displayLastName}`} />
@@ -274,7 +276,7 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
             </nav>
           </div>
 
-          {/* Settings + Sign out — compact row on mobile, stacked on desktop */}
+          {/* Settings + Sign out, compact row on mobile, stacked on desktop */}
           <div className="flex gap-1 border-t border-slate-100 px-3 py-2 dark:border-slate-800 lg:block lg:space-y-0.5 lg:py-3">
             {(() => {
               const active = pathname === "/dashboard/settings";

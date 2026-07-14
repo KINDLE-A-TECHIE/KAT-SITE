@@ -6,7 +6,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 /**
  * POST /api/meetings/recording-ready
  *
- * Jibri webhook — called by the finalize script on the VPS after a recording
+ * Jibri webhook, called by the finalize script on the VPS after a recording
  * is uploaded to R2 (or another accessible location).
  *
  * Expected body:

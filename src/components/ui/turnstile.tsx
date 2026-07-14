@@ -59,7 +59,7 @@ export function TurnstileWidget({ siteKey, onSuccess, onExpire, onError }: Props
       return;
     }
 
-    // Script not yet loaded — poll until it is
+    // Script not yet loaded, poll until it is
     const interval = setInterval(() => {
       if (window.turnstile) {
         clearInterval(interval);

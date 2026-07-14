@@ -1,4 +1,4 @@
-import { AssessmentVerificationStatus, AttemptStatus, NotificationType, QuestionType, UserRole } from "@prisma/client";
+import { CourseAudience, AssessmentVerificationStatus, AttemptStatus, NotificationType, QuestionType, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -48,13 +48,14 @@ export async function GET(request: Request) {
     where: {
       assessmentId: assessmentId ?? undefined,
       assessment: {
+        // School submissions are served by /api/school/results, scoped by schoolId. This route is
+        // the B2C product; it must see B2C work and nothing else.
+        program: { audience: CourseAudience.B2C },
         OR: [
           { createdById: session.user.id },
-          {
-            program: {
-              organizationId: session.user.organizationId ?? undefined,
-            },
-          },
+          ...(session.user.organizationId
+            ? [{ program: { organizationId: session.user.organizationId } }]
+            : []),
         ],
       },
     },
@@ -138,7 +139,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Check for existing submission — assessments close after being taken
+    // Check for existing submission, assessments close after being taken
     const existingSubmissions = await prisma.assessmentSubmission.findMany({
       where: { assessmentId: assessment.id, studentId: session.user.id },
       orderBy: { attemptNumber: "desc" },
@@ -148,7 +149,7 @@ export async function POST(request: Request) {
 
     let attemptNumber = 1;
     if (existingSubmissions.length > 0) {
-      // Has a previous submission — require an unused retake grant
+      // Has a previous submission, require an unused retake grant
       const grant = await prisma.retakeGrant.findFirst({
         where: { assessmentId: assessment.id, studentId: session.user.id, usedAt: null },
         select: { id: true },

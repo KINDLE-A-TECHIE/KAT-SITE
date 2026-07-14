@@ -72,7 +72,7 @@ export function FellowApplyPanel({ cohorts }: { cohorts: Cohort[] }) {
 
   return (
     <div className="space-y-4">
-      {/* Application form — hide if already approved or pending */}
+      {/* Application form, hide if already approved or pending */}
       {!hasApproved && !hasPending && (
         <div className="kat-card space-y-4">
           <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-800 dark:text-slate-200">

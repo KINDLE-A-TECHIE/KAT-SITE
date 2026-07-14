@@ -465,7 +465,7 @@ export function CurriculumPanel({ role }: { role: string }) {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {dialogMode === "edit" ? `Edit — ${editTarget?.name}` : "Add New Program"}
+              {dialogMode === "edit" ? `Edit, ${editTarget?.name}` : "Add New Program"}
             </DialogTitle>
           </DialogHeader>
           <ProgramForm

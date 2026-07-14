@@ -155,7 +155,7 @@ function LeaderboardDialog({ challenge, open, onClose }: {
           <div className="space-y-2 pt-1">
             {myEntry && myEntry.rank > 5 && (
               <p className="rounded-lg bg-blue-50 px-3 py-2 text-center text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                You&apos;re ranked #{myEntry.rank} — keep going! 💪
+                You&apos;re ranked #{myEntry.rank}, keep going! 💪
               </p>
             )}
             {entries.length >= 3 && (
@@ -573,7 +573,7 @@ function CreateChallengeDialog({ open, onClose, onCreated }: {
             <Select value={form.moduleId} onValueChange={(v) => set("moduleId", v)} disabled={!form.programId || modules.length === 0}>
               <SelectTrigger><SelectValue placeholder={modules.length === 0 ? "No modules yet" : "Select module"} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">— No specific module —</SelectItem>
+                <SelectItem value="none">,  No specific module, </SelectItem>
                 {modules.map((m) => <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -616,7 +616,7 @@ function CreateChallengeDialog({ open, onClose, onCreated }: {
                   {form.published ? "Publish immediately" : "Save as draft"}
                 </p>
                 <p className="text-xs text-slate-400">
-                  {form.published ? "Students will be notified and can start submitting." : "Only you can see this — publish it when ready."}
+                  {form.published ? "Students will be notified and can start submitting." : "Only you can see this, publish it when ready."}
                 </p>
               </div>
             </button>
@@ -746,7 +746,7 @@ function ChallengeCard({ challenge, isLearner, onRefresh }: {
           {isLearner && submitted && !graded && (
             <div className="mt-3 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 dark:bg-blue-900/20">
               <CheckCircle2 className="size-4 shrink-0 text-blue-500" />
-              <p className="text-xs font-medium text-blue-700 dark:text-blue-400">Submitted — waiting to be graded ⏳</p>
+              <p className="text-xs font-medium text-blue-700 dark:text-blue-400">Submitted, waiting to be graded ⏳</p>
             </div>
           )}
         </div>
@@ -912,7 +912,7 @@ export function ChallengesPanel({ role }: { role: UserRoleValue }) {
             </Button>
           )}
           {isLearner && tab === "active" && (
-            <p className="text-sm text-slate-400">Check back soon — a new challenge is coming! 💪</p>
+            <p className="text-sm text-slate-400">Check back soon, a new challenge is coming! 💪</p>
           )}
         </div>
       ) : (

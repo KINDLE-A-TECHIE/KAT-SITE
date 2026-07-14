@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 interface Params { params: Promise<{ projectId: string }> }
 
-// Public endpoint — no auth required. Only returns APPROVED + PUBLIC projects.
+// Public endpoint, no auth required. Only returns APPROVED + PUBLIC projects.
 export async function GET(_req: Request, { params }: Params) {
   const { projectId } = await params;
 

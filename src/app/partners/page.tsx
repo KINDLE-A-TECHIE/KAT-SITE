@@ -7,7 +7,7 @@ import { PartnerForm } from "./partner-form";
 import { School, Building2, Landmark, Handshake, Code2, FlaskConical, Clock4, Trophy } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Partner with KAT Learning — Schools, Corporates & Government",
+  title: "Partner with KAT Learning. Schools, Corporates & Government",
   description:
     "Bring world-class tech education to your students or workforce. KAT Learning partners with schools, corporate organisations, and government bodies across Africa.",
 };
@@ -25,10 +25,10 @@ const PARTNER_TYPES: PartnerCard[] = [
     title: "Schools",
     who: "Primary, secondary, and tertiary institutions",
     points: [
-      "Coding clubs — weekly sessions run by KAT mentors inside your school",
-      "Tech labs — structured programmes that turn any classroom into a build space",
-      "After-school programmes — curriculum-aligned tracks for ages 8–19",
-      "Hackathons — inter-school competitions and showcase events",
+      "Coding clubs, weekly sessions run by KAT mentors inside your school",
+      "Tech labs, structured programmes that turn any classroom into a build space",
+      "After-school programmes, curriculum-aligned tracks for ages 8–19",
+      "Hackathons, inter-school competitions and showcase events",
       "Teacher support and lesson materials included",
       "Parent visibility dashboards for every enrolled student",
     ],

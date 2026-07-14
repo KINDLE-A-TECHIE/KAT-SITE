@@ -199,7 +199,7 @@ export function buildPasswordResetEmail(opts: { firstName: string; resetUrl: str
       ${opts.resetUrl}
     </p>
     <p style="margin:24px 0 0;font-size:13px;color:#94a3b8;line-height:1.6;">
-      Didn&apos;t request this? Your password is safe — you can ignore this email.
+      Didn&apos;t request this? Your password is safe, you can ignore this email.
     </p>
   `);
 
@@ -245,11 +245,11 @@ export function buildParentDigestEmail(opts: {
                 ${p.submissionsLastMonth}
               </td>
               <td style="padding:10px 4px;font-size:13px;color:#475569;text-align:center;border-bottom:1px solid #f8fafc;">
-                ${p.avgScore !== null ? `${p.avgScore} pts` : "—"}
+                ${p.avgScore !== null ? `${p.avgScore} pts` : ", "}
               </td>
               <td style="padding:10px 4px;font-size:13px;text-align:center;font-weight:600;border-bottom:1px solid #f8fafc;
                          ${p.passRate !== null && p.passRate < 60 ? "color:#dc2626;" : "color:#16a34a;"}">
-                ${p.passRate !== null ? `${p.passRate}%` : "—"}
+                ${p.passRate !== null ? `${p.passRate}%` : ", "}
               </td>
             </tr>`,
         )
@@ -309,7 +309,7 @@ export function buildParentDigestEmail(opts: {
   `);
 
   const text =
-    `Monthly Progress Report — ${opts.month}\n\n` +
+    `Monthly Progress Report, ${opts.month}\n\n` +
     `Hi ${opts.parentFirstName},\n\nHere is your child's KAT Learning activity for ${opts.month}.\n\n` +
     opts.children
       .map((child) => {
@@ -317,7 +317,7 @@ export function buildParentDigestEmail(opts: {
           .filter((p) => p.submissionsLastMonth > 0)
           .map(
             (p) =>
-              `  - ${p.programName}: ${p.submissionsLastMonth} submission(s), avg ${p.avgScore ?? "—"} pts, pass rate ${p.passRate !== null ? p.passRate + "%" : "—"}`,
+              `  - ${p.programName}: ${p.submissionsLastMonth} submission(s), avg ${p.avgScore ?? ", "} pts, pass rate ${p.passRate !== null ? p.passRate + "%" : ", "}`,
           )
           .join("\n");
         const alerts = [
@@ -369,14 +369,14 @@ export function buildFellowApprovalEmail(opts: {
     </h2>
     <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.7;">
       Your application to the <strong style="color:#0f172a;">KAT Learning Fellowship Programme</strong>
-      has been approved. Your account has been upgraded to Fellow — welcome to the team.
+      has been approved. Your account has been upgraded to Fellow, welcome to the team.
     </p>
     ${cohortLine}
     ${notesLine}
     ${sectionLabel("What happens next")}
     <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:4px;">
       ${[
-        "Log in with your existing email and password — your role has already been updated.",
+        "Log in with your existing email and password, your role has already been updated.",
         "Your dashboard now shows your Fellow view, including assigned students and cohort schedules.",
         "Start mentoring students and leading sessions from day one.",
       ].map((step, i) => `
@@ -428,13 +428,13 @@ export function buildFellowRejectionEmail(opts: {
     </p>
     ${notesLine}
     <p style="margin:0 0 20px;font-size:14px;color:#475569;line-height:1.7;">
-      This isn&apos;t the end of the road. Every cohort is a new opportunity — keep building,
+      This isn&apos;t the end of the road. Every cohort is a new opportunity, keep building,
       keep shipping, and apply again when the next one opens. We&apos;re rooting for you.
     </p>
     ${ghostButton(applyUrl, "View My Application")}
   `);
 
-  const text = `Hi ${opts.firstName},\n\nThank you for applying to the KAT Fellowship. After review, we're unable to approve your application at this time.\n${opts.reviewNotes ? `\nFeedback: ${opts.reviewNotes}\n` : ""}\nKeep learning — you can re-apply in a future cohort.\n\nView application: ${applyUrl}\n\n© ${YEAR} KAT Learning`;
+  const text = `Hi ${opts.firstName},\n\nThank you for applying to the KAT Fellowship. After review, we're unable to approve your application at this time.\n${opts.reviewNotes ? `\nFeedback: ${opts.reviewNotes}\n` : ""}\nKeep learning, you can re-apply in a future cohort.\n\nView application: ${applyUrl}\n\n© ${YEAR} KAT Learning`;
 
   return { html, text };
 }
@@ -463,7 +463,7 @@ export function buildPaymentReminderEmail(opts: {
     { subject: string; headline: string; body: string; accentColor: string; badgeText: string; badgeBg: string }
   > = {
     due_soon: {
-      subject: `Payment due in 3 days — ${opts.childFirstName}'s ${opts.programName}`,
+      subject: `Payment due in 3 days, ${opts.childFirstName}'s ${opts.programName}`,
       headline: "Payment due in 3 days",
       body: `${opts.childFirstName}&apos;s enrolment in <strong style="color:#0f172a;">${opts.programName}</strong> renews on <strong style="color:#0f172a;">${opts.dueDate}</strong>. Pay before the due date to keep their learning uninterrupted.`,
       accentColor: "#1E5FAF",
@@ -471,7 +471,7 @@ export function buildPaymentReminderEmail(opts: {
       badgeBg: "#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;",
     },
     grace_started: {
-      subject: `Grace period started — ${opts.childFirstName}'s ${opts.programName}`,
+      subject: `Grace period started, ${opts.childFirstName}'s ${opts.programName}`,
       headline: "4-day grace period has started",
       body: `${opts.childFirstName}&apos;s enrolment in <strong style="color:#0f172a;">${opts.programName}</strong> expired on <strong style="color:#0f172a;">${opts.dueDate}</strong>. You have <strong>4 days</strong> to pay before access is suspended.`,
       accentColor: "#D97706",
@@ -479,7 +479,7 @@ export function buildPaymentReminderEmail(opts: {
       badgeBg: "#fffbeb;color:#b45309;border:1px solid #fde68a;",
     },
     suspended: {
-      subject: `Access suspended — ${opts.childFirstName}'s ${opts.programName}`,
+      subject: `Access suspended, ${opts.childFirstName}'s ${opts.programName}`,
       headline: "Enrolment suspended",
       body: `${opts.childFirstName}&apos;s access to <strong style="color:#0f172a;">${opts.programName}</strong> has been suspended due to an outstanding payment. Pay now to restore access immediately.`,
       accentColor: "#DC2626",
@@ -518,7 +518,7 @@ export function buildPaymentReminderEmail(opts: {
       </tr>
     </table>
     <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;line-height:1.6;">
-      Already paid? Verification can take a few minutes — no action needed.
+      Already paid? Verification can take a few minutes, no action needed.
     </p>
   `);
 
@@ -701,3 +701,39 @@ export function buildProjectStatusEmail(opts: {
   return { html, text };
 }
 
+
+/** Welcome + setup link for a school's first SCHOOL_ADMIN, sent at provisioning. */
+export function buildSchoolAdminWelcomeEmail(params: {
+  firstName: string;
+  schoolName: string;
+  schoolUrl: string;
+  setupUrl: string | null;
+}): { html: string; text: string } {
+  const { firstName, schoolName, schoolUrl, setupUrl } = params;
+  const cta = setupUrl
+    ? `<p><a href="${setupUrl}">Set your password</a> (the link is valid for 72 hours), then sign in at <a href="${schoolUrl}">${schoolUrl}</a>.</p>`
+    : `<p>Sign in at <a href="${schoolUrl}">${schoolUrl}</a> with your existing KAT password.</p>`;
+
+  const html = `
+    <p>Hello ${firstName},</p>
+    <p><strong>${schoolName}</strong> is now set up on KAT for Schools. You are its administrator.</p>
+    ${cta}
+    <p>From there you can create classes, upload your roster, and confirm seats for the term.</p>
+    <p>Kindle a Techie</p>
+  `.trim();
+
+  const text = [
+    `Hello ${firstName},`,
+    "",
+    `${schoolName} is now set up on KAT for Schools. You are its administrator.`,
+    setupUrl
+      ? `Set your password (valid 72 hours): ${setupUrl}\nThen sign in at ${schoolUrl}`
+      : `Sign in at ${schoolUrl} with your existing KAT password.`,
+    "",
+    "From there you can create classes, upload your roster, and confirm seats for the term.",
+    "",
+    "Kindle a Techie",
+  ].join("\n");
+
+  return { html, text };
+}

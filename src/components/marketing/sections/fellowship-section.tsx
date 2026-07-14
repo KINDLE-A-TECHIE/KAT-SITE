@@ -53,7 +53,7 @@ export function FellowshipSection({ cohorts }: FellowshipSectionProps) {
             Become a KAT Fellow
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-blue-200">
-            The best KAT students don&apos;t just graduate — they level up. Fellows mentor the next generation, lead real-world projects, and build a reputation that opens doors. Current students apply free. Ready?
+            The best KAT students don&apos;t just graduate, they level up. Fellows mentor the next generation, lead real-world projects, and build a reputation that opens doors. Current students apply free. Ready?
           </p>
         </div>
 
@@ -66,7 +66,7 @@ export function FellowshipSection({ cohorts }: FellowshipSectionProps) {
               border: "1px solid rgba(255,255,255,0.1)",
             }}
           >
-            <p className="text-blue-200">No cohorts open right now — check back soon or contact us to be notified when one opens.</p>
+            <p className="text-blue-200">No cohorts open right now, check back soon or contact us to be notified when one opens.</p>
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

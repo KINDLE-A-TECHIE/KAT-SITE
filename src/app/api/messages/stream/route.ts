@@ -43,7 +43,7 @@ export async function GET(request: Request) {
         try {
           controller.enqueue(encoder.encode("event: ping\ndata: {}\n\n"));
         } catch {
-          // Ignore — stream may have been closed.
+          // Ignore, stream may have been closed.
         }
       }, 25000);
 

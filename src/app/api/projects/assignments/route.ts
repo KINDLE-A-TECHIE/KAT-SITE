@@ -9,7 +9,7 @@ export async function GET() {
 
   const { id: userId, role, organizationId } = session.user;
 
-  // Students / Fellows — see PROJECT assessments for their enrolled programs
+  // Students / Fellows, see PROJECT assessments for their enrolled programs
   if (role === UserRole.STUDENT || role === UserRole.FELLOW) {
     const enrollments = await prisma.enrollment.findMany({
       where: { userId, status: "ACTIVE" },
@@ -65,7 +65,7 @@ export async function GET() {
     return NextResponse.json({ assignments });
   }
 
-  // Instructors / Admins — see all PROJECT assessments in their org
+  // Instructors / Admins, see all PROJECT assessments in their org
   const assessments = await prisma.assessment.findMany({
     where: {
       ...(organizationId ? { program: { organizationId } } : {}),

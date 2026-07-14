@@ -241,7 +241,7 @@ export function CohortsPanel() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  // Fellows (per cohort — independently expandable)
+  // Fellows (per cohort, independently expandable)
   const [fellowsOpen, setFellowsOpen] = useState<Record<string, boolean>>({});
   const [fellowsMap, setFellowsMap] = useState<Record<string, ApprovedFellow[]>>({});
   const [loadingFellows, setLoadingFellows] = useState<Record<string, boolean>>({});
@@ -484,7 +484,7 @@ export function CohortsPanel() {
 
   return (
     <div className="space-y-4">
-      {/* Header — always visible, even while loading */}
+      {/* Header, always visible, even while loading */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-500 dark:text-slate-400">
           {loading ? "Loading…" : `${cohorts.length} cohort${cohorts.length !== 1 ? "s" : ""}`}

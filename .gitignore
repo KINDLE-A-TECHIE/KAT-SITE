@@ -20,3 +20,11 @@ scripts/jibri-env.sh
 
 # Local npm overrides — .npmrc is intentionally tracked for Vercel builds
 # (Do NOT add .npmrc here)
+
+# Archived pre-baseline migrations (2026-07-13). Kept on disk only; they do NOT reproduce
+# schema.prisma, which is why 00000000000000_init replaced them.
+prisma/_migrations-archive-*/
+
+# Build artefacts and crash dumps. Neither belongs in history.
+tsconfig.tsbuildinfo
+*.stackdump

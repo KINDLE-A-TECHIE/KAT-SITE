@@ -258,7 +258,7 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
                 className={`overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 ${isLocked ? "border-slate-200/60 dark:border-slate-700/60 opacity-70" : "border-slate-200 dark:border-slate-700"}`}
               >
                 {isLocked ? (
-                  /* Locked module header — not clickable */
+                  /* Locked module header, not clickable */
                   <div className="flex w-full items-center gap-4 px-5 py-4 cursor-not-allowed select-none">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400 dark:bg-slate-800">
                       <Lock className="h-5 w-5" />
@@ -303,7 +303,7 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
                   </button>
                 )}
 
-                {/* Gate status strip — shown for unlocked modules */}
+                {/* Gate status strip, shown for unlocked modules */}
                 {!isLocked && (
                   <div className="flex flex-wrap gap-3 border-t border-slate-100 px-5 py-2 dark:border-slate-800">
                     <GateIndicator label="Assessment" status={gates?.assessmentGate} />
@@ -376,7 +376,7 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
             <Link href="/dashboard/curriculum" className="text-xs text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">← All Programs</Link>
             <h2 className="mt-0.5 [font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900 dark:text-slate-100">Curriculum</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              v{activeVersion.versionNumber} — {activeVersion.label}
+              v{activeVersion.versionNumber}, {activeVersion.label}
               {activeVersion.publishedAt && (
                 <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">Active</span>
               )}

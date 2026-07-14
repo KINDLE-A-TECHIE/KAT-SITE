@@ -20,7 +20,7 @@ const registerChildSchema = z.object({
   password: z.string().min(8).max(128),
 });
 
-// GET — list parent's linked children with their enrollments.
+// GET, list parent's linked children with their enrollments.
 export async function GET() {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -51,7 +51,7 @@ export async function GET() {
   return ok({ children: links.map((l) => l.child) });
 }
 
-// POST — either register a new child account (action: "register")
+// POST, either register a new child account (action: "register")
 //         or link an existing student account (action: "link").
 export async function POST(request: Request) {
   const session = await getServerAuthSession();

@@ -1,0 +1,191 @@
+import { PaymentProvider, SchoolInvoiceStatus, SchoolRole } from "@prisma/client";
+import { fail, ok } from "@/lib/http";
+import { getServerAuthSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { requireActiveSchool } from "@/lib/school";
+import { schoolInvoiceCreateSchema } from "@/lib/validators";
+import { getPaymentGateway } from "@/lib/payments/provider";
+import { generateInvoiceReference } from "@/lib/payments/receipt";
+import { trackEvent } from "@/lib/analytics";
+import { captureError } from "@/lib/sentry";
+
+/**
+ * School billing, invoice per term, per seat. SCHOOL_ADMIN only.
+ *
+ * NEVER licence-gated: when a licence lapses the admin must still reach billing to
+ * fix it. Gating this would be a deadlock, the school could never pay its way back in.
+ */
+
+const CURRENCY = "NGN";
+
+function guardFail(error: unknown) {
+  const message = error instanceof Error ? error.message : "Forbidden";
+  return message === "Unauthorized" ? fail("Unauthorized", 401) : fail("Forbidden", 403);
+}
+
+// GET /api/school/billing/invoices, this school's invoices + licences.
+export async function GET() {
+  let schoolId: string;
+  try {
+    ({ schoolId } = await requireActiveSchool([SchoolRole.SCHOOL_ADMIN]));
+  } catch (error) {
+    return guardFail(error);
+  }
+
+  try {
+    const [school, invoices, licenses] = await Promise.all([
+      prisma.school.findUnique({
+        where: { id: schoolId },
+        select: { name: true, pricePerSeat: true },
+      }),
+      prisma.schoolInvoice.findMany({
+        where: { schoolId },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+        select: {
+          id: true,
+          term: true,
+          seatCount: true,
+          amount: true,
+          status: true,
+          paystackRef: true,
+          createdAt: true,
+        },
+      }),
+      prisma.schoolLicense.findMany({
+        where: { schoolId },
+        orderBy: { createdAt: "desc" },
+        select: { term: true, status: true, seatLimit: true, seatsUsed: true },
+      }),
+    ]);
+
+    return ok({
+      school: { name: school?.name ?? "", pricePerSeat: Number(school?.pricePerSeat ?? 0) },
+      invoices: invoices.map((i) => ({ ...i, amount: Number(i.amount) })),
+      licenses,
+    });
+  } catch (error) {
+    captureError(error);
+    return fail("Could not load billing.", 500);
+  }
+}
+
+// POST /api/school/billing/invoices, confirm seats for a term, get a payment link.
+export async function POST(request: Request) {
+  let schoolId: string;
+  try {
+    ({ schoolId } = await requireActiveSchool([SchoolRole.SCHOOL_ADMIN]));
+  } catch (error) {
+    return guardFail(error);
+  }
+
+  const session = await getServerAuthSession();
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return fail("Invalid JSON", 400);
+  }
+
+  const parsed = schoolInvoiceCreateSchema.safeParse(body);
+  if (!parsed.success) {
+    return fail("Invalid invoice payload.", 400, parsed.error.flatten());
+  }
+  const { term, seatCount } = parsed.data;
+
+  try {
+    const school = await prisma.school.findUnique({
+      where: { id: schoolId },
+      select: { name: true, pricePerSeat: true },
+    });
+    if (!school) return fail("School not found.", 404);
+
+    const pricePerSeat = Number(school.pricePerSeat);
+    if (pricePerSeat <= 0) {
+      return fail(
+        "No seat price has been set for your school. Contact KAT to agree your pricing.",
+        422,
+      );
+    }
+
+    // One open invoice per term, otherwise an admin could stack several and pay the
+    // cheapest, or race two activations for the same term.
+    const openInvoice = await prisma.schoolInvoice.findFirst({
+      where: { schoolId, term, status: SchoolInvoiceStatus.PENDING },
+      select: { id: true, paystackRef: true },
+    });
+    if (openInvoice) {
+      return fail(
+        `There is already an unpaid invoice for ${term}. Pay or void it before raising another.`,
+        409,
+      );
+    }
+
+    // You cannot buy fewer seats than are already occupied this term, that would
+    // instantly put the school OVER_SEATED and lock its own students out.
+    const license = await prisma.schoolLicense.findUnique({
+      where: { schoolId_term: { schoolId, term } },
+      select: { seatsUsed: true },
+    });
+    if (license && seatCount < license.seatsUsed) {
+      return fail(
+        `${term} already has ${license.seatsUsed} seats in use, so you cannot buy only ${seatCount}.`,
+        422,
+      );
+    }
+
+    // THE AMOUNT IS COMPUTED HERE, never taken from the request.
+    const amount = Number((seatCount * pricePerSeat).toFixed(2));
+    const paystackRef = generateInvoiceReference();
+
+    const invoice = await prisma.schoolInvoice.create({
+      data: {
+        schoolId,
+        term,
+        seatCount,
+        amount,
+        status: SchoolInvoiceStatus.PENDING,
+        paystackRef,
+      },
+      select: { id: true, term: true, seatCount: true, amount: true, status: true, paystackRef: true },
+    });
+
+    // Reuse the existing gateway. The reference we generated is what the webhook will
+    // look the invoice up by.
+    let authorizationUrl: string | null = null;
+    try {
+      const gateway = getPaymentGateway(PaymentProvider.PAYSTACK);
+      const initialized = await gateway.initialize({
+        email: session!.user.email ?? `billing+${schoolId}@kindleatechie.com`,
+        amount,
+        currency: CURRENCY,
+        reference: paystackRef,
+        callbackUrl: `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/admin/billing?reference=${paystackRef}`,
+      });
+      authorizationUrl = initialized.authorizationUrl;
+    } catch (error) {
+      // The invoice stands even if checkout could not be initialized, the admin can
+      // retry payment. Losing the invoice would lose the audit trail.
+      captureError(error);
+    }
+
+    await trackEvent({
+      userId: session?.user?.id,
+      eventType: "admin",
+      eventName: "school_invoice_created",
+      payload: { schoolId, term, seatCount, amount },
+    });
+
+    return ok(
+      {
+        invoice: { ...invoice, amount: Number(invoice.amount) },
+        authorizationUrl,
+      },
+      201,
+    );
+  } catch (error) {
+    captureError(error);
+    return fail("Could not create the invoice.", 500);
+  }
+}

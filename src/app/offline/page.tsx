@@ -20,7 +20,7 @@ export default function OfflinePage() {
         </h1>
         <p className="mt-3 text-[15px] leading-relaxed text-slate-500">
           Your internet connection seems to have gone away. Check your Wi-Fi or mobile data, then
-          tap <span className="font-medium text-slate-700">Try Again</span> — you&rsquo;ll be right
+          tap <span className="font-medium text-slate-700">Try Again</span>, you&rsquo;ll be right
           back in class.
         </p>
 

@@ -23,7 +23,7 @@ export function CtaSection() {
             Raise a creator, thinker, and technology leader.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-blue-200">
-            From first lines of code to robotics, AI, design, and leadership — KAT is on a mission to raise a generation of young Africans ready to shape the future.
+            From first lines of code to robotics, AI, design, and leadership. KAT is on a mission to raise a generation of young Africans ready to shape the future.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button

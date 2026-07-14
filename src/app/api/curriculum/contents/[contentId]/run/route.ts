@@ -19,7 +19,7 @@ const ratelimit =
 
 interface Params { params: Promise<{ contentId: string }> }
 
-// Judge0 CE language IDs — matched to the languages returned by GET /languages on this instance
+// Judge0 CE language IDs, matched to the languages returned by GET /languages on this instance
 const JUDGE0_LANGUAGE_MAP: Record<string, number> = {
   // ── Popular ────────────────────────────────────────────────────────────────
   python:      71,  // Python (3.8.1)
@@ -67,7 +67,7 @@ const JUDGE0_LANGUAGE_MAP: Record<string, number> = {
 };
 
 const JUDGE0_API_URL = process.env.JUDGE0_API_URL?.replace(/\/$/, "") ?? null;
-// Optional — self-hosted Judge0 CE instances typically have no auth by default
+// Optional, self-hosted Judge0 CE instances typically have no auth by default
 const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY?.trim() ?? null;
 
 export async function POST(request: Request, { params }: Params) {
@@ -125,7 +125,7 @@ export async function POST(request: Request, { params }: Params) {
     return fail("Code execution service is not configured.", 503);
   }
 
-  // Build auth headers — omit X-Auth-Token entirely for self-hosted instances without auth
+  // Build auth headers, omit X-Auth-Token entirely for self-hosted instances without auth
   const authHeaders: Record<string, string> = JUDGE0_API_KEY
     ? { "X-Auth-Token": JUDGE0_API_KEY }
     : {};
@@ -161,10 +161,10 @@ export async function POST(request: Request, { params }: Params) {
     if (waitRes.ok) {
       result = await waitRes.json() as Judge0Result;
     } else if (waitRes.status === 400) {
-      // wait=true not enabled — fall back to async polling
+      // wait=true not enabled, fall back to async polling
       let detail = "";
       try { detail = await waitRes.text(); } catch { /* ignore */ }
-      console.warn(`[run] wait=true rejected (${waitRes.status}): ${detail} — falling back to polling`);
+      console.warn(`[run] wait=true rejected (${waitRes.status}): ${detail}, falling back to polling`);
 
       const createRes = await fetch(`${JUDGE0_API_URL}/submissions`, {
         method: "POST",

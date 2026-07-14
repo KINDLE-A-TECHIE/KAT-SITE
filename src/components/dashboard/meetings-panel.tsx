@@ -343,7 +343,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
 
   return (
     <div className="space-y-5">
-      {/* Mobile tab switcher — hidden on xl where columns show side by side */}
+      {/* Mobile tab switcher, hidden on xl where columns show side by side */}
       <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 xl:hidden dark:border-slate-700 dark:bg-slate-800/50">
         {(["live", "upcoming", "ended"] as const).map((key) => {
           const Icon = key === "live" ? Radio : key === "upcoming" ? CalendarClock : Video;

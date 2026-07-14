@@ -3,6 +3,7 @@ import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createDiscountCodeSchema } from "@/lib/validators";
+import { orgScope } from "@/lib/tenant";
 
 export async function GET() {
   const session = await getServerAuthSession();
@@ -10,7 +11,7 @@ export async function GET() {
   if (session.user.role !== UserRole.SUPER_ADMIN) return fail("Forbidden", 403);
 
   const codes = await prisma.discountCode.findMany({
-    where: { organizationId: session.user.organizationId ?? undefined },
+    where: orgScope(session.user.organizationId),
     include: {
       program: { select: { id: true, name: true } },
       createdBy: { select: { id: true, firstName: true, lastName: true } },

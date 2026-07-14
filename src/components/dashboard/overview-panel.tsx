@@ -178,6 +178,10 @@ const ACTIONS: Record<UserRoleValue, ActionCard[]> = {
       color: "bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
     },
   ],
+  // School accounts have no B2C actions. Their surface is the school host (/home, /teach, /learn);
+  // this dashboard is the consumer product and has nothing to offer them.
+  SCHOOL_STAFF: [],
+  SCHOOL_STUDENT: [],
 };
 
 export function OverviewPanel({ role, firstName = "there" }: OverviewPanelProps) {

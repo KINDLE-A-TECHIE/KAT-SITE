@@ -75,7 +75,7 @@ export async function POST(request: Request) {
   const { programId, name, startsAt, endsAt, capacity, applicationOpen, applicationClosesAt, externalApplicationFee } = parsed.data;
 
   try {
-    // Resolve organizationId — from linked program if given, otherwise from session user,
+    // Resolve organizationId, from linked program if given, otherwise from session user,
     // falling back to a DB lookup in case the session token pre-dates the org assignment.
     let organizationId = session.user.organizationId ?? null;
 

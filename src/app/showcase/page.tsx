@@ -32,7 +32,7 @@ async function getShowcaseProjects(): Promise<ShowcaseProject[]> {
 }
 
 export const metadata = {
-  title: "Project Showcase — KAT Learning",
+  title: "Project Showcase. KAT Learning",
   description: "Explore projects built by KAT Learning students and fellows.",
 };
 
@@ -54,7 +54,7 @@ export default async function ShowcasePage() {
             What our learners build
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-            Real projects created by KAT Learning students and fellows — from web apps to games, data tools and more.
+            Real projects created by KAT Learning students and fellows, from web apps to games, data tools and more.
           </p>
         </div>
 
@@ -64,7 +64,7 @@ export default async function ShowcasePage() {
               <FolderOpen className="size-8 text-slate-400" />
             </div>
             <p className="text-lg font-medium text-slate-600">No public projects yet</p>
-            <p className="mt-1 text-sm text-slate-400">Check back soon — our learners are building!</p>
+            <p className="mt-1 text-sm text-slate-400">Check back soon, our learners are building!</p>
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

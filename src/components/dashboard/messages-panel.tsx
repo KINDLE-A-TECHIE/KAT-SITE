@@ -911,7 +911,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
 
   return (
     <section className="grid grid-cols-1 gap-4 max-[360px]:gap-3 xl:grid-cols-[320px_1fr]">
-      {/* Thread list — hidden on mobile when a thread is open */}
+      {/* Thread list, hidden on mobile when a thread is open */}
       <aside className={`kat-card h-[72dvh] min-h-[420px] max-h-[880px] min-w-0 flex-col overflow-hidden max-[360px]:h-[68dvh] max-[360px]:min-h-[360px] sm:h-[74dvh] md:h-[78dvh] ${(selectedThreadId || selectedRecipientId) ? "hidden xl:flex" : "flex"}`}>
         {/* ── Fixed header ── */}
         <div className="mb-3 flex shrink-0 items-center justify-between">
@@ -995,7 +995,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
           )}
         </div>
 
-        {/* ── Composer — pinned to bottom ── */}
+        {/* ── Composer, pinned to bottom ── */}
         <div className="mt-3 shrink-0 space-y-2 border-t border-slate-100 dark:border-slate-800 pt-3">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">New Message</p>
 
@@ -1157,7 +1157,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
         </div>
       </aside>
 
-      {/* Chat view — hidden on mobile when no thread is selected */}
+      {/* Chat view, hidden on mobile when no thread is selected */}
       <div className={`kat-card h-[72dvh] min-h-[420px] max-h-[880px] min-w-0 flex-col overflow-hidden max-[360px]:h-[68dvh] max-[360px]:min-h-[360px] sm:h-[74dvh] md:h-[78dvh] ${(selectedThreadId || selectedRecipientId) ? "flex" : "hidden xl:flex"}`}>
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -1464,7 +1464,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                   animate={{ opacity: 1, y: 0 }}
                   className={`group flex max-w-[88%] items-end gap-1 max-[360px]:max-w-[92%] sm:max-w-[75%] ${mine ? "ml-auto flex-row-reverse" : "flex-row"}`}
                 >
-                  {/* Action buttons — beside bubble so they're never clipped by scroll container */}
+                  {/* Action buttons, beside bubble so they're never clipped by scroll container */}
                   {(canEdit || canDelete || canPin) && !isEditing && (
                     <div className="mb-1.5 flex shrink-0 flex-col gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       {canPin && (
@@ -1713,7 +1713,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                     <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
                       {previewContact.profile.education.map((item) => (
                         <p key={`${item.school}-${item.degree}`}>
-                          {item.degree} — {item.school}
+                          {item.degree}, {item.school}
                         </p>
                       ))}
                     </div>

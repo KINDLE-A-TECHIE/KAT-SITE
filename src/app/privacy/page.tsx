@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { LegalLayout } from "../legal-layout";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — KAT Learning",
+  title: "Privacy Policy. KAT Learning",
   description: "How KAT Learning collects, uses, and protects your personal data.",
 };
 
@@ -31,9 +31,9 @@ export default function PrivacyPage() {
       <h3>Account information</h3>
       <ul>
         <li>Full name and email address (required at registration)</li>
-        <li>Password (stored as a one-way bcrypt hash — we cannot read it)</li>
+        <li>Password (stored as a one-way bcrypt hash, we cannot read it)</li>
         <li>User role (Parent, Student, Instructor, Fellow, Admin)</li>
-        <li>Profile picture (optional — stored securely in Cloudflare R2)</li>
+        <li>Profile picture (optional, stored securely in Cloudflare R2)</li>
       </ul>
       <h3>Academic data</h3>
       <ul>
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
       <h3>Payment data</h3>
       <ul>
         <li>Enrollment and billing records (plan, amount, date)</li>
-        <li>Card details are <strong>never stored by us</strong> — all payments are processed by
+        <li>Card details are <strong>never stored by us</strong>, all payments are processed by
           Paystack and subject to their privacy policy</li>
       </ul>
       <h3>Communication data</h3>
@@ -56,7 +56,7 @@ export default function PrivacyPage() {
       </ul>
       <h3>Technical data</h3>
       <ul>
-        <li>Session tokens (stored as HTTP-only cookies — see our Cookie Policy)</li>
+        <li>Session tokens (stored as HTTP-only cookies, see our Cookie Policy)</li>
         <li>Basic server logs (IP address, request timestamps) retained for security purposes</li>
       </ul>
 
@@ -81,10 +81,10 @@ export default function PrivacyPage() {
 
       <h2>5. Third parties we share data with</h2>
       <ul>
-        <li><strong>Paystack</strong> — payment processing (enrollment billing and receipts)</li>
-        <li><strong>Jitsi Meet</strong> — live class video sessions (self-hosted)</li>
-        <li><strong>Cloudflare R2</strong> — file storage (avatars and project uploads)</li>
-        <li><strong>Neon (PostgreSQL)</strong> — our hosted database provider</li>
+        <li><strong>Paystack</strong>, payment processing (enrollment billing and receipts)</li>
+        <li><strong>Jitsi Meet</strong>, live class video sessions (self-hosted)</li>
+        <li><strong>Cloudflare R2</strong>, file storage (avatars and project uploads)</li>
+        <li><strong>Neon (PostgreSQL)</strong>, our hosted database provider</li>
       </ul>
       <p>
         All third-party providers are contractually bound to protect your data and may not use it

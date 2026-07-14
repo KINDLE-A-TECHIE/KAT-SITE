@@ -273,7 +273,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
     <div className="space-y-5">
       {/* Step 1: Select child */}
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Step 1 — Who are you paying for?</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Step 1. Who are you paying for?</p>
         <div className="grid gap-2 sm:grid-cols-2">
           {children.map((child) => (
             <button
@@ -303,7 +303,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
       {/* Step 2: Select program */}
       {selectedChild && (
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Step 2 — Select a program</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Step 2. Select a program</p>
           {programs.length === 0 ? (
             <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">No programs available yet.</p>
           ) : (
@@ -342,7 +342,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
       {/* Step 3: Billing month + Promo code + Add to Cart */}
       {selectedProgram && selectedChild && (
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Step 3 — Billing month &amp; discount</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Step 3. Billing month &amp; discount</p>
           <Input className="kat-date-input mb-3" type="month" value={billingMonth} onChange={(e) => setBillingMonth(e.target.value)} />
 
           {/* Promo code */}
@@ -598,7 +598,7 @@ function AdminPayForStudentForm({ onSuccess }: { onSuccess: () => void }) {
         <Select value={programId || undefined} onValueChange={setProgramId} disabled={!selectedUser}>
           <SelectTrigger className="h-10 w-full rounded-xl border border-slate-300 bg-slate-50/70 px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"><SelectValue placeholder="Select program" /></SelectTrigger>
           <SelectContent className="max-h-56 overflow-y-auto" position="popper" sideOffset={6}>
-            {programs.map((p) => <SelectItem key={p.id} value={p.id}>{p.name} — NGN {p.monthlyFee.toLocaleString()}/mo</SelectItem>)}
+            {programs.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}. NGN {p.monthlyFee.toLocaleString()}/mo</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -871,8 +871,8 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
               </p>
               <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
                 {type === "WAIVED"
-                  ? "No payment required — scholarship or admin grant"
-                  : "Billing starts today — 30-day cycle"}
+                  ? "No payment required, scholarship or admin grant"
+                  : "Billing starts today, 30-day cycle"}
               </p>
             </button>
           ))}
@@ -883,7 +883,7 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
         <p className="text-xs text-slate-500 dark:text-slate-400">
           This will create <strong>{totalEnrollments}</strong> enrollment{totalEnrollments !== 1 ? "s" : ""}{" "}
           ({selectedUsers.length} student{selectedUsers.length !== 1 ? "s" : ""} × {selectedProgramIds.size} program{selectedProgramIds.size !== 1 ? "s" : ""}){" "}
-          — <span className={billingType === "WAIVED" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}>
+          <span className={billingType === "WAIVED" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}>
             {billingType === "WAIVED" ? "billing waived" : "first payment due in 30 days"}
           </span>.
         </p>
@@ -1025,7 +1025,7 @@ function EnrollmentsManager() {
                     </span>
                   </div>
                   <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
-                    {e.program?.name ?? "—"}
+                    {e.program?.name ?? ", "}
                     {e.cohort ? ` · ${e.cohort.name}` : ""}
                     {" · "}Enrolled {new Date(e.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                     {e.isBillingWaived
@@ -1188,7 +1188,7 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">Description</label>
                 <Input
-                  placeholder="Internal note (e.g. Scholarship — John Doe)"
+                  placeholder="Internal note (e.g. Scholarship. John Doe)"
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 />
@@ -1490,10 +1490,10 @@ export function PaymentsPanel({ role }: { role: string }) {
                     <td className="py-3 pr-4 font-mono text-xs">{payment.reference}</td>
                     {showFor && (
                       <td className="py-3 pr-4">
-                        {payment.user ? `${payment.user.firstName} ${payment.user.lastName}` : <span className="text-slate-400 dark:text-slate-500">—</span>}
+                        {payment.user ? `${payment.user.firstName} ${payment.user.lastName}` : <span className="text-slate-400 dark:text-slate-500">, </span>}
                       </td>
                     )}
-                    <td className="py-3 pr-4">{payment.program?.name ?? "—"}</td>
+                    <td className="py-3 pr-4">{payment.program?.name ?? ", "}</td>
                     <td className="py-3 pr-4">
                       {new Date(payment.billingMonth).toLocaleDateString("en-NG", { month: "short", year: "numeric" })}
                     </td>
@@ -1508,7 +1508,7 @@ export function PaymentsPanel({ role }: { role: string }) {
                         <a href={`/dashboard/payments/receipt/${payment.receipt.id}`} className="text-xs font-medium text-sky-600 hover:underline">
                           {payment.receipt.receiptNumber}
                         </a>
-                      ) : <span className="text-slate-400 dark:text-slate-500">—</span>}
+                      ) : <span className="text-slate-400 dark:text-slate-500">, </span>}
                     </td>
                   </motion.tr>
                 ))}

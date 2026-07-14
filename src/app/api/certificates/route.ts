@@ -12,7 +12,7 @@ const CERT_INCLUDE = {
   approvedBy: { select: { id: true, firstName: true, lastName: true } },
 } as const;
 
-// GET — list certificates
+// GET, list certificates
 // Learners: own APPROVED certs only
 // Issuers:  all certs, optionally filtered by ?status=PENDING|APPROVED|REJECTED
 export async function GET(request: Request) {
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
   return ok({ certificates });
 }
 
-// POST — issue (SUPER_ADMIN → auto-approved) or request (ADMIN/INSTRUCTOR → PENDING)
+// POST, issue (SUPER_ADMIN → auto-approved) or request (ADMIN/INSTRUCTOR → PENDING)
 export async function POST(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
     include: CERT_INCLUDE,
   });
 
-  // When a SUPER_ADMIN directly issues a cert it's immediately approved —
+  // When a SUPER_ADMIN directly issues a cert it's immediately approved,
   // notify the learner straight away so they don't have to check manually.
   if (isSuperAdmin) {
     await prisma.notification.create({

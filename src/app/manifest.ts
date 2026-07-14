@@ -48,7 +48,7 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: "1080x1920",
         type: "image/png",
         form_factor: "narrow",
-        label: "KAT Learning — Home",
+        label: "KAT Learning. Home",
       },
       {
         src: "/screenshots/dashboard.png",

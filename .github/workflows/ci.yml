@@ -1,0 +1,163 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+# A superseded run tells you nothing. Cancel it and save the minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Placeholders. Nothing here reaches a real service, they exist because the app validates its
+  # environment at import time and would otherwise fail the build for the wrong reason.
+  NEXTAUTH_SECRET: ci-not-a-real-secret-ci-not-a-real-secret
+  NEXTAUTH_URL: http://localhost:3000
+  EMBED_TOKEN_SECRET: ci-embed-secret-ci-embed-secret-32chars
+  R2_ACCOUNT_ID: ci
+  R2_ACCESS_KEY_ID: ci
+  R2_SECRET_ACCESS_KEY: ci
+  R2_BUCKET_NAME: ci
+  R2_PUBLIC_URL: https://cdn.example.com
+  PAYSTACK_SECRET_KEY: sk_test_ci
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  # ── Static checks. Fast, no database. ────────────────────────────────────────
+  static:
+    name: typecheck & lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The Prisma client is generated code. Nothing type-checks without it.
+      - run: npx prisma generate
+      - run: npm run typecheck
+      - run: npm run lint
+
+  # ── Unit tests + the security harness, called out as its OWN job. ────────────
+  #
+  # "security ✗" in the checks list is unmissable. "test ✗" gets scrolled past, and this is the
+  # check that stands between a missing `where: { schoolId }` and a child-data leak.
+  security:
+    name: security (guards & tenant scoping)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Route authorization & tenant-scope harness
+        run: npx vitest run src/__tests__/security
+
+  test:
+    name: unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm test
+
+  # ── The real build. NOT redundant with typecheck. ────────────────────────────
+  #
+  # `next build` is the only thing that catches App Router violations, a route.ts exporting a
+  # non-handler, for instance, which passes local typecheck against a stale .next/types and then
+  # fails from a cold checkout. That exact bug shipped in this repo once.
+  build:
+    name: next build
+    runs-on: ubuntu-latest
+
+    # Next may reach the database while prerendering (the ISR showcase page queries it). Give the
+    # build a real one rather than let it fail for an unrelated reason.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kat
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kat
+          DIRECT_URL: postgresql://postgres:postgres@localhost:5432/kat
+      - name: Build
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kat
+          DIRECT_URL: postgresql://postgres:postgres@localhost:5432/kat
+
+  # ── Cross-tenant leak test, against a REAL Postgres. ─────────────────────────
+  #
+  # A throwaway database, built from migrations. Your Neon database is never involved, which is
+  # also the point of having a migration chain that actually replays (see the 0_init baseline).
+  integration:
+    name: cross-tenant isolation
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kat
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kat
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/kat
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+
+      # Builds the schema from the migration chain. If this ever fails, the migrations no longer
+      # describe the database, which also means production cannot be rebuilt from them.
+      - name: Apply migrations to a clean database
+        run: npx prisma migrate deploy
+
+      # The suite hard-fails (does not skip) when CI has no DATABASE_URL, a security test that
+      # silently skips reports green while testing nothing.
+      - name: Cross-tenant leak test
+        run: npm run test:integration

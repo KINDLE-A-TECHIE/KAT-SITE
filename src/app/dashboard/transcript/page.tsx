@@ -79,7 +79,7 @@ function gradeColor(score: number, total: number) {
 }
 
 function formatDate(value: string | null | undefined) {
-  if (!value) return "—";
+  if (!value) return ", ";
   return new Date(value).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
 
@@ -151,7 +151,7 @@ function TranscriptContent() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              KAT Learning — Academic Transcript
+              KAT Learning. Academic Transcript
             </p>
             <h2 className="mt-1 [font-family:var(--font-space-grotesk)] text-2xl font-bold text-slate-900 dark:text-slate-100">
               {transcript.firstName} {transcript.lastName}
@@ -179,7 +179,7 @@ function TranscriptContent() {
             { label: "Programs", value: transcript.enrollments.length },
             { label: "Assessments", value: totalAssessments },
             { label: "Passed", value: `${passedCount} / ${gradedSubmissions.length}` },
-            { label: "Avg Score", value: avgScore !== null ? `${avgScore}%` : "—" },
+            { label: "Avg Score", value: avgScore !== null ? `${avgScore}%` : ", " },
           ].map((item) => (
             <div key={item.label} className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
               <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{item.label}</p>

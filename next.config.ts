@@ -9,9 +9,23 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/:path*",
+        /*
+         * X-Frame-Options: SAMEORIGIN everywhere EXCEPT /embed.
+         *
+         * XFO cannot express an allow-list (ALLOW-FROM is dead), so a per-school origin list is
+         * impossible with it. The school embed opts out here and is protected instead by
+         * Content-Security-Policy: frame-ancestors, set per-school in middleware.ts from
+         * SchoolAllowedOrigin (and 'none' when a school has configured no origins, so it fails
+         * closed). Every other header below still applies to /embed.
+         */
+        source: "/((?!embed/).*)",
         headers: [
           { key: "X-Frame-Options",           value: "SAMEORIGIN" },
+        ],
+      },
+      {
+        source: "/:path*",
+        headers: [
           { key: "X-Content-Type-Options",     value: "nosniff" },
           { key: "X-XSS-Protection",           value: "1; mode=block" },
           { key: "Referrer-Policy",            value: "strict-origin-when-cross-origin" },

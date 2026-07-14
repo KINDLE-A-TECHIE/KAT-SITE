@@ -50,7 +50,7 @@ export function HeroSection({ enrollments, passRate }: HeroSectionProps) {
               </span>
             </h1>
             <p className="max-w-lg text-[1.05rem] leading-relaxed text-[var(--kat-text-secondary)]">
-              KAT prepares children and teenagers for the future through structured, real-world training in coding, robotics, AI, UI/UX design, and game development — with live mentors, hands-on projects, and full parent visibility.
+              KAT prepares children and teenagers for the future through structured, real-world training in coding, robotics, AI, UI/UX design, and game development, with live mentors, hands-on projects, and full parent visibility.
             </p>
           </div>
 

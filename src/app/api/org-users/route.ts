@@ -2,6 +2,7 @@ import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { orgScope } from "@/lib/tenant";
 
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
 
   const users = await prisma.user.findMany({
     where: {
-      organizationId: session.user.organizationId ?? undefined,
+      ...orgScope(session.user.organizationId),
       role: { in: allowedRoles },
       ...(q
         ? {

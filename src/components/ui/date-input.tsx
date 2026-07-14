@@ -16,7 +16,7 @@ type DateInputProps = Omit<React.ComponentProps<"input">, "type"> & {
  * is ignored on date inputs on these platforms.
  *
  * Solution: render as type="text" (so placeholder works) and switch to the
- * real date type synchronously via direct DOM mutation on pointerdown — BEFORE
+ * real date type synchronously via direct DOM mutation on pointerdown. BEFORE
  * the browser decides whether to open a text keyboard or the native date picker.
  * React state batching makes onFocus-based type-swaps arrive too late on iOS.
  */
@@ -46,7 +46,7 @@ export function DateInput({
 
   const switchToDateType = () => {
     if (!ref.current || ref.current.type === type) return;
-    // Direct DOM write is synchronous — iOS reads the new type before
+    // Direct DOM write is synchronous, iOS reads the new type before
     // deciding which picker to open, unlike a React setState re-render.
     ref.current.type = type;
     setInputType(type);

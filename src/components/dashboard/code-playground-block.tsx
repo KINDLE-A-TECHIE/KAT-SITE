@@ -12,7 +12,7 @@ import { zipSync } from "fflate";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Monaco is large — load only on client, never on server
+// Monaco is large, load only on client, never on server
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => <Skeleton className="h-full w-full rounded-none" />,
@@ -63,10 +63,10 @@ export const SUPPORTED_LANGUAGES = [
   { value: "css",         label: "CSS",             monacoLang: "css" },
 ] as const;
 
-// Languages that render in the browser iframe — no Judge0 needed
+// Languages that render in the browser iframe, no Judge0 needed
 const WEB_LANGUAGES = new Set(["html", "css"]);
 
-// ── Turtle shim — injected into Pyodide's sys.modules before user code runs ──
+// ── Turtle shim, injected into Pyodide's sys.modules before user code runs ──
 // Implements the standard turtle API on top of an HTML5 Canvas via JS interop.
 const TURTLE_SHIM = `
 import sys as _sys, types as _types, math as _math
@@ -360,7 +360,7 @@ _m.getscreen = getscreen
 _sys.modules['turtle'] = _m
 `;
 
-// ── Pygame shim — canvas-backed pygame API for Pyodide ────────────────────────
+// ── Pygame shim, canvas-backed pygame API for Pyodide ────────────────────────
 const PYGAME_SHIM = `
 import sys as _sys, types as _types, math as _math
 
@@ -376,7 +376,7 @@ except Exception:
     _W, _H  = 480, 360
 
 _frame   = 0
-_MAX_FRM = 500   # ~8 s at 60 fps — enough to see the result
+_MAX_FRM = 500   # ~8 s at 60 fps, enough to see the result
 
 # ── Color helpers ───────────────────────────────────────────────────────────────
 def _css(c):
@@ -1030,7 +1030,7 @@ export function CodePlaygroundBlock({
   const [stdin, setStdin]         = useState("");
 
   // ── Web preview state ──────────────────────────────────────────────────────
-  // (no extra state needed — iframe uses srcdoc, updated via ref)
+  // (no extra state needed, iframe uses srcdoc, updated via ref)
 
   // ── Pyodide state ──────────────────────────────────────────────────────────
   const [pyodideMode, setPyodideMode]         = useState(false);
@@ -1169,7 +1169,7 @@ ${code}
 </body></html>`;
     }
 
-    // html — raw
+    // html, raw
     return code;
   }, [isProjectMode, projectFiles, language, code]);
 
@@ -1373,11 +1373,11 @@ ${code}
       ).loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/" });
 
       pyodideRef.current = instance;
-      turtleShimInjected.current = false; // fresh instance — shim must be re-injected
+      turtleShimInjected.current = false; // fresh instance, shim must be re-injected
       setPyodideReady(true);
       return instance;
     } catch {
-      toast.error("Failed to load Pyodide — check your connection.");
+      toast.error("Failed to load Pyodide, check your connection.");
       setPyodideMode(false);
       throw new Error("Pyodide load failed");
     } finally {
@@ -1434,7 +1434,7 @@ ${code}
         if (usesPgzrun) await py.runPythonAsync(PGZERO_SHIM);
       }
 
-      // Auto-load packages detected from imports (skip canvas libs — handled by shims)
+      // Auto-load packages detected from imports (skip canvas libs, handled by shims)
       try { await py.loadPackagesFromImports(code); } catch { /* best effort */ }
 
       // Redirect stdout/stderr
@@ -1540,13 +1540,13 @@ ${code}
   // ── Code execution ─────────────────────────────────────────────────────────
 
   const run = async () => {
-    // Web mode — just refresh the preview iframe
+    // Web mode, just refresh the preview iframe
     if (isWebMode) {
       if (iframeRef.current) iframeRef.current.srcdoc = buildWebDoc();
       return;
     }
 
-    // Python browser mode — use Pyodide
+    // Python browser mode, use Pyodide
     if (pyodideMode && isPython) {
       await runPyodide();
       return;
@@ -1583,7 +1583,7 @@ ${code}
       if (!res.ok) setError(data.error ?? "Execution failed.");
       else setResult(data);
     } catch {
-      setError("Network error — could not reach execution service.");
+      setError("Network error, could not reach execution service.");
     } finally {
       setRunning(false);
     }
@@ -1690,7 +1690,7 @@ ${code}
       setPeerParticipants(data.session.participants);
       setAvailableSessionId(null);
       pollInterval.current = setInterval(() => void pollSession(), 2000);
-      toast.success("Peer session started — students can now join.");
+      toast.success("Peer session started, students can now join.");
     } catch {
       toast.error("Failed to start peer session.");
     } finally {
@@ -1836,7 +1836,7 @@ ${code}
       setSubmitDesc("");
       toast.success("Code submitted! Your instructor will review it soon.");
     } catch {
-      toast.error("Submission failed — please try again.");
+      toast.error("Submission failed, please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -1876,7 +1876,7 @@ ${code}
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-2 border-b border-slate-700 bg-[#1e1e1e] px-3 py-2">
 
-        {/* Left — language label + badges */}
+        {/* Left, language label + badges */}
         <div className="flex min-w-0 items-center gap-2">
           {isWebMode
             ? <Globe className="h-3.5 w-3.5 shrink-0 text-sky-400" />
@@ -1886,7 +1886,7 @@ ${code}
               <span className="flex items-center gap-1">
                 <span className="text-slate-500">Project</span>
                 <ChevronRight className="h-3 w-3 text-slate-600" />
-                <span>{entryFile ?? "—"}</span>
+                <span>{entryFile ?? ", "}</span>
               </span>
             ) : langLabel}
           </span>
@@ -1912,7 +1912,7 @@ ${code}
           )}
         </div>
 
-        {/* Right — actions */}
+        {/* Right, actions */}
         <div className="flex shrink-0 items-center gap-1">
 
           {/* Hidden file inputs */}
@@ -2098,7 +2098,7 @@ ${code}
             const isEntry  = path === entryFile;
             const basename = path.split("/").pop() ?? path;
             return (
-              // div instead of button — avoids illegal nested <button> which breaks inner click handlers
+              // div instead of button, avoids illegal nested <button> which breaks inner click handlers
               <div
                 key={path}
                 role="button"
@@ -2183,7 +2183,7 @@ ${code}
       {showPackages && isPython && pyodideMode && (
         <div className="border-b border-slate-700 bg-[#1a1a1a] px-4 py-3">
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-            Python Packages — Pyodide
+            Python Packages. Pyodide
           </p>
           <div className="flex items-center gap-2">
             <input
@@ -2220,7 +2220,7 @@ ${code}
       {/* ── Stdin panel ───────────────────────────────────────────────────────── */}
       {showStdin && !isWebMode && (
         <div className="border-b border-slate-700 bg-[#1e1e1e] px-4 py-2.5">
-          <p className="mb-1.5 text-[10px] font-medium text-slate-500">stdin — one value per line</p>
+          <p className="mb-1.5 text-[10px] font-medium text-slate-500">stdin, one value per line</p>
           <textarea
             value={stdin}
             onChange={(e) => setStdin(e.target.value)}
@@ -2266,7 +2266,7 @@ ${code}
           {isWebMode ? (
             /* ── Web Preview ── */
             <>
-              {/* Fullscreen backdrop — closes on click outside */}
+              {/* Fullscreen backdrop, closes on click outside */}
               {previewFullscreen && (
                 <div
                   className="fixed inset-0 z-[59] bg-black/40"
@@ -2313,7 +2313,7 @@ ${code}
             /* ── Terminal Output + Turtle Canvas ── */
             <div className="flex h-full flex-col bg-slate-950">
 
-              {/* Tab bar — only when Python + Pyodide */}
+              {/* Tab bar, only when Python + Pyodide */}
               {isPython && pyodideMode ? (
                 <div className="flex shrink-0 items-center border-b border-slate-800 bg-[#1a1a1a]">
                   <button
@@ -2372,7 +2372,7 @@ ${code}
                 </div>
               )}
 
-              {/* Turtle canvas — always in DOM so Pyodide can find it; hidden when tab not active */}
+              {/* Turtle canvas, always in DOM so Pyodide can find it; hidden when tab not active */}
               {turtleFullscreen && outputTab === "turtle" && isPython && pyodideMode && (
                 <div
                   className="fixed inset-0 z-[59] bg-black/40"
@@ -2398,7 +2398,7 @@ ${code}
                 />
               </div>
 
-              {/* Terminal output — hidden when turtle tab is active */}
+              {/* Terminal output, hidden when turtle tab is active */}
               <div className={`flex-1 overflow-auto ${outputTab === "turtle" && isPython && pyodideMode ? "hidden" : ""}`}>
                 {!result && !error && !running && (
                   <div className="flex h-full items-center justify-center px-4 text-center">
@@ -2599,7 +2599,7 @@ ${code}
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
               />
               <textarea
-                placeholder="Short description — what does your project do? (min. 10 characters)"
+                placeholder="Short description, what does your project do? (min. 10 characters)"
                 maxLength={500}
                 rows={2}
                 value={submitDesc}

@@ -3,7 +3,7 @@ import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { notifyEligibleStudents } from "@/app/api/challenges/route";
+import { checkChallengeProgram, notifyEligibleStudents } from "@/lib/challenges";
 
 interface Params { params: Promise<{ challengeId: string }> }
 
@@ -61,8 +61,12 @@ export async function PATCH(request: Request, { params }: Params) {
     },
   });
 
-  // Notify students when a challenge is published for the first time
+  // Notify students when a challenge is published for the first time.
+  // The audience is re-checked here, not assumed from creation.
   if (!wasPublished && parsed.data.published === true) {
+    const audienceProblem = await checkChallengeProgram(updated.programId);
+    if (audienceProblem) return fail(audienceProblem, 422);
+
     await notifyEligibleStudents(
       updated.id,
       updated.programId,

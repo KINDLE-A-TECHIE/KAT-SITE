@@ -574,8 +574,8 @@ export function AnalyticsPanel() {
         alert.upcomingMeetings,
         formatLastLogin(alert.lastLoginDaysAgo),
         alert.overdueAssessments,
-        alert.passRate !== null ? `${alert.passRate}%` : "—",
-        alert.daysSinceLastSubmission !== null ? `${alert.daysSinceLastSubmission}d ago` : "—",
+        alert.passRate !== null ? `${alert.passRate}%` : ", ",
+        alert.daysSinceLastSubmission !== null ? `${alert.daysSinceLastSubmission}d ago` : ", ",
         alert.riskScore,
       ]);
       const cohortRows = platform.cohortLeaderboard.map((cohort) => [
@@ -639,8 +639,8 @@ export function AnalyticsPanel() {
           p.programName,
           p.totalAssessments,
           p.totalSubmissions,
-          p.passRate !== null ? `${p.passRate}%` : "—",
-          p.avgScore !== null ? p.avgScore : "—",
+          p.passRate !== null ? `${p.passRate}%` : ", ",
+          p.avgScore !== null ? p.avgScore : ", ",
           p.pendingGrading,
         ]);
         sections.push(
@@ -664,9 +664,9 @@ export function AnalyticsPanel() {
             s.role,
             s.assessmentsCreated,
             s.submissionsGraded,
-            s.avgTurnaroundHours ?? "—",
-            s.avgFeedbackLength ?? "—",
-            s.studentPassRate !== null ? `${s.studentPassRate}%` : "—",
+            s.avgTurnaroundHours ?? ", ",
+            s.avgFeedbackLength ?? ", ",
+            s.studentPassRate !== null ? `${s.studentPassRate}%` : ", ",
           ]),
           "No instructor data yet.",
         ),
@@ -1201,7 +1201,7 @@ export function AnalyticsPanel() {
                           <td className="py-3">{prog.totalSubmissions}</td>
                           <td className="py-3">
                             {prog.passRate === null ? (
-                              <span className="text-slate-400 dark:text-slate-500">—</span>
+                              <span className="text-slate-400 dark:text-slate-500">, </span>
                             ) : (
                               <div className="flex min-w-[110px] items-center gap-2">
                                 <div className="flex-1">
@@ -1217,7 +1217,7 @@ export function AnalyticsPanel() {
                             )}
                           </td>
                           <td className="py-3">
-                            {prog.avgScore === null ? <span className="text-slate-400 dark:text-slate-500">—</span> : prog.avgScore}
+                            {prog.avgScore === null ? <span className="text-slate-400 dark:text-slate-500">, </span> : prog.avgScore}
                           </td>
                           <td className="py-3">
                             {prog.pendingGrading > 0 ? (
@@ -1289,12 +1289,12 @@ export function AnalyticsPanel() {
                             {alert.overdueAssessments > 0 ? (
                               <span className="font-semibold text-rose-600 dark:text-rose-400">{alert.overdueAssessments}</span>
                             ) : (
-                              <span className="text-slate-400 dark:text-slate-500">—</span>
+                              <span className="text-slate-400 dark:text-slate-500">, </span>
                             )}
                           </td>
                           <td className="py-3 max-[360px]:py-2">
                             {alert.passRate === null ? (
-                              <span className="text-slate-400 dark:text-slate-500">—</span>
+                              <span className="text-slate-400 dark:text-slate-500">, </span>
                             ) : (
                               <span className={cn("font-semibold", alert.passRate < 60 ? "text-rose-600 dark:text-rose-400" : alert.passRate < 75 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400")}>
                                 {alert.passRate}%
@@ -1303,7 +1303,7 @@ export function AnalyticsPanel() {
                           </td>
                           <td className="py-3 max-[360px]:py-2">
                             {alert.daysSinceLastSubmission === null ? (
-                              <span className="text-slate-400 dark:text-slate-500">—</span>
+                              <span className="text-slate-400 dark:text-slate-500">, </span>
                             ) : (
                               <span className={alert.daysSinceLastSubmission >= 14 ? "text-amber-600 dark:text-amber-400" : "text-slate-700 dark:text-slate-300"}>
                                 {alert.daysSinceLastSubmission === 0 ? "Today" : `${alert.daysSinceLastSubmission}d ago`}
@@ -1491,7 +1491,7 @@ export function AnalyticsPanel() {
                     <td className="py-3 max-[360px]:py-2">{s.submissionsGraded}</td>
                     <td className="py-3 max-[360px]:py-2">
                       {s.avgTurnaroundHours === null ? (
-                        <span className="text-slate-400 dark:text-slate-500">—</span>
+                        <span className="text-slate-400 dark:text-slate-500">, </span>
                       ) : (
                         <span className={cn("font-semibold", s.avgTurnaroundHours <= 24 ? "text-emerald-700 dark:text-emerald-400" : s.avgTurnaroundHours <= 72 ? "text-amber-700 dark:text-amber-400" : "text-rose-700 dark:text-rose-400")}>
                           {s.avgTurnaroundHours < 24
@@ -1502,7 +1502,7 @@ export function AnalyticsPanel() {
                     </td>
                     <td className="py-3 max-[360px]:py-2">
                       {s.avgFeedbackLength === null ? (
-                        <span className="text-slate-400 dark:text-slate-500">—</span>
+                        <span className="text-slate-400 dark:text-slate-500">, </span>
                       ) : (
                         <span className={cn("font-semibold", s.avgFeedbackLength >= 100 ? "text-emerald-700 dark:text-emerald-400" : s.avgFeedbackLength >= 40 ? "text-amber-700 dark:text-amber-400" : "text-rose-700 dark:text-rose-400")}>
                           {s.avgFeedbackLength} chars
@@ -1511,7 +1511,7 @@ export function AnalyticsPanel() {
                     </td>
                     <td className="py-3 max-[360px]:py-2">
                       {s.studentPassRate === null ? (
-                        <span className="text-slate-400 dark:text-slate-500">—</span>
+                        <span className="text-slate-400 dark:text-slate-500">, </span>
                       ) : (
                         <div className="flex min-w-[110px] items-center gap-2">
                           <div className="flex-1">

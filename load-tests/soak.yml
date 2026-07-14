@@ -1,0 +1,81 @@
+# Sustained soak load test, run after deploy to catch memory leaks and
+# connection pool exhaustion under real-world traffic patterns.
+# Run: npm run load:soak
+#
+# Requires:
+#   SERVER_BASE_URL , app base URL (default: http://localhost:3000)
+#   STUDENT_TOKEN   , a valid NextAuth session cookie value for authenticated routes
+#                       Format: next-auth.session-token=<value>
+#                       Obtain by logging in and copying the cookie from devtools.
+#
+# Pass criteria:
+#   - p95 < 800 ms
+#   - p99 < 2000 ms
+#   - Error rate < 2%
+
+config:
+  target: "{{ $processEnvironment.SERVER_BASE_URL || 'http://localhost:3000' }}"
+  phases:
+    - name: Warm up
+      duration: 60
+      arrivalRate: 5
+    - name: Ramp to peak
+      duration: 120
+      arrivalRate: 5
+      rampTo: 20
+    - name: Peak
+      duration: 180
+      arrivalRate: 20
+    - name: Ramp down
+      duration: 60
+      arrivalRate: 20
+      rampTo: 5
+  defaults:
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+  ensure:
+    p95: 800
+    p99: 2000
+    maxErrorRate: 2
+
+scenarios:
+  - name: Health check (unauthenticated)
+    weight: 30
+    flow:
+      - get:
+          url: /api/health
+          expect:
+            - statusCode: 200
+
+  - name: Login page (public HTML)
+    weight: 20
+    flow:
+      - get:
+          url: /login
+          expect:
+            - statusCode: 200
+
+  - name: Enrollment list (authenticated)
+    weight: 30
+    flow:
+      - get:
+          url: /api/enrollments
+          headers:
+            Cookie: "{{ $processEnvironment.STUDENT_TOKEN }}"
+          expect:
+            - statusCode: 200
+
+  - name: Rate-limited endpoint, payment init (authenticated)
+    weight: 20
+    flow:
+      - post:
+          url: /api/payments/initialize
+          headers:
+            Cookie: "{{ $processEnvironment.STUDENT_TOKEN }}"
+          json:
+            # Intentionally missing required fields, we just want to exercise
+            # auth + rate-limiter layers, not create real payments.
+            programId: "invalid"
+          expect:
+            - statusCode: 400

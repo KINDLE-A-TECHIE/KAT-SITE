@@ -1,7 +1,7 @@
 import { fail, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 
-// Public endpoint — no auth required.
+// Public endpoint, no auth required.
 // Verifies a certificate by its unique credentialId.
 export async function GET(
   _request: Request,

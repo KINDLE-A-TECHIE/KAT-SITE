@@ -57,7 +57,7 @@ export async function GET(request: Request) {
   return ok({ testimonials });
 }
 
-// POST /api/testimonials — parent submits a testimonial
+// POST /api/testimonials, parent submits a testimonial
 export async function POST(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
