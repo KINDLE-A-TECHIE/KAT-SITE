@@ -41,6 +41,24 @@ describe("assertSafeWebhookUrl", () => {
     }
   });
 
+  /**
+   * Every spelling of the cloud metadata service, in one table.
+   *
+   * This exists because a filter that matched only the DOTTED IPv4-mapped form
+   * (`::ffff:169.254.169.254`) let the HEX form (`::ffff:a9fe:a9fe`) straight through, and Node's
+   * URL parser hands you the hex one. The bug was invisible on Windows (whose resolver quietly
+   * fixed it up) and only surfaced in Linux CI.
+   */
+  it.each([
+    ["plain IPv4", "https://169.254.169.254/latest/meta-data/"],
+    ["IPv4-mapped, dotted", "https://[::ffff:169.254.169.254]/"],
+    ["IPv4-mapped, hex (what Node actually gives you)", "https://[::ffff:a9fe:a9fe]/"],
+    ["IPv4-compatible", "https://[::a9fe:a9fe]/"],
+    ["NAT64 prefix", "https://64:ff9b::a9fe:a9fe/"],
+  ])("blocks the metadata service via %s", async (_label, url) => {
+    expect(await assertSafeWebhookUrl(url), url).not.toBeNull();
+  });
+
   it("rejects an IPv4-mapped IPv6 address pointing at the metadata service", async () => {
     // ::ffff:169.254.169.254 is the classic way past a naive IPv4-only filter.
     expect(await assertSafeWebhookUrl("https://[::ffff:169.254.169.254]/")).toMatch(

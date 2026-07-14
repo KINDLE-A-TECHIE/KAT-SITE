@@ -65,7 +65,16 @@ export async function assertSafeWebhookUrl(raw: string): Promise<string | null> 
     return "The webhook URL must use https, pupils' progress must not travel in clear text.";
   }
 
-  const host = url.hostname;
+  /*
+   * STRIP THE BRACKETS. `new URL("https://[::1]/").hostname` returns "[::1]", WITH them, and
+   * isIP("[::1]") is 0: not an IP. So an IPv6 literal used to fall through to a DNS lookup, and
+   * every IPv6 check below was unreachable for it.
+   *
+   * It was still refused, but only because the lookup failed, and that is a platform accident:
+   * Windows' resolver tolerates the bracketed form and Linux's does not, so this passed locally and
+   * failed in CI. A security filter must not depend on which resolver is underneath it.
+   */
+  const host = url.hostname.replace(/^\[|\]$/g, "");
 
   const addresses: string[] = [];
   if (isIP(host)) {
@@ -112,9 +121,25 @@ function isPrivateAddress(address: string): boolean {
     if (a === "::1" || a === "::") return true; // loopback / unspecified
     if (a.startsWith("fc") || a.startsWith("fd")) return true; // unique-local
     if (a.startsWith("fe80")) return true; // link-local
-    // IPv4-mapped (::ffff:169.254.169.254), unwrap and re-check, or the filter is bypassed.
-    const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(a);
-    if (mapped) return isPrivateAddress(mapped[1]);
+    /*
+     * IPv4-EMBEDDED ADDRESSES. This is the bypass everyone forgets.
+     *
+     * `new URL("https://[::ffff:169.254.169.254]/")` does NOT hand back the dotted form. Node
+     * NORMALISES it to `::ffff:a9fe:a9fe`, in hex. A filter that only matches the dotted spelling
+     * therefore waves the cloud metadata service straight through, which is precisely what this
+     * one used to do.
+     *
+     * So: unwrap the trailing 32 bits of any IPv4-embedded form, in EITHER spelling, and judge it
+     * as the IPv4 address it really is.
+     */
+    const embedded = /^(?:::ffff:|::|64:ff9b::)(?:(\d+\.\d+\.\d+\.\d+)|([0-9a-f]{1,4}):([0-9a-f]{1,4}))$/i.exec(a);
+    if (embedded) {
+      if (embedded[1]) return isPrivateAddress(embedded[1]);
+      const hi = parseInt(embedded[2], 16);
+      const lo = parseInt(embedded[3], 16);
+      const v4 = [(hi >> 8) & 255, hi & 255, (lo >> 8) & 255, lo & 255].join(".");
+      return isPrivateAddress(v4);
+    }
     return false;
   }
 
