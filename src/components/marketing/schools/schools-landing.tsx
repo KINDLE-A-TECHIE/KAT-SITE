@@ -1,13 +1,13 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Check, GraduationCap, ShieldCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/site-footer";
-import { DESIGN_TOKENS } from "../landing-tokens";
+import { STAMP_CTA, STAMP_CTA_SM } from "../landing-tokens";
 import {
   COMPLIANCE_POINTS,
   CROSSWALK,
@@ -84,10 +84,10 @@ function BadgeCell({ row }: { row: CrosswalkRow }) {
 
 export function SchoolsLanding() {
   return (
-    <main
-      style={DESIGN_TOKENS as CSSProperties}
-      className="relative min-h-screen overflow-x-clip bg-[var(--kat-paper)] font-serif text-[var(--kat-ink)]"
-    >
+    // Tokens come from :root (globals.css). This page previously carried an inline
+    // token object that did not define a single one of the vars below, which is why it
+    // rendered colourless.
+    <main className="relative min-h-screen overflow-x-clip bg-[var(--kat-paper)] font-serif text-[var(--kat-ink)]">
       {/* Slim, calm header, logo + a single CTA. Denser and quieter than the kid site. */}
       <header className="sticky top-0 z-40 border-b border-[var(--kat-line)] bg-[var(--kat-paper)]/90 backdrop-blur-xl">
         <div className="kat-page flex h-16 items-center justify-between">
@@ -115,11 +115,7 @@ export function SchoolsLanding() {
             >
               Developers
             </Link>
-            <Button
-              asChild
-              size="sm"
-              className="rounded-none bg-[var(--kat-clay)] font-semibold text-[var(--kat-paper)] shadow-[3px_3px_0_0_var(--kat-ink)] transition-transform hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-[var(--kat-clay-deep)] hover:shadow-[1px_1px_0_0_var(--kat-ink)]"
-            >
+            <Button asChild size="sm" className={STAMP_CTA_SM}>
               <Link href="/partners">Request a pilot</Link>
             </Button>
           </div>
@@ -137,10 +133,10 @@ export function SchoolsLanding() {
             <span className="text-[var(--kat-clay)]">your own teachers can deliver.</span>
           </h1>
           <p className="mt-6 max-w-2xl font-serif text-lg leading-relaxed text-[var(--kat-text-2)]">
-            No specialist to hire. No lab to build. KAT licenses a complete, NERDC-mapped
-            Digital Technologies curriculum to your school: lesson plans and worksheets for
-            the digital-literacy strand, and a live coding platform for the part that&apos;s hard.
-            Your teachers deliver it; your students build real projects.
+            No specialist to hire, and it runs on the computers you already have. KAT licenses
+            a complete, NERDC-mapped Digital Technologies curriculum to your school: lesson plans
+            and worksheets for the digital-literacy strand, and a live coding platform for the
+            part that&apos;s hard. Your teachers deliver it; your students build real projects.
           </p>
         </Reveal>
 
@@ -161,7 +157,7 @@ export function SchoolsLanding() {
           <Button
             asChild
             size="lg"
-            className="gap-2 rounded-none bg-[var(--kat-clay)] px-7 font-semibold text-[var(--kat-paper)] shadow-[4px_4px_0_0_var(--kat-ink)] transition-transform hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-[var(--kat-clay-deep)] hover:shadow-[2px_2px_0_0_var(--kat-ink)]"
+            className={`gap-2 px-7 ${STAMP_CTA}`}
           >
             <Link href="/partners">
               Request a pilot
@@ -323,14 +319,10 @@ export function SchoolsLanding() {
               </h2>
               <p className="mt-4 font-serif text-base leading-relaxed text-[var(--kat-text-2)]">
                 Tell us your levels and student numbers, and we&apos;ll map your classes onto the
-                crosswalk and set up a pilot term. No specialist hire, no lab, no long contract.
+                crosswalk and set up a pilot term. No specialist hire, no lab to equip, no long contract.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
-                <Button
-                  asChild
-                  size="lg"
-                  className="gap-2 rounded-none bg-[var(--kat-clay)] px-8 font-semibold text-[var(--kat-paper)] shadow-[4px_4px_0_0_var(--kat-ink)] transition-transform hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-[var(--kat-clay-deep)] hover:shadow-[2px_2px_0_0_var(--kat-ink)]"
-                >
+                <Button asChild size="lg" className={`gap-2 px-8 ${STAMP_CTA}`}>
                   <Link href="/partners">
                     Request a pilot
                     <ArrowRight className="size-4" />

@@ -1,45 +1,39 @@
 import { Brain, Code2, Compass, Flame, Layers3, Shield } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { FEATURES } from "../landing-tokens";
 
 const ICON_MAP = { Code2, Shield, Layers3, Brain, Flame, Compass };
 
 export function FeaturesSection() {
   return (
-    <section id="features" className="kat-page kat-defer pb-16 sm:pb-20">
-      <div className="mb-10 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--kat-primary-blue)]">Features</p>
-        <h2 className="mx-auto mt-2 max-w-3xl [font-family:var(--font-space-grotesk)] text-3xl font-bold text-[var(--kat-text-primary)] sm:text-[2.5rem]">
-          Your child won&apos;t just learn technology, {" "}
-          <span className="bg-clip-text text-transparent" style={{ backgroundImage: "var(--kat-gradient)" }}>
-            they&apos;ll become a creator and leader
-          </span>
+    <section id="features" className="kat-page kat-defer py-16 sm:py-24">
+      <div className="max-w-2xl border-l-2 border-[var(--kat-clay)] pl-5">
+        <p className="kat-eyebrow">What they get</p>
+        <h2 className="mt-3 font-display text-3xl font-bold leading-tight text-[var(--kat-ink)] sm:text-[2.5rem]">
+          Not a course library. A workshop with a mentor in it.
         </h2>
-        <p className="mx-auto mt-3 max-w-xl text-[var(--kat-text-secondary)]">
-          Every feature is designed so kids build real digital skills, parents stay informed, and learning actually sticks.
-        </p>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {FEATURES.map((feature, index) => {
+      {/*
+       * A rule-divided grid, not six floating cards with six different icon colours.
+       * The borders collapse into a single hairline lattice, which is why the negative
+       * margins and -mt/-ml offsets are here rather than a gap.
+       */}
+      <div className="mt-12 grid border-t border-[var(--kat-border)] sm:grid-cols-2 lg:grid-cols-3">
+        {FEATURES.map((feature) => {
           const Icon = ICON_MAP[feature.iconName];
           return (
             <div
               key={feature.title}
-              className="group rounded-2xl border border-[var(--kat-border)] bg-white p-6 shadow-[0_4px_20px_-8px_rgba(19,43,94,0.1)] transition-all duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_16px_40px_-12px_rgba(19,43,94,0.18)]"
+              className="group border-b border-[var(--kat-border)] p-6 transition-colors hover:bg-[var(--kat-raised)] sm:border-r sm:[&:nth-child(2n)]:border-r-0 lg:[&:nth-child(2n)]:border-r lg:[&:nth-child(3n)]:border-r-0"
             >
-              <div className="mb-4 flex items-center justify-between">
-                <div className={cn("inline-flex rounded-xl p-2.5 text-white", feature.color)}>
-                  <Icon className="size-5" />
-                </div>
-                <span className="[font-family:var(--font-space-grotesk)] text-sm font-bold text-slate-200">
-                  0{index + 1}
-                </span>
-              </div>
-              <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-[var(--kat-text-primary)]">
+              <Icon
+                className="size-5 text-[var(--kat-muted)] transition-colors group-hover:text-[var(--kat-clay)]"
+                aria-hidden
+              />
+              <h3 className="mt-4 font-display text-lg font-semibold text-[var(--kat-ink)]">
                 {feature.title}
               </h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-[var(--kat-text-secondary)]">
+              <p className="mt-2 font-body text-sm leading-relaxed text-[var(--kat-muted)]">
                 {feature.description}
               </p>
             </div>

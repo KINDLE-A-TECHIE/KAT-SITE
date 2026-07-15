@@ -1,8 +1,37 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import Script from "next/script";
+import { Bricolage_Grotesque, Fraunces, JetBrains_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
+
+/*
+ * The type system, actually loaded. Previously globals.css merely NAMED "Manrope" /
+ * "Space Grotesk" in a font stack without ever fetching them, so every page silently
+ * fell back to Segoe/Arial. next/font self-hosts these and emits the --font-* vars
+ * that globals.css and tailwind.config.js consume.
+ *
+ * display=swap on all three: text paints immediately in the fallback rather than
+ * blocking on the webfont.
+ */
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-bricolage",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-fraunces",
+  axes: ["SOFT", "WONK"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-jetbrains",
+});
 
 export const metadata: Metadata = {
   title: "KAT Learning - Tech Education for Kids and Teens",
@@ -35,7 +64,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#132B5E",
+  themeColor: "#F4EEE2",
 };
 
 export default function RootLayout({
@@ -44,7 +73,11 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${bricolage.variable} ${fraunces.variable} ${jetbrainsMono.variable}`}
+    >
       <body className="font-sans antialiased">
         <Providers>{children}</Providers>
         {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (

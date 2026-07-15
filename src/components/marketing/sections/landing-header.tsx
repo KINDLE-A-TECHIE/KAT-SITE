@@ -3,17 +3,17 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { ArrowRight, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { NAV_ITEMS } from "../landing-tokens";
+import { NAV_ITEMS, STAMP_CTA_SM } from "../landing-tokens";
 
 export function LandingHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--kat-border)] bg-white/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-[var(--kat-border)] bg-[var(--kat-paper)]/90 backdrop-blur-xl">
       <div className="kat-page flex h-[4.25rem] items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link href="/" className="kat-focus-ring flex items-center gap-2.5 rounded">
           <Image
             src="/kindle-a-techie.svg"
             alt="KAT logo"
@@ -22,48 +22,38 @@ export function LandingHeader() {
             className="shrink-0"
             priority
           />
-          <span className="[font-family:var(--font-space-grotesk)] text-[1.05rem] font-semibold tracking-tight text-[var(--kat-text-primary)]">
-            kindle <span className="bg-clip-text text-transparent" style={{ backgroundImage: "var(--kat-gradient)" }}>a techie</span>
+          <span className="font-display text-[1.05rem] font-semibold tracking-tight text-[var(--kat-ink)]">
+            kindle <span className="text-[var(--kat-clay)]">a techie</span>
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="hidden items-center gap-7 lg:flex">
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-medium text-[var(--kat-text-secondary)] transition-colors hover:text-[var(--kat-primary-blue)]"
+              className="kat-focus-ring rounded text-sm font-medium text-[var(--kat-muted)] transition-colors hover:text-[var(--kat-clay)]"
             >
               {item.label}
             </Link>
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="rounded-lg text-[var(--kat-primary-blue)] hover:bg-blue-50"
+        <div className="hidden items-center gap-4 lg:flex">
+          <Link
+            href="/login"
+            className="kat-focus-ring rounded text-sm font-semibold text-[var(--kat-ink)] hover:text-[var(--kat-clay)]"
           >
-            <Link href="/login">Sign In</Link>
-          </Button>
-          <Button
-            asChild
-            size="sm"
-            className="rounded-lg gap-1.5 text-white shadow-[0_4px_14px_-4px_rgba(30,95,175,0.5)]"
-            style={{ background: "var(--kat-gradient)" }}
-          >
-            <Link href="/register">
-              Get Started
-              <ArrowRight className="size-3.5" />
-            </Link>
+            Sign in
+          </Link>
+          <Button asChild size="sm" className={STAMP_CTA_SM}>
+            <Link href="/register">Get started</Link>
           </Button>
         </div>
 
         <button
           type="button"
-          className="inline-flex size-10 items-center justify-center rounded-lg border border-[var(--kat-border)] text-[var(--kat-primary-blue)] md:hidden"
+          className="kat-focus-ring inline-flex size-10 items-center justify-center rounded-lg border border-[var(--kat-border)] text-[var(--kat-ink)] lg:hidden"
           onClick={() => setMobileMenuOpen((o) => !o)}
           aria-label="Toggle menu"
           aria-expanded={mobileMenuOpen}
@@ -73,13 +63,10 @@ export function LandingHeader() {
         </button>
       </div>
 
-      {/* Animated mobile dropdown */}
       <div
         id="mobile-nav"
-        className={`border-t border-[var(--kat-border)] bg-white transition-all duration-200 ease-in-out md:hidden ${
-          mobileMenuOpen
-            ? "max-h-[600px] opacity-100"
-            : "max-h-0 overflow-hidden opacity-0"
+        className={`border-t border-[var(--kat-border)] bg-[var(--kat-paper)] transition-all duration-200 ease-in-out lg:hidden ${
+          mobileMenuOpen ? "max-h-[600px] opacity-100" : "max-h-0 overflow-hidden opacity-0"
         }`}
       >
         <div className="kat-page flex flex-col gap-1 py-3">
@@ -88,31 +75,34 @@ export function LandingHeader() {
               key={item.href}
               href={item.href}
               onClick={() => setMobileMenuOpen(false)}
-              className="rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--kat-text-secondary)] hover:bg-slate-50 hover:text-[var(--kat-primary-blue)]"
+              className="rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--kat-muted)] hover:bg-[var(--kat-raised)] hover:text-[var(--kat-clay)]"
             >
               {item.label}
             </Link>
           ))}
           <div className="mt-2 grid grid-cols-2 gap-2 pt-1">
-            <Button asChild variant="outline" size="sm" className="rounded-lg">
-              <Link href="/login" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
-            </Button>
             <Button
               asChild
+              variant="outline"
               size="sm"
-              className="rounded-lg text-white"
-              style={{ background: "var(--kat-gradient)" }}
+              className="rounded-lg border-[var(--kat-border)] text-[var(--kat-ink)]"
             >
-              <Link href="/register" onClick={() => setMobileMenuOpen(false)}>Join Now</Link>
+              <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                Sign in
+              </Link>
+            </Button>
+            <Button asChild size="sm" className={STAMP_CTA_SM}>
+              <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
+                Join now
+              </Link>
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Backdrop overlay */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 top-[4.25rem] z-[-1] bg-black/30 md:hidden"
+          className="fixed inset-0 top-[4.25rem] z-[-1] bg-[var(--kat-ink)]/30 lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
           aria-hidden="true"
         />

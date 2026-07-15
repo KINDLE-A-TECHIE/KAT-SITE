@@ -132,7 +132,7 @@ export function EnrollmentChat() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
               onClick={() => setOpen(true)}
-              className="group flex items-center gap-2.5 rounded-full bg-gradient-to-r from-[#1E5FAF] to-[#4DB3E6] px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-shadow"
+              className="group flex items-center gap-2.5 rounded-full bg-[var(--kat-clay)] px-5 py-3.5 font-display text-sm font-semibold text-[var(--kat-paper)] shadow-kat transition-colors hover:bg-[var(--kat-clay-deep)]"
               aria-label="Open enrollment assistant"
             >
               <MessageCircle className="size-5 shrink-0" />
@@ -150,17 +150,19 @@ export function EnrollmentChat() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-6 z-50 flex w-[min(380px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20"
+            className="fixed bottom-6 right-6 z-50 flex w-[min(380px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-[var(--kat-border)] bg-[var(--kat-raised)] shadow-kat-lg"
             style={{ maxHeight: "min(560px, calc(100dvh - 3rem))" }}
           >
             {/* Header */}
-            <div className="flex items-center gap-3 bg-gradient-to-r from-[#1E5FAF] to-[#4DB3E6] px-4 py-3.5">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/20">
-                <Bot className="size-5 text-white" />
+            <div className="flex items-center gap-3 bg-[var(--kat-ink)] px-4 py-3.5">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--kat-clay)]">
+                <Bot className="size-5 text-[var(--kat-paper)]" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-white">Kemi</p>
-                <p className="text-xs text-blue-100">KAT Enrollment Assistant</p>
+                <p className="font-display text-sm font-semibold text-[var(--kat-paper)]">Kemi</p>
+                <p className="font-mono text-[0.65rem] uppercase tracking-wider text-[var(--kat-paper)]/55">
+                  Enrollment assistant
+                </p>
               </div>
               {/* WhatsApp shortcut */}
               {WHATSAPP_HREF && (
@@ -170,7 +172,7 @@ export function EnrollmentChat() {
                   rel="noopener noreferrer"
                   aria-label="Chat on WhatsApp"
                   title="Chat on WhatsApp"
-                  className="flex items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90 shrink-0"
+                  className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
                 >
                   <WhatsAppIcon className="size-3.5" />
                   <span>WhatsApp</span>
@@ -178,7 +180,7 @@ export function EnrollmentChat() {
               )}
               <button
                 onClick={() => setOpen(false)}
-                className="flex size-8 shrink-0 items-center justify-center rounded-full text-white/80 hover:bg-white/20 hover:text-white transition-colors"
+                className="flex size-8 shrink-0 items-center justify-center rounded-full text-[var(--kat-paper)]/70 transition-colors hover:bg-white/10 hover:text-[var(--kat-paper)]"
                 aria-label="Close chat"
               >
                 <X className="size-4" />
@@ -193,21 +195,21 @@ export function EnrollmentChat() {
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   {msg.role === "model" && (
-                    <div className="mr-2 mt-1 flex size-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#1E5FAF] to-[#4DB3E6]">
-                      <Bot className="size-3.5 text-white" />
+                    <div className="mr-2 mt-1 flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--kat-clay)]">
+                      <Bot className="size-3.5 text-[var(--kat-paper)]" />
                     </div>
                   )}
                   <div
-                    className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                    className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 font-body text-sm leading-relaxed ${
                       msg.role === "user"
-                        ? "rounded-br-sm bg-gradient-to-br from-[#1E5FAF] to-[#4DB3E6] text-white"
-                        : "rounded-bl-sm bg-slate-100 text-slate-800"
+                        ? "rounded-br-sm bg-[var(--kat-clay)] text-[var(--kat-paper)]"
+                        : "rounded-bl-sm bg-[var(--kat-paper)] text-[var(--kat-ink)]"
                     }`}
                   >
                     {msg.content ? (
                       <span className="whitespace-pre-line">{msg.content}</span>
                     ) : (
-                      <span className="flex items-center gap-1.5 text-slate-400">
+                      <span className="flex items-center gap-1.5 text-[var(--kat-muted)]">
                         <Loader2 className="size-3.5 animate-spin" />
                         Thinking…
                       </span>
@@ -224,7 +226,7 @@ export function EnrollmentChat() {
                       key={q}
                       onClick={() => void sendMessage(q)}
                       disabled={streaming}
-                      className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                      className="rounded-full border border-[var(--kat-border)] bg-[var(--kat-paper)] px-3 py-1.5 text-xs font-medium text-[var(--kat-clay)] transition-colors hover:bg-[var(--kat-clay)] hover:text-[var(--kat-paper)] disabled:opacity-50"
                     >
                       {q}
                     </button>
@@ -236,27 +238,27 @@ export function EnrollmentChat() {
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSubmit} className="border-t border-slate-100 p-3">
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+            <form onSubmit={handleSubmit} className="border-t border-[var(--kat-border)] p-3">
+              <div className="flex items-center gap-2 rounded-xl border border-[var(--kat-border)] bg-[var(--kat-paper)] px-3 py-2 transition-all focus-within:border-[var(--kat-clay)] focus-within:ring-2 focus-within:ring-[var(--kat-clay)]/15">
                 <input
                   ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask a question…"
                   disabled={streaming}
-                  className="flex-1 bg-transparent text-sm text-slate-800 placeholder-slate-400 outline-none disabled:opacity-60"
+                  className="flex-1 bg-transparent font-body text-sm text-[var(--kat-ink)] outline-none placeholder:text-[var(--kat-muted)] disabled:opacity-60"
                   maxLength={500}
                 />
                 <button
                   type="submit"
                   disabled={streaming || !input.trim()}
-                  className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#1E5FAF] to-[#4DB3E6] text-white transition-opacity disabled:opacity-40"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--kat-clay)] text-[var(--kat-paper)] transition-opacity hover:bg-[var(--kat-clay-deep)] disabled:opacity-40"
                   aria-label="Send"
                 >
                   {streaming ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
                 </button>
               </div>
-              <p className="mt-2 text-center text-[10px] text-slate-400">
+              <p className="mt-2 text-center font-mono text-[0.6rem] uppercase tracking-wider text-[var(--kat-muted)]">
                 Powered by Gemini · AI can make mistakes
               </p>
             </form>

@@ -3,68 +3,138 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * THE KAT PALETTE, single source of truth.
+   *
+   * Every --kat-* token a component may reference is declared HERE, at :root, so it
+   * is defined on every page, in every route group, under every host. Do not define
+   * brand tokens in a component-scoped `style={...}` object: a component that inherits
+   * a var it thinks exists but doesn't renders transparent-on-transparent and fails
+   * SILENTLY (no build error, no console warning). That is exactly how the schools
+   * landing shipped invisible. `src/__tests__/design/design-tokens.test.ts` now fails
+   * the build if any component uses a --kat-* var that is not declared in this block.
+   *
+   * Warm, grounded, deliberately not-SaaS. Blue is retired as a brand colour.
+   * Contrast (WCAG AA) is verified by the same test, do not hand-edit a hex without
+   * re-running it.
+   */
   :root {
-    --font-manrope: "Manrope", "Inter", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
-    --font-space-grotesk: "Space Grotesk", "Inter", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
-    --kat-primary-blue: #1E5FAF;
-    --background: 208 45% 97%;
-    --foreground: 222 36% 13%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 36% 13%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 36% 13%;
-    --primary: 214 66% 26%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 200 34% 94%;
-    --secondary-foreground: 222 30% 19%;
-    --muted: 203 35% 94%;
-    --muted-foreground: 214 18% 45%;
-    --accent: 191 72% 45%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 76% 55%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 212 25% 86%;
-    --input: 212 25% 86%;
-    --ring: 214 66% 26%;
+    /* Type. Loaded for real via next/font in layout.tsx, these are the handles. */
+    --font-display: var(--font-bricolage), "Bricolage Grotesque", "Segoe UI", sans-serif;
+    --font-body: var(--font-fraunces), "Fraunces", Georgia, serif;
+    --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
+    --font-ui: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+
+    /* Deprecated aliases. Pre-redesign surfaces (dashboards, auth) still reference
+       these; they now resolve to the real faces instead of an unloaded fallback.
+       Do not use them in new code, use --font-display / --font-body / --font-ui. */
+    --font-space-grotesk: var(--font-display);
+    --font-manrope: var(--font-ui);
+
+    /* Colour, the five named anchors. */
+    --kat-ink: #1A1714;      /* text / near-black, warm (not blue-black slate) */
+    --kat-clay: #B2401D;     /* PRIMARY / brand. Darkened from #C64B27 to clear AA. */
+    --kat-clay-deep: #8F3316; /* hover / pressed */
+    --kat-sun: #F2B705;      /* accent, used sparingly */
+    --kat-paper: #F4EEE2;    /* background surface, warm canvas */
+    --kat-pine: #1F5C4A;     /* secondary / success / "verified" */
+
+    /* Derived neutrals, all warm-biased so nothing reads as cold grey. */
+    --kat-raised: #FBF7F0;   /* raised surface on paper (cards) */
+    --kat-border: #E0D5C3;   /* hairline rule */
+    --kat-muted: #6E6459;    /* secondary text, AA on paper */
+
+    /* The schools surface names the same two neutrals --kat-line / --kat-text-2.
+       Aliased rather than renamed: they are the vocabulary that surface is written in. */
+    --kat-line: var(--kat-border);
+    --kat-text-2: var(--kat-muted);
+
+    /* The one gradient left, clay into sun. Warm, and only used as a fill on a couple
+       of pre-redesign surfaces (partners, dashboard avatars). The landing uses none. */
+    --kat-gradient: linear-gradient(90deg, #B2401D, #D97706);
+
+    /* Deprecated colour aliases. Retired blue names repointed onto the warm palette
+       so any surface not yet converted renders on-brand instead of blue. */
+    --kat-primary-blue: var(--kat-clay);
+    --kat-accent-sky: var(--kat-sun);
+    --kat-deep-navy: var(--kat-ink);
+    --kat-text-primary: var(--kat-ink);
+    --kat-text-secondary: var(--kat-muted);
+    --kat-surface: var(--kat-raised);
+    --kat-bg: var(--kat-paper);
+    --kat-success: var(--kat-pine);
+    --kat-warning: #8A6A00;
+    --kat-danger: #B3261E;
+
+    /* shadcn tokens, mapped onto the palette above. Every ui/ primitive in the app
+       (Button, Card, Input, Badge) inherits the brand from here. */
+    --background: 40 45% 92%;
+    --foreground: 30 13% 9%;
+    --card: 38 57% 96%;
+    --card-foreground: 30 13% 9%;
+    --popover: 38 57% 96%;
+    --popover-foreground: 30 13% 9%;
+    --primary: 14 72% 41%;
+    --primary-foreground: 40 45% 96%;
+    --secondary: 40 30% 88%;
+    --secondary-foreground: 30 13% 14%;
+    --muted: 40 25% 89%;
+    --muted-foreground: 30 10% 38%;
+    --accent: 45 96% 48%;
+    --accent-foreground: 30 13% 9%;
+    --destructive: 4 68% 42%;
+    --destructive-foreground: 40 45% 96%;
+    --border: 38 33% 82%;
+    --input: 38 33% 82%;
+    --ring: 14 72% 41%;
     --radius: 0.75rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 222 25% 20%;
-    --sidebar-primary: 214 66% 26%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 205 40% 94%;
-    --sidebar-accent-foreground: 222 36% 13%;
-    --sidebar-border: 210 22% 88%;
-    --sidebar-ring: 214 66% 26%;
+    --sidebar-background: 38 45% 95%;
+    --sidebar-foreground: 30 13% 16%;
+    --sidebar-primary: 14 72% 41%;
+    --sidebar-primary-foreground: 40 45% 96%;
+    --sidebar-accent: 40 30% 90%;
+    --sidebar-accent-foreground: 30 13% 9%;
+    --sidebar-border: 38 30% 85%;
+    --sidebar-ring: 14 72% 41%;
   }
 
   .dark {
-    --background: 222 28% 8%;
-    --foreground: 210 35% 93%;
-    --card: 222 25% 11%;
-    --card-foreground: 210 35% 93%;
-    --popover: 222 25% 12%;
-    --popover-foreground: 210 35% 93%;
-    --primary: 214 70% 58%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 217 25% 17%;
-    --secondary-foreground: 210 35% 90%;
-    --muted: 217 22% 15%;
-    --muted-foreground: 215 18% 58%;
-    --accent: 191 65% 42%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 68% 56%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 217 20% 18%;
-    --input: 217 20% 18%;
-    --ring: 214 70% 58%;
-    --sidebar-background: 222 30% 9%;
-    --sidebar-foreground: 210 30% 88%;
-    --sidebar-primary: 214 66% 55%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 25% 16%;
-    --sidebar-accent-foreground: 210 35% 88%;
-    --sidebar-border: 217 22% 16%;
-    --sidebar-ring: 214 66% 55%;
+    /* Warm dark: ink deepened, clay lifted so it still reads on a dark ground. */
+    --kat-paper: #17140F;
+    --kat-ink: #F2EADC;
+    --kat-raised: #221D16;
+    --kat-border: #3A3229;
+    --kat-muted: #A79B8B;
+    --kat-clay: #E0673C;
+    --kat-clay-deep: #C0512A;
+
+    --background: 34 20% 7%;
+    --foreground: 40 45% 91%;
+    --card: 32 19% 11%;
+    --card-foreground: 40 45% 91%;
+    --popover: 32 19% 12%;
+    --popover-foreground: 40 45% 91%;
+    --primary: 16 72% 56%;
+    --primary-foreground: 30 20% 8%;
+    --secondary: 32 14% 18%;
+    --secondary-foreground: 40 40% 88%;
+    --muted: 32 13% 16%;
+    --muted-foreground: 36 12% 60%;
+    --accent: 45 90% 55%;
+    --accent-foreground: 30 20% 8%;
+    --destructive: 4 62% 52%;
+    --destructive-foreground: 40 45% 96%;
+    --border: 32 14% 19%;
+    --input: 32 14% 19%;
+    --ring: 16 72% 56%;
+    --sidebar-background: 34 20% 8%;
+    --sidebar-foreground: 40 40% 86%;
+    --sidebar-primary: 16 72% 56%;
+    --sidebar-primary-foreground: 30 20% 8%;
+    --sidebar-accent: 32 14% 17%;
+    --sidebar-accent-foreground: 40 40% 86%;
+    --sidebar-border: 32 14% 17%;
+    --sidebar-ring: 16 72% 56%;
   }
 }
 
@@ -81,21 +151,11 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    background-image:
-      radial-gradient(circle at 10% 20%, rgba(30, 95, 175, 0.08), transparent 25%),
-      radial-gradient(circle at 90% 10%, rgba(77, 179, 230, 0.12), transparent 30%),
-      radial-gradient(circle at 70% 85%, rgba(19, 43, 94, 0.08), transparent 28%);
+    font-family: var(--font-ui);
     min-height: 100vh;
     overflow-x: hidden;
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  .dark body {
-    background-image:
-      radial-gradient(circle at 10% 20%, rgba(30, 95, 175, 0.12), transparent 25%),
-      radial-gradient(circle at 90% 10%, rgba(14, 40, 90, 0.18), transparent 30%),
-      radial-gradient(circle at 70% 85%, rgba(19, 43, 94, 0.14), transparent 28%);
   }
 }
 
@@ -107,16 +167,39 @@
   }
 
   .kat-title {
-    font-family: var(--font-space-grotesk), sans-serif;
-    @apply text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl;
+    font-family: var(--font-display), sans-serif;
+    @apply text-3xl font-bold tracking-tight text-[var(--kat-ink)] sm:text-4xl;
   }
 
   .kat-card {
-    @apply rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm backdrop-blur sm:p-5 dark:border-slate-700 dark:bg-slate-900/90;
+    @apply rounded-2xl border border-[var(--kat-border)] bg-[var(--kat-raised)] p-4 shadow-sm sm:p-5;
   }
 
   .kat-chip {
-    @apply inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-900;
+    @apply inline-flex items-center rounded-full border border-[var(--kat-border)] bg-[var(--kat-paper)] px-3 py-1 text-xs font-medium text-[var(--kat-ink)];
+  }
+
+  /*
+   * Editorial primitives for the marketing surface: a hairline rule and a mono
+   * section label ("01 · INTAKE"). These replace the old floating-card-on-gradient
+   * treatment, the layout reads as a workbench, not a SaaS landing.
+   */
+  .kat-rule {
+    @apply border-t border-[var(--kat-border)];
+  }
+
+  .kat-eyebrow {
+    font-family: var(--font-mono), monospace;
+    @apply text-xs font-medium uppercase tracking-[0.28em] text-[var(--kat-muted)];
+  }
+
+  /* Faint blueprint grid. Replaces both retired gradient-blob systems. */
+  .kat-blueprint {
+    background-color: var(--kat-paper);
+    background-image:
+      linear-gradient(to right, rgba(26, 23, 20, 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(26, 23, 20, 0.045) 1px, transparent 1px);
+    background-size: 64px 64px;
   }
 
   .kat-date-input {
@@ -132,8 +215,8 @@
   }
 
   .kat-date-input:focus {
-    @apply border-[#1E5FAF] outline-none;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 0 0 3px rgba(30, 95, 175, 0.12);
+    @apply border-[var(--kat-clay)] outline-none;
+    box-shadow: 0 1px 2px rgba(26, 23, 20, 0.05), 0 0 0 3px rgba(178, 64, 29, 0.14);
   }
 
   .kat-date-input::-webkit-datetime-edit {
@@ -156,14 +239,14 @@
   .kat-date-input::-webkit-datetime-edit-hour-field:focus,
   .kat-date-input::-webkit-datetime-edit-minute-field:focus,
   .kat-date-input::-webkit-datetime-edit-ampm-field:focus {
-    background-color: rgba(30, 95, 175, 0.1);
+    background-color: rgba(178, 64, 29, 0.12);
     border-radius: 3px;
-    color: #1e3a8a;
+    color: #8F3316;
     outline: none;
   }
 
   .kat-date-input::-webkit-calendar-picker-indicator {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231E5FAF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23B2401D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: center;
     background-size: 14px;
@@ -178,7 +261,7 @@
 
   .kat-date-input::-webkit-calendar-picker-indicator:hover {
     opacity: 1;
-    background-color: rgba(30, 95, 175, 0.1);
+    background-color: rgba(178, 64, 29, 0.12);
   }
 
   /* On touch devices: drop the custom SVG icon and use the browser's native
@@ -205,8 +288,8 @@
   }
 
   .dark .kat-date-input:focus {
-    @apply border-blue-400;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(96, 165, 250, 0.15);
+    @apply border-[var(--kat-clay)];
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(224, 103, 60, 0.18);
   }
 
   .dark .kat-date-input::-webkit-datetime-edit-text {
@@ -214,7 +297,7 @@
   }
 
   .dark .kat-date-input::-webkit-calendar-picker-indicator {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2393c5fd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23E0673C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
   }
 
   .kat-defer {
@@ -224,7 +307,7 @@
 
   /* Consistent focus ring for interactive elements that aren't using shadcn Button/Input */
   .kat-focus-ring {
-    @apply outline-none focus-visible:ring-2 focus-visible:ring-[#1E5FAF]/60 focus-visible:ring-offset-1;
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-[var(--kat-clay)] focus-visible:ring-offset-1;
   }
 }
 

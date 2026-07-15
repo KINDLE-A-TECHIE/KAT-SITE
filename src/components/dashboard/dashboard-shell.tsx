@@ -15,6 +15,7 @@ import {
   FileText,
   FolderOpen,
   GraduationCap,
+  Handshake,
   LayoutDashboard,
   Library,
   LineChart,
@@ -79,6 +80,7 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
         { href: "/dashboard/analytics", label: "Analytics", icon: LineChart },
         { href: "/dashboard/fellows/applications", label: "Applications", icon: FileText },
         { href: "/dashboard/cohorts", label: "Cohorts", icon: UsersRound },
+        { href: "/dashboard/partner-inquiries", label: "Partner Inquiries", icon: Handshake },
         { href: "/dashboard/super-admin-invites", label: "Access", icon: ShieldAlert },
         { href: "/dashboard/testimonials", label: "Testimonials", icon: Quote },
       ];
@@ -91,6 +93,7 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
         { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
         { href: "/dashboard/analytics", label: "Analytics", icon: LineChart },
         { href: "/dashboard/fellows/applications", label: "Applications", icon: FileText },
+        { href: "/dashboard/partner-inquiries", label: "Partner Inquiries", icon: Handshake },
       ];
     case "PARENT":
       return [
