@@ -36,6 +36,19 @@ function BuildArtifact({ build }: { build: Build | undefined }) {
 
         {build ? (
           <dl className="divide-y divide-[var(--kat-border)]">
+            {/* Real cover image of the shipped project when the student uploaded one.
+                No image = the text manifest still stands on its own (no placeholder). */}
+            {build.imageUrl ? (
+              <div className="aspect-[16/10] overflow-hidden bg-[var(--kat-paper)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={build.imageUrl}
+                  alt={`${build.title}, a project shipped by ${build.firstName}`}
+                  className="h-full w-full object-cover"
+                  loading="eager"
+                />
+              </div>
+            ) : null}
             <div className="px-5 py-5">
               <dt className="font-mono text-[0.7rem] uppercase tracking-[0.22em] text-[var(--kat-muted)]">
                 Project

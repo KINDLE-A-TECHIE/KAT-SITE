@@ -148,6 +148,7 @@ async function getRealBuilds(): Promise<Build[]> {
       select: {
         id: true,
         title: true,
+        coverImageUrl: true,
         student: { select: { firstName: true } },
         program: { select: { name: true } },
       },
@@ -160,6 +161,7 @@ async function getRealBuilds(): Promise<Build[]> {
       firstName: p.student.firstName,
       title: p.title,
       program: p.program?.name ?? null,
+      imageUrl: p.coverImageUrl,
     }));
   } catch {
     return [];
