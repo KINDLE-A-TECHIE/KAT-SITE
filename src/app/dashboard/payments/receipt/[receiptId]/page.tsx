@@ -84,16 +84,16 @@ export default async function ReceiptPage({ params }: Props) {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 print:bg-white print:p-0">
+    <div className="min-h-screen bg-stone-50 p-6 print:bg-white print:p-0">
       <div className="mx-auto max-w-2xl rounded-2xl bg-white shadow-lg print:shadow-none">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-100 px-8 py-7">
+        <div className="flex items-start justify-between border-b border-stone-100 px-8 py-7">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+            <p className="text-xs font-bold uppercase tracking-widest text-stone-400">
               KAT Learning
             </p>
-            <h1 className="mt-1 text-2xl font-bold text-slate-900">Payment Receipt</h1>
-            <p className="mt-0.5 text-sm text-slate-500">#{receipt.receiptNumber}</p>
+            <h1 className="mt-1 text-2xl font-bold text-stone-900">Payment Receipt</h1>
+            <p className="mt-0.5 text-sm text-stone-500">#{receipt.receiptNumber}</p>
           </div>
           <div className="text-right">
             <span
@@ -102,12 +102,12 @@ export default async function ReceiptPage({ params }: Props) {
                   ? "bg-emerald-100 text-emerald-700"
                   : payment.status === "REFUNDED"
                     ? "bg-amber-100 text-amber-700"
-                    : "bg-slate-100 text-slate-600"
+                    : "bg-stone-100 text-stone-600"
               }`}
             >
               {payment.status}
             </span>
-            <p className="mt-1 text-xs text-slate-400">{issuedDate}</p>
+            <p className="mt-1 text-xs text-stone-400">{issuedDate}</p>
           </div>
         </div>
 
@@ -115,56 +115,56 @@ export default async function ReceiptPage({ params }: Props) {
         <div className="space-y-6 px-8 py-7">
           {/* Issued To */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-stone-400">
               Issued To
             </p>
-            <p className="mt-1 font-semibold text-slate-800">
+            <p className="mt-1 font-semibold text-stone-800">
               {issuedTo.firstName} {issuedTo.lastName}
             </p>
-            <p className="text-sm text-slate-500">{issuedTo.email}</p>
+            <p className="text-sm text-stone-500">{issuedTo.email}</p>
           </div>
 
           {/* Payment Details */}
-          <div className="overflow-hidden rounded-xl border border-slate-100">
+          <div className="overflow-hidden rounded-xl border border-stone-100">
             <table className="w-full text-sm">
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-stone-100">
                 <tr>
-                  <td className="px-4 py-3 text-slate-500">Program</td>
-                  <td className="px-4 py-3 text-right font-medium text-slate-800">
+                  <td className="px-4 py-3 text-stone-500">Program</td>
+                  <td className="px-4 py-3 text-right font-medium text-stone-800">
                     {payment.program?.name ?? ", "}
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-3 text-slate-500">Billing Month</td>
-                  <td className="px-4 py-3 text-right font-medium text-slate-800">
+                  <td className="px-4 py-3 text-stone-500">Billing Month</td>
+                  <td className="px-4 py-3 text-right font-medium text-stone-800">
                     {billingMonth}
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-3 text-slate-500">Reference</td>
-                  <td className="px-4 py-3 text-right font-mono text-xs text-slate-700">
+                  <td className="px-4 py-3 text-stone-500">Reference</td>
+                  <td className="px-4 py-3 text-right font-mono text-xs text-stone-700">
                     {payment.reference}
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-3 text-slate-500">Payment Method</td>
-                  <td className="px-4 py-3 text-right font-medium text-slate-800">
+                  <td className="px-4 py-3 text-stone-500">Payment Method</td>
+                  <td className="px-4 py-3 text-right font-medium text-stone-800">
                     {payment.channel ?? payment.provider}
                   </td>
                 </tr>
                 {paidByParent && (
                   <tr>
-                    <td className="px-4 py-3 text-slate-500">Paid By</td>
-                    <td className="px-4 py-3 text-right font-medium text-slate-800">
+                    <td className="px-4 py-3 text-stone-500">Paid By</td>
+                    <td className="px-4 py-3 text-right font-medium text-stone-800">
                       {paidByParent.firstName} {paidByParent.lastName}{" "}
-                      <span className="text-xs text-slate-400">(Parent)</span>
+                      <span className="text-xs text-stone-400">(Parent)</span>
                     </td>
                   </tr>
                 )}
                 {issuedBy && (
                   <tr>
-                    <td className="px-4 py-3 text-slate-500">Issued By</td>
-                    <td className="px-4 py-3 text-right font-medium text-slate-800">
+                    <td className="px-4 py-3 text-stone-500">Issued By</td>
+                    <td className="px-4 py-3 text-right font-medium text-stone-800">
                       {issuedBy.firstName} {issuedBy.lastName}
                     </td>
                   </tr>
@@ -174,16 +174,16 @@ export default async function ReceiptPage({ params }: Props) {
           </div>
 
           {/* Amount */}
-          <div className="flex items-baseline justify-between rounded-xl bg-slate-50 px-4 py-4">
-            <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+          <div className="flex items-baseline justify-between rounded-xl bg-stone-50 px-4 py-4">
+            <p className="text-sm font-semibold text-stone-500 uppercase tracking-wider">
               Amount Paid
             </p>
-            <p className="text-2xl font-bold text-slate-900">{amount}</p>
+            <p className="text-2xl font-bold text-stone-900">{amount}</p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-100 px-8 py-5 text-center text-xs text-slate-400 print:hidden">
+        <div className="border-t border-stone-100 px-8 py-5 text-center text-xs text-stone-400 print:hidden">
           <p>This is an official payment receipt from KAT Learning.</p>
           <p className="mt-1">
             Use your browser&apos;s Print function (Ctrl+P / ⌘P) to save as PDF.

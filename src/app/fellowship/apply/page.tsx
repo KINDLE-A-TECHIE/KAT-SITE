@@ -77,25 +77,25 @@ function FellowshipApplyContent() {
   if (loadingCohort) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-slate-400" />
+        <Loader2 className="size-6 animate-spin text-stone-400" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-stone-50">
       {/* Nav bar */}
-      <header className="border-b border-slate-200 bg-white px-6 py-4">
+      <header className="border-b border-stone-200 bg-white px-6 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <Image src="/kindle-a-techie.svg" alt="KAT logo" width={32} height={32} />
-            <span className="[font-family:var(--font-space-grotesk)] text-sm font-semibold text-slate-900">
+            <span className="[font-family:var(--font-space-grotesk)] text-sm font-semibold text-stone-900">
               KAT Learning
             </span>
           </Link>
           <Link
             href="/#fellowship"
-            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+            className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-700"
           >
             <ArrowLeft className="size-4" />
             Back
@@ -107,19 +107,19 @@ function FellowshipApplyContent() {
         <div className="w-full max-w-2xl">
           {submitted ? (
             /* ── Success state ── */
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-10">
+            <div className="rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-sm sm:p-10">
               <CheckCircle2 className="mx-auto mb-4 size-14 text-emerald-500" />
-              <h1 className="[font-family:var(--font-space-grotesk)] text-2xl font-bold text-slate-900">
+              <h1 className="[font-family:var(--font-space-grotesk)] text-2xl font-bold text-stone-900">
                 Application Submitted!
               </h1>
-              <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-500">
+              <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-stone-500">
                 {requiresPayment
                   ? "Check your email, we've sent you a link to set up your account and pay the application fee."
                   : "Check your email for confirmation. We'll review your application and get back to you soon."}
               </p>
               <Button
                 onClick={() => router.push("/")}
-                className="mt-8 rounded-xl bg-[#0D1F45] px-8 text-sm font-semibold hover:bg-[#132B5E]"
+                className="mt-8 rounded-xl bg-[#1A1714] px-8 text-sm font-semibold hover:bg-[#1A1714]"
               >
                 Back to Home
               </Button>
@@ -131,17 +131,17 @@ function FellowshipApplyContent() {
               {cohort && (
                 <div
                   className="mb-8 rounded-2xl p-6"
-                  style={{ background: "linear-gradient(135deg,#0D1F45 0%,#1E5FAF 100%)" }}
+                  style={{ background: "linear-gradient(135deg,#1A1714 0%,#B2401D 100%)" }}
                 >
-                  <p className="text-xs font-semibold uppercase tracking-widest text-blue-300">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-orange-300">
                     Fellowship Application
                   </p>
                   <h1 className="mt-1 [font-family:var(--font-space-grotesk)] text-xl font-bold text-white">
                     {cohort.name}
                   </h1>
-                  <p className="mt-0.5 text-sm text-blue-200">{cohort.program.name}</p>
+                  <p className="mt-0.5 text-sm text-orange-200">{cohort.program.name}</p>
                   {cohort.externalApplicationFee != null && (
-                    <p className="mt-3 text-sm text-blue-100">
+                    <p className="mt-3 text-sm text-orange-100">
                       Application fee:{" "}
                       <span className="font-semibold text-white">
                         ₦{Number(cohort.externalApplicationFee).toLocaleString("en-NG")}
@@ -153,8 +153,8 @@ function FellowshipApplyContent() {
               )}
 
               {!cohortId || (!loadingCohort && !cohort) ? (
-                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-                  <p className="text-slate-500">No cohort selected or cohort not found.</p>
+                <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm">
+                  <p className="text-stone-500">No cohort selected or cohort not found.</p>
                   <Button
                     onClick={() => router.push("/#fellowship")}
                     variant="outline"
@@ -166,13 +166,13 @@ function FellowshipApplyContent() {
               ) : (
                 <form
                   onSubmit={onSubmit}
-                  className="space-y-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8"
+                  className="space-y-6 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-8"
                 >
                   <div>
-                    <h2 className="[font-family:var(--font-space-grotesk)] text-lg font-bold text-slate-900">
+                    <h2 className="[font-family:var(--font-space-grotesk)] text-lg font-bold text-stone-900">
                       Your Details
                     </h2>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-stone-500">
                       We'll create a KAT account for you automatically, no sign-up needed.
                     </p>
                   </div>
@@ -180,10 +180,10 @@ function FellowshipApplyContent() {
                   {/* Name row */}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <Label className="text-sm font-medium text-slate-700">First name</Label>
+                      <Label className="text-sm font-medium text-stone-700">First name</Label>
                       <Input
                         placeholder="Ada"
-                        className="h-11 rounded-xl border-slate-200"
+                        className="h-11 rounded-xl border-stone-200"
                         {...form.register("firstName")}
                       />
                       {form.formState.errors.firstName && (
@@ -191,10 +191,10 @@ function FellowshipApplyContent() {
                       )}
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-sm font-medium text-slate-700">Last name</Label>
+                      <Label className="text-sm font-medium text-stone-700">Last name</Label>
                       <Input
                         placeholder="Okonkwo"
-                        className="h-11 rounded-xl border-slate-200"
+                        className="h-11 rounded-xl border-stone-200"
                         {...form.register("lastName")}
                       />
                       {form.formState.errors.lastName && (
@@ -206,11 +206,11 @@ function FellowshipApplyContent() {
                   {/* Email + Phone */}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <Label className="text-sm font-medium text-slate-700">Email address</Label>
+                      <Label className="text-sm font-medium text-stone-700">Email address</Label>
                       <Input
                         type="email"
                         placeholder="ada@example.com"
-                        className="h-11 rounded-xl border-slate-200"
+                        className="h-11 rounded-xl border-stone-200"
                         {...form.register("email")}
                       />
                       {form.formState.errors.email && (
@@ -218,13 +218,13 @@ function FellowshipApplyContent() {
                       )}
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-sm font-medium text-slate-700">
-                        Phone number <span className="font-normal text-slate-400">(optional)</span>
+                      <Label className="text-sm font-medium text-stone-700">
+                        Phone number <span className="font-normal text-stone-400">(optional)</span>
                       </Label>
                       <Input
                         type="tel"
                         placeholder="+234 800 000 0000"
-                        className="h-11 rounded-xl border-slate-200"
+                        className="h-11 rounded-xl border-stone-200"
                         {...form.register("phone")}
                       />
                       {form.formState.errors.phone && (
@@ -233,24 +233,24 @@ function FellowshipApplyContent() {
                     </div>
                   </div>
 
-                  <hr className="border-slate-100" />
+                  <hr className="border-stone-100" />
 
                   <div>
-                    <h2 className="[font-family:var(--font-space-grotesk)] text-lg font-bold text-slate-900">
+                    <h2 className="[font-family:var(--font-space-grotesk)] text-lg font-bold text-stone-900">
                       Your Application
                     </h2>
                   </div>
 
                   {/* Motivation */}
                   <div className="space-y-1.5">
-                    <Label className="text-sm font-medium text-slate-700">
+                    <Label className="text-sm font-medium text-stone-700">
                       Why do you want to be a KAT Fellow?{" "}
-                      <span className="font-normal text-slate-400">(50–3000 chars)</span>
+                      <span className="font-normal text-stone-400">(50–3000 chars)</span>
                     </Label>
                     <Textarea
                       placeholder="Tell us about your passion for teaching, your background, and what you'll bring to the programme…"
                       rows={6}
-                      className="rounded-xl border-slate-200 text-sm resize-none"
+                      className="rounded-xl border-stone-200 text-sm resize-none"
                       {...form.register("motivation")}
                     />
                     {form.formState.errors.motivation && (
@@ -260,14 +260,14 @@ function FellowshipApplyContent() {
 
                   {/* Experience */}
                   <div className="space-y-1.5">
-                    <Label className="text-sm font-medium text-slate-700">
+                    <Label className="text-sm font-medium text-stone-700">
                       Relevant experience{" "}
-                      <span className="font-normal text-slate-400">(optional, up to 2000 chars)</span>
+                      <span className="font-normal text-stone-400">(optional, up to 2000 chars)</span>
                     </Label>
                     <Textarea
                       placeholder="Previous teaching, mentoring, or tech experience…"
                       rows={4}
-                      className="rounded-xl border-slate-200 text-sm resize-none"
+                      className="rounded-xl border-stone-200 text-sm resize-none"
                       {...form.register("experience")}
                     />
                   </div>
@@ -275,7 +275,7 @@ function FellowshipApplyContent() {
                   <Button
                     type="submit"
                     disabled={form.formState.isSubmitting}
-                    className="h-11 w-full rounded-xl bg-[#0D1F45] text-sm font-semibold hover:bg-[#132B5E]"
+                    className="h-11 w-full rounded-xl bg-[#1A1714] text-sm font-semibold hover:bg-[#1A1714]"
                   >
                     {form.formState.isSubmitting ? (
                       <><Loader2 className="mr-2 size-4 animate-spin" />Submitting…</>
@@ -284,9 +284,9 @@ function FellowshipApplyContent() {
                     )}
                   </Button>
 
-                  <p className="text-center text-xs text-slate-400">
+                  <p className="text-center text-xs text-stone-400">
                     Already have an account?{" "}
-                    <Link href="/login?redirect=/dashboard/fellows/apply" className="text-[#1E5FAF] hover:underline">
+                    <Link href="/login?redirect=/dashboard/fellows/apply" className="text-[#B2401D] hover:underline">
                       Sign in and apply there
                     </Link>
                   </p>
@@ -306,7 +306,7 @@ export default function FellowshipApplyPage() {
   return (
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-slate-400" />
+        <Loader2 className="size-6 animate-spin text-stone-400" />
       </div>
     }>
       <FellowshipApplyContent />

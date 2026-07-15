@@ -23,10 +23,10 @@ type ModuleGateMap = Record<string, ModuleGate>;
 function GateIndicator({ label, status }: { label: string; status?: GateStatusValue }) {
   const passed = status === "PASSED";
   return (
-    <span className={`flex items-center gap-1 text-xs ${passed ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}`}>
+    <span className={`flex items-center gap-1 text-xs ${passed ? "text-emerald-600 dark:text-emerald-400" : "text-stone-400 dark:text-stone-500"}`}>
       {passed
         ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-        : <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-slate-300 dark:border-slate-600 inline-block" />
+        : <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-stone-300 dark:border-stone-600 inline-block" />
       }
       {label}
     </span>
@@ -175,13 +175,13 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
     return (
       <div className="space-y-4">
         <div className="kat-card flex items-center gap-3">
-          <Link href={`/dashboard/curriculum`} className="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">← Programs</Link>
+          <Link href={`/dashboard/curriculum`} className="text-sm text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200">← Programs</Link>
         </div>
         <div className="kat-card py-16 text-center">
-          <GraduationCap className="mx-auto mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
-          <p className="font-medium text-slate-600 dark:text-slate-400">No active curriculum version yet.</p>
+          <GraduationCap className="mx-auto mb-3 h-10 w-10 text-stone-300 dark:text-stone-600" />
+          <p className="font-medium text-stone-600 dark:text-stone-400">No active curriculum version yet.</p>
           {(role === "SUPER_ADMIN" || role === "ADMIN") && (
-            <Link href={`/dashboard/curriculum/${programId}/versions`} className="mt-3 inline-block text-sm font-medium text-[#1E5FAF] hover:underline">
+            <Link href={`/dashboard/curriculum/${programId}/versions`} className="mt-3 inline-block text-sm font-medium text-[#B2401D] hover:underline">
               Create a version →
             </Link>
           )}
@@ -201,13 +201,13 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
     return (
       <div className="mx-auto max-w-3xl space-y-4">
         <div className="kat-card">
-          <Link href="/dashboard/curriculum" className="text-xs text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">
+          <Link href="/dashboard/curriculum" className="text-xs text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300">
             ← My Courses
           </Link>
-          <h2 className="mt-1 [font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900 dark:text-slate-100">
+          <h2 className="mt-1 [font-family:var(--font-space-grotesk)] text-xl font-bold text-stone-900 dark:text-stone-100">
             Course Outline
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {activeVersion.modules.length} module{activeVersion.modules.length !== 1 ? "s" : ""}
             {" · "}
             {totalLessons} lesson{totalLessons !== 1 ? "s" : ""}
@@ -217,12 +217,12 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
           {totalLessons > 0 && (
             <div className="mt-3">
               <div className="mb-1 flex items-center justify-between text-xs">
-                <span className="text-slate-500 dark:text-slate-400">{totalCompleted}/{totalLessons} completed</span>
-                <span className="font-semibold text-[#1E5FAF] dark:text-blue-400">{overallPct}%</span>
+                <span className="text-stone-500 dark:text-stone-400">{totalCompleted}/{totalLessons} completed</span>
+                <span className="font-semibold text-[#B2401D] dark:text-orange-400">{overallPct}%</span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+              <div className="h-2 overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
                 <div
-                  className="h-full rounded-full bg-[#1E5FAF] transition-all duration-500"
+                  className="h-full rounded-full bg-[#B2401D] transition-all duration-500"
                   style={{ width: `${overallPct}%` }}
                 />
               </div>
@@ -233,8 +233,8 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
         <div className="space-y-3">
           {activeVersion.modules.length === 0 && (
             <div className="kat-card py-12 text-center">
-              <BookOpen className="mx-auto mb-3 h-8 w-8 text-slate-300 dark:text-slate-600" />
-              <p className="text-sm text-slate-400 dark:text-slate-500">No lessons available yet.</p>
+              <BookOpen className="mx-auto mb-3 h-8 w-8 text-stone-300 dark:text-stone-600" />
+              <p className="text-sm text-stone-400 dark:text-stone-500">No lessons available yet.</p>
             </div>
           )}
 
@@ -255,17 +255,17 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: modIndex * 0.05 }}
-                className={`overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 ${isLocked ? "border-slate-200/60 dark:border-slate-700/60 opacity-70" : "border-slate-200 dark:border-slate-700"}`}
+                className={`overflow-hidden rounded-2xl border bg-white dark:bg-stone-900 ${isLocked ? "border-stone-200/60 dark:border-stone-700/60 opacity-70" : "border-stone-200 dark:border-stone-700"}`}
               >
                 {isLocked ? (
                   /* Locked module header, not clickable */
                   <div className="flex w-full items-center gap-4 px-5 py-4 cursor-not-allowed select-none">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400 dark:bg-slate-800">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-stone-400 dark:bg-stone-800">
                       <Lock className="h-5 w-5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-slate-600 dark:text-slate-400">{mod.title}</p>
-                      <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                      <p className="font-semibold text-stone-600 dark:text-stone-400">{mod.title}</p>
+                      <p className="mt-0.5 text-xs text-stone-400 dark:text-stone-500">
                         Complete all gates for the previous module to unlock
                       </p>
                     </div>
@@ -274,7 +274,7 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
                   /* Unlocked module header */
                   <button
                     type="button"
-                    className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                    className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-stone-50 dark:hover:bg-stone-800/60"
                     onClick={() => setExpandedModules((prev) => {
                       const next = new Set(prev);
                       if (expanded) { next.delete(mod.id); } else { next.add(mod.id); }
@@ -284,20 +284,20 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
                     <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
                       modDone
                         ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400"
-                        : "bg-[#1E5FAF]/10 text-[#1E5FAF] dark:bg-blue-900/30 dark:text-blue-400"
+                        : "bg-[#B2401D]/10 text-[#B2401D] dark:bg-orange-900/30 dark:text-orange-400"
                     }`}>
                       {modDone ? <CheckCircle2 className="h-5 w-5" /> : modIndex + 1}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">{mod.title}</p>
+                      <p className="font-semibold text-stone-900 dark:text-stone-100">{mod.title}</p>
                       {mod.description && (
-                        <p className="mt-0.5 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">{mod.description}</p>
+                        <p className="mt-0.5 line-clamp-1 text-xs text-stone-500 dark:text-stone-400">{mod.description}</p>
                       )}
-                      <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                      <p className="mt-0.5 text-xs text-stone-400 dark:text-stone-500">
                         {modTotal > 0 ? `${modCompleted}/${modTotal} lessons complete` : "No lessons yet"}
                       </p>
                     </div>
-                    <div className="shrink-0 text-slate-400 dark:text-slate-500">
+                    <div className="shrink-0 text-stone-400 dark:text-stone-500">
                       {expanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
                     </div>
                   </button>
@@ -305,7 +305,7 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
 
                 {/* Gate status strip, shown for unlocked modules */}
                 {!isLocked && (
-                  <div className="flex flex-wrap gap-3 border-t border-slate-100 px-5 py-2 dark:border-slate-800">
+                  <div className="flex flex-wrap gap-3 border-t border-stone-100 px-5 py-2 dark:border-stone-800">
                     <GateIndicator label="Assessment" status={gates?.assessmentGate} />
                     <GateIndicator label="Project" status={gates?.projectGate} />
                     <GateIndicator label="Instructor OK" status={gates?.instructorGate} />
@@ -321,9 +321,9 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
                       exit={{ height: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="border-t border-slate-100 dark:border-slate-800">
+                      <div className="border-t border-stone-100 dark:border-stone-800">
                         {mod.lessons.length === 0 && (
-                          <p className="px-6 py-4 text-sm text-slate-400 dark:text-slate-500">No lessons in this module yet.</p>
+                          <p className="px-6 py-4 text-sm text-stone-400 dark:text-stone-500">No lessons in this module yet.</p>
                         )}
                         {mod.lessons.map((lesson, lessonIndex) => {
                           const done = completedIds.has(lesson.id);
@@ -331,26 +331,26 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
                             <Link
                               key={lesson.id}
                               href={`/dashboard/curriculum/${programId}/lessons/${lesson.id}`}
-                              className="flex items-center gap-4 border-b border-slate-50 px-5 py-3.5 transition-colors last:border-0 hover:bg-slate-50 dark:border-slate-800/60 dark:hover:bg-slate-800/40"
+                              className="flex items-center gap-4 border-b border-stone-50 px-5 py-3.5 transition-colors last:border-0 hover:bg-stone-50 dark:border-stone-800/60 dark:hover:bg-stone-800/40"
                             >
                               {done ? (
                                 <CheckCircle2 className="h-7 w-7 shrink-0 text-emerald-500 dark:text-emerald-400" />
                               ) : (
-                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-stone-100 text-xs font-semibold text-stone-500 dark:bg-stone-800 dark:text-stone-400">
                                   {lessonIndex + 1}
                                 </span>
                               )}
                               <span className={`min-w-0 flex-1 text-sm font-medium ${
-                                done ? "text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-300"
+                                done ? "text-stone-400 dark:text-stone-500" : "text-stone-700 dark:text-stone-300"
                               }`}>
                                 {lesson.title}
                               </span>
                               {lesson.contents.length > 0 && (
-                                <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                <span className="shrink-0 text-xs text-stone-400 dark:text-stone-500">
                                   {lesson.contents.length} item{lesson.contents.length !== 1 ? "s" : ""}
                                 </span>
                               )}
-                              <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 dark:text-slate-600" />
+                              <ChevronRight className="h-4 w-4 shrink-0 text-stone-300 dark:text-stone-600" />
                             </Link>
                           );
                         })}
@@ -373,9 +373,9 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
       <div className="kat-card">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <Link href="/dashboard/curriculum" className="text-xs text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">← All Programs</Link>
-            <h2 className="mt-0.5 [font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900 dark:text-slate-100">Curriculum</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <Link href="/dashboard/curriculum" className="text-xs text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300">← All Programs</Link>
+            <h2 className="mt-0.5 [font-family:var(--font-space-grotesk)] text-xl font-bold text-stone-900 dark:text-stone-100">Curriculum</h2>
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               v{activeVersion.versionNumber}, {activeVersion.label}
               {activeVersion.publishedAt && (
                 <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">Active</span>
@@ -385,7 +385,7 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
           {isSA && (
             <Link
               href={`/dashboard/curriculum/${programId}/versions`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50 dark:border-stone-700 dark:text-stone-400 dark:hover:bg-stone-800"
             >
               <Settings className="h-3.5 w-3.5" />
               Manage Versions
@@ -397,7 +397,7 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
       {/* Modules */}
       <div className="kat-card space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-slate-800 dark:text-slate-200">Modules ({activeVersion.modules.length})</h3>
+          <h3 className="font-semibold text-stone-800 dark:text-stone-200">Modules ({activeVersion.modules.length})</h3>
           {isCreator && !addingModule && (
             <Button size="sm" variant="outline" onClick={() => setAddingModule(true)} className="gap-1.5">
               <Plus className="h-3.5 w-3.5" />Add Module
@@ -414,32 +414,32 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
         </AnimatePresence>
 
         {activeVersion.modules.length === 0 && !addingModule && (
-          <p className="py-6 text-center text-sm text-slate-400 dark:text-slate-500">No modules yet. {isCreator && "Add one above."}</p>
+          <p className="py-6 text-center text-sm text-stone-400 dark:text-stone-500">No modules yet. {isCreator && "Add one above."}</p>
         )}
 
         {activeVersion.modules.map((mod) => {
           const expanded = expandedModules.has(mod.id);
           return (
-            <div key={mod.id} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+            <div key={mod.id} className="overflow-hidden rounded-xl border border-stone-200 dark:border-stone-700">
               {/* Module header */}
               <div
-                className="flex cursor-pointer items-center gap-2 bg-slate-50 px-4 py-3 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-700"
+                className="flex cursor-pointer items-center gap-2 bg-stone-50 px-4 py-3 hover:bg-stone-100 dark:bg-stone-800/60 dark:hover:bg-stone-700"
                 onClick={() => setExpandedModules((prev) => {
                   const next = new Set(prev);
                   if (expanded) { next.delete(mod.id); } else { next.add(mod.id); }
                   return next;
                 })}
               >
-                {expanded ? <ChevronDown className="h-4 w-4 text-slate-400 dark:text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />}
-                <BookOpen className="h-4 w-4 text-[#1E5FAF] dark:text-blue-400" />
-                <span className="flex-1 font-medium text-slate-800 dark:text-slate-200">{mod.title}</span>
-                <span className="text-xs text-slate-400 dark:text-slate-500">{mod.lessons.length} lesson{mod.lessons.length !== 1 ? "s" : ""}</span>
+                {expanded ? <ChevronDown className="h-4 w-4 text-stone-400 dark:text-stone-500" /> : <ChevronRight className="h-4 w-4 text-stone-400 dark:text-stone-500" />}
+                <BookOpen className="h-4 w-4 text-[#B2401D] dark:text-orange-400" />
+                <span className="flex-1 font-medium text-stone-800 dark:text-stone-200">{mod.title}</span>
+                <span className="text-xs text-stone-400 dark:text-stone-500">{mod.lessons.length} lesson{mod.lessons.length !== 1 ? "s" : ""}</span>
                 {isSA && (
                   <button
                     type="button"
                     disabled={busy}
                     onClick={(e) => { e.stopPropagation(); void deleteModule(mod.id); }}
-                    className="ml-2 rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-500 dark:text-slate-500 dark:hover:bg-rose-900/30 dark:hover:text-rose-400"
+                    className="ml-2 rounded p-1 text-stone-400 hover:bg-rose-50 hover:text-rose-500 dark:text-stone-500 dark:hover:bg-rose-900/30 dark:hover:text-rose-400"
                     aria-label="Delete module"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -451,24 +451,24 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
               <AnimatePresence>
                 {expanded && (
                   <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden">
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <div className="divide-y divide-stone-100 dark:divide-stone-800">
                       {mod.lessons.map((lesson) => (
                         <div key={lesson.id} className="flex items-center gap-3 px-6 py-2.5">
                           <div className="flex-1 min-w-0">
                             <Link
                               href={`/dashboard/curriculum/${programId}/lessons/${lesson.id}`}
-                              className="text-sm font-medium text-slate-700 hover:text-[#1E5FAF] hover:underline dark:text-slate-300 dark:hover:text-blue-400"
+                              className="text-sm font-medium text-stone-700 hover:text-[#B2401D] hover:underline dark:text-stone-300 dark:hover:text-orange-400"
                             >
                               {lesson.title}
                             </Link>
                           </div>
-                          <span className="text-xs text-slate-400 dark:text-slate-500">{lesson.contents.length} item{lesson.contents.length !== 1 ? "s" : ""}</span>
+                          <span className="text-xs text-stone-400 dark:text-stone-500">{lesson.contents.length} item{lesson.contents.length !== 1 ? "s" : ""}</span>
                           {isSA && (
                             <button
                               type="button"
                               disabled={busy}
                               onClick={() => void deleteLesson(lesson.id)}
-                              className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-500 dark:text-slate-500 dark:hover:bg-rose-900/30 dark:hover:text-rose-400"
+                              className="rounded p-1 text-stone-400 hover:bg-rose-50 hover:text-rose-500 dark:text-stone-500 dark:hover:bg-rose-900/30 dark:hover:text-rose-400"
                               aria-label="Delete lesson"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -490,7 +490,7 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
                             <button
                               type="button"
                               onClick={() => setAddingLessonFor(mod.id)}
-                              className="flex items-center gap-1 text-xs text-slate-400 hover:text-[#1E5FAF] dark:text-slate-500 dark:hover:text-blue-400"
+                              className="flex items-center gap-1 text-xs text-stone-400 hover:text-[#B2401D] dark:text-stone-500 dark:hover:text-orange-400"
                             >
                               <Plus className="h-3 w-3" /> Add lesson
                             </button>

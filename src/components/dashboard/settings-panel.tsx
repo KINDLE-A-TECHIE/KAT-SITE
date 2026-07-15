@@ -100,8 +100,8 @@ function PasswordTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Change Password</h3>
-        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+        <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100">Change Password</h3>
+        <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">
           After changing your password, all devices will be signed out.
         </p>
       </div>
@@ -143,7 +143,7 @@ function PasswordTab() {
         <Button
           type="submit"
           disabled={saving || !current || !next || !confirm}
-          className="bg-[#0D1F45] hover:bg-[#162d5e]"
+          className="bg-[#1A1714] hover:bg-[#162d5e]"
         >
           <KeyRound className="mr-2 size-4" />
           {saving ? "Updating…" : "Update password"}
@@ -176,8 +176,8 @@ function NotificationsTab({ role }: { role: UserRoleValue }) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Notification Preferences</h3>
-        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+        <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100">Notification Preferences</h3>
+        <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">
           Control which in-app and email notifications you receive. Preferences are saved to this device.
         </p>
       </div>
@@ -233,8 +233,8 @@ function NotifRow({
   return (
     <div className="flex items-center justify-between gap-4 py-1">
       <div className="min-w-0">
-        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{label}</p>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
+        <p className="text-sm font-medium text-stone-800 dark:text-stone-200">{label}</p>
+        <p className="text-xs text-stone-500 dark:text-stone-400">{description}</p>
       </div>
       <Switch checked={checked} onCheckedChange={onToggle} />
     </div>
@@ -266,8 +266,8 @@ function AppearanceTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Appearance</h3>
-        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Choose how KAT Learning looks for you.</p>
+        <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100">Appearance</h3>
+        <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">Choose how KAT Learning looks for you.</p>
       </div>
       <div className="grid grid-cols-2 gap-3 max-w-sm sm:grid-cols-3">
         {options.map(({ value, label, icon: Icon }) => {
@@ -279,8 +279,8 @@ function AppearanceTab() {
               onClick={() => setTheme(value)}
               className={`flex flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 text-sm font-medium transition-all ${
                 active
-                  ? "border-[#0D1F45] bg-[#0D1F45]/5 text-[#0D1F45] dark:border-blue-400 dark:bg-blue-900/20 dark:text-blue-300"
-                  : "border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+                  ? "border-[#1A1714] bg-[#1A1714]/5 text-[#1A1714] dark:border-orange-400 dark:bg-orange-900/20 dark:text-orange-300"
+                  : "border-stone-200 text-stone-500 hover:border-stone-300 hover:bg-stone-50 dark:border-stone-700 dark:text-stone-400 dark:hover:border-stone-600 dark:hover:bg-stone-800"
               }`}
             >
               <Icon className="size-5" />
@@ -347,8 +347,8 @@ function SecurityTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Security</h3>
-        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+        <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100">Security</h3>
+        <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">
           Manage your active sessions and keep your account secure.
         </p>
       </div>
@@ -356,7 +356,7 @@ function SecurityTab() {
       {/* Sessions */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Active sessions</p>
+          <p className="text-sm font-medium text-stone-700 dark:text-stone-300">Active sessions</p>
           {sessions.length > 1 && (
             <button
               type="button"
@@ -372,27 +372,27 @@ function SecurityTab() {
         {loading ? (
           <div className="space-y-2">
             {[1, 2].map((n) => (
-              <div key={n} className="h-14 animate-pulse rounded-lg bg-slate-100" />
+              <div key={n} className="h-14 animate-pulse rounded-lg bg-stone-100" />
             ))}
           </div>
         ) : sessions.length === 0 ? (
-          <p className="text-sm text-slate-400">No active sessions found.</p>
+          <p className="text-sm text-stone-400">No active sessions found.</p>
         ) : (
           <div className="space-y-2">
             {sessions.map((s, i) => (
               <div
                 key={s.id}
-                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800"
+                className="flex items-center gap-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 dark:border-stone-700 dark:bg-stone-800"
               >
-                <Shield className="size-4 shrink-0 text-slate-400" />
+                <Shield className="size-4 shrink-0 text-stone-400" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  <p className="text-xs font-medium text-stone-700 dark:text-stone-300">
                     Session {i + 1}
                     {s.sessionToken === currentToken && (
                       <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">current</span>
                     )}
                   </p>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                  <p className="text-[11px] text-stone-400 dark:text-stone-500">
                     Started {new Date(s.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                     {" · "}Expires {new Date(s.expires).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                   </p>
@@ -438,22 +438,22 @@ function SecurityTab() {
 export function SettingsPanel({ role }: { role: UserRoleValue }) {
   return (
     <Tabs defaultValue="account" className="space-y-4">
-      <TabsList className="flex h-auto flex-wrap gap-1 bg-slate-100 p-1 dark:bg-slate-800">
-        <TabsTrigger value="account" className="gap-1.5 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-700 dark:text-slate-300">
+      <TabsList className="flex h-auto flex-wrap gap-1 bg-stone-100 p-1 dark:bg-stone-800">
+        <TabsTrigger value="account" className="gap-1.5 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-stone-700 dark:text-stone-300">
           <KeyRound className="size-3.5" /> Account
         </TabsTrigger>
-        <TabsTrigger value="notifications" className="gap-1.5 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-700 dark:text-slate-300">
+        <TabsTrigger value="notifications" className="gap-1.5 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-stone-700 dark:text-stone-300">
           <Bell className="size-3.5" /> Notifications
         </TabsTrigger>
-        <TabsTrigger value="appearance" className="gap-1.5 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-700 dark:text-slate-300">
+        <TabsTrigger value="appearance" className="gap-1.5 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-stone-700 dark:text-stone-300">
           <Sun className="size-3.5" /> Appearance
         </TabsTrigger>
-        <TabsTrigger value="security" className="gap-1.5 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-700 dark:text-slate-300">
+        <TabsTrigger value="security" className="gap-1.5 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-stone-700 dark:text-stone-300">
           <Lock className="size-3.5" /> Security
         </TabsTrigger>
       </TabsList>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-900">
         <TabsContent value="account" className="mt-0">
           <PasswordTab />
         </TabsContent>

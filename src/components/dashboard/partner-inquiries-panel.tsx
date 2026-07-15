@@ -24,7 +24,7 @@ type Inquiry = {
 
 const STATUS_STYLES: Record<Inquiry["status"], string> = {
   NEW: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400",
-  CONTACTED: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400",
+  CONTACTED: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400",
   APPROVED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
   ARCHIVED: "bg-stone-200 text-stone-600 dark:bg-stone-700 dark:text-stone-300",
 };

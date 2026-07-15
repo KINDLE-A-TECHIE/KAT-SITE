@@ -77,8 +77,8 @@ type LeaderboardEntry = {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CARD_ACCENTS = [
-  "border-l-violet-400", "border-l-cyan-400", "border-l-amber-400", "border-l-rose-400",
-  "border-l-emerald-400", "border-l-blue-400", "border-l-fuchsia-400", "border-l-orange-400",
+  "border-l-orange-400", "border-l-orange-400", "border-l-amber-400", "border-l-rose-400",
+  "border-l-emerald-400", "border-l-orange-400", "border-l-orange-400", "border-l-orange-400",
 ];
 const MEDAL_EMOJI: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
 const LEARNER_ROLES: UserRoleValue[] = ["STUDENT", "FELLOW"];
@@ -138,7 +138,7 @@ function LeaderboardDialog({ challenge, open, onClose }: {
           <DialogTitle className="flex items-center gap-2">
             <Trophy className="size-5 text-amber-500" />Challenge Champions
           </DialogTitle>
-          <DialogDescription className="text-xs text-slate-500">
+          <DialogDescription className="text-xs text-stone-500">
             {challenge.title} · {total} participant{total !== 1 ? "s" : ""}
           </DialogDescription>
         </DialogHeader>
@@ -148,13 +148,13 @@ function LeaderboardDialog({ challenge, open, onClose }: {
         ) : entries.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
             <span className="text-5xl">🌱</span>
-            <p className="font-semibold text-slate-600 dark:text-slate-400">No scores yet</p>
-            <p className="text-sm text-slate-400">Be the first on the board!</p>
+            <p className="font-semibold text-stone-600 dark:text-stone-400">No scores yet</p>
+            <p className="text-sm text-stone-400">Be the first on the board!</p>
           </div>
         ) : (
           <div className="space-y-2 pt-1">
             {myEntry && myEntry.rank > 5 && (
-              <p className="rounded-lg bg-blue-50 px-3 py-2 text-center text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+              <p className="rounded-lg bg-orange-50 px-3 py-2 text-center text-sm font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                 You&apos;re ranked #{myEntry.rank}, keep going! 💪
               </p>
             )}
@@ -162,8 +162,8 @@ function LeaderboardDialog({ challenge, open, onClose }: {
               <div className="mb-4 flex items-end justify-center gap-2 pt-2">
                 {[entries[1], entries[0], entries[2]].map((e, pos) => {
                   const heights = ["h-16", "h-24", "h-12"];
-                  const bg = ["bg-slate-200 dark:bg-slate-700", "bg-amber-300 dark:bg-amber-600", "bg-orange-200 dark:bg-orange-800"];
-                  const textColor = ["text-slate-600 dark:text-slate-300", "text-amber-900 dark:text-amber-100", "text-orange-800 dark:text-orange-200"];
+                  const bg = ["bg-stone-200 dark:bg-stone-700", "bg-amber-300 dark:bg-amber-600", "bg-orange-200 dark:bg-orange-800"];
+                  const textColor = ["text-stone-600 dark:text-stone-300", "text-amber-900 dark:text-amber-100", "text-orange-800 dark:text-orange-200"];
                   if (!e) return null;
                   return (
                     <div key={e.studentId} className="flex flex-col items-center gap-1">
@@ -178,26 +178,26 @@ function LeaderboardDialog({ challenge, open, onClose }: {
             )}
             {entries.map((e) => (
               <motion.div key={e.studentId} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${e.isCurrentUser ? "bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:ring-blue-700" : "bg-slate-50 dark:bg-slate-800/50"}`}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${e.isCurrentUser ? "bg-orange-50 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:ring-orange-700" : "bg-stone-50 dark:bg-stone-800/50"}`}
               >
                 <span className="w-6 text-center text-base">
-                  {e.rank <= 3 ? MEDAL_EMOJI[e.rank] : <span className="text-xs font-bold text-slate-400">#{e.rank}</span>}
+                  {e.rank <= 3 ? MEDAL_EMOJI[e.rank] : <span className="text-xs font-bold text-stone-400">#{e.rank}</span>}
                 </span>
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-violet-500 text-[11px] font-bold text-white">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-500 text-[11px] font-bold text-white">
                   {e.studentName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  <p className="truncate text-sm font-semibold text-stone-800 dark:text-stone-200">
                     {e.studentName}{e.isCurrentUser ? " (You)" : ""}
                   </p>
-                  <p className="text-[10px] text-slate-400">{rankTitle(e.score, e.maxPoints)}</p>
+                  <p className="text-[10px] text-stone-400">{rankTitle(e.score, e.maxPoints)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                    {e.score}<span className="text-[10px] font-normal text-slate-400">/{e.maxPoints}</span>
+                  <p className="text-sm font-bold text-stone-700 dark:text-stone-200">
+                    {e.score}<span className="text-[10px] font-normal text-stone-400">/{e.maxPoints}</span>
                   </p>
-                  <div className="mt-0.5 h-1.5 w-16 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-                    <div className="h-full rounded-full bg-gradient-to-r from-blue-400 to-violet-500" style={{ width: `${Math.round((e.score / Math.max(e.maxPoints, 1)) * 100)}%` }} />
+                  <div className="mt-0.5 h-1.5 w-16 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
+                    <div className="h-full rounded-full bg-gradient-to-r from-orange-400 to-orange-500" style={{ width: `${Math.round((e.score / Math.max(e.maxPoints, 1)) * 100)}%` }} />
                   </div>
                 </div>
               </motion.div>
@@ -287,10 +287,10 @@ function SubmitDialog({ challenge, open, onClose, onSubmitted }: {
             <Flame className="size-5 text-orange-500" />
             Enter the Challenge!
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-500">
+          <DialogDescription className="text-sm text-stone-500">
             {challenge.title}
             {challenge.module && (
-              <span className="ml-2 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
+              <span className="ml-2 rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                 {challenge.module.title}
               </span>
             )}
@@ -298,16 +298,16 @@ function SubmitDialog({ challenge, open, onClose, onSubmitted }: {
         </DialogHeader>
 
         {challenge.description && (
-          <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+          <p className="rounded-xl bg-stone-50 px-4 py-3 text-sm leading-relaxed text-stone-700 dark:bg-stone-800 dark:text-stone-300">
             {challenge.description}
           </p>
         )}
 
 
-        <div className="flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+        <div className="flex gap-1 rounded-xl bg-stone-100 p-1 dark:bg-stone-800">
           {([["link", Link2, "Share a Link"], ["file", FileUp, "Upload a File"]] as const).map(([t, Icon, label]) => (
             <button key={t} onClick={() => setTab(t)}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors ${tab === t ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100" : "text-slate-500 hover:text-slate-700"}`}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors ${tab === t ? "bg-white text-stone-900 shadow-sm dark:bg-stone-700 dark:text-stone-100" : "text-stone-500 hover:text-stone-700"}`}
             >
               <Icon className="size-4" />{label}
             </button>
@@ -317,37 +317,37 @@ function SubmitDialog({ challenge, open, onClose, onSubmitted }: {
         <div className="space-y-3">
           {tab === "link" ? (
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Link to your work <span className="text-slate-400">(GitHub, CodePen, live demo…)</span>
+              <label className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300">
+                Link to your work <span className="text-stone-400">(GitHub, CodePen, live demo…)</span>
               </label>
               <Input placeholder="https://github.com/you/your-project" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} className="text-sm" />
             </div>
           ) : (
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Upload your file <span className="text-slate-400">(max 50 MB)</span>
+              <label className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300">
+                Upload your file <span className="text-stone-400">(max 50 MB)</span>
               </label>
               <input ref={fileRef} type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
               {file ? (
                 <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 dark:border-emerald-800 dark:bg-emerald-900/20">
                   <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
                   <p className="min-w-0 flex-1 truncate text-sm font-medium text-emerald-700 dark:text-emerald-400">{file.name}</p>
-                  <button onClick={() => setFile(null)} className="shrink-0 text-xs text-slate-400 hover:text-red-500">Remove</button>
+                  <button onClick={() => setFile(null)} className="shrink-0 text-xs text-stone-400 hover:text-red-500">Remove</button>
                 </div>
               ) : (
                 <button onClick={() => fileRef.current?.click()}
-                  className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-200 py-6 text-center transition hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-700 dark:hover:border-blue-600"
+                  className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-stone-200 py-6 text-center transition hover:border-orange-300 hover:bg-orange-50/50 dark:border-stone-700 dark:hover:border-orange-600"
                 >
-                  <FileUp className="size-6 text-slate-400" />
-                  <span className="text-sm font-medium text-slate-500">Click to choose a file</span>
-                  <span className="text-xs text-slate-400">ZIP, PDF, images, or any file up to 50 MB</span>
+                  <FileUp className="size-6 text-stone-400" />
+                  <span className="text-sm font-medium text-stone-500">Click to choose a file</span>
+                  <span className="text-xs text-stone-400">ZIP, PDF, images, or any file up to 50 MB</span>
                 </button>
               )}
             </div>
           )}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-              Notes <span className="text-slate-400">(optional)</span>
+            <label className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-300">
+              Notes <span className="text-stone-400">(optional)</span>
             </label>
             <Textarea placeholder="Describe what you built, challenges you faced, or what you're proud of…" className="min-h-[70px] resize-y text-sm" value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
@@ -417,9 +417,9 @@ function GradeSubmissionsDialog({ challenge, open, onClose }: {
       <DialogContent className="max-h-[90vh] max-w-[calc(100%-2rem)] sm:max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Medal className="size-5 text-violet-500" />Grade Submissions
+            <Medal className="size-5 text-orange-500" />Grade Submissions
           </DialogTitle>
-          <DialogDescription className="text-xs text-slate-500">
+          <DialogDescription className="text-xs text-stone-500">
             {challenge.title} · {challenge.points} pts max
           </DialogDescription>
         </DialogHeader>
@@ -429,7 +429,7 @@ function GradeSubmissionsDialog({ challenge, open, onClose }: {
         ) : submissions.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
             <span className="text-5xl">📭</span>
-            <p className="font-semibold text-slate-600 dark:text-slate-400">No submissions yet</p>
+            <p className="font-semibold text-stone-600 dark:text-stone-400">No submissions yet</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -437,11 +437,11 @@ function GradeSubmissionsDialog({ challenge, open, onClose }: {
               const g = grading[s.id] ?? { score: "", feedback: "", saving: false };
               const isGraded = s.score !== null;
               return (
-                <div key={s.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+                <div key={s.id} className="rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-800/50">
                   <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">{s.student.firstName} {s.student.lastName}</p>
-                      <p className="text-xs text-slate-400">{s.student.email}</p>
+                      <p className="font-semibold text-stone-900 dark:text-stone-100">{s.student.firstName} {s.student.lastName}</p>
+                      <p className="text-xs text-stone-400">{s.student.email}</p>
                     </div>
                     {isGraded && (
                       <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
@@ -451,16 +451,16 @@ function GradeSubmissionsDialog({ challenge, open, onClose }: {
                   </div>
                   <div className="mb-3 space-y-1.5">
                     {s.linkUrl && (
-                      <a href={s.linkUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+                      <a href={s.linkUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:underline dark:text-orange-400">
                         <ExternalLink className="size-3.5" />{s.linkUrl}
                       </a>
                     )}
                     {s.fileUrl && (
-                      <a href={s.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+                      <a href={s.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:underline dark:text-orange-400">
                         <FileUp className="size-3.5" />{s.fileName ?? "Download file"}
                       </a>
                     )}
-                    {s.note && <p className="text-sm italic text-slate-600 dark:text-slate-400">&ldquo;{s.note}&rdquo;</p>}
+                    {s.note && <p className="text-sm italic text-stone-600 dark:text-stone-400">&ldquo;{s.note}&rdquo;</p>}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Input type="number" min="0" max={challenge.points} placeholder={`Score (0–${challenge.points})`} className="h-8 w-32 text-sm"
@@ -561,7 +561,7 @@ function CreateChallengeDialog({ open, onClose, onCreated }: {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2">
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Program *</label>
+            <label className="mb-1 block text-xs font-medium text-stone-600 dark:text-stone-400">Program *</label>
             <Select value={form.programId} onValueChange={(v) => set("programId", v)}>
               <SelectTrigger><SelectValue placeholder="Select program" /></SelectTrigger>
               <SelectContent>{programs.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
@@ -569,7 +569,7 @@ function CreateChallengeDialog({ open, onClose, onCreated }: {
           </div>
 
           <div className="col-span-2">
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Module (optional)</label>
+            <label className="mb-1 block text-xs font-medium text-stone-600 dark:text-stone-400">Module (optional)</label>
             <Select value={form.moduleId} onValueChange={(v) => set("moduleId", v)} disabled={!form.programId || modules.length === 0}>
               <SelectTrigger><SelectValue placeholder={modules.length === 0 ? "No modules yet" : "Select module"} /></SelectTrigger>
               <SelectContent>
@@ -580,42 +580,42 @@ function CreateChallengeDialog({ open, onClose, onCreated }: {
           </div>
 
           <div className="col-span-2">
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Challenge Title *</label>
+            <label className="mb-1 block text-xs font-medium text-stone-600 dark:text-stone-400">Challenge Title *</label>
             <Input placeholder="e.g. Build a Calculator App" value={form.title} onChange={(e) => set("title", e.target.value)} />
           </div>
 
           <div className="col-span-2">
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Description</label>
+            <label className="mb-1 block text-xs font-medium text-stone-600 dark:text-stone-400">Description</label>
             <Textarea placeholder="Describe what students should build…" className="min-h-[70px] resize-y text-sm" value={form.description} onChange={(e) => set("description", e.target.value)} />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Week #</label>
+            <label className="mb-1 block text-xs font-medium text-stone-600 dark:text-stone-400">Week #</label>
             <Input type="number" min="1" placeholder="e.g. 3" value={form.weekNumber} onChange={(e) => set("weekNumber", e.target.value)} />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Points</label>
+            <label className="mb-1 block text-xs font-medium text-stone-600 dark:text-stone-400">Points</label>
             <Input type="number" min="1" value={form.points} onChange={(e) => set("points", e.target.value)} />
           </div>
 
           <div className="col-span-2">
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">Due Date</label>
+            <label className="mb-1 block text-xs font-medium text-stone-600 dark:text-stone-400">Due Date</label>
             <DateInput value={form.dueDate} onChange={(e) => set("dueDate", e.target.value)} />
           </div>
 
           <div className="col-span-2">
             <button type="button" onClick={() => set("published", !form.published)}
-              className={`flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors ${form.published ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20" : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800"}`}
+              className={`flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors ${form.published ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20" : "border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800"}`}
             >
-              <div className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${form.published ? "bg-emerald-100 dark:bg-emerald-800" : "bg-slate-100 dark:bg-slate-700"}`}>
-                {form.published ? <Eye className="size-4 text-emerald-600 dark:text-emerald-400" /> : <EyeOff className="size-4 text-slate-400" />}
+              <div className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${form.published ? "bg-emerald-100 dark:bg-emerald-800" : "bg-stone-100 dark:bg-stone-700"}`}>
+                {form.published ? <Eye className="size-4 text-emerald-600 dark:text-emerald-400" /> : <EyeOff className="size-4 text-stone-400" />}
               </div>
               <div>
-                <p className={`text-sm font-semibold ${form.published ? "text-emerald-700 dark:text-emerald-400" : "text-slate-600 dark:text-slate-400"}`}>
+                <p className={`text-sm font-semibold ${form.published ? "text-emerald-700 dark:text-emerald-400" : "text-stone-600 dark:text-stone-400"}`}>
                   {form.published ? "Publish immediately" : "Save as draft"}
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-stone-400">
                   {form.published ? "Students will be notified and can start submitting." : "Only you can see this, publish it when ready."}
                 </p>
               </div>
@@ -687,24 +687,24 @@ function ChallengeCard({ challenge, isLearner, onRefresh }: {
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 border-l-4 ${accent} ${!challenge.published ? "opacity-70" : ""}`}
+        className={`overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm dark:border-stone-700 dark:bg-stone-900 border-l-4 ${accent} ${!challenge.published ? "opacity-70" : ""}`}
       >
         <div className="p-3 sm:p-4">
           <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
             {!challenge.published && (
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-slate-800">Draft</span>
+              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-stone-500 dark:bg-stone-800">Draft</span>
             )}
             {challenge.weekNumber && (
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-stone-500 dark:bg-stone-800 dark:text-stone-400">
                 Week {challenge.weekNumber}
               </span>
             )}
             {challenge.module && (
-              <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-medium text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+              <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                 {challenge.module.title}
               </span>
             )}
-            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+            <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
               {challenge.program.name}
             </span>
             {isActive && due.urgent && (
@@ -714,12 +714,12 @@ function ChallengeCard({ challenge, isLearner, onRefresh }: {
             )}
           </div>
 
-          <h3 className="font-semibold leading-snug text-slate-900 dark:text-slate-100">{challenge.title}</h3>
+          <h3 className="font-semibold leading-snug text-stone-900 dark:text-stone-100">{challenge.title}</h3>
           {challenge.description && (
-            <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{challenge.description}</p>
+            <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-stone-500 dark:text-stone-400">{challenge.description}</p>
           )}
 
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-stone-400">
             <span className="flex items-center gap-1"><Star className="size-3.5 text-amber-400" />{challenge.points} pts</span>
             {due.ended && <span className="flex items-center gap-1"><Clock className="size-3.5" />Ended</span>}
             {!due.ended && !due.urgent && challenge.dueDate && (
@@ -727,7 +727,7 @@ function ChallengeCard({ challenge, isLearner, onRefresh }: {
             )}
             <span className="flex items-center gap-1"><Users className="size-3.5" />{challenge._count.submissions} submitted</span>
             {!isLearner && challenge.createdBy && (
-              <span className="text-slate-300 dark:text-slate-600">by {challenge.createdBy.firstName}</span>
+              <span className="text-stone-300 dark:text-stone-600">by {challenge.createdBy.firstName}</span>
             )}
           </div>
 
@@ -744,23 +744,23 @@ function ChallengeCard({ challenge, isLearner, onRefresh }: {
             </div>
           )}
           {isLearner && submitted && !graded && (
-            <div className="mt-3 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 dark:bg-blue-900/20">
-              <CheckCircle2 className="size-4 shrink-0 text-blue-500" />
-              <p className="text-xs font-medium text-blue-700 dark:text-blue-400">Submitted, waiting to be graded ⏳</p>
+            <div className="mt-3 flex items-center gap-2 rounded-lg bg-orange-50 px-3 py-2 dark:bg-orange-900/20">
+              <CheckCircle2 className="size-4 shrink-0 text-orange-500" />
+              <p className="text-xs font-medium text-orange-700 dark:text-orange-400">Submitted, waiting to be graded ⏳</p>
             </div>
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 bg-slate-50/50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-800/30">
+        <div className="flex flex-wrap items-center gap-2 border-t border-stone-100 bg-stone-50/50 px-4 py-2.5 dark:border-stone-800 dark:bg-stone-800/30">
           <button onClick={() => setBoardOpen(true)}
-            className="flex items-center gap-1 text-xs font-medium text-slate-500 transition hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400"
+            className="flex items-center gap-1 text-xs font-medium text-stone-500 transition hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-400"
           >
             <Trophy className="size-3.5" />Leaderboard
           </button>
 
           {!isLearner && (
             <button onClick={() => setGradeOpen(true)}
-              className="flex items-center gap-1 text-xs font-medium text-slate-500 transition hover:text-violet-600 dark:text-slate-400 dark:hover:text-violet-400"
+              className="flex items-center gap-1 text-xs font-medium text-stone-500 transition hover:text-orange-600 dark:text-stone-400 dark:hover:text-orange-400"
             >
               <Medal className="size-3.5" />Grade ({challenge._count.submissions})
             </button>
@@ -771,13 +771,13 @@ function ChallengeCard({ challenge, isLearner, onRefresh }: {
           {!isLearner && (
             <>
               <button onClick={() => void togglePublish()} disabled={toggling}
-                className={`flex items-center gap-1 text-xs font-medium transition ${challenge.published ? "text-slate-400 hover:text-orange-500" : "text-emerald-500 hover:text-emerald-600"}`}
+                className={`flex items-center gap-1 text-xs font-medium transition ${challenge.published ? "text-stone-400 hover:text-orange-500" : "text-emerald-500 hover:text-emerald-600"}`}
               >
                 {toggling ? <Loader2 className="size-3.5 animate-spin" /> : challenge.published ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
                 {challenge.published ? "Unpublish" : "Publish"}
               </button>
               <button onClick={() => void handleDelete()} disabled={deleting}
-                className="flex items-center gap-1 text-xs font-medium text-slate-400 transition hover:text-red-500"
+                className="flex items-center gap-1 text-xs font-medium text-stone-400 transition hover:text-red-500"
               >
                 {deleting ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
               </button>
@@ -843,11 +843,11 @@ export function ChallengesPanel({ role }: { role: UserRoleValue }) {
       <AnimatePresence>
         {isLearner && featured && (
           <motion.div key={featured.id} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0D1F45] via-[#1E5FAF] to-violet-600 px-4 py-5 sm:px-6 sm:py-6 text-white"
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1A1714] via-[#B2401D] to-orange-600 px-4 py-5 sm:px-6 sm:py-6 text-white"
           >
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
               <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
-              <div className="absolute -bottom-8 left-10 h-32 w-32 rounded-full bg-blue-300/10 blur-2xl" />
+              <div className="absolute -bottom-8 left-10 h-32 w-32 rounded-full bg-orange-300/10 blur-2xl" />
             </div>
             <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -857,9 +857,9 @@ export function ChallengesPanel({ role }: { role: UserRoleValue }) {
                   {featured.weekNumber && <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium">Week {featured.weekNumber}</span>}
                 </div>
                 <h2 className="text-lg font-bold leading-snug sm:text-xl">{featured.title}</h2>
-                {featured.module && <p className="mt-0.5 text-sm text-blue-200">{featured.module.title}</p>}
+                {featured.module && <p className="mt-0.5 text-sm text-orange-200">{featured.module.title}</p>}
                 {featured.dueDate && (
-                  <p className="mt-1 flex items-center gap-1 text-xs text-blue-200">
+                  <p className="mt-1 flex items-center gap-1 text-xs text-orange-200">
                     <Clock className="size-3.5" />{dueMeta(featured.dueDate).label}
                   </p>
                 )}
@@ -868,7 +868,7 @@ export function ChallengesPanel({ role }: { role: UserRoleValue }) {
                 <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold">
                   <Star className="size-4 text-amber-300" />{featured.points} pts
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-blue-200">
+                <div className="flex items-center gap-1.5 text-xs text-orange-200">
                   <Users className="size-3.5" />{featured._count.submissions} on the board
                 </div>
               </div>
@@ -878,10 +878,10 @@ export function ChallengesPanel({ role }: { role: UserRoleValue }) {
       </AnimatePresence>
 
       <div className="flex items-center justify-between gap-2">
-        <div className="flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+        <div className="flex gap-1 rounded-xl bg-stone-100 p-1 dark:bg-stone-800">
           {tabs.map(([t, list]) => (
             <button key={t} onClick={() => setTab(t as typeof tab)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors sm:px-4 sm:text-sm ${tab === t ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors sm:px-4 sm:text-sm ${tab === t ? "bg-white text-stone-900 shadow-sm dark:bg-stone-700 dark:text-stone-100" : "text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"}`}
             >
               {t}{list.length > 0 ? ` (${list.length})` : ""}
             </button>
@@ -901,9 +901,9 @@ export function ChallengesPanel({ role }: { role: UserRoleValue }) {
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
         </div>
       ) : displayed.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-200 py-16 text-center dark:border-slate-700">
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-stone-200 py-16 text-center dark:border-stone-700">
           <span className="text-5xl">{tab === "active" ? "🚀" : tab === "draft" ? "📝" : "📚"}</span>
-          <p className="font-medium text-slate-600 dark:text-slate-400">
+          <p className="font-medium text-stone-600 dark:text-stone-400">
             {tab === "active" ? "No active challenges right now" : tab === "draft" ? "No drafts" : "No past challenges yet"}
           </p>
           {isManager && tab === "active" && (
@@ -912,7 +912,7 @@ export function ChallengesPanel({ role }: { role: UserRoleValue }) {
             </Button>
           )}
           {isLearner && tab === "active" && (
-            <p className="text-sm text-slate-400">Check back soon, a new challenge is coming! 💪</p>
+            <p className="text-sm text-stone-400">Check back soon, a new challenge is coming! 💪</p>
           )}
         </div>
       ) : (

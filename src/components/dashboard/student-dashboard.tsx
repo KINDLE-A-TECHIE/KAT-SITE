@@ -12,15 +12,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 // ─── XP & Level engine ────────────────────────────────────────────────────────
 
 const LEVEL_TIERS = [
-  { level: 1,  xp: 0,    rank: "Rookie",     emoji: "🌱", gradient: "from-slate-600 to-slate-700",       bar: "bg-slate-400"   },
-  { level: 2,  xp: 100,  rank: "Explorer",   emoji: "🔍", gradient: "from-blue-600 to-blue-700",         bar: "bg-blue-400"    },
-  { level: 3,  xp: 250,  rank: "Apprentice", emoji: "⚙️", gradient: "from-cyan-600 to-teal-700",         bar: "bg-cyan-400"    },
+  { level: 1,  xp: 0,    rank: "Rookie",     emoji: "🌱", gradient: "from-stone-600 to-stone-700",       bar: "bg-stone-400"   },
+  { level: 2,  xp: 100,  rank: "Explorer",   emoji: "🔍", gradient: "from-orange-600 to-orange-700",         bar: "bg-orange-400"    },
+  { level: 3,  xp: 250,  rank: "Apprentice", emoji: "⚙️", gradient: "from-orange-600 to-orange-700",         bar: "bg-orange-400"    },
   { level: 4,  xp: 450,  rank: "Builder",    emoji: "🔨", gradient: "from-emerald-600 to-green-700",     bar: "bg-emerald-400" },
   { level: 5,  xp: 700,  rank: "Hacker",     emoji: "⚡", gradient: "from-yellow-500 to-orange-600",     bar: "bg-yellow-400"  },
   { level: 6,  xp: 1000, rank: "Innovator",  emoji: "🚀", gradient: "from-orange-500 to-red-600",        bar: "bg-orange-400"  },
   { level: 7,  xp: 1350, rank: "Pioneer",    emoji: "🌟", gradient: "from-pink-500 to-rose-600",         bar: "bg-pink-400"    },
-  { level: 8,  xp: 1750, rank: "Champion",   emoji: "🏆", gradient: "from-violet-600 to-purple-700",     bar: "bg-violet-400"  },
-  { level: 9,  xp: 2250, rank: "Legend",     emoji: "👑", gradient: "from-purple-600 to-indigo-700",     bar: "bg-purple-400"  },
+  { level: 8,  xp: 1750, rank: "Champion",   emoji: "🏆", gradient: "from-orange-600 to-orange-700",     bar: "bg-orange-400"  },
+  { level: 9,  xp: 2250, rank: "Legend",     emoji: "👑", gradient: "from-orange-600 to-orange-700",     bar: "bg-orange-400"  },
   { level: 10, xp: 2800, rank: "KAT Elite",  emoji: "💎", gradient: "from-amber-400 to-yellow-500",      bar: "bg-amber-300"   },
 ] as const;
 
@@ -67,8 +67,8 @@ const MISSIONS = [
     href: "/dashboard/curriculum",
     icon: BookOpen,
     xp: 5,
-    color: "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
-    border: "border-blue-100 dark:border-blue-900/40",
+    color: "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400",
+    border: "border-orange-100 dark:border-orange-900/40",
   },
   {
     label: "Take an assessment",
@@ -76,8 +76,8 @@ const MISSIONS = [
     href: "/dashboard/assessments",
     icon: ClipboardList,
     xp: 15,
-    color: "bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400",
-    border: "border-violet-100 dark:border-violet-900/40",
+    color: "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400",
+    border: "border-orange-100 dark:border-orange-900/40",
   },
   {
     label: "Join a live session",
@@ -94,8 +94,8 @@ const MISSIONS = [
     href: "/dashboard/messages",
     icon: MessageSquare,
     xp: 2,
-    color: "bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400",
-    border: "border-sky-100 dark:border-sky-900/40",
+    color: "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400",
+    border: "border-orange-100 dark:border-orange-900/40",
   },
 ] as const;
 
@@ -216,17 +216,17 @@ export function StudentDashboard({ firstName }: { firstName: string }) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Day streak",    value: logins,      icon: Flame,         accent: "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400" },
-          { label: "Assessments",   value: assessments, icon: ClipboardList, accent: "bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400" },
+          { label: "Assessments",   value: assessments, icon: ClipboardList, accent: "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400" },
           { label: "Badges earned", value: badges.length, icon: BadgeCheck,  accent: "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",   href: "/dashboard/badges" },
           { label: "Live sessions", value: meetings,    icon: Calendar,      accent: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400", href: "/dashboard/meetings" },
         ].map(({ label, value, icon: Icon, accent, href }, i) => {
           const inner = (
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 transition hover:shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="rounded-2xl border border-stone-200 bg-white p-4 transition hover:shadow-sm dark:border-stone-700 dark:bg-stone-900">
               <div className={`mb-2 inline-flex h-8 w-8 items-center justify-center rounded-xl ${accent}`}>
                 <Icon className="h-4 w-4" />
               </div>
-              <p className="[font-family:var(--font-space-grotesk)] text-2xl font-bold text-slate-900 dark:text-slate-100">{value}</p>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{label}</p>
+              <p className="[font-family:var(--font-space-grotesk)] text-2xl font-bold text-stone-900 dark:text-stone-100">{value}</p>
+              <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{label}</p>
             </div>
           );
           return (
@@ -248,14 +248,14 @@ export function StudentDashboard({ firstName }: { firstName: string }) {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"
+          className="rounded-2xl border border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-900"
         >
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Star className="h-4 w-4 text-amber-500" />
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100">Your Achievements</h3>
+              <h3 className="font-semibold text-stone-900 dark:text-stone-100">Your Achievements</h3>
             </div>
-            <Link href="/dashboard/badges" className="flex items-center gap-1 text-xs font-medium text-[#1E5FAF] hover:underline dark:text-blue-400">
+            <Link href="/dashboard/badges" className="flex items-center gap-1 text-xs font-medium text-[#B2401D] hover:underline dark:text-orange-400">
               See all <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -266,7 +266,7 @@ export function StudentDashboard({ firstName }: { firstName: string }) {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.35 + i * 0.06 }}
-                className="flex flex-col items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-center dark:border-slate-800 dark:bg-slate-800/60"
+                className="flex flex-col items-center gap-2 rounded-xl border border-stone-100 bg-stone-50 p-3 text-center dark:border-stone-800 dark:bg-stone-800/60"
               >
                 <div
                   className="flex h-12 w-12 items-center justify-center rounded-full text-2xl shadow-sm"
@@ -274,8 +274,8 @@ export function StudentDashboard({ firstName }: { firstName: string }) {
                 >
                   {eb.badge.icon}
                 </div>
-                <p className="text-xs font-semibold leading-tight text-slate-800 dark:text-slate-100">{eb.badge.name}</p>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500">{fmt(eb.earnedAt)}</p>
+                <p className="text-xs font-semibold leading-tight text-stone-800 dark:text-stone-100">{eb.badge.name}</p>
+                <p className="text-[10px] text-stone-400 dark:text-stone-500">{fmt(eb.earnedAt)}</p>
               </motion.div>
             ))}
           </div>
@@ -289,9 +289,9 @@ export function StudentDashboard({ firstName }: { firstName: string }) {
         transition={{ delay: 0.4 }}
       >
         <div className="mb-3 flex items-center gap-2">
-          <Zap className="h-4 w-4 text-[#1E5FAF]" />
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100">Your Missions</h3>
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+          <Zap className="h-4 w-4 text-[#B2401D]" />
+          <h3 className="font-semibold text-stone-900 dark:text-stone-100">Your Missions</h3>
+          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-500 dark:bg-stone-800 dark:text-stone-400">
             earn XP
           </span>
         </div>
@@ -305,21 +305,21 @@ export function StudentDashboard({ firstName }: { firstName: string }) {
             >
               <Link
                 href={href}
-                className={`group flex items-start gap-4 rounded-2xl border bg-white p-4 transition hover:shadow-md dark:bg-slate-900 ${border}`}
+                className={`group flex items-start gap-4 rounded-2xl border bg-white p-4 transition hover:shadow-md dark:bg-stone-900 ${border}`}
               >
                 <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${color}`}>
                   <Icon className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-slate-900 dark:text-slate-100">{label}</p>
+                    <p className="font-semibold text-stone-900 dark:text-stone-100">{label}</p>
                     <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
                       +{xp} XP
                     </span>
                   </div>
-                  <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{description}</p>
+                  <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">{description}</p>
                 </div>
-                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-500 dark:text-slate-600 dark:group-hover:text-slate-400" />
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-stone-300 transition group-hover:translate-x-0.5 group-hover:text-stone-500 dark:text-stone-600 dark:group-hover:text-stone-400" />
               </Link>
             </motion.div>
           ))}
@@ -335,15 +335,15 @@ export function StudentDashboard({ firstName }: { firstName: string }) {
         >
           <Link
             href="/dashboard/messages"
-            className="flex items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50 px-5 py-3.5 transition hover:bg-sky-100 dark:border-sky-900/40 dark:bg-sky-950/30 dark:hover:bg-sky-950/50"
+            className="flex items-center gap-3 rounded-2xl border border-orange-100 bg-orange-50 px-5 py-3.5 transition hover:bg-orange-100 dark:border-orange-900/40 dark:bg-orange-950/30 dark:hover:bg-orange-950/50"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white">
               <MessageSquare className="h-4 w-4" />
             </div>
-            <p className="text-sm font-medium text-sky-800 dark:text-sky-300">
+            <p className="text-sm font-medium text-orange-800 dark:text-orange-300">
               You have <span className="font-bold">{messages}</span> unread message{messages !== 1 ? "s" : ""} waiting.
             </p>
-            <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-sky-400" />
+            <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-orange-400" />
           </Link>
         </motion.div>
       )}

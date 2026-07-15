@@ -109,12 +109,12 @@ export function SuperAdminRegisterForm() {
         transition={{ duration: 0.3, ease: "easeOut" }}
         className="w-full max-w-lg"
       >
-        <Card className="overflow-hidden border-slate-200/70 bg-white/95 shadow-xl">
-          <div className="h-2 bg-gradient-to-r from-slate-700 via-blue-700 to-cyan-600" />
+        <Card className="overflow-hidden border-stone-200/70 bg-white/95 shadow-xl">
+          <div className="h-2 bg-gradient-to-r from-stone-700 via-orange-700 to-orange-600" />
           <CardHeader>
             <p className="kat-chip w-fit">Super Admin Invite</p>
             <CardTitle className="mt-3 text-2xl">Activate Super Admin Access</CardTitle>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-stone-600">
               This page works only with a valid invite token.
             </p>
           </CardHeader>
@@ -180,9 +180,9 @@ export function SuperAdminRegisterForm() {
               </Button>
             </form>
 
-            <p className="mt-4 text-sm text-slate-600">
+            <p className="mt-4 text-sm text-stone-600">
               Have an account already?{" "}
-              <Link className="font-medium text-blue-700 hover:underline" href="/login">
+              <Link className="font-medium text-orange-700 hover:underline" href="/login">
                 Sign in
               </Link>
             </p>

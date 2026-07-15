@@ -91,11 +91,11 @@ const emptyNew = (): Draft => ({
 // ── Shared input styles ────────────────────────────────────────────────────────
 
 const INPUT_CLS =
-  "h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 " +
-  "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 " +
-  "shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-all duration-150 " +
-  "focus:border-[#1E5FAF] focus:outline-none focus:shadow-[0_1px_2px_rgba(15,23,42,0.05),0_0_0_3px_rgba(30,95,175,0.12)] " +
-  "hover:border-slate-300 dark:hover:border-slate-600 disabled:cursor-not-allowed disabled:opacity-50";
+  "h-11 w-full rounded-xl border border-stone-200 bg-white px-4 text-sm font-medium text-stone-700 " +
+  "dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 " +
+  "shadow-[0_1px_2px_rgba(26, 23, 20,0.05)] transition-all duration-150 " +
+  "focus:border-[#B2401D] focus:outline-none focus:shadow-[0_1px_2px_rgba(26, 23, 20,0.05),0_0_0_3px_rgba(178, 64, 29,0.12)] " +
+  "hover:border-stone-300 dark:hover:border-stone-600 disabled:cursor-not-allowed disabled:opacity-50";
 
 // ── Small reusable inputs ──────────────────────────────────────────────────────
 
@@ -112,10 +112,10 @@ function FormField({
 }) {
   return (
     <div className="space-y-1.5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+      <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
         {label}
         {required && <span className="ml-0.5 text-rose-400">*</span>}
-        {hint && <span className="ml-1.5 font-normal normal-case text-slate-400 dark:text-slate-500">{hint}</span>}
+        {hint && <span className="ml-1.5 font-normal normal-case text-stone-400 dark:text-stone-500">{hint}</span>}
       </p>
       {children}
     </div>
@@ -486,7 +486,7 @@ export function CohortsPanel() {
     <div className="space-y-4">
       {/* Header, always visible, even while loading */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           {loading ? "Loading…" : `${cohorts.length} cohort${cohorts.length !== 1 ? "s" : ""}`}
         </p>
         <Button
@@ -505,9 +505,9 @@ export function CohortsPanel() {
           {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
         </div>
       ) : cohorts.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center dark:border-slate-700">
-          <p className="text-sm text-slate-500 dark:text-slate-400">No cohorts yet.</p>
-          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Click <strong>New Cohort</strong> above to create one.</p>
+        <div className="rounded-xl border border-dashed border-stone-300 p-8 text-center dark:border-stone-700">
+          <p className="text-sm text-stone-500 dark:text-stone-400">No cohorts yet.</p>
+          <p className="mt-1 text-xs text-stone-400 dark:text-stone-500">Click <strong>New Cohort</strong> above to create one.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -525,21 +525,21 @@ export function CohortsPanel() {
                 <div className="flex items-start gap-4">
                   <div className="min-w-0 flex-1">
                     {cohort.programName && (
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{cohort.programName}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">{cohort.programName}</p>
                     )}
-                    <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">{cohort.name}</h3>
-                    <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                    <h3 className="text-base font-semibold text-stone-800 dark:text-stone-200">{cohort.name}</h3>
+                    <p className="mt-0.5 text-xs text-stone-400 dark:text-stone-500">
                       {fmtDate(cohort.startsAt)} &mdash; {fmtDate(cohort.endsAt)}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${cohort.applicationOpen ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:ring-emerald-800" : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"}`}>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${cohort.applicationOpen ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:ring-emerald-800" : "bg-stone-100 text-stone-500 dark:bg-stone-700 dark:text-stone-400"}`}>
                         {cohort.applicationOpen ? "Applications open" : "Applications closed"}
                       </span>
-                      <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:ring-blue-800">
+                      <span className="inline-flex items-center rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-medium text-orange-700 ring-1 ring-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:ring-orange-800">
                         {cohort.applicationCount} application{cohort.applicationCount !== 1 ? "s" : ""}
                       </span>
                       {cohort.capacity != null && (
-                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                        <span className="inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-medium text-stone-600 dark:bg-stone-700 dark:text-stone-300">
                           Capacity: {cohort.capacity}
                         </span>
                       )}
@@ -551,7 +551,7 @@ export function CohortsPanel() {
                     <button
                       type="button"
                       onClick={() => setConfirmDeleteId(cohort.id)}
-                      className="rounded-lg p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500 dark:text-slate-600 dark:hover:bg-rose-900/30 dark:hover:text-rose-400"
+                      className="rounded-lg p-2 text-stone-300 transition-colors hover:bg-rose-50 hover:text-rose-500 dark:text-stone-600 dark:hover:bg-rose-900/30 dark:hover:text-rose-400"
                       title="Delete cohort"
                     >
                       <Trash2 className="size-4" />
@@ -559,7 +559,7 @@ export function CohortsPanel() {
                     <button
                       type="button"
                       onClick={() => setSettingsOpen((p) => ({ ...p, [cohort.id]: !isSettingsOpen }))}
-                      className={`flex items-center gap-1 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 ${isSettingsOpen ? "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"}`}
+                      className={`flex items-center gap-1 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 ${isSettingsOpen ? "bg-stone-100 text-stone-700 dark:bg-stone-700 dark:text-stone-200" : "text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-700"}`}
                       title="Settings"
                     >
                       <Settings2 className="size-3.5" />
@@ -569,7 +569,7 @@ export function CohortsPanel() {
                     <button
                       type="button"
                       onClick={() => toggleFellows(cohort.id)}
-                      className={`flex items-center gap-1 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 ${isFellowsOpen ? "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"}`}
+                      className={`flex items-center gap-1 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 ${isFellowsOpen ? "bg-stone-100 text-stone-700 dark:bg-stone-700 dark:text-stone-200" : "text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-700"}`}
                       title="Fellows"
                     >
                       <Users className="size-3.5" />
@@ -581,7 +581,7 @@ export function CohortsPanel() {
 
                 {/* ── Settings panel ───────────────────────────────────────────── */}
                 {isSettingsOpen && (
-                  <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+                  <div className="mt-4 border-t border-stone-100 pt-4 dark:border-stone-800">
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       <FormField label="Cohort Name" required>
                         <TextInput value={draft.name} onChange={(v) => updateDraft(cohort.id, "name", v)} placeholder="e.g. Cohort 3" />
@@ -606,7 +606,7 @@ export function CohortsPanel() {
                       </FormField>
                     </div>
 
-                    <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="mt-4 flex flex-col gap-3 border-t border-stone-100 pt-4 dark:border-stone-800 sm:flex-row sm:items-center sm:justify-between">
                       <label className="flex cursor-pointer items-start gap-3">
                         <input
                           type="checkbox"
@@ -615,8 +615,8 @@ export function CohortsPanel() {
                           onChange={(e) => updateDraft(cohort.id, "applicationOpen", e.target.checked)}
                         />
                         <div>
-                          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Applications Open</p>
-                          <p className="text-xs text-slate-400 dark:text-slate-500">Show this cohort on the public fellowship page</p>
+                          <p className="text-sm font-medium text-stone-700 dark:text-stone-300">Applications Open</p>
+                          <p className="text-xs text-stone-400 dark:text-stone-500">Show this cohort on the public fellowship page</p>
                         </div>
                       </label>
                       <button
@@ -634,15 +634,15 @@ export function CohortsPanel() {
 
                 {/* ── Fellows panel ────────────────────────────────────────────── */}
                 {isFellowsOpen && (
-                  <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
-                    <p className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">Approved Fellows &amp; Program Assignments</p>
+                  <div className="mt-4 border-t border-stone-100 pt-4 dark:border-stone-800">
+                    <p className="mb-4 text-sm font-semibold text-stone-700 dark:text-stone-300">Approved Fellows &amp; Program Assignments</p>
 
                     {loadingFellows[cohort.id] ? (
-                      <div className="flex items-center gap-2 text-sm text-slate-400 dark:text-slate-500">
+                      <div className="flex items-center gap-2 text-sm text-stone-400 dark:text-stone-500">
                         <Loader2 className="size-4 animate-spin" /> Loading fellows…
                       </div>
                     ) : !fellowsMap[cohort.id]?.length ? (
-                      <p className="text-sm text-slate-400 dark:text-slate-500">No approved fellows for this cohort yet.</p>
+                      <p className="text-sm text-stone-400 dark:text-stone-500">No approved fellows for this cohort yet.</p>
                     ) : (
                       <div className="space-y-3">
                         {fellowsMap[cohort.id].map((fellow) => {
@@ -652,10 +652,10 @@ export function CohortsPanel() {
                           const available = programs.filter((p) => !assignedIds.has(p.id));
 
                           return (
-                            <div key={fellow.userId} className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/60">
+                            <div key={fellow.userId} className="rounded-xl border border-stone-200 bg-stone-50/60 p-4 dark:border-stone-700 dark:bg-stone-800/60">
                               <div className="mb-3">
-                                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{fellow.firstName} {fellow.lastName}</p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">{fellow.email}</p>
+                                <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">{fellow.firstName} {fellow.lastName}</p>
+                                <p className="text-xs text-stone-500 dark:text-stone-400">{fellow.email}</p>
                               </div>
 
                               {fellow.enrollments.length > 0 ? (
@@ -665,14 +665,14 @@ export function CohortsPanel() {
                                     return (
                                       <span
                                         key={e.id}
-                                        className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
+                                        className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700 dark:border-orange-800 dark:bg-orange-900/40 dark:text-orange-300"
                                       >
                                         {e.programName}
                                         <button
                                           type="button"
                                           disabled={isRemoving}
                                           onClick={() => void handleUnassign(cohort.id, fellow.userId, e.id)}
-                                          className="ml-0.5 rounded-full text-blue-400 transition-colors hover:text-rose-500 disabled:opacity-50"
+                                          className="ml-0.5 rounded-full text-orange-400 transition-colors hover:text-rose-500 disabled:opacity-50"
                                           title="Remove assignment"
                                         >
                                           {isRemoving ? <Loader2 className="size-3 animate-spin" /> : <X className="size-3" />}
@@ -682,7 +682,7 @@ export function CohortsPanel() {
                                   })}
                                 </div>
                               ) : (
-                                <p className="mb-3 text-xs italic text-slate-400 dark:text-slate-500">No programs assigned yet.</p>
+                                <p className="mb-3 text-xs italic text-stone-400 dark:text-stone-500">No programs assigned yet.</p>
                               )}
 
                               {available.length > 0 ? (
@@ -708,7 +708,7 @@ export function CohortsPanel() {
                                   </button>
                                 </div>
                               ) : (
-                                <p className="text-xs italic text-slate-400 dark:text-slate-500">Enrolled in all available programs.</p>
+                                <p className="text-xs italic text-stone-400 dark:text-stone-500">Enrolled in all available programs.</p>
                               )}
                             </div>
                           );
@@ -761,7 +761,7 @@ export function CohortsPanel() {
               </FormField>
             </div>
 
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 dark:border-slate-700 dark:bg-slate-800/60">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-stone-50/60 p-3.5 dark:border-stone-700 dark:bg-stone-800/60">
               <input
                 type="checkbox"
                 className="mt-0.5 size-4 accent-[var(--kat-primary-blue)]"
@@ -769,12 +769,12 @@ export function CohortsPanel() {
                 onChange={(e) => updateNew("applicationOpen", e.target.checked)}
               />
               <div>
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Open applications immediately</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500">You can change this later from cohort settings</p>
+                <p className="text-sm font-medium text-stone-700 dark:text-stone-300">Open applications immediately</p>
+                <p className="text-xs text-stone-400 dark:text-stone-500">You can change this later from cohort settings</p>
               </div>
             </label>
 
-            <div className="flex justify-end gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+            <div className="flex justify-end gap-3 border-t border-stone-100 pt-4 dark:border-stone-800">
               <Button variant="outline" onClick={() => { setCreateOpen(false); setNewDraft(emptyNew()); }}>
                 Cancel
               </Button>

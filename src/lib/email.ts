@@ -89,7 +89,7 @@ function emailWrapper(content: string) {
               <!-- Top accent bar -->
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td height="3" style="background:linear-gradient(90deg,#1E5FAF 0%,#4DB3E6 100%);font-size:0;line-height:0;">&nbsp;</td>
+                  <td height="3" style="background:linear-gradient(90deg,#B2401D 0%,#F2B705 100%);font-size:0;line-height:0;">&nbsp;</td>
                 </tr>
               </table>
 
@@ -132,7 +132,7 @@ function primaryButton(href: string, label: string) {
   return `
     <table cellpadding="0" cellspacing="0" style="margin:28px 0 0;">
       <tr>
-        <td style="border-radius:10px;background:linear-gradient(90deg,#1E5FAF,#4DB3E6);">
+        <td style="border-radius:10px;background:linear-gradient(90deg,#B2401D,#F2B705);">
           <a href="${href}"
              style="display:inline-block;padding:13px 32px;color:#ffffff;font-size:14px;
                     font-weight:600;text-decoration:none;border-radius:10px;letter-spacing:0.01em;">
@@ -149,7 +149,7 @@ function ghostButton(href: string, label: string) {
       <tr>
         <td style="border-radius:10px;border:1px solid #e2e8f0;">
           <a href="${href}"
-             style="display:inline-block;padding:12px 28px;color:#1E5FAF;font-size:14px;
+             style="display:inline-block;padding:12px 28px;color:#B2401D;font-size:14px;
                     font-weight:600;text-decoration:none;border-radius:10px;">
             ${label}
           </a>
@@ -382,7 +382,7 @@ export function buildFellowApprovalEmail(opts: {
       ].map((step, i) => `
         <tr>
           <td style="width:28px;vertical-align:top;padding:4px 12px 12px 0;">
-            <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#1E5FAF,#4DB3E6);
+            <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#B2401D,#F2B705);
                         text-align:center;line-height:22px;font-size:11px;font-weight:700;color:#fff;">
               ${i + 1}
             </div>
@@ -392,7 +392,7 @@ export function buildFellowApprovalEmail(opts: {
     </table>
     ${primaryButton(loginUrl, "Go to My Dashboard →")}
     <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;">
-      Direct link: <a href="${dashboardUrl}" style="color:#1E5FAF;text-decoration:none;">${dashboardUrl}</a>
+      Direct link: <a href="${dashboardUrl}" style="color:#B2401D;text-decoration:none;">${dashboardUrl}</a>
     </p>
   `);
 
@@ -466,7 +466,7 @@ export function buildPaymentReminderEmail(opts: {
       subject: `Payment due in 3 days, ${opts.childFirstName}'s ${opts.programName}`,
       headline: "Payment due in 3 days",
       body: `${opts.childFirstName}&apos;s enrolment in <strong style="color:#0f172a;">${opts.programName}</strong> renews on <strong style="color:#0f172a;">${opts.dueDate}</strong>. Pay before the due date to keep their learning uninterrupted.`,
-      accentColor: "#1E5FAF",
+      accentColor: "#B2401D",
       badgeText: "DUE SOON",
       badgeBg: "#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;",
     },
@@ -563,7 +563,7 @@ export function buildExternalFellowApplicationEmail(opts: {
     ${feeNote}
     <p style="margin:0 0 24px;font-size:13px;color:#94a3b8;line-height:1.6;">
       Questions? Reply to this email or write to us at
-      <a href="mailto:hello@kindleatechie.com" style="color:#1E5FAF;text-decoration:none;">hello@kindleatechie.com</a>.
+      <a href="mailto:hello@kindleatechie.com" style="color:#B2401D;text-decoration:none;">hello@kindleatechie.com</a>.
     </p>
   `);
 }
@@ -606,7 +606,7 @@ export function buildPartnerEnquiryNotificationEmail(opts: {
         ${infoRow("Organisation", opts.organization)}
         ${infoRow("Type", opts.type)}
         ${programsDisplay ? infoRow("Programmes of Interest", programsDisplay) : ""}
-        ${infoRow("Email", `<a href="mailto:${opts.email}" style="color:#1E5FAF;text-decoration:none;">${opts.email}</a>`)}
+        ${infoRow("Email", `<a href="mailto:${opts.email}" style="color:#B2401D;text-decoration:none;">${opts.email}</a>`)}
         ${opts.phone ? infoRow("Phone", opts.phone) : ""}
       </tbody>
     </table>
@@ -686,7 +686,7 @@ export function buildProjectStatusEmail(opts: {
     ${primaryButton(opts.projectUrl, cfg.buttonLabel)}
     <p style="margin:24px 0 0;font-size:12px;color:#94a3b8;line-height:1.6;">
       Questions? Reply to this email or write to
-      <a href="mailto:hello@kindleatechie.com" style="color:#1E5FAF;text-decoration:none;">hello@kindleatechie.com</a>.
+      <a href="mailto:hello@kindleatechie.com" style="color:#B2401D;text-decoration:none;">hello@kindleatechie.com</a>.
     </p>
   `);
 

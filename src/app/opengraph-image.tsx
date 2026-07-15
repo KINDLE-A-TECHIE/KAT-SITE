@@ -14,7 +14,7 @@ export default function OgImage() {
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          background: "linear-gradient(135deg, #0D1F45 0%, #132B5E 45%, #1E5FAF 100%)",
+          background: "linear-gradient(135deg, #1A1714 0%, #1A1714 45%, #B2401D 100%)",
           fontFamily: "sans-serif",
           padding: "64px",
           position: "relative",
@@ -41,7 +41,7 @@ export default function OgImage() {
             width: 280,
             height: 280,
             borderRadius: "50%",
-            background: "rgba(30,95,175,0.25)",
+            background: "rgba(178, 64, 29,0.25)",
             filter: "blur(50px)",
           }}
         />
@@ -65,7 +65,7 @@ export default function OgImage() {
               width: 10,
               height: 10,
               borderRadius: "50%",
-              background: "#4DB3E6",
+              background: "#F2B705",
             }}
           />
           <span style={{ color: "#93c5fd", fontSize: 16, fontWeight: 600, letterSpacing: "0.1em" }}>

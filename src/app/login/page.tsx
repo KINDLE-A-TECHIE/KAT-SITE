@@ -97,8 +97,8 @@ function LoginContent() {
         <div className="relative hidden lg:flex lg:w-[45%] flex-col justify-between overflow-hidden bg-kat-dark p-10">
           {/* Background decoration */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-blue-600/20 blur-3xl" />
-            <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-indigo-600/10 blur-3xl" />
+            <div className="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-orange-600/20 blur-3xl" />
+            <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-orange-600/10 blur-3xl" />
           </div>
 
           <Link href="/" className="relative flex items-center gap-3">
@@ -109,29 +109,29 @@ function LoginContent() {
           </Link>
 
           <div className="relative">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-blue-400">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-orange-400">
               Learning Management System
             </p>
             <h1 className="[font-family:var(--font-space-grotesk)] text-4xl font-bold leading-tight text-white">
               Empowering the
               <br />
-              <span className="text-blue-400">next generation</span>
+              <span className="text-orange-400">next generation</span>
               <br />
               of African talent.
             </h1>
-            <p className="mt-4 text-sm leading-relaxed text-slate-400">
+            <p className="mt-4 text-sm leading-relaxed text-stone-400">
               A unified platform for students, fellows, parents, and instructors
               to learn, collaborate, and grow together.
             </p>
           </div>
 
-          <p className="relative text-xs text-slate-500">
+          <p className="relative text-xs text-stone-500">
 
           </p>
         </div>
 
         {/* Right panel, form */}
-        <div className="flex flex-1 items-center justify-center bg-slate-50 px-4 py-8 sm:px-6 sm:py-12">
+        <div className="flex flex-1 items-center justify-center bg-stone-50 px-4 py-8 sm:px-6 sm:py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -141,34 +141,34 @@ function LoginContent() {
             {/* Mobile logo */}
             <Link href="/" className="mb-8 flex items-center gap-2 lg:hidden">
               <Image src="/kindle-a-techie.svg" alt="KAT logo" width={36} height={36} className="shrink-0" />
-              <span className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-900">
+              <span className="[font-family:var(--font-space-grotesk)] font-semibold text-stone-900">
                 KAT Learning
               </span>
             </Link>
 
             <div className="mb-8">
-              <h2 className="[font-family:var(--font-space-grotesk)] text-2xl font-bold text-slate-900">
+              <h2 className="[font-family:var(--font-space-grotesk)] text-2xl font-bold text-stone-900">
                 Welcome back
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-stone-500">
                 Sign in to your account to continue.
               </p>
             </div>
 
             <form onSubmit={onSubmit} className="space-y-5">
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+                <Label htmlFor="email" className="text-sm font-medium text-stone-700">
                   Email address
                 </Label>
                 <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="you@example.com"
                     aria-describedby={form.formState.errors.email ? "email-error" : undefined}
                     aria-invalid={!!form.formState.errors.email}
-                    className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-[#1E5FAF]/50"
+                    className="h-11 rounded-xl border-stone-200 bg-white pl-10 text-sm shadow-sm placeholder:text-stone-400 focus-visible:ring-[#B2401D]/50"
                     {...form.register("email")}
                   />
                 </div>
@@ -179,7 +179,7 @@ function LoginContent() {
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-sm font-medium text-slate-700">
+                  <Label htmlFor="password" className="text-sm font-medium text-stone-700">
                     Password
                   </Label>
                   <Link
@@ -190,21 +190,21 @@ function LoginContent() {
                   </Link>
                 </div>
                 <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     aria-describedby={form.formState.errors.password ? "password-error" : undefined}
                     aria-invalid={!!form.formState.errors.password}
-                    className="h-11 rounded-xl border-slate-200 bg-white pl-10 pr-10 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-[#1E5FAF]/50"
+                    className="h-11 rounded-xl border-stone-200 bg-white pl-10 pr-10 text-sm shadow-sm placeholder:text-stone-400 focus-visible:ring-[#B2401D]/50"
                     {...form.register("password")}
                   />
                   <button
                     type="button"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
                     tabIndex={-1}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
@@ -226,12 +226,12 @@ function LoginContent() {
               )}
 
               {siteKey && !turnstileToken && !loading && (
-                <p className="text-center text-xs text-slate-400">Complete the security check above to sign in.</p>
+                <p className="text-center text-xs text-stone-400">Complete the security check above to sign in.</p>
               )}
               <Button
                 disabled={loading || (!!siteKey && !turnstileToken)}
                 type="submit"
-                className="h-11 w-full rounded-xl bg-kat-blue text-sm font-semibold hover:bg-[#1a52a0]"
+                className="h-11 w-full rounded-xl bg-kat-blue text-sm font-semibold hover:bg-[#8F3316]"
               >
                 {loading && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden="true" />}
                 {loading ? "Signing in…" : "Sign In"}
@@ -241,9 +241,9 @@ function LoginContent() {
             {process.env.NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED === "true" && (
               <>
                 <div className="relative my-5 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-slate-200" />
-                  <span className="text-xs text-slate-400">or</span>
-                  <div className="h-px flex-1 bg-slate-200" />
+                  <div className="h-px flex-1 bg-stone-200" />
+                  <span className="text-xs text-stone-400">or</span>
+                  <div className="h-px flex-1 bg-stone-200" />
                 </div>
 
                 <Button
@@ -251,7 +251,7 @@ function LoginContent() {
                   variant="outline"
                   disabled={googleLoading}
                   onClick={handleGoogleSignIn}
-                  className="h-11 w-full rounded-xl border-slate-200 bg-white text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+                  className="h-11 w-full rounded-xl border-stone-200 bg-white text-sm font-medium text-stone-700 shadow-sm hover:bg-stone-50"
                 >
                   <GoogleIcon />
                   <span className="ml-2">{googleLoading ? "Redirecting…" : "Continue with Google"}</span>
@@ -259,7 +259,7 @@ function LoginContent() {
               </>
             )}
 
-            <p className="mt-6 text-center text-sm text-slate-500">
+            <p className="mt-6 text-center text-sm text-stone-500">
               Don&apos;t have an account?{" "}
               <Link
                 href={redirectTo !== "/dashboard" ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}
@@ -278,7 +278,7 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-slate-50" />}>
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-stone-50" />}>
       <LoginContent />
     </Suspense>
   );

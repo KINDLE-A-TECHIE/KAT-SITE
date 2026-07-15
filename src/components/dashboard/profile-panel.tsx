@@ -128,16 +128,16 @@ const LOCATION_OPTIONS = [
   "New Zealand",
   "Singapore",
 ] as const;
-const PROFILE_CARD_CLASS = "border border-slate-200/90 dark:border-slate-700/90 bg-white/95 dark:bg-slate-900/90 shadow-[0_16px_38px_-28px_rgba(15,23,42,0.55)]";
+const PROFILE_CARD_CLASS = "border border-stone-200/90 dark:border-stone-700/90 bg-white/95 dark:bg-stone-900/90 shadow-[0_16px_38px_-28px_rgba(26, 23, 20,0.55)]";
 const PROFILE_INPUT_CLASS =
-  "h-10 rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-800 px-3 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-sky-200 focus-visible:ring-offset-0";
+  "h-10 rounded-xl border-stone-300 dark:border-stone-600 bg-stone-50/70 dark:bg-stone-800 px-3 text-stone-800 dark:text-stone-200 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus-visible:ring-2 focus-visible:ring-orange-200 focus-visible:ring-offset-0";
 const PROFILE_SELECT_CLASS =
-  "h-10 w-full max-w-full min-w-0 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-800 px-3 text-sm text-slate-700 dark:text-slate-200 focus-visible:ring-2 focus-visible:ring-sky-200";
+  "h-10 w-full max-w-full min-w-0 rounded-xl border border-stone-300 dark:border-stone-600 bg-stone-50/70 dark:bg-stone-800 px-3 text-sm text-stone-700 dark:text-stone-200 focus-visible:ring-2 focus-visible:ring-orange-200";
 const PROFILE_VISIBILITY_SELECT_CLASS =
-  "h-10 w-full max-w-full min-w-0 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-800 px-3 text-sm text-slate-700 dark:text-slate-200 focus-visible:ring-2 focus-visible:ring-sky-200";
-const PROFILE_PANEL_CLASS = "rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-[0_10px_24px_-22px_rgba(15,23,42,0.6)]";
+  "h-10 w-full max-w-full min-w-0 rounded-xl border border-stone-300 dark:border-stone-600 bg-stone-50/70 dark:bg-stone-800 px-3 text-sm text-stone-700 dark:text-stone-200 focus-visible:ring-2 focus-visible:ring-orange-200";
+const PROFILE_PANEL_CLASS = "rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-4 shadow-[0_10px_24px_-22px_rgba(26, 23, 20,0.6)]";
 const PROFILE_TEXTAREA_CLASS =
-  "rounded-xl border-slate-300 dark:border-slate-600 bg-slate-50/70 dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-sky-200 focus-visible:ring-offset-0";
+  "rounded-xl border-stone-300 dark:border-stone-600 bg-stone-50/70 dark:bg-stone-800 text-stone-800 dark:text-stone-200 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus-visible:ring-2 focus-visible:ring-orange-200 focus-visible:ring-offset-0";
 const PROFILE_SELECT_CONTENT_CLASS = "max-h-56 overflow-y-auto";
 
 function createClientId() {
@@ -612,16 +612,16 @@ export function ProfilePanel() {
     >
       <Card className={`${PROFILE_CARD_CLASS} h-fit overflow-hidden lg:sticky lg:top-24`}>
         <CardContent className="space-y-6 pt-6">
-          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-gradient-to-b from-slate-50 dark:from-slate-800/60 to-white dark:to-slate-900 p-4">
+          <div className="rounded-2xl border border-stone-200/80 dark:border-stone-700/80 bg-gradient-to-b from-stone-50 dark:from-stone-800/60 to-white dark:to-stone-900 p-4">
             <div className="flex flex-col items-center text-center">
-              <Avatar className="size-28 border border-slate-200 dark:border-slate-700 shadow-sm">
+              <Avatar className="size-28 border border-stone-200 dark:border-stone-700 shadow-sm">
                 <AvatarImage src={state.avatarUrl || undefined} alt={`${displayName} profile picture`} />
-                <AvatarFallback className="bg-slate-100 dark:bg-slate-700 text-xl font-semibold text-slate-700 dark:text-slate-300">
+                <AvatarFallback className="bg-stone-100 dark:bg-stone-700 text-xl font-semibold text-stone-700 dark:text-stone-300">
                   {getInitials(state.firstName, state.lastName)}
                 </AvatarFallback>
               </Avatar>
-              <p className="mt-3 text-base font-semibold text-slate-900 dark:text-slate-100">{displayName}</p>
-              <p className="text-sm text-slate-600 dark:text-slate-400">{state.headline || "Add a short professional headline."}</p>
+              <p className="mt-3 text-base font-semibold text-stone-900 dark:text-stone-100">{displayName}</p>
+              <p className="text-sm text-stone-600 dark:text-stone-400">{state.headline || "Add a short professional headline."}</p>
             </div>
           </div>
 
@@ -638,14 +638,14 @@ export function ProfilePanel() {
               }}
             />
             {avatarUploading ? (
-              <div className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 text-sm text-slate-600 dark:text-slate-400">
+              <div className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/60 px-3 text-sm text-stone-600 dark:text-stone-400">
                 <Loader2 className="size-4 animate-spin" />
                 Uploading…
               </div>
             ) : (
               <label
                 htmlFor="profile-avatar-upload"
-                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/60 px-3 text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors hover:bg-white dark:hover:bg-slate-700/50"
+                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-stone-300 dark:border-stone-600 bg-stone-50 dark:bg-stone-800/60 px-3 text-sm font-medium text-stone-700 dark:text-stone-300 transition-colors hover:bg-white dark:hover:bg-stone-700/50"
               >
                 <Upload className="size-4" />
                 Upload Photo
@@ -664,17 +664,17 @@ export function ProfilePanel() {
           </div>
 
           <div>
-            <div className="mb-1 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+            <div className="mb-1 flex items-center justify-between text-xs text-stone-600 dark:text-stone-400">
               <span className="font-medium">Profile Completion</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{profileCompletion}%</span>
+              <span className="font-semibold text-stone-800 dark:text-stone-200">{profileCompletion}%</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-600">
-              <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500" style={{ width: `${profileCompletion}%` }} />
+            <div className="h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-600">
+              <div className="h-full rounded-full bg-gradient-to-r from-orange-600 to-orange-500" style={{ width: `${profileCompletion}%` }} />
             </div>
           </div>
 
           <div>
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Summary Visibility</p>
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">Summary Visibility</p>
             <Select
               value={state.visibility.summary}
               onValueChange={(value) =>
@@ -708,16 +708,16 @@ export function ProfilePanel() {
 
       <div className="min-w-0 space-y-5">
         <Card className={PROFILE_CARD_CLASS}>
-          <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
-            <CardTitle className="[font-family:var(--font-space-grotesk)] text-xl tracking-tight text-slate-900 dark:text-slate-100">Profile Information</CardTitle>
-            <CardDescription className="leading-relaxed text-slate-500 dark:text-slate-400">
+          <CardHeader className="border-b border-stone-100 dark:border-stone-800 pb-4">
+            <CardTitle className="[font-family:var(--font-space-grotesk)] text-xl tracking-tight text-stone-900 dark:text-stone-100">Profile Information</CardTitle>
+            <CardDescription className="leading-relaxed text-stone-500 dark:text-stone-400">
               Update your identity, contact details, and bio shown across your workspace.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5 pt-5">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:[&>*]:min-w-0">
               <div className="space-y-1">
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-400">First Name</p>
+                <p className="text-xs font-medium text-stone-600 dark:text-stone-400">First Name</p>
                 <Input
                   className={PROFILE_INPUT_CLASS}
                   placeholder="First name"
@@ -726,7 +726,7 @@ export function ProfilePanel() {
                 />
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Last Name</p>
+                <p className="text-xs font-medium text-stone-600 dark:text-stone-400">Last Name</p>
                 <Input
                   className={PROFILE_INPUT_CLASS}
                   placeholder="Last name"
@@ -735,7 +735,7 @@ export function ProfilePanel() {
                 />
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Headline</p>
+                <p className="text-xs font-medium text-stone-600 dark:text-stone-400">Headline</p>
                 <Input
                   className={PROFILE_INPUT_CLASS}
                   placeholder="Headline"
@@ -744,7 +744,7 @@ export function ProfilePanel() {
                 />
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Phone</p>
+                <p className="text-xs font-medium text-stone-600 dark:text-stone-400">Phone</p>
                 <Input
                   className={PROFILE_INPUT_CLASS}
                   placeholder="Phone"
@@ -753,7 +753,7 @@ export function ProfilePanel() {
                 />
               </div>
               <div className="space-y-1 md:max-w-sm">
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Location</p>
+                <p className="text-xs font-medium text-stone-600 dark:text-stone-400">Location</p>
                 <Select
                   value={normalizedLocation}
                   onValueChange={(value) => setState((prev) => ({ ...prev, location: value }))}
@@ -780,7 +780,7 @@ export function ProfilePanel() {
             </div>
 
             <div className="space-y-1">
-              <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Bio</p>
+              <p className="text-xs font-medium text-stone-600 dark:text-stone-400">Bio</p>
               <Textarea
                 className={`min-h-[120px] ${PROFILE_TEXTAREA_CLASS}`}
                 placeholder="Short bio"
@@ -792,13 +792,13 @@ export function ProfilePanel() {
         </Card>
 
         <Card className={PROFILE_CARD_CLASS}>
-          <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
-            <CardTitle className="[font-family:var(--font-space-grotesk)] text-lg tracking-tight text-slate-900 dark:text-slate-100">Social Links</CardTitle>
-            <CardDescription className="leading-relaxed text-slate-500 dark:text-slate-400">
+          <CardHeader className="border-b border-stone-100 dark:border-stone-800 pb-4">
+            <CardTitle className="[font-family:var(--font-space-grotesk)] text-lg tracking-tight text-stone-900 dark:text-stone-100">Social Links</CardTitle>
+            <CardDescription className="leading-relaxed text-stone-500 dark:text-stone-400">
               Use full URLs, for example `https://github.com/username`.
             </CardDescription>
             <div className="pt-2">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Links Visibility</p>
+              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">Links Visibility</p>
               <Select
                 value={state.visibility.links}
                 onValueChange={(value) =>
@@ -857,11 +857,11 @@ export function ProfilePanel() {
         </Card>
 
         <Card className={PROFILE_CARD_CLASS}>
-          <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
-            <CardTitle className="[font-family:var(--font-space-grotesk)] text-lg tracking-tight text-slate-900 dark:text-slate-100">Skills</CardTitle>
-            <CardDescription className="leading-relaxed text-slate-500 dark:text-slate-400">Add skills one-by-one or comma separated.</CardDescription>
+          <CardHeader className="border-b border-stone-100 dark:border-stone-800 pb-4">
+            <CardTitle className="[font-family:var(--font-space-grotesk)] text-lg tracking-tight text-stone-900 dark:text-stone-100">Skills</CardTitle>
+            <CardDescription className="leading-relaxed text-stone-500 dark:text-stone-400">Add skills one-by-one or comma separated.</CardDescription>
             <div className="pt-2">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Skills Visibility</p>
+              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">Skills Visibility</p>
               <Select
                 value={state.visibility.skills}
                 onValueChange={(value) =>
@@ -913,18 +913,18 @@ export function ProfilePanel() {
 
             <div className="flex flex-wrap gap-2">
               {state.skills.length === 0 ? (
-                <p className="text-sm text-slate-500 dark:text-slate-400">No skills added yet.</p>
+                <p className="text-sm text-stone-500 dark:text-stone-400">No skills added yet.</p>
               ) : (
                 state.skills.map((skill) => (
                   <span
                     key={skill}
-                    className="inline-flex items-center gap-2 rounded-full border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-900/30 px-3 py-1 text-xs font-medium text-sky-900 dark:text-sky-400"
+                    className="inline-flex items-center gap-2 rounded-full border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/30 px-3 py-1 text-xs font-medium text-orange-900 dark:text-orange-400"
                   >
                     {skill}
                     <button
                       type="button"
                       aria-label={`Remove ${skill}`}
-                      className="rounded-full text-sky-800 dark:text-sky-400 transition-colors hover:text-sky-950 dark:hover:text-sky-200"
+                      className="rounded-full text-orange-800 dark:text-orange-400 transition-colors hover:text-orange-950 dark:hover:text-orange-200"
                       onClick={() => removeSkill(skill)}
                     >
                       x
@@ -937,10 +937,10 @@ export function ProfilePanel() {
         </Card>
 
         <Card className={PROFILE_CARD_CLASS}>
-          <CardHeader className="flex flex-col gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+          <CardHeader className="flex flex-col gap-3 border-b border-stone-100 dark:border-stone-800 pb-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
             <div className="space-y-1">
-              <CardTitle className="flex items-center gap-2 [font-family:var(--font-space-grotesk)] text-lg text-slate-900 dark:text-slate-100">
-                <GraduationCap className="size-5 text-sky-700 dark:text-sky-400" />
+              <CardTitle className="flex items-center gap-2 [font-family:var(--font-space-grotesk)] text-lg text-stone-900 dark:text-stone-100">
+                <GraduationCap className="size-5 text-orange-700 dark:text-orange-400" />
                 Education
               </CardTitle>
               <CardDescription>Add schools and certifications using clear fields.</CardDescription>
@@ -987,14 +987,14 @@ export function ProfilePanel() {
           </CardHeader>
           <CardContent className="space-y-3">
             {state.education.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/80 dark:bg-slate-800/40 p-4 text-sm text-slate-600 dark:text-slate-400">
+              <div className="rounded-xl border border-dashed border-stone-300 dark:border-stone-600 bg-stone-50/80 dark:bg-stone-800/40 p-4 text-sm text-stone-600 dark:text-stone-400">
                 No education entries yet.
               </div>
             ) : (
               state.education.map((item, index) => (
                 <div key={item.id} className={PROFILE_PANEL_CLASS}>
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Education {index + 1}</p>
+                    <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">Education {index + 1}</p>
                     <Button
                       type="button"
                       variant="ghost"
@@ -1031,7 +1031,7 @@ export function ProfilePanel() {
                       value={item.fieldOfStudy}
                       onChange={(event) => updateEducation(item.id, { fieldOfStudy: event.target.value })}
                     />
-                    <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 text-sm text-slate-700 dark:text-slate-300">
+                    <label className="inline-flex items-center gap-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/60 px-3 text-sm text-stone-700 dark:text-stone-300">
                       <input
                         type="checkbox"
                         checked={item.isCurrent}
@@ -1071,10 +1071,10 @@ export function ProfilePanel() {
         </Card>
 
         <Card className={PROFILE_CARD_CLASS}>
-          <CardHeader className="flex flex-col gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+          <CardHeader className="flex flex-col gap-3 border-b border-stone-100 dark:border-stone-800 pb-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
             <div className="space-y-1">
-              <CardTitle className="flex items-center gap-2 [font-family:var(--font-space-grotesk)] text-lg text-slate-900 dark:text-slate-100">
-                <Briefcase className="size-5 text-sky-700 dark:text-sky-400" />
+              <CardTitle className="flex items-center gap-2 [font-family:var(--font-space-grotesk)] text-lg text-stone-900 dark:text-stone-100">
+                <Briefcase className="size-5 text-orange-700 dark:text-orange-400" />
                 Experience
               </CardTitle>
               <CardDescription>Add your work history with structured fields.</CardDescription>
@@ -1121,14 +1121,14 @@ export function ProfilePanel() {
           </CardHeader>
           <CardContent className="space-y-3">
             {state.experience.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/80 dark:bg-slate-800/40 p-4 text-sm text-slate-600 dark:text-slate-400">
+              <div className="rounded-xl border border-dashed border-stone-300 dark:border-stone-600 bg-stone-50/80 dark:bg-stone-800/40 p-4 text-sm text-stone-600 dark:text-stone-400">
                 No experience entries yet.
               </div>
             ) : (
               state.experience.map((item, index) => (
                 <div key={item.id} className={PROFILE_PANEL_CLASS}>
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Experience {index + 1}</p>
+                    <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">Experience {index + 1}</p>
                     <Button
                       type="button"
                       variant="ghost"
@@ -1159,7 +1159,7 @@ export function ProfilePanel() {
                       value={item.title}
                       onChange={(event) => updateExperience(item.id, { title: event.target.value })}
                     />
-                    <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 text-sm text-slate-700 dark:text-slate-300">
+                    <label className="inline-flex items-center gap-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/60 px-3 text-sm text-stone-700 dark:text-stone-300">
                       <input
                         type="checkbox"
                         checked={item.isCurrent}

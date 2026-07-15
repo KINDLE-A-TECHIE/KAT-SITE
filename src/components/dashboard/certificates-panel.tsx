@@ -191,7 +191,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
     <div className="space-y-5">
       {/* Header row */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           {canIssue
             ? isSuperAdmin
               ? "Issue and manage certificates for your learners."
@@ -201,7 +201,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
         {canIssue && (
           <Button
             size="sm"
-            className="gap-1.5 bg-[#0D1F45] hover:bg-[#162d5e]"
+            className="gap-1.5 bg-[#1A1714] hover:bg-[#162d5e]"
             onClick={() => void openIssue()}
           >
             <Plus className="size-3.5" />
@@ -212,15 +212,15 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
 
       {/* Status filter tabs, issuers only */}
       {canIssue && (
-        <div className="flex w-fit items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800/60">
+        <div className="flex w-fit items-center gap-1 rounded-xl bg-stone-100 p-1 dark:bg-stone-800/60">
           {FILTER_TABS.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setStatusFilter(tab.value)}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                 statusFilter === tab.value
-                  ? "bg-white shadow-sm text-slate-800 dark:bg-slate-700 dark:text-slate-100"
-                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                  ? "bg-white shadow-sm text-stone-800 dark:bg-stone-700 dark:text-stone-100"
+                  : "text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
               }`}
             >
               {tab.label}
@@ -234,9 +234,9 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
           {[1, 2, 3].map(n => <Skeleton key={n} className="h-20 w-full rounded-xl" />)}
         </div>
       ) : certs.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-200 py-16 text-center dark:border-slate-700">
-          <Award className="size-10 text-slate-300 dark:text-slate-600" />
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-stone-200 py-16 text-center dark:border-stone-700">
+          <Award className="size-10 text-stone-300 dark:text-stone-600" />
+          <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
             {canIssue
               ? statusFilter
                 ? `No ${STATUS_LABEL[statusFilter as CertStatus].toLowerCase()} certificates.`
@@ -260,10 +260,10 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
               <section key={program.id} className="space-y-2">
                 {/* Programme header */}
                 <div className="flex flex-wrap items-center gap-2 pb-0.5">
-                  <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  <h3 className="text-sm font-semibold text-stone-800 dark:text-stone-200">
                     {program.name}
                   </h3>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${PROGRAM_LEVEL_COLOR[program.level] ?? "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${PROGRAM_LEVEL_COLOR[program.level] ?? "bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300"}`}>
                     {PROGRAM_LEVEL_LABEL[program.level] ?? program.level}
                   </span>
                   {canIssue && (
@@ -312,10 +312,10 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
 
       {/* Issue / Request dialog */}
       <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
-        <DialogContent className="max-w-md dark:border-slate-700 dark:bg-slate-900">
+        <DialogContent className="max-w-md dark:border-stone-700 dark:bg-stone-900">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 dark:text-slate-100">
-              <Award className="size-4 text-[#0D1F45] dark:text-blue-400" />
+            <DialogTitle className="flex items-center gap-2 dark:text-stone-100">
+              <Award className="size-4 text-[#1A1714] dark:text-orange-400" />
               {isSuperAdmin ? "Issue Certificate" : "Request Certificate"}
             </DialogTitle>
           </DialogHeader>
@@ -328,19 +328,19 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
 
           <div className="space-y-4 pt-1">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Student / Fellow</label>
+              <label className="text-xs font-medium text-stone-600 dark:text-stone-400">Student / Fellow</label>
               <Select value={selectedUser} onValueChange={setSelectedUser}>
                 <SelectTrigger className="[&>span]:truncate">
                   <SelectValue placeholder="Select recipient…" />
                 </SelectTrigger>
                 <SelectContent>
                   {learners.length === 0 ? (
-                    <div className="px-3 py-4 text-center text-xs text-slate-400">Loading learners…</div>
+                    <div className="px-3 py-4 text-center text-xs text-stone-400">Loading learners…</div>
                   ) : (
                     learners.map(l => (
                       <SelectItem key={l.id} value={l.id}>
                         {l.firstName} {l.lastName}
-                        <span className="ml-1.5 text-slate-400">({l.role.toLowerCase()})</span>
+                        <span className="ml-1.5 text-stone-400">({l.role.toLowerCase()})</span>
                       </SelectItem>
                     ))
                   )}
@@ -349,19 +349,19 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Programme</label>
+              <label className="text-xs font-medium text-stone-600 dark:text-stone-400">Programme</label>
               <Select value={selectedProgram} onValueChange={setSelectedProgram}>
                 <SelectTrigger className="[&>span]:truncate">
                   <SelectValue placeholder="Select programme…" />
                 </SelectTrigger>
                 <SelectContent>
                   {programs.length === 0 ? (
-                    <div className="px-3 py-4 text-center text-xs text-slate-400">Loading programmes…</div>
+                    <div className="px-3 py-4 text-center text-xs text-stone-400">Loading programmes…</div>
                   ) : (
                     programs.map(p => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.name}
-                        <span className="ml-1.5 text-slate-400">· {PROGRAM_LEVEL_LABEL[p.level] ?? p.level}</span>
+                        <span className="ml-1.5 text-stone-400">· {PROGRAM_LEVEL_LABEL[p.level] ?? p.level}</span>
                       </SelectItem>
                     ))
                   )}
@@ -370,11 +370,11 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
             </div>
 
             <div className="flex gap-2 pt-1">
-              <Button variant="outline" className="flex-1 dark:border-slate-600 dark:text-slate-300" onClick={() => setIssueOpen(false)}>
+              <Button variant="outline" className="flex-1 dark:border-stone-600 dark:text-stone-300" onClick={() => setIssueOpen(false)}>
                 <X className="mr-1.5 size-3.5" /> Cancel
               </Button>
               <Button
-                className="flex-1 bg-[#0D1F45] hover:bg-[#162d5e]"
+                className="flex-1 bg-[#1A1714] hover:bg-[#162d5e]"
                 disabled={issuing || !selectedUser || !selectedProgram}
                 onClick={() => void issueCertificate()}
               >
@@ -390,17 +390,17 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
 
       {/* Revoke confirmation dialog */}
       <Dialog open={!!revokeTarget} onOpenChange={open => !open && setRevokeTarget(null)}>
-        <DialogContent className="max-w-sm dark:border-slate-700 dark:bg-slate-900">
+        <DialogContent className="max-w-sm dark:border-stone-700 dark:bg-stone-900">
           <DialogHeader>
-            <DialogTitle className="dark:text-slate-100">Revoke Certificate</DialogTitle>
+            <DialogTitle className="dark:text-stone-100">Revoke Certificate</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-stone-600 dark:text-stone-400">
             Are you sure you want to revoke the certificate for{" "}
-            <span className="font-semibold text-slate-800 dark:text-slate-200">{revokeTarget?.name}</span>?
+            <span className="font-semibold text-stone-800 dark:text-stone-200">{revokeTarget?.name}</span>?
             This action cannot be undone.
           </p>
           <DialogFooter className="gap-2">
-            <Button variant="outline" className="dark:border-slate-600 dark:text-slate-300" onClick={() => setRevokeTarget(null)}>
+            <Button variant="outline" className="dark:border-stone-600 dark:text-stone-300" onClick={() => setRevokeTarget(null)}>
               Cancel
             </Button>
             <Button variant="destructive" disabled={revoking} onClick={() => void confirmRevoke()}>
@@ -412,33 +412,33 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
 
       {/* Reject dialog */}
       <Dialog open={!!rejectTarget} onOpenChange={open => !open && setRejectTarget(null)}>
-        <DialogContent className="max-w-sm dark:border-slate-700 dark:bg-slate-900">
+        <DialogContent className="max-w-sm dark:border-stone-700 dark:bg-stone-900">
           <DialogHeader>
-            <DialogTitle className="dark:text-slate-100">Reject Certificate Request</DialogTitle>
+            <DialogTitle className="dark:text-stone-100">Reject Certificate Request</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-stone-600 dark:text-stone-400">
               Rejecting certificate for{" "}
-              <span className="font-semibold text-slate-800 dark:text-slate-200">
+              <span className="font-semibold text-stone-800 dark:text-stone-200">
                 {rejectTarget?.user.firstName} {rejectTarget?.user.lastName}
               </span>{" "}
               {rejectTarget?.program.name}.
             </p>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                Rejection note <span className="text-slate-400">(optional)</span>
+              <label className="text-xs font-medium text-stone-600 dark:text-stone-400">
+                Rejection note <span className="text-stone-400">(optional)</span>
               </label>
               <textarea
                 value={rejectionNote}
                 onChange={e => setRejectionNote(e.target.value)}
                 placeholder="Reason for rejection…"
                 rows={3}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0D1F45]/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/30"
+                className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#1A1714]/30 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:placeholder:text-stone-500 dark:focus:ring-orange-500/30"
               />
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" className="dark:border-slate-600 dark:text-slate-300" onClick={() => setRejectTarget(null)}>
+            <Button variant="outline" className="dark:border-stone-600 dark:text-stone-300" onClick={() => setRejectTarget(null)}>
               Cancel
             </Button>
             <Button
@@ -487,20 +487,20 @@ function CertRow({
   };
 
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="flex items-center gap-4 rounded-xl border border-stone-200 bg-white px-4 py-3.5 shadow-sm dark:border-stone-700 dark:bg-stone-900">
       {/* Icon */}
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#0D1F45]/8 dark:bg-[#0D1F45]/30">
-        <Award className="size-5 text-[#0D1F45] dark:text-blue-300" />
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#1A1714]/8 dark:bg-[#1A1714]/30">
+        <Award className="size-5 text-[#1A1714] dark:text-orange-300" />
       </div>
 
       {/* Info */}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           {/* Issuer sees learner name; learner sees programme name */}
-          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
             {canIssue ? `${cert.user.firstName} ${cert.user.lastName}` : cert.program.name}
           </p>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${PROGRAM_LEVEL_COLOR[cert.program.level] ?? "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${PROGRAM_LEVEL_COLOR[cert.program.level] ?? "bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300"}`}>
             {PROGRAM_LEVEL_LABEL[cert.program.level] ?? cert.program.level}
           </span>
           {canIssue && (
@@ -512,12 +512,12 @@ function CertRow({
 
         {/* Issuer: programme name + email on second line */}
         {canIssue && (
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
             {cert.program.name} · {cert.user.email}
           </p>
         )}
 
-        <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
+        <p className="mt-0.5 text-[11px] text-stone-400 dark:text-stone-500">
           {canIssue
             ? <>Requested {formatDate(cert.issuedAt)} by {cert.issuedBy.firstName} {cert.issuedBy.lastName}</>
             : <>Issued {formatDate(cert.issuedAt)}</>
@@ -559,13 +559,13 @@ function CertRow({
             <button
               onClick={handleCopy}
               title="Copy certificate link"
-              className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+              className="flex size-8 items-center justify-center rounded-lg text-stone-400 transition hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-stone-800 dark:hover:text-stone-300"
             >
               {linkCopied ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
             </button>
             <Link
               href={`/certificate/${cert.credentialId}`}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 transition hover:border-stone-300 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
             >
               <ExternalLink className="size-3" />
               View
@@ -576,7 +576,7 @@ function CertRow({
         {canRevoke && (
           <button
             onClick={onRevoke}
-            className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/30 dark:hover:text-rose-400"
+            className="flex size-8 items-center justify-center rounded-lg text-stone-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/30 dark:hover:text-rose-400"
             title="Revoke certificate"
           >
             <Trash2 className="size-3.5" />
