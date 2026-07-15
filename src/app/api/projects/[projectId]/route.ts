@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { UserRole } from "@prisma/client";
+import { NotificationType, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -9,10 +9,10 @@ interface Params { params: Promise<{ projectId: string }> }
 
 const updateSchema = z.object({
   title: z.string().min(1).max(120).optional(),
-  description: z.string().max(2000).optional(),
+  description: z.string().min(10).max(2000).optional(),
   tags: z.array(z.string().max(30)).max(10).optional(),
   deployedUrl: z.string().url().optional().or(z.literal("")),
-  visibility: z.enum(["PRIVATE", "PUBLIC"]).optional(),
+  howToUse: z.string().max(2000).optional(),
   status: z.enum(["DRAFT", "SUBMITTED"]).optional(), // students can only submit/retract
 });
 
@@ -30,6 +30,16 @@ export async function GET(_req: Request, { params }: Params) {
       feedback: {
         include: { author: { select: { id: true, firstName: true, lastName: true, role: true } } },
         orderBy: { createdAt: "asc" },
+      },
+      reviews: {
+        include: { reviewer: { select: { id: true, firstName: true, lastName: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      },
+      assets: {
+        select: { id: true, name: true, mimeType: true, size: true, url: true, description: true, uploadedAt: true,
+          uploader: { select: { firstName: true, lastName: true } } },
+        orderBy: { uploadedAt: "asc" },
       },
     },
   });
@@ -76,14 +86,25 @@ export async function PATCH(request: Request, { params }: Params) {
   const isOwner = project.studentId === session.user.id;
   if (!isOwner) return fail("Forbidden", 403);
 
-  // Can only edit DRAFT or NEEDS_WORK projects
-  if (project.status !== "DRAFT" && project.status !== "NEEDS_WORK") {
-    return fail("Cannot edit a submitted or reviewed project.", 400);
-  }
-
   const body = await request.json() as unknown;
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) return fail("Invalid input.", 400, parsed.error.flatten());
+
+  const { status: newStatus, ...fields } = parsed.data;
+  const hasFieldEdits = Object.keys(fields).length > 0;
+  const isRetract = newStatus === "DRAFT" && project.status === "SUBMITTED";
+  const isSubmit = newStatus === "SUBMITTED" && (
+    project.status === "DRAFT" || project.status === "NEEDS_WORK" || project.status === "REJECTED"
+  );
+
+  // Field edits only allowed on DRAFT, NEEDS_WORK, or REJECTED
+  if (hasFieldEdits && project.status !== "DRAFT" && project.status !== "NEEDS_WORK" && project.status !== "REJECTED") {
+    return fail("Cannot edit a submitted or reviewed project.", 400);
+  }
+  // Status transitions: only submit or retract
+  if (newStatus && !isRetract && !isSubmit) {
+    return fail("Invalid status transition.", 400);
+  }
 
   const updated = await prisma.project.update({
     where: { id: projectId },
@@ -92,15 +113,42 @@ export async function PATCH(request: Request, { params }: Params) {
       ...(parsed.data.description !== undefined && { description: parsed.data.description }),
       ...(parsed.data.tags !== undefined && { tags: parsed.data.tags }),
       ...(parsed.data.deployedUrl !== undefined && { deployedUrl: parsed.data.deployedUrl || null }),
-      ...(parsed.data.visibility !== undefined && { visibility: parsed.data.visibility }),
+      ...(parsed.data.howToUse !== undefined && { howToUse: parsed.data.howToUse || null }),
       ...(parsed.data.status !== undefined && { status: parsed.data.status }),
     },
     include: {
       program: { select: { id: true, name: true } },
       files: true,
       feedback: { include: { author: { select: { id: true, firstName: true, lastName: true, role: true } } } },
+      assets: {
+        select: { id: true, name: true, mimeType: true, size: true, url: true, description: true, uploadedAt: true,
+          uploader: { select: { firstName: true, lastName: true } } },
+        orderBy: { uploadedAt: "asc" },
+      },
     },
   });
+
+  // Notify instructors in the org that a new submission is waiting for review
+  if (isSubmit && session.user.organizationId) {
+    const instructors = await prisma.user.findMany({
+      where: { organizationId: session.user.organizationId, role: UserRole.INSTRUCTOR },
+      select: { id: true },
+    });
+    if (instructors.length > 0) {
+      await prisma.notification.createMany({
+        data: instructors.map((i) => ({
+          recipientId: i.id,
+          creatorId: session.user.id,
+          type: NotificationType.INFO,
+          title: "Project submitted for review",
+          body: JSON.stringify({
+            text: `A student submitted "${project.title}" for review. Open the Review Queue to assess it.`,
+            targetPath: "/dashboard/projects",
+          }),
+        })),
+      });
+    }
+  }
 
   return ok({ project: updated });
 }

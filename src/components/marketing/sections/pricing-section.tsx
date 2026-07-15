@@ -1,63 +1,60 @@
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { PRICING_TIERS } from "../landing-tokens";
+import { PRICING_TIERS, STAMP_CTA } from "../landing-tokens";
 
 export function PricingSection() {
   return (
-    <section id="pricing" className="kat-page kat-defer pb-16 sm:pb-20">
-      <div className="mb-10 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--kat-primary-blue)]">Pricing</p>
-        <h2 className="mt-2 [font-family:var(--font-space-grotesk)] text-3xl font-bold text-[var(--kat-text-primary)] sm:text-4xl">
-          Transparent, per-track enrollment
+    <section id="pricing" className="kat-page kat-defer py-16 sm:py-24">
+      <div className="max-w-2xl border-l-2 border-[var(--kat-clay)] pl-5">
+        <p className="kat-eyebrow">Pricing</p>
+        <h2 className="mt-3 font-display text-3xl font-bold leading-tight text-[var(--kat-ink)] sm:text-[2.5rem]">
+          Billed monthly. Cancel whenever.
         </h2>
-        <p className="mx-auto mt-3 max-w-xl text-[var(--kat-text-secondary)]">
-          Each track is billed monthly. Parents register, select a cohort, and complete payment to
-          activate their child&apos;s access. Scholarships are available.
+        <p className="mt-4 font-body leading-relaxed text-[var(--kat-muted)]">
+          Register to see your track&apos;s price. Scholarship spots open every cohort,
+          apply and tell us you need support.
         </p>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-3">
+      <div className="mt-12 grid border-t border-[var(--kat-border)] sm:grid-cols-3">
         {PRICING_TIERS.map((tier) => (
           <div
             key={tier.id}
             className={cn(
-              "relative flex flex-col rounded-2xl border bg-white p-6 shadow-[0_4px_20px_-8px_rgba(19,43,94,0.1)]",
-              tier.highlight
-                ? "border-[var(--kat-primary-blue)] shadow-[0_16px_48px_-12px_rgba(30,95,175,0.25)]"
-                : "border-[var(--kat-border)]",
+              "relative flex flex-col border-b border-[var(--kat-border)] p-6 sm:border-r sm:last:border-r-0",
+              // The highlighted tier is marked by a solid ground, not a shadow, a
+              // badge and a coloured border all at once.
+              tier.highlight && "bg-[var(--kat-raised)]",
             )}
           >
             {tier.highlight && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <Badge
-                  className="border-0 px-3 py-0.5 text-xs font-semibold text-white"
-                  style={{ background: "var(--kat-gradient)" }}
-                >
-                  Most Popular
-                </Badge>
-              </div>
+              <span className="absolute right-6 top-6 font-mono text-[0.7rem] uppercase tracking-widest text-[var(--kat-clay)]">
+                Most chosen
+              </span>
             )}
 
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--kat-primary-blue)]">
-                {tier.ages}
-              </p>
-              <h3 className="mt-1 [font-family:var(--font-space-grotesk)] text-xl font-bold text-[var(--kat-text-primary)]">
-                {tier.label}
-              </h3>
-              <p className="mt-3 text-sm font-medium text-[var(--kat-text-secondary)]">
-                {tier.monthlyLabel}
-              </p>
-              <p className="mt-0.5 text-xs text-[var(--kat-text-secondary)]">{tier.billingNote}</p>
-            </div>
+            <p className="font-mono text-[0.7rem] uppercase tracking-[0.22em] text-[var(--kat-muted)]">
+              {tier.ages}
+            </p>
+            <h3 className="mt-2 font-display text-xl font-bold text-[var(--kat-ink)]">
+              {tier.label}
+            </h3>
+            <p className="mt-4 font-body text-sm font-medium text-[var(--kat-ink)]">
+              {tier.monthlyLabel}
+            </p>
+            <p className="mt-0.5 font-mono text-[0.7rem] uppercase tracking-wider text-[var(--kat-muted)]">
+              {tier.billingNote}
+            </p>
 
-            <ul className="mt-5 flex-1 space-y-2.5">
+            <ul className="mt-6 flex-1 space-y-2.5">
               {tier.includes.map((item) => (
-                <li key={item} className="flex items-start gap-2.5 text-sm text-[var(--kat-text-secondary)]">
-                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[var(--kat-success)]" />
+                <li
+                  key={item}
+                  className="flex items-start gap-2.5 font-body text-sm leading-relaxed text-[var(--kat-muted)]"
+                >
+                  <Check className="mt-0.5 size-4 shrink-0 text-[var(--kat-pine)]" aria-hidden />
                   {item}
                 </li>
               ))}
@@ -65,13 +62,11 @@ export function PricingSection() {
 
             <Button
               asChild
-              className={cn(
-                "mt-6 w-full rounded-xl font-semibold",
+              className={
                 tier.highlight
-                  ? "text-white shadow-[0_4px_14px_-4px_rgba(30,95,175,0.5)]"
-                  : "border border-[var(--kat-border)] bg-white text-[var(--kat-primary-blue)] hover:bg-blue-50",
-              )}
-              style={tier.highlight ? { background: "var(--kat-gradient)" } : {}}
+                  ? cn("mt-7 w-full", STAMP_CTA)
+                  : "mt-7 w-full rounded-none border border-[var(--kat-ink)]/25 bg-transparent font-semibold text-[var(--kat-ink)] hover:bg-[var(--kat-ink)] hover:text-[var(--kat-paper)]"
+              }
               variant={tier.highlight ? "default" : "outline"}
             >
               <Link href="/register">{tier.cta}</Link>
@@ -80,12 +75,13 @@ export function PricingSection() {
         ))}
       </div>
 
-      <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-center">
-        <p className="text-sm font-semibold text-emerald-800">
-          Scholarship spots available every cohort
-        </p>
-        <p className="mt-1 text-sm text-emerald-700">
-          Need financial support? Join the waitlist and mention scholarships — we review every application.
+      <div className="mt-8 flex items-start gap-3 border-l-2 border-[var(--kat-pine)] bg-[var(--kat-raised)] px-5 py-4">
+        <p className="font-body text-sm leading-relaxed text-[var(--kat-muted)]">
+          <span className="font-semibold text-[var(--kat-ink)]">
+            Scholarship spots open every cohort.
+          </span>{" "}
+          If cost is the only thing standing between your child and this, tell us. We
+          read every application.
         </p>
       </div>
     </section>

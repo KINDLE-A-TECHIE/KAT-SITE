@@ -1,9 +1,10 @@
-import { EnrollmentStatus, UserRole } from "@prisma/client";
+import { EnrollmentPeriodReason, EnrollmentStatus, UserRole } from "@prisma/client";
 import { z } from "zod";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { trackEvent } from "@/lib/analytics";
+import { orgScope } from "@/lib/tenant";
 
 const createEnrollmentSchema = z.object({
   userId: z.string().cuid().optional(),
@@ -34,7 +35,7 @@ export async function GET(request: Request) {
   const enrollments = await prisma.enrollment.findMany({
     where: isAdmin && !filterUserId
       ? {
-          program: { organizationId: session.user.organizationId ?? undefined },
+          program: orgScope(session.user.organizationId),
         }
       : {
           userId: targetUserId,
@@ -95,30 +96,61 @@ export async function POST(request: Request) {
       ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
       : undefined;
 
-    const enrollment = await prisma.enrollment.upsert({
-      where: {
-        userId_programId: {
+    // Check if a prior enrollment exists (could be suspended/dropped)
+    const existing = await prisma.enrollment.findUnique({
+      where: { userId_programId: { userId: targetUserId, programId: parsed.data.programId } },
+      select: { id: true, status: true },
+    });
+
+    const isReactivation = !!existing && existing.status !== EnrollmentStatus.ACTIVE;
+    const isFirstTime = !existing;
+
+    const startReason: EnrollmentPeriodReason = isFirstTime
+      ? EnrollmentPeriodReason.INITIAL
+      : isReactivation
+        ? (isBillingWaived ? EnrollmentPeriodReason.WAIVED : EnrollmentPeriodReason.REACTIVATION)
+        : (isBillingWaived ? EnrollmentPeriodReason.WAIVED : EnrollmentPeriodReason.MANUAL);
+
+    // ONE TRANSACTION. An enrollment without its billing period is a child who is enrolled and
+    // billed for nothing, and a crash between the two writes would leave exactly that. They land
+    // together or not at all.
+    const enrollment = await prisma.$transaction(async (tx) => {
+      const created = await tx.enrollment.upsert({
+        where: {
+          userId_programId: {
+            userId: targetUserId,
+            programId: parsed.data.programId,
+          },
+        },
+        update: {
+          status: EnrollmentStatus.ACTIVE,
+          ...(isManualByStaff && {
+            isBillingWaived,
+            currentPeriodEnd: billingType === "BILLABLE" ? billingPeriodEnd : null,
+          }),
+        },
+        create: {
           userId: targetUserId,
           programId: parsed.data.programId,
-        },
-      },
-      update: {
-        status: EnrollmentStatus.ACTIVE,
-        ...(isManualByStaff && {
           isBillingWaived,
-          currentPeriodEnd: billingType === "BILLABLE" ? billingPeriodEnd : null,
-        }),
-      },
-      create: {
-        userId: targetUserId,
-        programId: parsed.data.programId,
-        isBillingWaived,
-        currentPeriodEnd: billingPeriodEnd,
-      },
-      include: {
-        user: { select: { id: true, firstName: true, lastName: true } },
-        program: { select: { id: true, name: true } },
-      },
+          currentPeriodEnd: billingPeriodEnd,
+        },
+        include: {
+          user: { select: { id: true, firstName: true, lastName: true } },
+          program: { select: { id: true, name: true } },
+        },
+      });
+
+      // Close any stale open period before opening the new one.
+      await tx.enrollmentPeriod.updateMany({
+        where: { enrollmentId: created.id, endedAt: null },
+        data: { endedAt: new Date(), endReason: "MANUAL" },
+      });
+      await tx.enrollmentPeriod.create({
+        data: { enrollmentId: created.id, startReason },
+      });
+
+      return created;
     });
 
     await trackEvent({

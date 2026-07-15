@@ -455,6 +455,9 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
             return;
           }
 
+          // Notify other components (e.g. NotificationsPopover) without a second SSE connection
+          window.dispatchEvent(new CustomEvent("kat:message_created", { detail: payload }));
+
           const activeThreadId = selectedThreadIdRef.current;
           const now = Date.now();
           if (now - lastThreadRefreshAtRef.current >= 1200) {
@@ -908,7 +911,8 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
 
   return (
     <section className="grid grid-cols-1 gap-4 max-[360px]:gap-3 xl:grid-cols-[320px_1fr]">
-      <aside className="kat-card flex h-[72dvh] min-h-[420px] max-h-[880px] min-w-0 flex-col overflow-hidden max-[360px]:h-[68dvh] max-[360px]:min-h-[360px] sm:h-[74dvh] md:h-[78dvh]">
+      {/* Thread list, hidden on mobile when a thread is open */}
+      <aside className={`kat-card h-[72dvh] min-h-[420px] max-h-[880px] min-w-0 flex-col overflow-hidden max-[360px]:h-[68dvh] max-[360px]:min-h-[360px] sm:h-[74dvh] md:h-[78dvh] ${(selectedThreadId || selectedRecipientId) ? "hidden xl:flex" : "flex"}`}>
         {/* ── Fixed header ── */}
         <div className="mb-3 flex shrink-0 items-center justify-between">
           <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold max-[360px]:text-base">Conversations</h3>
@@ -991,7 +995,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
           )}
         </div>
 
-        {/* ── Composer — pinned to bottom ── */}
+        {/* ── Composer, pinned to bottom ── */}
         <div className="mt-3 shrink-0 space-y-2 border-t border-slate-100 dark:border-slate-800 pt-3">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">New Message</p>
 
@@ -1153,9 +1157,19 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
         </div>
       </aside>
 
-      <div className="kat-card flex h-[72dvh] min-h-[420px] max-h-[880px] min-w-0 flex-col overflow-hidden max-[360px]:h-[68dvh] max-[360px]:min-h-[360px] sm:h-[74dvh] md:h-[78dvh]">
+      {/* Chat view, hidden on mobile when no thread is selected */}
+      <div className={`kat-card h-[72dvh] min-h-[420px] max-h-[880px] min-w-0 flex-col overflow-hidden max-[360px]:h-[68dvh] max-[360px]:min-h-[360px] sm:h-[74dvh] md:h-[78dvh] ${(selectedThreadId || selectedRecipientId) ? "flex" : "hidden xl:flex"}`}>
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex min-w-0 items-center gap-2.5">
+            {/* Mobile back button */}
+            <button
+              type="button"
+              onClick={() => { setSelectedThreadId(""); setSelectedRecipientId(""); }}
+              className="mr-1 flex size-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 xl:hidden"
+              aria-label="Back to conversations"
+            >
+              <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
             {activeThread ? (
               <>
                 {activeThread.type === "GROUP" ? (
@@ -1450,7 +1464,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                   animate={{ opacity: 1, y: 0 }}
                   className={`group flex max-w-[88%] items-end gap-1 max-[360px]:max-w-[92%] sm:max-w-[75%] ${mine ? "ml-auto flex-row-reverse" : "flex-row"}`}
                 >
-                  {/* Action buttons — beside bubble so they're never clipped by scroll container */}
+                  {/* Action buttons, beside bubble so they're never clipped by scroll container */}
                   {(canEdit || canDelete || canPin) && !isEditing && (
                     <div className="mb-1.5 flex shrink-0 flex-col gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       {canPin && (
@@ -1699,7 +1713,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                     <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
                       {previewContact.profile.education.map((item) => (
                         <p key={`${item.school}-${item.degree}`}>
-                          {item.degree} — {item.school}
+                          {item.degree}, {item.school}
                         </p>
                       ))}
                     </div>

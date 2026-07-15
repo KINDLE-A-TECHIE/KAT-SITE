@@ -3,6 +3,7 @@ import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { updateDiscountCodeSchema } from "@/lib/validators";
+import { orgScope } from "@/lib/tenant";
 
 interface Params { params: Promise<{ codeId: string }> }
 
@@ -14,7 +15,7 @@ export async function PATCH(request: Request, { params }: Params) {
   const { codeId } = await params;
 
   const code = await prisma.discountCode.findFirst({
-    where: { id: codeId, organizationId: session.user.organizationId ?? undefined },
+    where: { id: codeId, ...orgScope(session.user.organizationId) },
   });
   if (!code) return fail("Discount code not found.", 404);
 
@@ -47,7 +48,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   const { codeId } = await params;
 
   const code = await prisma.discountCode.findFirst({
-    where: { id: codeId, organizationId: session.user.organizationId ?? undefined },
+    where: { id: codeId, ...orgScope(session.user.organizationId) },
   });
   if (!code) return fail("Discount code not found.", 404);
 

@@ -6,6 +6,7 @@ import { Briefcase, GraduationCap, Loader2, Plus, Trash2, Upload } from "lucide-
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -97,7 +98,7 @@ type ProfileApiUser = {
   };
 };
 
-const MAX_AVATAR_FILE_SIZE = 20 * 1024 * 1024; // 20 MB — server compresses to <5 MB
+const MAX_AVATAR_FILE_SIZE = 20 * 1024 * 1024; // 20 MB, server compresses to <5 MB
 const VISIBILITY_OPTIONS: { label: string; value: ProfileVisibilityValue }[] = [
   { label: "Only me", value: "PRIVATE" },
   { label: "Institution members", value: "ORG" },
@@ -348,7 +349,7 @@ export function ProfilePanel() {
         data = (await res.json()) as typeof data;
       } catch {
         // Server returned non-JSON (e.g. HTML error page)
-        toast.error("Server error — check console for details.");
+        toast.error("Server error, check console for details.");
         return;
       }
       if (!res.ok) {
@@ -1043,15 +1044,15 @@ export function ProfilePanel() {
                       />
                       Currently studying
                     </label>
-                    <Input
-                      className={`${PROFILE_INPUT_CLASS} kat-date-input`}
+                    <DateInput
                       type="date"
+                      placeholder="Start date"
                       value={item.startDate}
                       onChange={(event) => updateEducation(item.id, { startDate: event.target.value })}
                     />
-                    <Input
-                      className={`${PROFILE_INPUT_CLASS} kat-date-input`}
+                    <DateInput
                       type="date"
+                      placeholder="End date"
                       value={item.endDate}
                       disabled={item.isCurrent}
                       onChange={(event) => updateEducation(item.id, { endDate: event.target.value })}
@@ -1172,15 +1173,15 @@ export function ProfilePanel() {
                       Current role
                     </label>
                     <div />
-                    <Input
-                      className={`${PROFILE_INPUT_CLASS} kat-date-input`}
+                    <DateInput
                       type="date"
+                      placeholder="Start date"
                       value={item.startDate}
                       onChange={(event) => updateExperience(item.id, { startDate: event.target.value })}
                     />
-                    <Input
-                      className={`${PROFILE_INPUT_CLASS} kat-date-input`}
+                    <DateInput
                       type="date"
+                      placeholder="End date"
                       value={item.endDate}
                       disabled={item.isCurrent}
                       onChange={(event) => updateExperience(item.id, { endDate: event.target.value })}

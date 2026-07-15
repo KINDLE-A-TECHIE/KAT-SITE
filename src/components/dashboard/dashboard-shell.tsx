@@ -15,14 +15,17 @@ import {
   FileText,
   FolderOpen,
   GraduationCap,
+  Handshake,
   LayoutDashboard,
   Library,
   LineChart,
   LogOut,
   MessageSquare,
+  Quote,
   ScrollText,
   Settings,
   ShieldAlert,
+  Swords,
   UserCircle,
   Users,
   UsersRound,
@@ -45,8 +48,9 @@ type DashboardShellProps = {
 
 const CORE_NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
   { href: "/dashboard/profile", label: "Profile", icon: UserCircle },
+  { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
+
 ];
 
 const LEARNING_NAV = [
@@ -69,34 +73,42 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
       return [
         ...CORE_NAV,
         ...LEARNING_NAV,
+        { href: "/dashboard/challenges", label: "Challenges", icon: Swords },
         { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
         { href: "/dashboard/content-review", label: "Content Review", icon: Library },
         { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
         { href: "/dashboard/analytics", label: "Analytics", icon: LineChart },
         { href: "/dashboard/fellows/applications", label: "Applications", icon: FileText },
         { href: "/dashboard/cohorts", label: "Cohorts", icon: UsersRound },
+        { href: "/dashboard/partner-inquiries", label: "Partner Inquiries", icon: Handshake },
         { href: "/dashboard/super-admin-invites", label: "Access", icon: ShieldAlert },
+        { href: "/dashboard/testimonials", label: "Testimonials", icon: Quote },
       ];
     case "ADMIN":
       return [
         ...CORE_NAV,
         ...LEARNING_NAV,
+        { href: "/dashboard/challenges", label: "Challenges", icon: Swords },
         { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
         { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
         { href: "/dashboard/analytics", label: "Analytics", icon: LineChart },
         { href: "/dashboard/fellows/applications", label: "Applications", icon: FileText },
+        { href: "/dashboard/partner-inquiries", label: "Partner Inquiries", icon: Handshake },
       ];
     case "PARENT":
       return [
         ...CORE_NAV,
         { href: "/dashboard/children", label: "My Children", icon: Users },
         { href: "/dashboard/grades", label: "Children's Grades", icon: Award },
+        { href: "/dashboard/projects", label: "Children's Projects", icon: FolderOpen },
         { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
+        { href: "/dashboard/testimonials", label: "Testimonials", icon: Quote },
       ];
     case "STUDENT":
       return [
         ...CORE_NAV,
         ...LEARNING_NAV,
+        { href: "/dashboard/challenges", label: "Challenges", icon: Swords },
         { href: "/dashboard/badges", label: "Badges", icon: BadgeCheck },
         { href: "/dashboard/grades", label: "My Grades", icon: Award },
         { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
@@ -107,13 +119,19 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
       return [
         ...CORE_NAV,
         ...LEARNING_NAV,
+        { href: "/dashboard/challenges", label: "Challenges", icon: Swords },
         { href: "/dashboard/badges", label: "Badges", icon: BadgeCheck },
         { href: "/dashboard/grades", label: "My Grades", icon: Award },
         { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
         { href: "/dashboard/transcript", label: "Transcript", icon: ScrollText },
       ];
     case "INSTRUCTOR":
-      return [...CORE_NAV, ...LEARNING_NAV, { href: "/dashboard/projects", label: "Projects", icon: FolderOpen }];
+      return [
+        ...CORE_NAV,
+        ...LEARNING_NAV,
+        { href: "/dashboard/challenges", label: "Challenges", icon: Swords },
+        { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
+      ];
     default:
       return CORE_NAV;
   }
@@ -126,6 +144,8 @@ const ROLE_LABEL: Record<UserRoleValue, string> = {
   FELLOW: "Fellow",
   STUDENT: "Student",
   PARENT: "Parent",
+  SCHOOL_STAFF: "School Staff",
+  SCHOOL_STUDENT: "School Student",
 };
 
 function getInitials(firstName: string, lastName: string) {
@@ -160,7 +180,7 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
     fetch("/api/users/avatar", { signal: controller.signal, cache: "no-store" })
       .then((r) => (r.ok ? (r.json() as Promise<{ avatarUrl?: string | null }>) : Promise.reject()))
       .then((p) => { if (active) setAvatarUrl(p.avatarUrl ?? null); })
-      .catch(() => {});
+      .catch(() => { });
     return () => { active = false; controller.abort(); };
   }, []);
 
@@ -202,19 +222,19 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
 
         {/* ── Sidebar ─────────────────────────────────────────────── */}
         <aside className="h-fit overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 print:hidden">
-          {/* Brand */}
-          <div className="flex items-center gap-2.5 border-b border-slate-100 px-4 py-4 dark:border-slate-800">
+          {/* Brand, desktop only (top bar serves this role on mobile) */}
+          <Link href="/" className="hidden items-center gap-2.5 border-b border-slate-100 px-4 py-4 dark:border-slate-800 lg:flex">
             <Image src="/kindle-a-techie.svg" alt="KAT logo" width={30} height={30} className="shrink-0" />
             <span className="[font-family:var(--font-space-grotesk)] text-sm font-semibold text-slate-900 dark:text-slate-100">
               KAT Learning
             </span>
-          </div>
+          </Link>
 
-          {/* User card */}
-          <div className="mx-3 my-3 flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800">
+          {/* User card, desktop only (top bar shows avatar on mobile) */}
+          <div className="mx-3 my-3 hidden items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800 lg:flex">
             <Avatar className="size-9 shrink-0 border border-slate-200">
               <AvatarImage src={avatarUrl ?? undefined} alt={`${displayFirstName} ${displayLastName}`} />
-              <AvatarFallback className="bg-[#0D1F45] text-[11px] font-bold text-white">{initials}</AvatarFallback>
+              <AvatarFallback className="bg-kat-dark text-[11px] font-bold text-white">{initials}</AvatarFallback>
             </Avatar>
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
@@ -225,60 +245,66 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
           </div>
 
           {/* Nav */}
-          <nav className="flex gap-1 overflow-x-auto px-3 pb-1 lg:block lg:space-y-0.5 lg:overflow-visible lg:pb-3">
-            {navItems.map((item, index) => {
-              const Icon = item.icon;
-              const active = pathname === item.href;
-              return (
-                <motion.div
-                  key={item.href}
-                  className="shrink-0 lg:shrink"
-                  initial={{ opacity: 0, x: -6 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                >
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-2.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition-colors max-[360px]:gap-1.5 max-[360px]:px-2.5 max-[360px]:py-1.5 max-[360px]:text-xs",
-                      active
-                        ? "bg-[#0D1F45] text-white"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
-                    )}
+          <div className="relative">
+            {/* Gradient fade to hint at horizontal scroll on mobile */}
+            <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-14 bg-gradient-to-l from-white to-transparent dark:from-slate-900 lg:hidden" />
+            <nav className="flex gap-1 overflow-x-auto px-3 pb-2 pt-2 lg:block lg:space-y-0.5 lg:overflow-visible lg:pb-3 lg:pt-0">
+              {navItems.map((item, index) => {
+                const Icon = item.icon;
+                const active = pathname === item.href;
+                return (
+                  <motion.div
+                    key={item.href}
+                    className="shrink-0 lg:shrink"
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.03 }}
                   >
-                    <Icon className={cn("size-4 shrink-0", active ? "text-blue-300" : "text-slate-400 dark:text-slate-500")} />
-                    <span>{item.label}</span>
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </nav>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "flex items-center gap-2.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition-colors max-[360px]:gap-1.5 max-[360px]:px-2.5 max-[360px]:py-1.5 max-[360px]:text-xs",
+                        active
+                          ? "bg-kat-dark text-white"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
+                      )}
+                    >
+                      <Icon className={cn("size-4 shrink-0", active ? "text-blue-300" : "text-slate-400 dark:text-slate-500")} />
+                      <span>{item.label}</span>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </nav>
+          </div>
 
-          {/* Settings + Sign out */}
-          <div className="border-t border-slate-100 px-3 py-3 space-y-0.5 dark:border-slate-800">
+          {/* Settings + Sign out, compact row on mobile, stacked on desktop */}
+          <div className="flex gap-1 border-t border-slate-100 px-3 py-2 dark:border-slate-800 lg:block lg:space-y-0.5 lg:py-3">
             {(() => {
               const active = pathname === "/dashboard/settings";
               return (
                 <Link
                   href="/dashboard/settings"
+                  aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                    "flex flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors lg:gap-2.5 lg:py-2.5",
                     active
-                      ? "bg-[#0D1F45] text-white"
+                      ? "bg-kat-dark text-white"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
                   )}
                 >
                   <Settings className={cn("size-4 shrink-0", active ? "text-blue-300" : "text-slate-400 dark:text-slate-500")} />
-                  Settings
+                  <span>Settings</span>
                 </Link>
               );
             })()}
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              className="flex flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 lg:w-full lg:gap-2.5 lg:py-2.5"
             >
               <LogOut className="size-4 shrink-0 text-slate-400 dark:text-slate-500" />
-              Sign out
+              <span>Sign out</span>
             </button>
           </div>
         </aside>
@@ -300,7 +326,7 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
               >
                 <Avatar className="size-7 border border-slate-200">
                   <AvatarImage src={avatarUrl ?? undefined} alt={`${displayFirstName} ${displayLastName}`} />
-                  <AvatarFallback className="bg-[#0D1F45] text-[10px] font-bold text-white">{initials}</AvatarFallback>
+                  <AvatarFallback className="bg-kat-dark text-[10px] font-bold text-white">{initials}</AvatarFallback>
                 </Avatar>
                 <span className="hidden text-xs font-medium text-slate-700 sm:inline dark:text-slate-300">{displayFirstName}</span>
               </Link>

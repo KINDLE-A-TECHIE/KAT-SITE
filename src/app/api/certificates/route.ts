@@ -1,3 +1,4 @@
+import { NotificationType } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -11,16 +12,25 @@ const CERT_INCLUDE = {
   approvedBy: { select: { id: true, firstName: true, lastName: true } },
 } as const;
 
-// GET — list certificates (own for learners, all for issuers)
-export async function GET() {
+// GET, list certificates
+// Learners: own APPROVED certs only
+// Issuers:  all certs, optionally filtered by ?status=PENDING|APPROVED|REJECTED
+export async function GET(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
 
   const { id, role } = session.user;
   const isIssuer = ISSUER_ROLES.includes(role);
 
+  const { searchParams } = new URL(request.url);
+  const status = searchParams.get("status") as "PENDING" | "APPROVED" | "REJECTED" | null;
+
+  const where = isIssuer
+    ? status ? { status } : {}
+    : { userId: id, status: "APPROVED" as const };
+
   const certificates = await prisma.certificate.findMany({
-    where: isIssuer ? {} : { userId: id, status: "APPROVED" },
+    where,
     include: CERT_INCLUDE,
     orderBy: { issuedAt: "desc" },
   });
@@ -28,7 +38,7 @@ export async function GET() {
   return ok({ certificates });
 }
 
-// POST — issue (SUPER_ADMIN → auto-approved) or request (ADMIN/INSTRUCTOR → PENDING)
+// POST, issue (SUPER_ADMIN → auto-approved) or request (ADMIN/INSTRUCTOR → PENDING)
 export async function POST(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -46,8 +56,18 @@ export async function POST(request: Request) {
   if (!["STUDENT", "FELLOW"].includes(recipient.role))
     return fail("Certificates can only be issued to students and fellows");
 
-  const program = await prisma.program.findUnique({ where: { id: programId }, select: { id: true } });
+  const program = await prisma.program.findUnique({
+    where: { id: programId },
+    select: { id: true, name: true },
+  });
   if (!program) return fail("Program not found", 404);
+
+  // Guard: student must be enrolled in the programme
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { userId_programId: { userId, programId } },
+    select: { id: true },
+  });
+  if (!enrollment) return fail("This student is not enrolled in the selected programme.", 422);
 
   const existing = await prisma.certificate.findUnique({
     where: { userId_programId: { userId, programId } },
@@ -66,6 +86,23 @@ export async function POST(request: Request) {
     },
     include: CERT_INCLUDE,
   });
+
+  // When a SUPER_ADMIN directly issues a cert it's immediately approved,
+  // notify the learner straight away so they don't have to check manually.
+  if (isSuperAdmin) {
+    await prisma.notification.create({
+      data: {
+        recipientId: userId,
+        creatorId: session.user.id,
+        type: NotificationType.SUCCESS,
+        title: "Certificate issued",
+        body: JSON.stringify({
+          text: `Congratulations! You've been awarded a certificate for ${program.name}. View and download it now.`,
+          targetPath: "/dashboard/certificates",
+        }),
+      },
+    });
+  }
 
   return ok({ certificate }, 201);
 }

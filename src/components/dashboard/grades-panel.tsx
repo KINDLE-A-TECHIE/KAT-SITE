@@ -275,7 +275,7 @@ function GradesContent({ enrollments, isParent }: { enrollments: Enrollment[]; i
         <SummaryCard label="Programs Enrolled" value={enrollments.length} icon={BookOpen} color="bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400" />
         <SummaryCard label="Assessments Taken" value={submitted.length} sub={`of ${allAssessments.length} total`} icon={FileText} color="bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400" />
         <SummaryCard label="Passed" value={`${passed.length}/${graded.length}`} sub="graded assessments" icon={Award} color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400" />
-        <SummaryCard label="Average Score" value={avgPct !== null ? `${avgPct}%` : "—"} sub="across graded work" icon={TrendingUp} color="bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400" />
+        <SummaryCard label="Average Score" value={avgPct !== null ? `${avgPct}%` : ", "} sub="across graded work" icon={TrendingUp} color="bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400" />
       </div>
 
       {/* Per-program */}

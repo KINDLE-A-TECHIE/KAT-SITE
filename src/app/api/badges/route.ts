@@ -2,7 +2,7 @@ import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// GET — list earned badges for the current user (or a specific user for admins)
+// GET, list earned badges for the current user (or a specific user for admins)
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);

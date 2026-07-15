@@ -163,7 +163,7 @@ export async function POST(request: Request) {
 
     await sendEmail({
       to: parent.email,
-      subject: `KAT Learning — ${monthLabel} Progress Report`,
+      subject: `KAT Learning, ${monthLabel} Progress Report`,
       html,
       text,
     });

@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { ArrowDown, ArrowUp, CheckCircle2, Eye, GripVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, ClipboardList, Eye, GripVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +23,7 @@ import {
   type QuestionTypeValue,
   type UserRoleValue,
 } from "@/lib/enums";
+import { ProjectAssessmentView } from "@/components/dashboard/project-assessment-view";
 
 type Program = {
   id: string;
@@ -713,10 +715,9 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
             </Select>
             <Input placeholder="Assessment title" value={title} onChange={(event) => setTitle(event.target.value)} />
             <Input placeholder="Pass score" type="number" value={passScore} onChange={(event) => setPassScore(event.target.value)} />
-            <Input
-              className="kat-date-input"
-              placeholder="Due date"
+            <DateInput
               type="date"
+              placeholder="Select due date"
               value={dueDate}
               onChange={(event) => setDueDate(event.target.value)}
             />
@@ -725,6 +726,16 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
               Publish now (visible to learners only after super-admin verification)
             </label>
             </div>
+            {type === "PROJECT" && (
+              <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 dark:border-blue-900/30 dark:bg-blue-950/20">
+                <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">Project Assessment</p>
+                <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                  No questions required. Use the description above to specify what students must build.
+                  Students will submit their project (files, links, description) directly from the Assessments panel.
+                </p>
+              </div>
+            )}
+            {type !== "PROJECT" && (
             <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-700 dark:bg-slate-800">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Question Builder</p>
@@ -965,6 +976,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
               </div>
             )}
             </div>
+            )}
             <textarea
               className="min-h-[80px] w-full rounded-md border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
               placeholder="Description (optional)"
@@ -986,6 +998,18 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
               <Skeleton className="h-20 w-full" />
               <Skeleton className="h-20 w-full" />
             </div>
+          ) : assessments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+              <div className="flex size-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+                <ClipboardList className="size-6 text-slate-400 dark:text-slate-500" />
+              </div>
+              <div>
+                <p className="font-medium text-slate-700 dark:text-slate-300">No assessments yet</p>
+                <p className="mt-0.5 text-sm text-slate-400 dark:text-slate-500">
+                  {roleCanCreate ? "Create an assessment above to get started." : "Your instructor hasn't assigned any assessments yet."}
+                </p>
+              </div>
+            </div>
           ) : (
             <div className="space-y-3">
               {assessments.map((assessment, index) => (
@@ -1002,7 +1026,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     <p className="text-xs text-slate-600 dark:text-slate-400">
                       {assessment.program?.name}
                       {assessment.module && <span className="text-slate-400 dark:text-slate-500"> · {assessment.module.title}</span>}
-                      {" "}— Pass: {assessment.passScore}/{assessment.totalPoints}
+                      {" "},  Pass: {assessment.passScore}/{assessment.totalPoints}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -1025,6 +1049,26 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                 </div>
 
                 {roleCanSubmit ? (() => {
+                  // PROJECT-type assessments use the dedicated project submission UI
+                  if (assessment.type === "PROJECT") {
+                    return (
+                      <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+                        <ProjectAssessmentView
+                          assessment={{
+                            id:          assessment.id,
+                            title:       assessment.title,
+                            description: assessment.description,
+                            totalPoints: assessment.totalPoints,
+                            passScore:   assessment.passScore,
+                            dueDate:     assessment.dueDate,
+                            program:     assessment.program,
+                            module:      assessment.module ?? null,
+                          }}
+                        />
+                      </div>
+                    );
+                  }
+
                   const latestSub = assessment.submissions?.[0]; // ordered by attemptNumber desc
                   const hasRetakeGrant = (assessment.retakeGrants?.length ?? 0) > 0;
                   const isLocked = !!latestSub && !hasRetakeGrant;
@@ -1034,7 +1078,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     return (
                       <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/40">
                         <p className={`text-sm font-semibold ${passed ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
-                          {passed ? "✓ Passed" : "✗ Not passed"} — Attempt #{latestSub.attemptNumber}
+                          {passed ? "✓ Passed" : "✗ Not passed"}. Attempt #{latestSub.attemptNumber}
                         </p>
                         <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                           Score: {latestSub.totalScore}/{assessment.totalPoints} · {latestSub.status === "IN_REVIEW" ? "Awaiting manual review" : "Graded"}
@@ -1050,7 +1094,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     <div className="mt-3 space-y-3 border-t border-slate-100 pt-3 dark:border-slate-800">
                       {hasRetakeGrant && (
                         <div className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-                          Retake available — Attempt #{(latestSub?.attemptNumber ?? 0) + 1}
+                          Retake available. Attempt #{(latestSub?.attemptNumber ?? 0) + 1}
                         </div>
                       )}
                       {assessment.questions.map((question) => (

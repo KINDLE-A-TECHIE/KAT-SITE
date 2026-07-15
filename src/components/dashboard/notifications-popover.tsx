@@ -1,30 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bell } from "lucide-react";
+import {
+  AlertTriangle,
+  Bell,
+  CheckCircle2,
+  Info,
+  Sparkles,
+  XCircle,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 type NotificationTypeValue = "INFO" | "SUCCESS" | "WARNING" | "ERROR";
-type MessageStreamEvent =
-  | {
-      type: "connected";
-      at: string;
-    }
-  | {
-      type: "message_created";
-      threadId: string;
-      messageId: string;
-      senderId: string;
-      recipientId: string;
-      recipientIds?: string[];
-      createdAt: string;
-    };
-
-const STREAM_RETRY_MS = 3000;
 
 type NotificationItem = {
   id: string;
@@ -34,6 +24,7 @@ type NotificationItem = {
   createdAt: string;
   readAt: string | null;
 };
+
 type ParsedNotificationBody = {
   text: string;
   targetPath?: string;
@@ -53,35 +44,74 @@ function parseNotificationBody(raw: string): ParsedNotificationBody {
       };
     }
   } catch {
-    // Body can also be legacy plain text.
+    // legacy plain text body
   }
   return { text: raw };
 }
 
 function formatTimestamp(value: string) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "Unknown time";
-  }
-  return date.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  if (Number.isNaN(date.getTime())) return "Unknown time";
+  const now = Date.now();
+  const diff = now - date.getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleString(undefined, { month: "short", day: "numeric" });
 }
 
-function typeLabelClass(type: NotificationTypeValue) {
-  if (type === "SUCCESS") {
-    return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400";
-  }
-  if (type === "WARNING") {
-    return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400";
-  }
-  if (type === "ERROR") {
-    return "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-400";
-  }
-  return "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300";
+const TYPE_CONFIG: Record<NotificationTypeValue, {
+  Icon: React.ElementType;
+  iconClass: string;
+  bgClass: string;
+  borderClass: string;
+  label: string;
+}> = {
+  SUCCESS: {
+    Icon: CheckCircle2,
+    iconClass: "text-emerald-600 dark:text-emerald-400",
+    bgClass: "bg-emerald-100 dark:bg-emerald-900/40",
+    borderClass: "border-l-emerald-500",
+    label: "Success",
+  },
+  WARNING: {
+    Icon: AlertTriangle,
+    iconClass: "text-amber-600 dark:text-amber-400",
+    bgClass: "bg-amber-100 dark:bg-amber-900/40",
+    borderClass: "border-l-amber-500",
+    label: "Warning",
+  },
+  ERROR: {
+    Icon: XCircle,
+    iconClass: "text-rose-600 dark:text-rose-400",
+    bgClass: "bg-rose-100 dark:bg-rose-900/40",
+    borderClass: "border-l-rose-500",
+    label: "Error",
+  },
+  INFO: {
+    Icon: Info,
+    iconClass: "text-blue-600 dark:text-blue-400",
+    bgClass: "bg-blue-100 dark:bg-blue-900/40",
+    borderClass: "border-l-blue-500",
+    label: "Info",
+  },
+};
+
+function NotificationSkeleton() {
+  return (
+    <div className="flex gap-3 px-4 py-3.5">
+      <div className="mt-0.5 h-8 w-8 shrink-0 animate-pulse rounded-full bg-slate-100 dark:bg-slate-700" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3.5 w-3/4 animate-pulse rounded bg-slate-100 dark:bg-slate-700" />
+        <div className="h-3 w-full animate-pulse rounded bg-slate-100 dark:bg-slate-700" />
+        <div className="h-3 w-1/2 animate-pulse rounded bg-slate-100 dark:bg-slate-700" />
+      </div>
+    </div>
+  );
 }
 
 export function NotificationsPopover() {
@@ -96,96 +126,42 @@ export function NotificationsPopover() {
 
   const loadNotifications = useCallback(async (options?: { silent?: boolean }) => {
     const showLoading = !options?.silent;
-    if (showLoading) {
-      setLoading(true);
-    }
+    if (showLoading) setLoading(true);
     try {
-      const response = await fetch("/api/notifications", {
-        cache: "no-store",
-      });
+      const response = await fetch("/api/notifications", { cache: "no-store" });
       const payload = await response.json();
       if (!response.ok) {
-        if (!options?.silent) {
-          toast.error(payload?.error ?? "Could not load notifications.");
-        }
+        if (!options?.silent) toast.error(payload?.error ?? "Could not load notifications.");
         return;
       }
-      const nextNotifications = ((payload.notifications ?? []) as NotificationItem[]).filter(
-        (notification) => !notification.readAt,
+      const next = ((payload.notifications ?? []) as NotificationItem[]).filter(
+        (n) => !n.readAt,
       );
-      setNotifications(nextNotifications);
+      setNotifications(next);
       setHasLoadedOnce(true);
     } catch {
-      if (!options?.silent) {
-        toast.error("Could not load notifications.");
-      }
+      if (!options?.silent) toast.error("Could not load notifications.");
     } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
+      if (showLoading) setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    void loadNotifications({ silent: true });
-  }, [loadNotifications]);
+  useEffect(() => { void loadNotifications({ silent: true }); }, [loadNotifications]);
 
   useEffect(() => {
-    if (!open || !hasLoadedOnce) {
-      return;
-    }
-
-    const interval = window.setInterval(() => {
-      void loadNotifications({ silent: true });
-    }, 60_000);
+    if (!open || !hasLoadedOnce) return;
+    const interval = window.setInterval(() => void loadNotifications({ silent: true }), 60_000);
     return () => window.clearInterval(interval);
   }, [open, hasLoadedOnce, loadNotifications]);
 
   useEffect(() => {
-    let eventSource: EventSource | null = null;
-    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-    let unmounted = false;
-
-    const connect = () => {
-      eventSource = new EventSource("/api/messages/stream");
-
-      eventSource.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data) as MessageStreamEvent;
-          if (payload.type !== "message_created") {
-            return;
-          }
-          void loadNotifications({ silent: true });
-        } catch {
-          // Ignore malformed payloads from stream.
-        }
-      };
-
-      eventSource.onerror = () => {
-        eventSource?.close();
-        eventSource = null;
-        if (!unmounted) {
-          reconnectTimeout = setTimeout(connect, STREAM_RETRY_MS);
-        }
-      };
-    };
-
-    connect();
-
-    return () => {
-      unmounted = true;
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-      }
-      eventSource?.close();
-    };
+    const handler = () => void loadNotifications({ silent: true });
+    window.addEventListener("kat:message_created", handler);
+    return () => window.removeEventListener("kat:message_created", handler);
   }, [loadNotifications]);
 
   const markOneAsRead = async (notificationId: string) => {
-    const target = notifications.find((notification) => notification.id === notificationId);
-    if (!target) {
-      return false;
-    }
+    if (!notifications.find((n) => n.id === notificationId)) return false;
     setBusy(true);
     try {
       const response = await fetch("/api/notifications", {
@@ -194,11 +170,8 @@ export function NotificationsPopover() {
         body: JSON.stringify({ notificationId }),
       });
       const payload = await response.json();
-      if (!response.ok) {
-        toast.error(payload?.error ?? "Could not update notification.");
-        return false;
-      }
-      setNotifications((prev) => prev.filter((notification) => notification.id !== notificationId));
+      if (!response.ok) { toast.error(payload?.error ?? "Could not update notification."); return false; }
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
       return true;
     } catch {
       toast.error("Could not update notification.");
@@ -211,29 +184,15 @@ export function NotificationsPopover() {
   const handleNotificationClick = async (notification: NotificationItem) => {
     const parsed = parseNotificationBody(notification.body);
     const consumed = await markOneAsRead(notification.id);
-    if (!consumed) {
-      return;
-    }
-
+    if (!consumed) return;
     setOpen(false);
-
-    if (parsed.targetPath) {
-      router.push(parsed.targetPath);
-      return;
-    }
-    if (parsed.threadId) {
-      router.push(`/dashboard/messages?threadId=${encodeURIComponent(parsed.threadId)}`);
-      return;
-    }
-    if (/message/i.test(notification.title)) {
-      router.push("/dashboard/messages");
-    }
+    if (parsed.targetPath) { router.push(parsed.targetPath); return; }
+    if (parsed.threadId) { router.push(`/dashboard/messages?threadId=${encodeURIComponent(parsed.threadId)}`); return; }
+    if (/message/i.test(notification.title)) router.push("/dashboard/messages");
   };
 
   const markAllAsRead = async () => {
-    if (unreadCount === 0) {
-      return;
-    }
+    if (unreadCount === 0) return;
     setBusy(true);
     try {
       const response = await fetch("/api/notifications", {
@@ -242,10 +201,7 @@ export function NotificationsPopover() {
         body: JSON.stringify({ markAll: true }),
       });
       const payload = await response.json();
-      if (!response.ok) {
-        toast.error(payload?.error ?? "Could not mark notifications as read.");
-        return;
-      }
+      if (!response.ok) { toast.error(payload?.error ?? "Could not mark notifications as read."); return; }
       setNotifications([]);
     } catch {
       toast.error("Could not mark notifications as read.");
@@ -256,9 +212,7 @@ export function NotificationsPopover() {
 
   const onOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
-    if (nextOpen) {
-      void loadNotifications();
-    }
+    if (nextOpen) void loadNotifications();
   };
 
   return (
@@ -267,78 +221,135 @@ export function NotificationsPopover() {
         <button
           type="button"
           aria-label="Open notifications"
-          className="relative rounded-full border border-slate-200 bg-white p-2 text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 max-[360px]:p-1.5"
+          className={cn(
+            "relative rounded-full border p-2 transition-all duration-150",
+            "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+            "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100",
+            open && "bg-slate-50 dark:bg-slate-700",
+          )}
         >
-          <Bell className="size-4" />
-          {unreadCount > 0 ? (
-            <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white">
+          <Bell className={cn("size-4 transition-transform duration-150", open && "scale-110")} />
+          {unreadCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 py-px text-[10px] font-bold leading-none text-white ring-2 ring-white dark:ring-slate-900">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
-          ) : null}
+          )}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={8} collisionPadding={12} className="w-[min(96vw,360px)] max-h-[70vh] overflow-hidden p-0">
-        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-700 max-[360px]:px-3">
-          <div>
-            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Notifications</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{unreadCount} unread</p>
+
+      <PopoverContent
+        align="end"
+        sideOffset={10}
+        collisionPadding={12}
+        className="w-[min(95vw,380px)] overflow-hidden p-0 shadow-xl"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0D1F45]/10 dark:bg-blue-900/40">
+              <Bell className="size-3.5 text-[#0D1F45] dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Notifications</p>
+              {unreadCount > 0 && (
+                <p className="text-[11px] leading-none text-slate-400 dark:text-slate-500">
+                  {unreadCount} unread
+                </p>
+              )}
+            </div>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-              className="h-8 max-[360px]:px-2 max-[360px]:text-xs"
+          {unreadCount > 0 && (
+            <button
+              type="button"
               onClick={() => void markAllAsRead()}
-              disabled={busy || unreadCount === 0}
+              disabled={busy}
+              className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
-            Mark all read
-          </Button>
+              Mark all read
+            </button>
+          )}
         </div>
-        <div className="max-h-[calc(70vh-57px)] overflow-y-auto overscroll-contain">
+
+        {/* Body */}
+        <div className="max-h-[min(60vh,420px)] overflow-y-auto overscroll-contain bg-slate-50 dark:bg-slate-900/50">
           {loading ? (
-            <div className="space-y-2 p-4">
-              <div className="h-16 animate-pulse rounded-md bg-slate-100 dark:bg-slate-700" />
-              <div className="h-16 animate-pulse rounded-md bg-slate-100 dark:bg-slate-700" />
-              <div className="h-16 animate-pulse rounded-md bg-slate-100 dark:bg-slate-700" />
+            <div className="divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
+              <NotificationSkeleton />
+              <NotificationSkeleton />
+              <NotificationSkeleton />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">No notifications yet.</div>
+            <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                <Sparkles className="size-5 text-slate-400 dark:text-slate-500" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-300">All caught up!</p>
+                <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">No new notifications.</p>
+              </div>
+            </div>
           ) : (
-            <div className="divide-y divide-slate-100 dark:divide-slate-700">
-              {notifications.map((notification) => (
-                <button
-                  type="button"
-                  key={notification.id}
-                  className={cn(
-                    "w-full px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50 max-[360px]:px-3",
-                    !notification.readAt ? "bg-cyan-50/40 dark:bg-cyan-900/20" : "bg-white dark:bg-transparent",
-                  )}
-                  onClick={() => void handleNotificationClick(notification)}
-                  disabled={busy}
-                >
-                  {(() => {
-                    const parsed = parseNotificationBody(notification.body);
-                    return (
-                      <>
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="line-clamp-1 text-sm font-medium text-slate-900 dark:text-slate-100">{notification.title}</p>
-                          <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold", typeLabelClass(notification.type))}>
-                            {notification.type}
-                          </span>
+            <div className="divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
+              {notifications.map((notification) => {
+                const cfg = TYPE_CONFIG[notification.type] ?? TYPE_CONFIG.INFO;
+                const { Icon } = cfg;
+                const parsed = parseNotificationBody(notification.body);
+                const isUnread = !notification.readAt;
+
+                return (
+                  <button
+                    type="button"
+                    key={notification.id}
+                    onClick={() => void handleNotificationClick(notification)}
+                    disabled={busy}
+                    className={cn(
+                      "group w-full border-l-[3px] px-4 py-3.5 text-left transition-colors",
+                      "hover:bg-slate-50 dark:hover:bg-slate-800/60",
+                      "disabled:opacity-60",
+                      isUnread
+                        ? cfg.borderClass
+                        : "border-l-transparent",
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Icon */}
+                      <div className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full", cfg.bgClass)}>
+                        <Icon className={cn("size-4", cfg.iconClass)} />
+                      </div>
+
+                      {/* Content */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="line-clamp-1 text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#1E5FAF] dark:group-hover:text-blue-400">
+                            {notification.title}
+                          </p>
+                          {isUnread && (
+                            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+                          )}
                         </div>
-                        <p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-400">{parsed.text}</p>
-                        <div className="mt-2 flex items-center justify-between">
-                          <p className="text-[11px] text-slate-500 dark:text-slate-500">{formatTimestamp(notification.createdAt)}</p>
-                          <span className="text-[11px] font-medium text-cyan-700 dark:text-cyan-400">New</span>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </button>
-              ))}
+                        <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                          {parsed.text}
+                        </p>
+                        <p className="mt-1.5 text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                          {formatTimestamp(notification.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
+
+        {/* Footer */}
+        {notifications.length > 0 && (
+          <div className="border-t border-slate-100 bg-white px-4 py-2.5 dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-center text-[11px] text-slate-400 dark:text-slate-500">
+              Click a notification to dismiss and navigate
+            </p>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

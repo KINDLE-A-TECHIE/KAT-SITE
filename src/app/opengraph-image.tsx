@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "KAT Learning — Tech Education for African Kids and Teens";
+export const alt = "KAT Learning. Tech Education for African Kids and Teens";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -56,7 +56,7 @@ export default function OgImage() {
             border: "1px solid rgba(255,255,255,0.18)",
             borderRadius: 100,
             padding: "8px 20px",
-            width: "fit-content",
+            alignSelf: "flex-start",
             marginBottom: 32,
           }}
         >

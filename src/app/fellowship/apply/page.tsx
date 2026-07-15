@@ -87,7 +87,7 @@ function FellowshipApplyContent() {
       {/* Nav bar */}
       <header className="border-b border-slate-200 bg-white px-6 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <Link href="/#fellowship" className="flex items-center gap-2.5">
+          <Link href="/" className="flex items-center gap-2.5">
             <Image src="/kindle-a-techie.svg" alt="KAT logo" width={32} height={32} />
             <span className="[font-family:var(--font-space-grotesk)] text-sm font-semibold text-slate-900">
               KAT Learning
@@ -103,18 +103,18 @@ function FellowshipApplyContent() {
         </div>
       </header>
 
-      <main className="flex flex-1 justify-center px-6 py-12">
+      <main className="flex flex-1 justify-center px-4 py-8 sm:px-6 sm:py-12">
         <div className="w-full max-w-2xl">
           {submitted ? (
             /* ── Success state ── */
-            <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-10">
               <CheckCircle2 className="mx-auto mb-4 size-14 text-emerald-500" />
               <h1 className="[font-family:var(--font-space-grotesk)] text-2xl font-bold text-slate-900">
                 Application Submitted!
               </h1>
               <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-500">
                 {requiresPayment
-                  ? "Check your email — we've sent you a link to set up your account and pay the application fee."
+                  ? "Check your email, we've sent you a link to set up your account and pay the application fee."
                   : "Check your email for confirmation. We'll review your application and get back to you soon."}
               </p>
               <Button
@@ -146,7 +146,7 @@ function FellowshipApplyContent() {
                       <span className="font-semibold text-white">
                         ₦{Number(cohort.externalApplicationFee).toLocaleString("en-NG")}
                       </span>{" "}
-                      — payable after submission
+                      payable after submission
                     </p>
                   )}
                 </div>
@@ -166,14 +166,14 @@ function FellowshipApplyContent() {
               ) : (
                 <form
                   onSubmit={onSubmit}
-                  className="space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm"
+                  className="space-y-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8"
                 >
                   <div>
                     <h2 className="[font-family:var(--font-space-grotesk)] text-lg font-bold text-slate-900">
                       Your Details
                     </h2>
                     <p className="mt-1 text-sm text-slate-500">
-                      We'll create a KAT account for you automatically — no sign-up needed.
+                      We'll create a KAT account for you automatically, no sign-up needed.
                     </p>
                   </div>
 

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 /**
  * Called after a submission is fully graded.
  * If the student has now passed every published+approved assessment in the module,
- * award the module badge (idempotent — does nothing if already earned).
+ * award the module badge (idempotent, does nothing if already earned).
  */
 export async function tryAwardModuleBadge(studentId: string, assessmentId: string): Promise<string | null> {
   // Get the assessment's moduleId

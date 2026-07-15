@@ -87,7 +87,7 @@ export async function GET() {
               feedbackEntries.length,
           );
 
-    // Student pass rate — unique submissions with known passScore
+    // Student pass rate, unique submissions with known passScore
     const passableSubmissions = Array.from(bySubmission.values()).filter(
       (s) => s.passScore !== null,
     );

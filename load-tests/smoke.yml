@@ -1,0 +1,57 @@
+# Pre-deploy smoke load test
+# Verifies the app handles a modest, realistic burst without errors.
+# Run: npm run load:smoke
+# Requires: server running at http://localhost:3000 (or BASE_URL env var)
+#
+# Pass criteria (enforced by ensure block):
+#   - p95 response time < 500 ms
+#   - Error rate < 1%
+
+config:
+  target: "{{ $processEnvironment.BASE_URL || 'http://localhost:3000' }}"
+  phases:
+    - name: Ramp up
+      duration: 20
+      arrivalRate: 2
+      rampTo: 10
+    - name: Sustained
+      duration: 40
+      arrivalRate: 10
+  defaults:
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+  ensure:
+    p95: 500
+    maxErrorRate: 1
+
+scenarios:
+  - name: Health check
+    weight: 60
+    flow:
+      - get:
+          url: /api/health
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: status
+            - equals:
+                - "{{ status }}"
+                - ok
+
+  - name: Login page HTML
+    weight: 25
+    flow:
+      - get:
+          url: /login
+          expect:
+            - statusCode: 200
+
+  - name: Missing auth → redirect (middleware)
+    weight: 15
+    flow:
+      - get:
+          url: /dashboard
+          followRedirect: false
+          expect:
+            - statusCode: 307

@@ -9,7 +9,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import Image from "next/image";
-import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react";
+import { TurnstileWidget } from "@/components/ui/turnstile";
 import type { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,9 +44,12 @@ function RegisterContent() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
   const selectedRole = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: { firstName: "", lastName: "", email: "", password: "", role: "STUDENT" },
+    mode: "onTouched",
   });
 
   const form = selectedRole;
@@ -68,7 +72,7 @@ function RegisterContent() {
     const response = await fetch("/api/users/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
+      body: JSON.stringify({ ...values, turnstileToken: turnstileToken ?? "" }),
     });
     const payload = await response.json();
     if (!response.ok) {
@@ -99,18 +103,18 @@ function RegisterContent() {
     <div className="flex min-h-screen flex-col">
       <main className="flex flex-1">
         {/* Left branding panel */}
-        <div className="relative hidden lg:flex lg:w-[45%] flex-col justify-between overflow-hidden bg-[#0D1F45] p-10">
+        <div className="relative hidden lg:flex lg:w-[45%] flex-col justify-between overflow-hidden bg-kat-dark p-10">
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-blue-600/20 blur-3xl" />
             <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-indigo-600/10 blur-3xl" />
           </div>
 
-          <div className="relative flex items-center gap-3">
+          <Link href="/" className="relative flex items-center gap-3">
             <Image src="/kindle-a-techie.svg" alt="KAT logo" width={40} height={40} className="shrink-0" />
             <span className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-white">
               KAT Learning
             </span>
-          </div>
+          </Link>
 
           <div className="relative space-y-6">
             <div>
@@ -150,7 +154,7 @@ function RegisterContent() {
         </div>
 
         {/* Right form panel */}
-        <div className="flex flex-1 items-center justify-center bg-slate-50 px-6 py-12">
+        <div className="flex flex-1 items-center justify-center bg-slate-50 px-4 py-8 sm:px-6 sm:py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -158,12 +162,12 @@ function RegisterContent() {
             className="w-full max-w-sm"
           >
             {/* Mobile logo */}
-            <div className="mb-8 flex items-center gap-2 lg:hidden">
+            <Link href="/" className="mb-8 flex items-center gap-2 lg:hidden">
               <Image src="/kindle-a-techie.svg" alt="KAT logo" width={36} height={36} className="shrink-0" />
               <span className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-900">
                 KAT Learning
               </span>
-            </div>
+            </Link>
 
             <div className="mb-6">
               <h2 className="[font-family:var(--font-space-grotesk)] text-2xl font-bold text-slate-900">
@@ -182,11 +186,11 @@ function RegisterContent() {
                   type="button"
                   onClick={() => form.setValue("role", opt.value, { shouldValidate: true })}
                   className={`rounded-xl border p-3 text-left transition-all ${watchedRole === opt.value
-                      ? "border-[#1E5FAF] bg-blue-50 ring-1 ring-[#1E5FAF]/30"
+                      ? "border-kat-blue bg-blue-50 ring-1 ring-kat-blue/30"
                       : "border-slate-200 bg-white hover:border-slate-300"
                     }`}
                 >
-                  <p className={`text-sm font-semibold ${watchedRole === opt.value ? "text-[#1E5FAF]" : "text-slate-800"}`}>
+                  <p className={`text-sm font-semibold ${watchedRole === opt.value ? "text-kat-blue" : "text-slate-800"}`}>
                     {opt.label}
                   </p>
                   <p className="mt-0.5 text-xs text-slate-500 leading-snug">{opt.description}</p>
@@ -195,7 +199,7 @@ function RegisterContent() {
             </div>
 
             <form onSubmit={onSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="firstName" className="text-sm font-medium text-slate-700">
                     First name
@@ -205,12 +209,14 @@ function RegisterContent() {
                     <Input
                       id="firstName"
                       placeholder="Amara"
-                      className="h-11 rounded-xl border-slate-200 bg-white pl-9 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-blue-500/30"
+                      aria-describedby={form.formState.errors.firstName ? "firstName-error" : undefined}
+                      aria-invalid={!!form.formState.errors.firstName}
+                      className="h-11 rounded-xl border-slate-200 bg-white pl-9 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-[#1E5FAF]/50"
                       {...form.register("firstName")}
                     />
                   </div>
                   {form.formState.errors.firstName && (
-                    <p className="text-xs text-rose-500">{form.formState.errors.firstName.message}</p>
+                    <p id="firstName-error" role="alert" className="text-xs text-rose-500">{form.formState.errors.firstName.message}</p>
                   )}
                 </div>
 
@@ -221,11 +227,13 @@ function RegisterContent() {
                   <Input
                     id="lastName"
                     placeholder="Okafor"
-                    className="h-11 rounded-xl border-slate-200 bg-white text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-blue-500/30"
+                    aria-describedby={form.formState.errors.lastName ? "lastName-error" : undefined}
+                    aria-invalid={!!form.formState.errors.lastName}
+                    className="h-11 rounded-xl border-slate-200 bg-white text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-[#1E5FAF]/50"
                     {...form.register("lastName")}
                   />
                   {form.formState.errors.lastName && (
-                    <p className="text-xs text-rose-500">{form.formState.errors.lastName.message}</p>
+                    <p id="lastName-error" role="alert" className="text-xs text-rose-500">{form.formState.errors.lastName.message}</p>
                   )}
                 </div>
               </div>
@@ -240,12 +248,14 @@ function RegisterContent() {
                     id="email"
                     type="email"
                     placeholder="you@example.com"
-                    className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-blue-500/30"
+                    aria-describedby={form.formState.errors.email ? "reg-email-error" : undefined}
+                    aria-invalid={!!form.formState.errors.email}
+                    className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-[#1E5FAF]/50"
                     {...form.register("email")}
                   />
                 </div>
                 {form.formState.errors.email && (
-                  <p className="text-xs text-rose-500">{form.formState.errors.email.message}</p>
+                  <p id="reg-email-error" role="alert" className="text-xs text-rose-500">{form.formState.errors.email.message}</p>
                 )}
               </div>
 
@@ -259,28 +269,44 @@ function RegisterContent() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    className="h-11 rounded-xl border-slate-200 bg-white pl-10 pr-10 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-blue-500/30"
+                    aria-describedby={form.formState.errors.password ? "reg-password-error" : undefined}
+                    aria-invalid={!!form.formState.errors.password}
+                    className="h-11 rounded-xl border-slate-200 bg-white pl-10 pr-10 text-sm shadow-sm placeholder:text-slate-400 focus-visible:ring-[#1E5FAF]/50"
                     {...form.register("password")}
                   />
                   <button
                     type="button"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     onClick={() => setShowPassword((v) => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     tabIndex={-1}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
                   </button>
                 </div>
                 {form.formState.errors.password && (
-                  <p className="text-xs text-rose-500">{form.formState.errors.password.message}</p>
+                  <p id="reg-password-error" role="alert" className="text-xs text-rose-500">{form.formState.errors.password.message}</p>
                 )}
               </div>
 
+              {siteKey && (
+                <TurnstileWidget
+                  siteKey={siteKey}
+                  onSuccess={setTurnstileToken}
+                  onExpire={() => setTurnstileToken(null)}
+                  onError={() => setTurnstileToken(null)}
+                />
+              )}
+
+              {siteKey && !turnstileToken && !loading && (
+                <p className="text-center text-xs text-slate-400">Complete the security check above to create your account.</p>
+              )}
               <Button
-                disabled={loading}
+                disabled={loading || (!!siteKey && !turnstileToken)}
                 type="submit"
-                className="h-11 w-full rounded-xl bg-[#1E5FAF] text-sm font-semibold hover:bg-[#1a52a0]"
+                className="h-11 w-full rounded-xl bg-kat-blue text-sm font-semibold hover:bg-[#1a52a0]"
               >
+                {loading && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden="true" />}
                 {loading ? "Creating account…" : "Create Account"}
               </Button>
             </form>
@@ -302,9 +328,7 @@ function RegisterContent() {
                 >
                   <GoogleIcon />
                   <span className="ml-2">
-                    {googleLoading
-                      ? "Redirecting…"
-                      : `Continue with Google as ${watchedRole === "PARENT" ? "Parent" : "Student"}`}
+                    {googleLoading ? "Redirecting…" : "Continue with Google"}
                   </span>
                 </Button>
               </>
@@ -312,7 +336,7 @@ function RegisterContent() {
 
             <p className="mt-6 text-center text-sm text-slate-500">
               Already have an account?{" "}
-              <Link href="/login" className="font-semibold text-[#1E5FAF] hover:underline">
+              <Link href="/login" className="font-semibold text-kat-blue hover:underline">
                 Sign in
               </Link>
             </p>

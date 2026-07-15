@@ -1,51 +1,47 @@
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { STAMP_CTA_DARK } from "../landing-tokens";
 
 export function CtaSection() {
   return (
     <section className="kat-page kat-defer pb-20">
-      <div
-        className="relative overflow-hidden rounded-3xl p-8 text-white sm:p-12"
-        style={{ background: "linear-gradient(135deg, #0D1F45 0%, #132B5E 45%, #1E5FAF 100%)" }}
-      >
-        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[var(--kat-accent-sky)] opacity-10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-10 h-56 w-56 rounded-full bg-[var(--kat-primary-blue)] opacity-20 blur-3xl" />
-        <div className="pointer-events-none absolute right-1/3 top-1/4 h-32 w-32 rounded-full bg-white opacity-5 blur-2xl" />
-
-        <div className="relative z-10 mx-auto max-w-2xl text-center">
-          <Badge className="mb-5 border-0 bg-white/10 text-blue-200 hover:bg-white/10">
-            <Sparkles className="mr-1.5 size-3" />
-            Ready to start?
-          </Badge>
-          <h2 className="[font-family:var(--font-space-grotesk)] text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[2.8rem]">
-            Give your child a future in tech.
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-blue-200">
-            From first lines of code to real projects and leadership opportunities — KAT helps kids
-            and teens grow with confidence and community.
+      {/* Flat ink panel. The three stacked blur-blobs that used to live in here were
+          decoration standing in for a point of view. */}
+      <div className="border-l-4 border-[var(--kat-clay)] bg-[var(--kat-ink)] px-8 py-14 sm:px-14 sm:py-20">
+        <div className="max-w-2xl">
+          <p className="font-mono text-xs font-medium uppercase tracking-[0.28em] text-[var(--kat-sun)]">
+            Ready when they are
           </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <h2 className="mt-4 font-display text-3xl font-bold leading-[1.1] text-[var(--kat-paper)] sm:text-[2.8rem]">
+            Raise a builder, not a spectator.
+          </h2>
+          <p className="mt-5 max-w-xl font-body text-base leading-relaxed text-[var(--kat-paper)]/70">
+            From their first line of code to robotics, AI and design. Live mentors,
+            real projects, and a parent dashboard that shows you all of it.
+          </p>
+
+          <div className="mt-9 flex flex-wrap items-center gap-6">
             <Button
               asChild
               size="lg"
-              className="rounded-xl bg-white px-8 font-semibold text-[var(--kat-primary-blue)] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] hover:bg-slate-100"
+              className={`gap-2 px-8 ${STAMP_CTA_DARK}`}
             >
-              <Link href="/register">Enroll Your Child</Link>
+              <Link href="/register">
+                Enroll your child
+                <ArrowRight className="size-4" />
+              </Link>
             </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="rounded-xl border-white/20 text-white hover:bg-white/10"
-              style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
+            <Link
+              href="/login"
+              className="kat-focus-ring rounded text-sm font-semibold text-[var(--kat-paper)] underline decoration-[var(--kat-sun)] decoration-2 underline-offset-[6px] hover:text-[var(--kat-sun)]"
             >
-              <Link href="/login">Sign In to Dashboard</Link>
-            </Button>
+              Sign in to your dashboard
+            </Link>
           </div>
-          <p className="mt-5 text-xs text-blue-300">
-            Parent-managed enrollment · 3 age-based tracks · Live mentors
+
+          <p className="mt-8 font-mono text-[0.7rem] uppercase tracking-[0.2em] text-[var(--kat-paper)]/45">
+            Parent-managed · Coding, robotics, AI, design, game dev · Live mentors
           </p>
         </div>
       </div>

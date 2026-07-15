@@ -1,8 +1,9 @@
+import { NotificationType } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// PATCH — approve or reject a pending certificate (SUPER_ADMIN only)
+// PATCH, approve or reject a pending certificate (SUPER_ADMIN only)
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -31,10 +32,57 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     },
   });
 
+  // Fire notifications so nobody has to manually poll the certificates page
+  const notifications: Parameters<typeof prisma.notification.createMany>[0]["data"] = [];
+
+  if (body.action === "APPROVE") {
+    // Learner: their certificate is ready
+    notifications.push({
+      recipientId: updated.user.id,
+      creatorId: session.user.id,
+      type: NotificationType.SUCCESS,
+      title: "Certificate approved",
+      body: JSON.stringify({
+        text: `Your certificate for ${updated.program.name} has been approved. View and download it now.`,
+        targetPath: "/dashboard/certificates",
+      }),
+    });
+    // Requester (admin/instructor who originally filed the request), if different from SA
+    if (updated.issuedBy.id !== session.user.id) {
+      notifications.push({
+        recipientId: updated.issuedBy.id,
+        creatorId: session.user.id,
+        type: NotificationType.SUCCESS,
+        title: "Certificate request approved",
+        body: JSON.stringify({
+          text: `Your certificate request for ${updated.user.firstName} ${updated.user.lastName} (${updated.program.name}) was approved.`,
+          targetPath: "/dashboard/certificates",
+        }),
+      });
+    }
+  } else {
+    // Requester: their request was turned down
+    const reasonSuffix = updated.rejectionNote ? ` Reason: ${updated.rejectionNote}` : "";
+    notifications.push({
+      recipientId: updated.issuedBy.id,
+      creatorId: session.user.id,
+      type: NotificationType.WARNING,
+      title: "Certificate request rejected",
+      body: JSON.stringify({
+        text: `Your certificate request for ${updated.user.firstName} ${updated.user.lastName} (${updated.program.name}) was rejected.${reasonSuffix}`,
+        targetPath: "/dashboard/certificates",
+      }),
+    });
+  }
+
+  if (notifications.length > 0) {
+    await prisma.notification.createMany({ data: notifications });
+  }
+
   return ok({ certificate: updated });
 }
 
-// DELETE — revoke a certificate (SUPER_ADMIN / ADMIN only)
+// DELETE, revoke a certificate (SUPER_ADMIN / ADMIN only)
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);

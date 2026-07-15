@@ -61,7 +61,7 @@ export function FellowApplicationsPanel() {
     if (!res.ok) { toast.error(payload?.error ?? "Could not submit review."); return; }
     toast.success(
       decision === "APPROVED"
-        ? "Application approved — applicant promoted to Fellow."
+        ? "Application approved, applicant promoted to Fellow."
         : "Application rejected.",
     );
     setExpanded(null);

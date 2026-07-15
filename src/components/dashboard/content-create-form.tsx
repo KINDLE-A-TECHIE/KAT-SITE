@@ -36,17 +36,49 @@ const TAB_LABEL: Record<Tab, string> = {
 };
 
 const STARTER_CODE: Record<string, string> = {
-  python:     "# Write your Python code here\nprint(\"Hello, World!\")\n",
-  javascript: "// Write your JavaScript code here\nconsole.log(\"Hello, World!\");\n",
-  typescript: "// Write your TypeScript code here\nconst greeting: string = \"Hello, World!\";\nconsole.log(greeting);\n",
-  java:       "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World!\");\n    }\n}\n",
-  c:          "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    return 0;\n}\n",
-  cpp:        "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}\n",
-  go:         "package main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"Hello, World!\")\n}\n",
-  rust:       "fn main() {\n    println!(\"Hello, World!\");\n}\n",
-  php:        "<?php\necho \"Hello, World!\\n\";\n",
-  ruby:       "puts \"Hello, World!\"\n",
-  csharp:     "using System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine(\"Hello, World!\");\n    }\n}\n",
+  // Popular
+  python:      "# Write your Python code here\nprint(\"Hello, World!\")\n",
+  javascript:  "// Write your JavaScript code here\nconsole.log(\"Hello, World!\");\n",
+  typescript:  "// Write your TypeScript code here\nconst greeting: string = \"Hello, World!\";\nconsole.log(greeting);\n",
+  java:        "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World!\");\n    }\n}\n",
+  c:           "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    return 0;\n}\n",
+  cpp:         "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}\n",
+  csharp:      "using System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine(\"Hello, World!\");\n    }\n}\n",
+  go:          "package main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"Hello, World!\")\n}\n",
+  rust:        "fn main() {\n    println!(\"Hello, World!\");\n}\n",
+  kotlin:      "fun main() {\n    println(\"Hello, World!\")\n}\n",
+  swift:       "print(\"Hello, World!\")\n",
+  php:         "<?php\necho \"Hello, World!\\n\";\n",
+  ruby:        "puts \"Hello, World!\"\n",
+  scala:       "object Main extends App {\n    println(\"Hello, World!\")\n}\n",
+  r:           "cat(\"Hello, World!\\n\")\n",
+  bash:        "#!/bin/bash\necho \"Hello, World!\"\n",
+  sql:         "SELECT 'Hello, World!' AS greeting;\n",
+  lua:         "print(\"Hello, World!\")\n",
+  perl:        "use strict;\nuse warnings;\nprint \"Hello, World!\\n\";\n",
+  // Functional
+  haskell:     "main :: IO ()\nmain = putStrLn \"Hello, World!\"\n",
+  clojure:     "(println \"Hello, World!\")\n",
+  elixir:      "IO.puts(\"Hello, World!\")\n",
+  erlang:      "-module(main).\n-export([main/0]).\nmain() ->\n    io:format(\"Hello, World!~n\").\n",
+  fsharp:      "printfn \"Hello, World!\"\n",
+  commonlisp:  "(format t \"Hello, World!~%\")\n",
+  ocaml:       "let () = print_endline \"Hello, World!\"\n",
+  // JVM extras
+  groovy:      "println \"Hello, World!\"\n",
+  // Systems / low-level
+  d:           "import std.stdio;\nvoid main() {\n    writeln(\"Hello, World!\");\n}\n",
+  objectivec:  "#import <Foundation/Foundation.h>\nint main() {\n    NSLog(@\"Hello, World!\");\n    return 0;\n}\n",
+  assembly:    "section .data\n    msg db \"Hello, World!\", 10\n    len equ $ - msg\nsection .text\n    global _start\n_start:\n    mov rax, 1\n    mov rdi, 1\n    mov rsi, msg\n    mov rdx, len\n    syscall\n    mov rax, 60\n    xor rdi, rdi\n    syscall\n",
+  // Scripting / legacy
+  python2:     "print \"Hello, World!\"\n",
+  fortran:     "program hello\n    print *, 'Hello, World!'\nend program hello\n",
+  pascal:      "program Hello;\nbegin\n    writeln('Hello, World!');\nend.\n",
+  cobol:       "IDENTIFICATION DIVISION.\nPROGRAM-ID. Hello.\nPROCEDURE DIVISION.\n    DISPLAY 'Hello, World!'.\n    STOP RUN.\n",
+  basic:       "print \"Hello, World!\"\n",
+  vbnet:       "Module Program\n    Sub Main()\n        Console.WriteLine(\"Hello, World!\")\n    End Sub\nEnd Module\n",
+  prolog:      ":- initialization(main, main).\nmain :- write('Hello, World!'), nl.\n",
+  octave:      "disp('Hello, World!')\n",
 };
 
 type QueuedBlock = {

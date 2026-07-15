@@ -1,18 +1,18 @@
-import type { CSSProperties } from "react";
-import { DESIGN_TOKENS } from "./landing-tokens";
+import type { Build } from "./landing-tokens";
 import { LandingHeader } from "./sections/landing-header";
 import { HeroSection } from "./sections/hero-section";
-import { StatsBar } from "./sections/stats-bar";
+import { BuildLogMarquee } from "./sections/build-log-marquee";
 import { FeaturesSection } from "./sections/features-section";
 import { HowItWorksSection } from "./sections/how-it-works-section";
 import { TracksSection } from "./sections/tracks-section";
 import { FellowshipSection } from "./sections/fellowship-section";
+import { EventsSection } from "./sections/events-section";
 import { TestimonialsSection } from "./sections/testimonials-section";
 import { PricingSection } from "./sections/pricing-section";
-import { ScheduleWaitlistSection } from "./sections/schedule-waitlist-section";
 import { FaqSection } from "./sections/faq-section";
 import { CtaSection } from "./sections/cta-section";
 import { SiteFooter } from "@/components/site-footer";
+import { EnrollmentChat } from "./enrollment-chat";
 
 type OpenCohort = {
   id: string;
@@ -26,36 +26,54 @@ type OpenCohort = {
   program: { id: string; name: string; level: string; description: string | null };
 };
 
+type DbTestimonial = {
+  id: string;
+  quote: string;
+  rating: number;
+  childName: string | null;
+  author: { firstName: string; lastName: string; profile: { avatarUrl: string | null } | null };
+};
+
 type LandingPageProps = {
   enrollments: number;
   passRate: number;
   openCohorts: OpenCohort[];
+  testimonials?: DbTestimonial[];
+  builds: Build[];
 };
 
-export function LandingPage({ enrollments, passRate, openCohorts }: LandingPageProps) {
+export function LandingPage({
+  enrollments,
+  passRate,
+  openCohorts,
+  testimonials,
+  builds,
+}: LandingPageProps) {
   return (
-    <main style={DESIGN_TOKENS as CSSProperties} className="relative overflow-x-clip">
-      {/* Background blobs */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-[var(--kat-bg)]" />
-        <div className="absolute left-[-20rem] top-[-12rem] h-[42rem] w-[42rem] rounded-full bg-[radial-gradient(circle,rgba(77,179,230,0.16)_0%,transparent_70%)]" />
-        <div className="absolute right-[-14rem] top-10 h-[36rem] w-[36rem] rounded-full bg-[radial-gradient(circle,rgba(30,95,175,0.12)_0%,transparent_70%)]" />
-        <div className="absolute bottom-0 left-1/2 h-[28rem] w-[60rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(19,43,94,0.05)_0%,transparent_70%)]" />
-      </div>
-
+    /*
+     * No inline token object and no gradient blobs. The palette comes from :root
+     * (globals.css) and the page sits on warm paper with a faint blueprint grid,
+     * a workbench, not a SaaS landing. The blobs were the other half of the
+     * template look; they are gone, not restyled.
+     */
+    <main className="kat-blueprint relative overflow-x-clip">
       <LandingHeader />
-      <HeroSection enrollments={enrollments} passRate={passRate} />
-      <StatsBar enrollments={enrollments} passRate={passRate} />
+      <HeroSection enrollments={enrollments} passRate={passRate} builds={builds} />
+
+      {/* The signature element. Renders nothing when no real build has been approved. */}
+      <BuildLogMarquee builds={builds} />
+
       <FeaturesSection />
       <HowItWorksSection />
       <TracksSection />
       <FellowshipSection cohorts={openCohorts} />
-      <TestimonialsSection />
+      <EventsSection />
+      <TestimonialsSection testimonials={testimonials} />
       <PricingSection />
-      <ScheduleWaitlistSection />
       <FaqSection />
       <CtaSection />
       <SiteFooter />
+      <EnrollmentChat />
     </main>
   );
 }

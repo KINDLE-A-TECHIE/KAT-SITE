@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Award, Check, ExternalLink, Plus, Trash2, X } from "lucide-react";
+import { Award, Check, Copy, ExternalLink, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PROGRAM_LEVEL_COLOR, PROGRAM_LEVEL_LABEL } from "@/lib/enums";
 import type { UserRoleValue } from "@/lib/enums";
 
 type CertStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -28,20 +29,6 @@ type Certificate = {
 type Learner = { id: string; firstName: string; lastName: string; email: string; role: string };
 type Program = { id: string; name: string; level: string };
 
-const LEVEL_LABEL: Record<string, string> = {
-  BEGINNER: "Beginner",
-  INTERMEDIATE: "Intermediate",
-  ADVANCED: "Advanced",
-  FELLOWSHIP: "Fellowship",
-};
-
-const LEVEL_COLOUR: Record<string, string> = {
-  BEGINNER: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
-  INTERMEDIATE: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
-  ADVANCED: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400",
-  FELLOWSHIP: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
-};
-
 const STATUS_STYLE: Record<CertStatus, string> = {
   PENDING:  "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
   APPROVED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
@@ -54,38 +41,48 @@ const STATUS_LABEL: Record<CertStatus, string> = {
   REJECTED: "Rejected",
 };
 
+const FILTER_TABS = [
+  { value: "",         label: "All"      },
+  { value: "PENDING",  label: "Pending"  },
+  { value: "APPROVED", label: "Approved" },
+  { value: "REJECTED", label: "Rejected" },
+] as const;
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
 export function CertificatesPanel({ role }: { role: UserRoleValue }) {
-  const canIssue   = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR"].includes(role);
-  const canRevoke  = ["SUPER_ADMIN", "ADMIN"].includes(role);
-  const canApprove = role === "SUPER_ADMIN";
+  const canIssue     = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR"].includes(role);
+  const canRevoke    = ["SUPER_ADMIN", "ADMIN"].includes(role);
+  const canApprove   = role === "SUPER_ADMIN";
   const isSuperAdmin = role === "SUPER_ADMIN";
 
   const [certs, setCerts] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<"" | "PENDING" | "APPROVED" | "REJECTED">("");
   const [issueOpen, setIssueOpen] = useState(false);
 
-  // Issue form state
+  // Issue form
   const [learners, setLearners] = useState<Learner[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedUser, setSelectedUser] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("");
   const [issuing, setIssuing] = useState(false);
 
-  // Revoke confirmation
+  // Revoke
   const [revokeTarget, setRevokeTarget] = useState<{ id: string; name: string } | null>(null);
   const [revoking, setRevoking] = useState(false);
 
-  // Reject dialog
+  // Reject
   const [rejectTarget, setRejectTarget] = useState<Certificate | null>(null);
   const [rejectionNote, setRejectionNote] = useState("");
   const [reviewing, setReviewing] = useState(false);
 
   const fetchCerts = async () => {
-    const res = await fetch("/api/certificates");
+    setLoading(true);
+    const qs = canIssue && statusFilter ? `?status=${statusFilter}` : "";
+    const res = await fetch(`/api/certificates${qs}`);
     if (res.ok) {
       const data = await res.json() as { certificates: Certificate[] };
       setCerts(data.certificates);
@@ -93,7 +90,8 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
     setLoading(false);
   };
 
-  useEffect(() => { void fetchCerts(); }, []);
+  // Re-fetch whenever the status filter changes
+  useEffect(() => { void fetchCerts(); }, [statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openIssue = async () => {
     setIssueOpen(true);
@@ -164,7 +162,13 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
     }
   };
 
-  // Group certs by program, sorted: programs with pending first
+  const copyLink = async (credentialId: string) => {
+    const url = `${window.location.origin}/certificate/${credentialId}`;
+    await navigator.clipboard.writeText(url);
+    toast.success("Certificate link copied!");
+  };
+
+  // Group certs by programme; groups with pending certs float to the top
   const programGroups = (() => {
     const map = new Map<string, { program: Certificate["program"]; certs: Certificate[] }>();
     for (const cert of certs) {
@@ -172,12 +176,10 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
       if (!map.has(key)) map.set(key, { program: cert.program, certs: [] });
       map.get(key)!.certs.push(cert);
     }
-    // Within each group: PENDING → APPROVED → REJECTED
     const STATUS_ORDER: Record<CertStatus, number> = { PENDING: 0, APPROVED: 1, REJECTED: 2 };
     for (const group of map.values()) {
       group.certs.sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
     }
-    // Sort groups: programs with any pending first
     return [...map.values()].sort((a, b) => {
       const aPending = a.certs.some(c => c.status === "PENDING") ? 0 : 1;
       const bPending = b.certs.some(c => c.status === "PENDING") ? 0 : 1;
@@ -186,15 +188,15 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
   })();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header row */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500 dark:text-slate-400">
           {canIssue
             ? isSuperAdmin
               ? "Issue and manage certificates for your learners."
-              : "Request certificates for your learners — they require super admin approval."
-            : "Download and share your earned certificates."}
+              : "Request certificates for your learners, they require super admin approval."
+            : "Your earned certificates, view, download, or share them."}
         </p>
         {canIssue && (
           <Button
@@ -208,6 +210,25 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
         )}
       </div>
 
+      {/* Status filter tabs, issuers only */}
+      {canIssue && (
+        <div className="flex w-fit items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800/60">
+          {FILTER_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setStatusFilter(tab.value)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                statusFilter === tab.value
+                  ? "bg-white shadow-sm text-slate-800 dark:bg-slate-700 dark:text-slate-100"
+                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map(n => <Skeleton key={n} className="h-20 w-full rounded-xl" />)}
@@ -216,9 +237,13 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-200 py-16 text-center dark:border-slate-700">
           <Award className="size-10 text-slate-300 dark:text-slate-600" />
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            {canIssue ? "No certificates yet." : "You haven't earned any certificates yet."}
+            {canIssue
+              ? statusFilter
+                ? `No ${STATUS_LABEL[statusFilter as CertStatus].toLowerCase()} certificates.`
+                : "No certificates yet."
+              : "You haven't earned any certificates yet."}
           </p>
-          {canIssue && (
+          {canIssue && !statusFilter && (
             <Button size="sm" variant="outline" onClick={() => void openIssue()}>
               <Plus className="mr-1.5 size-3.5" />
               {isSuperAdmin ? "Issue first certificate" : "Request first certificate"}
@@ -233,16 +258,16 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
             const rejectedCount = groupCerts.filter(c => c.status === "REJECTED").length;
             return (
               <section key={program.id} className="space-y-2">
-                {/* Program header */}
-                <div className="flex items-center gap-2 pb-0.5">
+                {/* Programme header */}
+                <div className="flex flex-wrap items-center gap-2 pb-0.5">
                   <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                     {program.name}
                   </h3>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${LEVEL_COLOUR[program.level] ?? "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
-                    {LEVEL_LABEL[program.level] ?? program.level}
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${PROGRAM_LEVEL_COLOR[program.level] ?? "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
+                    {PROGRAM_LEVEL_LABEL[program.level] ?? program.level}
                   </span>
                   {canIssue && (
-                    <div className="flex items-center gap-1.5 ml-1">
+                    <div className="ml-1 flex items-center gap-1.5">
                       {pendingCount > 0 && (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
                           {pendingCount} pending
@@ -274,6 +299,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
                       onApprove={() => void reviewCert(cert.id, "APPROVE")}
                       onReject={() => { setRejectTarget(cert); setRejectionNote(""); }}
                       onRevoke={() => setRevokeTarget({ id: cert.id, name: `${cert.user.firstName} ${cert.user.lastName}` })}
+                      onCopyLink={() => void copyLink(cert.credentialId)}
                       reviewing={reviewing}
                     />
                   ))}
@@ -335,7 +361,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
                     programs.map(p => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.name}
-                        <span className="ml-1.5 text-slate-400">· {LEVEL_LABEL[p.level] ?? p.level}</span>
+                        <span className="ml-1.5 text-slate-400">· {PROGRAM_LEVEL_LABEL[p.level] ?? p.level}</span>
                       </SelectItem>
                     ))
                   )}
@@ -377,11 +403,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
             <Button variant="outline" className="dark:border-slate-600 dark:text-slate-300" onClick={() => setRevokeTarget(null)}>
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              disabled={revoking}
-              onClick={() => void confirmRevoke()}
-            >
+            <Button variant="destructive" disabled={revoking} onClick={() => void confirmRevoke()}>
               {revoking ? "Revoking…" : "Revoke"}
             </Button>
           </DialogFooter>
@@ -400,7 +422,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
               <span className="font-semibold text-slate-800 dark:text-slate-200">
                 {rejectTarget?.user.firstName} {rejectTarget?.user.lastName}
               </span>{" "}
-              — {rejectTarget?.program.name}.
+              {rejectTarget?.program.name}.
             </p>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
@@ -433,7 +455,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
   );
 }
 
-// ─── Certificate row sub-component ───────────────────────────────────────────
+// ─── Certificate row ──────────────────────────────────────────────────────────
 
 function CertRow({
   cert,
@@ -443,6 +465,7 @@ function CertRow({
   onApprove,
   onReject,
   onRevoke,
+  onCopyLink,
   reviewing,
 }: {
   cert: Certificate;
@@ -452,8 +475,17 @@ function CertRow({
   onApprove?: () => void;
   onReject?: () => void;
   onRevoke: () => void;
+  onCopyLink: () => void;
   reviewing: boolean;
 }) {
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const handleCopy = () => {
+    onCopyLink();
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
   return (
     <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
       {/* Icon */}
@@ -464,11 +496,12 @@ function CertRow({
       {/* Info */}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
+          {/* Issuer sees learner name; learner sees programme name */}
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-            {cert.program.name}
+            {canIssue ? `${cert.user.firstName} ${cert.user.lastName}` : cert.program.name}
           </p>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${LEVEL_COLOUR[cert.program.level] ?? "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
-            {LEVEL_LABEL[cert.program.level] ?? cert.program.level}
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${PROGRAM_LEVEL_COLOR[cert.program.level] ?? "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
+            {PROGRAM_LEVEL_LABEL[cert.program.level] ?? cert.program.level}
           </span>
           {canIssue && (
             <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS_STYLE[cert.status]}`}>
@@ -476,13 +509,19 @@ function CertRow({
             </span>
           )}
         </div>
+
+        {/* Issuer: programme name + email on second line */}
         {canIssue && (
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-            {cert.user.firstName} {cert.user.lastName} · {cert.user.email}
+            {cert.program.name} · {cert.user.email}
           </p>
         )}
+
         <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
-          Requested {formatDate(cert.issuedAt)} by {cert.issuedBy.firstName} {cert.issuedBy.lastName}
+          {canIssue
+            ? <>Requested {formatDate(cert.issuedAt)} by {cert.issuedBy.firstName} {cert.issuedBy.lastName}</>
+            : <>Issued {formatDate(cert.issuedAt)}</>
+          }
           {cert.status === "APPROVED" && cert.approvedBy && (
             <> · Approved by {cert.approvedBy.firstName} {cert.approvedBy.lastName}</>
           )}
@@ -502,7 +541,6 @@ function CertRow({
               disabled={reviewing}
               onClick={onApprove}
               className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40"
-              title="Approve"
             >
               <Check className="size-3" /> Approve
             </button>
@@ -510,21 +548,31 @@ function CertRow({
               disabled={reviewing}
               onClick={onReject}
               className="flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-medium text-rose-700 transition hover:bg-rose-100 disabled:opacity-50 dark:border-rose-800 dark:bg-rose-900/20 dark:text-rose-400 dark:hover:bg-rose-900/40"
-              title="Reject"
             >
               <X className="size-3" /> Reject
             </button>
           </>
         )}
+
         {cert.status === "APPROVED" && (
-          <Link
-            href={`/certificate/${cert.credentialId}`}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-          >
-            <ExternalLink className="size-3" />
-            View
-          </Link>
+          <>
+            <button
+              onClick={handleCopy}
+              title="Copy certificate link"
+              className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+            >
+              {linkCopied ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
+            </button>
+            <Link
+              href={`/certificate/${cert.credentialId}`}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            >
+              <ExternalLink className="size-3" />
+              View
+            </Link>
+          </>
         )}
+
         {canRevoke && (
           <button
             onClick={onRevoke}

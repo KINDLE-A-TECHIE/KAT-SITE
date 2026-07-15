@@ -8,12 +8,29 @@ coverage
 .env.*.local
 !.env.example
 
-prisma/migrations
+# NOTE: prisma/migrations is deliberately NOT ignored.
+#
+# It used to be, and that single line was the root of a serious problem: migrations were never
+# shared, so nobody could rebuild the database from them. Drift accumulated invisibly until a fresh
+# deploy needed 139 corrective statements to match schema.prisma, which meant production could not
+# be recreated from its own history. Migrations ARE the schema's history. They belong in git.
+
 *.log
 
 .vercel
 
 .claude
 
+# Jibri secrets — fill in locally, never commit
+scripts/jibri-env.sh
+
 # Local npm overrides — .npmrc is intentionally tracked for Vercel builds
 # (Do NOT add .npmrc here)
+
+# Archived pre-baseline migrations (2026-07-13). Kept on disk only; they do NOT reproduce
+# schema.prisma, which is why 00000000000000_init replaced them.
+prisma/_migrations-archive-*/
+
+# Build artefacts and crash dumps. Neither belongs in history.
+tsconfig.tsbuildinfo
+*.stackdump

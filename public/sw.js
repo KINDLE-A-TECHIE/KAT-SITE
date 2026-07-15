@@ -1,7 +1,7 @@
 const RUNTIME_CACHE = "kat-runtime-v2";
 const RUNTIME_CACHE_LIMIT = 60;
 
-// Fix 11 — derive static cache name from Next.js build ID so stale caches
+// Fix 11, derive static cache name from Next.js build ID so stale caches
 // are automatically evicted whenever a new build is deployed.
 let _staticCachePromise = null;
 
@@ -95,7 +95,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Fix 10 — cache-first for static assets (/_next/static/* are content-addressed
+  // Fix 10, cache-first for static assets (/_next/static/* are content-addressed
   // and never change, so serving from cache immediately is safe and faster).
   if (isStaticAssetRequest(request, url)) {
     event.respondWith(
@@ -109,7 +109,7 @@ self.addEventListener("fetch", (event) => {
         const staticCache = await caches.open(staticCacheName);
         const shellCached = await staticCache.match(request);
         if (shellCached) return shellCached;
-        // Cache miss — fetch from network, store, then return
+        // Cache miss, fetch from network, store, then return
         try {
           const networkResponse = await fetch(request);
           if (networkResponse.ok) {

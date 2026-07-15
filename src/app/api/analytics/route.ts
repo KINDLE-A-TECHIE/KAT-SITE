@@ -36,7 +36,7 @@ export async function GET(request: Request) {
   const isAdmin = session.user.role === UserRole.SUPER_ADMIN || session.user.role === UserRole.ADMIN;
 
   try {
-    // Resolve organizationId — session JWT may be stale for admin users
+    // Resolve organizationId, session JWT may be stale for admin users
     let orgId = session.user.organizationId ?? null;
     if (isAdmin && !orgId) {
       const dbUser = await prisma.user.findUnique({

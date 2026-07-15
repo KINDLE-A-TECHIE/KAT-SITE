@@ -113,6 +113,6 @@ export async function POST(request: Request) {
     }
   }
 
-  // Always return 200 — Paystack will retry on non-2xx responses.
+  // Always return 200. Paystack will retry on non-2xx responses.
   return new Response("OK", { status: 200 });
 }

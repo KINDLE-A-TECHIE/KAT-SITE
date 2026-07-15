@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2 } from "lucide-react";
+import { STAMP_CTA } from "@/components/marketing/landing-tokens";
 
 type FormState = "idle" | "loading" | "success" | "error";
 
@@ -13,9 +14,20 @@ const PARTNER_TYPES = [
   { value: "OTHER", label: "Other" },
 ];
 
+// NERDC levels, the values the admin inbox and the schools crosswalk expect. The old
+// coding_clubs/tech_labs/after_school/hackathons values are now "legacy" in
+// partner-inquiries-panel.tsx; a school pilot lead is scoped by the level(s) they teach.
+const SCHOOL_PROGRAMS = [
+  { value: "primary_1_3", label: "Primary 1–3" },
+  { value: "primary_4_6", label: "Primary 4–6" },
+  { value: "jss", label: "JSS 1–3" },
+  { value: "sss", label: "SSS 1–3" },
+];
+
 export function PartnerForm() {
   const [state, setState] = useState<FormState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [programs, setPrograms] = useState<string[]>([]);
   const [form, setForm] = useState({
     name: "",
     organization: "",
@@ -30,6 +42,12 @@ export function PartnerForm() {
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
   }
 
+  function toggleProgram(value: string) {
+    setPrograms((prev) =>
+      prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value],
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setState("loading");
@@ -38,7 +56,7 @@ export function PartnerForm() {
       const res = await fetch("/api/partners", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, programs }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -54,23 +72,24 @@ export function PartnerForm() {
   if (state === "success") {
     return (
       <div className="flex flex-col items-center gap-4 py-12 text-center">
-        <CheckCircle2 className="size-12 text-emerald-500" />
-        <h3 className="text-xl font-semibold text-slate-900">Inquiry received!</h3>
-        <p className="max-w-sm text-sm text-slate-500">
+        <CheckCircle2 className="size-12 text-[var(--kat-pine)]" />
+        <h3 className="font-display text-xl font-semibold text-[var(--kat-ink)]">Inquiry received!</h3>
+        <p className="max-w-sm font-body text-sm text-[var(--kat-muted)]">
           Thank you for reaching out. Our partnerships team will be in touch within 2 business days.
         </p>
       </div>
     );
   }
 
+  const labelCls = "font-mono text-[0.7rem] uppercase tracking-[0.14em] text-[var(--kat-muted)]";
   const inputCls =
-    "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-[var(--kat-primary-blue)] focus:ring-2 focus:ring-[var(--kat-primary-blue)]/10 transition";
+    "w-full rounded-none border border-[var(--kat-border)] bg-[var(--kat-paper)] px-4 py-3 font-body text-sm text-[var(--kat-ink)] outline-none transition placeholder:text-[var(--kat-muted)] focus:border-[var(--kat-clay)] focus:ring-2 focus:ring-[var(--kat-clay)]/15";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-slate-600">Your Name</label>
+          <label className={labelCls}>Your name</label>
           <input
             required
             placeholder="e.g. Amaka Okonkwo"
@@ -80,7 +99,7 @@ export function PartnerForm() {
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-slate-600">Organisation Name</label>
+          <label className={labelCls}>Organisation name</label>
           <input
             required
             placeholder="e.g. Lagos State Ministry of Education"
@@ -92,7 +111,7 @@ export function PartnerForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-slate-600">Partnership Type</label>
+        <label className={labelCls}>Partnership type</label>
         <select required className={inputCls} value={form.type} onChange={set("type")}>
           {PARTNER_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
@@ -102,9 +121,49 @@ export function PartnerForm() {
         </select>
       </div>
 
+      {form.type === "SCHOOL" && (
+        <div className="space-y-2">
+          <label className={labelCls}>
+            Levels you teach <span className="normal-case tracking-normal">(select all that apply)</span>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {SCHOOL_PROGRAMS.map((prog) => {
+              const checked = programs.includes(prog.value);
+              return (
+                <button
+                  key={prog.value}
+                  type="button"
+                  onClick={() => toggleProgram(prog.value)}
+                  className={`flex items-center gap-2.5 rounded-none border px-4 py-3 text-left font-body text-sm transition ${
+                    checked
+                      ? "border-[var(--kat-clay)] bg-[var(--kat-clay)]/[0.07] font-medium text-[var(--kat-clay)]"
+                      : "border-[var(--kat-border)] bg-[var(--kat-paper)] text-[var(--kat-ink)] hover:border-[var(--kat-clay)]/50"
+                  }`}
+                >
+                  <span
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center border transition ${
+                      checked
+                        ? "border-[var(--kat-clay)] bg-[var(--kat-clay)]"
+                        : "border-[var(--kat-border)] bg-[var(--kat-paper)]"
+                    }`}
+                  >
+                    {checked && (
+                      <svg viewBox="0 0 10 8" className="h-2.5 w-2.5">
+                        <path d="M1 4l3 3 5-6" stroke="var(--kat-paper)" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </span>
+                  {prog.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-slate-600">Work Email</label>
+          <label className={labelCls}>Work email</label>
           <input
             required
             type="email"
@@ -115,7 +174,7 @@ export function PartnerForm() {
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-slate-600">Phone (optional)</label>
+          <label className={labelCls}>Phone (optional)</label>
           <input
             type="tel"
             placeholder="+234 800 000 0000"
@@ -127,11 +186,11 @@ export function PartnerForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-slate-600">Tell us about your goals</label>
+        <label className={labelCls}>Tell us about your goals</label>
         <textarea
           required
           rows={4}
-          placeholder="Describe what you're hoping to achieve through this partnership — e.g. number of students, target age range, timeline, any specific programmes in mind."
+          placeholder="Describe what you're hoping to achieve, e.g. number of students, target levels, timeline, and any specific programmes in mind."
           className={`${inputCls} resize-none`}
           value={form.message}
           onChange={set("message")}
@@ -139,21 +198,22 @@ export function PartnerForm() {
       </div>
 
       {state === "error" && (
-        <p className="rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">{errorMsg}</p>
+        <p className="rounded-none border-l-2 border-[var(--kat-danger)] bg-[var(--kat-danger)]/[0.06] px-4 py-2.5 font-body text-sm text-[var(--kat-danger)]">
+          {errorMsg}
+        </p>
       )}
 
       <Button
         type="submit"
         disabled={state === "loading"}
-        className="w-full rounded-xl py-3 text-sm font-semibold text-white"
-        style={{ background: "var(--kat-gradient)" }}
+        className={`w-full py-3 ${STAMP_CTA}`}
       >
         {state === "loading" ? (
           <span className="flex items-center justify-center gap-2">
             <Loader2 className="size-4 animate-spin" /> Sending…
           </span>
         ) : (
-          "Send Partnership Inquiry"
+          "Send partnership inquiry"
         )}
       </Button>
     </form>

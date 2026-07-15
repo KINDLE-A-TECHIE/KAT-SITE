@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { UserRole } from "@prisma/client";
+import { NotificationType, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { projectFeedbackLimiter, rateLimitResponse } from "@/lib/ratelimit";
 
 interface Params { params: Promise<{ projectId: string }> }
 
@@ -17,9 +18,17 @@ export async function POST(request: Request, { params }: Params) {
   if (!canReview) return fail("Only instructors and admins can leave feedback.", 403);
 
   const { projectId } = await params;
-  const project = await prisma.project.findUnique({ where: { id: projectId }, select: { id: true, status: true } });
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { id: true, title: true, status: true, studentId: true },
+  });
   if (!project) return fail("Project not found.", 404);
   if (project.status === "DRAFT") return fail("Cannot review a draft project.", 400);
+
+  if (projectFeedbackLimiter) {
+    const { success, reset } = await projectFeedbackLimiter.limit(session.user.id);
+    if (!success) return rateLimitResponse(reset);
+  }
 
   const body = await request.json() as unknown;
   const parsed = schema.safeParse(body);
@@ -29,6 +38,22 @@ export async function POST(request: Request, { params }: Params) {
     data: { projectId, authorId: session.user.id, body: parsed.data.body },
     include: { author: { select: { id: true, firstName: true, lastName: true, role: true } } },
   });
+
+  // Notify the student, but not if they somehow left feedback on their own project
+  if (project.studentId !== session.user.id) {
+    await prisma.notification.create({
+      data: {
+        recipientId: project.studentId,
+        creatorId: session.user.id,
+        type: NotificationType.INFO,
+        title: "New feedback on your project",
+        body: JSON.stringify({
+          text: `Your instructor left feedback on "${project.title}". Open your project to read it.`,
+          targetPath: "/dashboard/projects",
+        }),
+      },
+    });
+  }
 
   return ok({ feedback }, 201);
 }

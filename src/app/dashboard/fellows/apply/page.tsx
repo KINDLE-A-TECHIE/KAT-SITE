@@ -24,7 +24,7 @@ export default async function FellowApplyPage() {
       <PageHeader
         badge="Fellowship"
         title="Apply for Fellowship"
-        subtitle="Fellows mentor junior students and lead cohort activities. Tell us why you're ready to step up — applications are reviewed by the admin team."
+        subtitle="Fellows mentor junior students and lead cohort activities. Tell us why you're ready to step up, applications are reviewed by the admin team."
       />
       <FellowApplyPanel
         cohorts={cohorts.map((c) => ({

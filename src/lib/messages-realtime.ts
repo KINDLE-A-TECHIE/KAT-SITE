@@ -210,7 +210,7 @@ async function ensureRedisRealtime() {
     return;
   }
 
-  // Publisher: Upstash REST client — created once, stateless HTTP calls
+  // Publisher: Upstash REST client, created once, stateless HTTP calls
   if (!store.upstashPublisher) {
     store.upstashPublisher = new UpstashRedis({
       url: UPSTASH_REST_URL!,
@@ -227,7 +227,7 @@ async function ensureRedisRealtime() {
   store.redisInitPromise = (async () => {
     subscriber = createClient({
       url: tcpUrl,
-      socket: { reconnectStrategy: false }, // don't retry — fail fast and fall back to in-memory
+      socket: { reconnectStrategy: false }, // don't retry, fail fast and fall back to in-memory
     }) as RedisClientType;
 
     subscriber.on("error", () => { /* suppress per-attempt noise; setup failure is logged below */ });

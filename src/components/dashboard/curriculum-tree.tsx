@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
-  BookOpen, ChevronDown, ChevronRight, GraduationCap,
-  Plus, Settings, Trash2
+  BookOpen, CheckCircle2, ChevronDown, ChevronRight, GraduationCap,
+  Lock, Plus, Settings, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,22 @@ type LessonSummary = { id: string; title: string; sortOrder: number; contents: {
 type Module = { id: string; title: string; description: string | null; sortOrder: number; lessons: LessonSummary[] };
 type CurriculumVersion = { id: string; versionNumber: number; label: string; isActive: boolean; publishedAt: string | null; createdBy: { firstName: string; lastName: string } };
 type CurriculumData = { versions: (CurriculumVersion & { modules: Module[] })[] } | null;
+type GateStatusValue = "NOT_STARTED" | "IN_PROGRESS" | "PASSED";
+type ModuleGate = { assessmentGate: GateStatusValue; projectGate: GateStatusValue; instructorGate: GateStatusValue; allGatesPassed: boolean };
+type ModuleGateMap = Record<string, ModuleGate>;
+
+function GateIndicator({ label, status }: { label: string; status?: GateStatusValue }) {
+  const passed = status === "PASSED";
+  return (
+    <span className={`flex items-center gap-1 text-xs ${passed ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}`}>
+      {passed
+        ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+        : <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-slate-300 dark:border-slate-600 inline-block" />
+      }
+      {label}
+    </span>
+  );
+}
 
 const CREATOR_ROLES = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR"];
 
@@ -58,6 +74,8 @@ function AddInlineForm({
 
 export function CurriculumTree({ programId, role }: { programId: string; role: string }) {
   const [data, setData] = useState<CurriculumData>(null);
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [moduleGates, setModuleGates] = useState<ModuleGateMap>({});
   const [loading, setLoading] = useState(true);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const [addingModule, setAddingModule] = useState(false);
@@ -69,15 +87,23 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
 
   const load = async () => {
     try {
-      const res = await fetch(`/api/programs/${programId}/curriculum`);
-      if (res.ok) {
-        const payload = await res.json() as { curriculum: CurriculumData };
+      const [currRes, progressRes] = await Promise.all([
+        fetch(`/api/programs/${programId}/curriculum`),
+        isCreator ? Promise.resolve(null) : fetch(`/api/curriculum/progress/${programId}`),
+      ]);
+      if (currRes.ok) {
+        const payload = await currRes.json() as { curriculum: CurriculumData };
         setData(payload.curriculum);
         // Auto-expand all modules on first load
         const active = payload.curriculum?.versions?.[0];
         if (active) {
           setExpandedModules(new Set(active.modules.map((m) => m.id)));
         }
+      }
+      if (progressRes?.ok) {
+        const p = await progressRes.json() as { completedLessonIds: string[]; moduleGates?: ModuleGateMap };
+        setCompletedIds(new Set(p.completedLessonIds));
+        setModuleGates(p.moduleGates ?? {});
       }
     } catch { /* ignore */ }
     setLoading(false);
@@ -166,6 +192,12 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
 
   /* ── Learner view ── */
   if (!isCreator) {
+    const totalLessons = activeVersion.modules.reduce((sum, m) => sum + m.lessons.length, 0);
+    const totalCompleted = activeVersion.modules.reduce(
+      (sum, m) => sum + m.lessons.filter((l) => completedIds.has(l.id)).length, 0
+    );
+    const overallPct = totalLessons > 0 ? Math.round((totalCompleted / totalLessons) * 100) : 0;
+
     return (
       <div className="mx-auto max-w-3xl space-y-4">
         <div className="kat-card">
@@ -178,8 +210,24 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {activeVersion.modules.length} module{activeVersion.modules.length !== 1 ? "s" : ""}
             {" · "}
-            {activeVersion.modules.reduce((sum, m) => sum + m.lessons.length, 0)} lesson{activeVersion.modules.reduce((sum, m) => sum + m.lessons.length, 0) !== 1 ? "s" : ""}
+            {totalLessons} lesson{totalLessons !== 1 ? "s" : ""}
           </p>
+
+          {/* Overall progress bar */}
+          {totalLessons > 0 && (
+            <div className="mt-3">
+              <div className="mb-1 flex items-center justify-between text-xs">
+                <span className="text-slate-500 dark:text-slate-400">{totalCompleted}/{totalLessons} completed</span>
+                <span className="font-semibold text-[#1E5FAF] dark:text-blue-400">{overallPct}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-[#1E5FAF] transition-all duration-500"
+                  style={{ width: `${overallPct}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-3">
@@ -192,44 +240,81 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
 
           {activeVersion.modules.map((mod, modIndex) => {
             const expanded = expandedModules.has(mod.id);
+            const modCompleted = mod.lessons.filter((l) => completedIds.has(l.id)).length;
+            const modTotal = mod.lessons.length;
+            const modDone = modTotal > 0 && modCompleted === modTotal;
+            const gates = moduleGates[mod.id];
+
+            // A module is locked if the previous module hasn't had all its gates passed
+            const prevMod = modIndex > 0 ? activeVersion.modules[modIndex - 1] : null;
+            const isLocked = prevMod !== null && !(moduleGates[prevMod.id]?.allGatesPassed ?? false);
+
             return (
               <motion.div
                 key={mod.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: modIndex * 0.05 }}
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+                className={`overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 ${isLocked ? "border-slate-200/60 dark:border-slate-700/60 opacity-70" : "border-slate-200 dark:border-slate-700"}`}
               >
-                {/* Module header */}
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60"
-                  onClick={() => setExpandedModules((prev) => {
-                    const next = new Set(prev);
-                    if (expanded) { next.delete(mod.id); } else { next.add(mod.id); }
-                    return next;
-                  })}
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1E5FAF]/10 text-sm font-bold text-[#1E5FAF] dark:bg-blue-900/30 dark:text-blue-400">
-                    {modIndex + 1}
+                {isLocked ? (
+                  /* Locked module header, not clickable */
+                  <div className="flex w-full items-center gap-4 px-5 py-4 cursor-not-allowed select-none">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400 dark:bg-slate-800">
+                      <Lock className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-slate-600 dark:text-slate-400">{mod.title}</p>
+                      <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                        Complete all gates for the previous module to unlock
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-slate-900 dark:text-slate-100">{mod.title}</p>
-                    {mod.description && (
-                      <p className="mt-0.5 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">{mod.description}</p>
-                    )}
-                    <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
-                      {mod.lessons.length} lesson{mod.lessons.length !== 1 ? "s" : ""}
-                    </p>
+                ) : (
+                  /* Unlocked module header */
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                    onClick={() => setExpandedModules((prev) => {
+                      const next = new Set(prev);
+                      if (expanded) { next.delete(mod.id); } else { next.add(mod.id); }
+                      return next;
+                    })}
+                  >
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
+                      modDone
+                        ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400"
+                        : "bg-[#1E5FAF]/10 text-[#1E5FAF] dark:bg-blue-900/30 dark:text-blue-400"
+                    }`}>
+                      {modDone ? <CheckCircle2 className="h-5 w-5" /> : modIndex + 1}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">{mod.title}</p>
+                      {mod.description && (
+                        <p className="mt-0.5 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">{mod.description}</p>
+                      )}
+                      <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                        {modTotal > 0 ? `${modCompleted}/${modTotal} lessons complete` : "No lessons yet"}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-slate-400 dark:text-slate-500">
+                      {expanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                    </div>
+                  </button>
+                )}
+
+                {/* Gate status strip, shown for unlocked modules */}
+                {!isLocked && (
+                  <div className="flex flex-wrap gap-3 border-t border-slate-100 px-5 py-2 dark:border-slate-800">
+                    <GateIndicator label="Assessment" status={gates?.assessmentGate} />
+                    <GateIndicator label="Project" status={gates?.projectGate} />
+                    <GateIndicator label="Instructor OK" status={gates?.instructorGate} />
                   </div>
-                  <div className="shrink-0 text-slate-400 dark:text-slate-500">
-                    {expanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-                  </div>
-                </button>
+                )}
 
                 {/* Lessons */}
                 <AnimatePresence>
-                  {expanded && (
+                  {!isLocked && expanded && (
                     <motion.div
                       initial={{ height: 0 }}
                       animate={{ height: "auto" }}
@@ -240,26 +325,35 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
                         {mod.lessons.length === 0 && (
                           <p className="px-6 py-4 text-sm text-slate-400 dark:text-slate-500">No lessons in this module yet.</p>
                         )}
-                        {mod.lessons.map((lesson, lessonIndex) => (
-                          <Link
-                            key={lesson.id}
-                            href={`/dashboard/curriculum/${programId}/lessons/${lesson.id}`}
-                            className="flex items-center gap-4 border-b border-slate-50 px-5 py-3.5 transition-colors last:border-0 hover:bg-slate-50 dark:border-slate-800/60 dark:hover:bg-slate-800/40"
-                          >
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                              {lessonIndex + 1}
-                            </span>
-                            <span className="min-w-0 flex-1 text-sm font-medium text-slate-700 dark:text-slate-300">
-                              {lesson.title}
-                            </span>
-                            {lesson.contents.length > 0 && (
-                              <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">
-                                {lesson.contents.length} item{lesson.contents.length !== 1 ? "s" : ""}
+                        {mod.lessons.map((lesson, lessonIndex) => {
+                          const done = completedIds.has(lesson.id);
+                          return (
+                            <Link
+                              key={lesson.id}
+                              href={`/dashboard/curriculum/${programId}/lessons/${lesson.id}`}
+                              className="flex items-center gap-4 border-b border-slate-50 px-5 py-3.5 transition-colors last:border-0 hover:bg-slate-50 dark:border-slate-800/60 dark:hover:bg-slate-800/40"
+                            >
+                              {done ? (
+                                <CheckCircle2 className="h-7 w-7 shrink-0 text-emerald-500 dark:text-emerald-400" />
+                              ) : (
+                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                  {lessonIndex + 1}
+                                </span>
+                              )}
+                              <span className={`min-w-0 flex-1 text-sm font-medium ${
+                                done ? "text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-300"
+                              }`}>
+                                {lesson.title}
                               </span>
-                            )}
-                            <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 dark:text-slate-600" />
-                          </Link>
-                        ))}
+                              {lesson.contents.length > 0 && (
+                                <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                                  {lesson.contents.length} item{lesson.contents.length !== 1 ? "s" : ""}
+                                </span>
+                              )}
+                              <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 dark:text-slate-600" />
+                            </Link>
+                          );
+                        })}
                       </div>
                     </motion.div>
                   )}
@@ -282,7 +376,7 @@ export function CurriculumTree({ programId, role }: { programId: string; role: s
             <Link href="/dashboard/curriculum" className="text-xs text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">← All Programs</Link>
             <h2 className="mt-0.5 [font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900 dark:text-slate-100">Curriculum</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              v{activeVersion.versionNumber} — {activeVersion.label}
+              v{activeVersion.versionNumber}, {activeVersion.label}
               {activeVersion.publishedAt && (
                 <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">Active</span>
               )}

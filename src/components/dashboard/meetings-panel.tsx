@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { CalendarClock, Radio, RefreshCcw, Search, Users, Video } from "lucide-react";
+import { CalendarClock, Download, Radio, RefreshCcw, Search, Users, Video, X } from "lucide-react";
 import { toast } from "sonner";
 import { ProfilePreviewCard, type ProfilePreviewContact } from "@/components/dashboard/profile-preview-card";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,7 +29,7 @@ type Meeting = {
   recordingPlayUrl: string | null;
   recordingDownloadUrl: string | null;
   recordingSyncedAt: string | null;
-  dailyRoomUrl: string;
+  roomUrl: string;
   host: { id: string; firstName: string; lastName: string };
   participants: {
     user: { id: string; firstName: string; lastName: string; role: UserRoleValue };
@@ -42,23 +43,31 @@ type MeetingsPanelProps = {
 
 const HOST_ROLES: UserRoleValue[] = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR", "FELLOW"];
 const SKILL_DISCOVERY_ROLES: UserRoleValue[] = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR"];
-const AUTO_RECORD_ROLES: UserRoleValue[] = ["STUDENT", "FELLOW"];
 const RECORDING_VIEW_ROLES: UserRoleValue[] = ["SUPER_ADMIN", "ADMIN"];
 const COLUMN_META = {
   live: {
     label: "Live",
     tone: "from-emerald-500 to-teal-400",
     chip: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+    accent: "border-l-emerald-400 dark:border-l-emerald-500",
+    emptyIcon: Radio,
+    emptyLabel: "No live sessions right now.",
   },
   upcoming: {
     label: "Upcoming",
     tone: "from-blue-600 to-cyan-500",
     chip: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
+    accent: "border-l-blue-400 dark:border-l-blue-500",
+    emptyIcon: CalendarClock,
+    emptyLabel: "No upcoming sessions scheduled.",
   },
   ended: {
     label: "Ended",
     tone: "from-slate-600 to-slate-500",
     chip: "bg-slate-200 text-slate-700 dark:bg-slate-600 dark:text-slate-300",
+    accent: "border-l-slate-300 dark:border-l-slate-600",
+    emptyIcon: Video,
+    emptyLabel: "No ended sessions yet.",
   },
 } as const;
 
@@ -86,6 +95,7 @@ function recordingStatusLabel(status: MeetingRecordingStatusValue) {
 }
 
 export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
+  const [activeColumn, setActiveColumn] = useState<"live" | "upcoming" | "ended">("upcoming");
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [recordingLibrary, setRecordingLibrary] = useState<Meeting[]>([]);
   const [contacts, setContacts] = useState<ProfilePreviewContact[]>([]);
@@ -93,7 +103,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
   const [recordingLibraryLoading, setRecordingLibraryLoading] = useState(false);
   const [contactsLoading, setContactsLoading] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [recordingSyncingId, setRecordingSyncingId] = useState<string | null>(null);
+  const [joiningId, setJoiningId] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -106,7 +116,6 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
   const canHost = HOST_ROLES.includes(role);
   const canDiscoverBySkill = SKILL_DISCOVERY_ROLES.includes(role);
   const canWatchRecordings = RECORDING_VIEW_ROLES.includes(role);
-  const canSyncRecordings = role === "SUPER_ADMIN";
   const canViewRecordingLibrary = role === "SUPER_ADMIN";
   const canCancelMeeting = useCallback(
     (meeting: Meeting) => {
@@ -130,15 +139,6 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
 
   const contactsById = useMemo(() => new Map(contacts.map((contact) => [contact.id, contact])), [contacts]);
 
-  const requiresAutoRecording = useMemo(() => {
-    if (AUTO_RECORD_ROLES.includes(role)) {
-      return true;
-    }
-    return selectedParticipants.some((participantId) => {
-      const participantRole = contactsById.get(participantId)?.role;
-      return participantRole === "STUDENT" || participantRole === "FELLOW";
-    });
-  }, [contactsById, role, selectedParticipants]);
 
   const participantOptions = useMemo(
     () => contacts.filter((contact) => !selectedParticipants.includes(contact.id)),
@@ -274,6 +274,38 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
     await loadMeetings();
   };
 
+  const setRecordingMode = async (meetingId: string, recordingMode: MeetingRecordingModeValue) => {
+    const response = await fetch("/api/meetings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ meetingId, recordingMode }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      toast.error(payload?.error ?? "Could not update recording mode.");
+      return;
+    }
+    setMeetings((prev) =>
+      prev.map((m) =>
+        m.id === meetingId
+          ? { ...m, recordingMode: (payload.meeting as Meeting).recordingMode, recordingStatus: (payload.meeting as Meeting).recordingStatus }
+          : m,
+      ),
+    );
+    toast.success("Recording mode updated.");
+  };
+
+  const removeMeeting = async (meetingId: string) => {
+    const response = await fetch(`/api/meetings?meetingId=${meetingId}`, { method: "DELETE" });
+    const payload = await response.json();
+    if (!response.ok) {
+      toast.error(payload?.error ?? "Could not remove meeting.");
+      return;
+    }
+    toast.success("Meeting removed.");
+    setMeetings((prev) => prev.filter((m) => m.id !== meetingId));
+  };
+
   const cancelMeeting = async (meetingId: string) => {
     const response = await fetch("/api/meetings", {
       method: "PATCH",
@@ -292,69 +324,44 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
     await loadMeetings();
   };
 
-  const syncMeetingRecording = useCallback(
-    async (meetingId: string) => {
-      setRecordingSyncingId(meetingId);
-      try {
-        const response = await fetch("/api/meetings", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            meetingId,
-            syncRecording: true,
-          }),
-        });
-        const payload = await response.json();
-        if (!response.ok) {
-          toast.error(payload?.error ?? "Could not sync recording.");
-          return;
-        }
-        const status = payload?.meeting?.recordingStatus as MeetingRecordingStatusValue | undefined;
-        if (status === "AVAILABLE") {
-          toast.success("Recording is ready.");
-        } else if (status === "FAILED") {
-          toast.error("Recording not found yet.");
-        } else {
-          toast.message("Recording is still processing.");
-        }
-        await loadMeetings();
-        if (canViewRecordingLibrary) {
-          await loadRecordingLibrary();
-        }
-      } finally {
-        setRecordingSyncingId(null);
+  const joinMeeting = useCallback(async (meetingId: string) => {
+    setJoiningId(meetingId);
+    try {
+      const response = await fetch(`/api/meetings/${meetingId}/join`);
+      const payload = await response.json();
+      if (!response.ok || !payload?.joinUrl) {
+        toast.error(payload?.error ?? "Could not get meeting join link.");
+        return;
       }
-    },
-    [canViewRecordingLibrary, loadMeetings, loadRecordingLibrary],
-  );
+      window.open(payload.joinUrl as string, "_blank", "noopener,noreferrer");
+    } catch {
+      toast.error("Could not get meeting join link.");
+    } finally {
+      setJoiningId(null);
+    }
+  }, []);
 
   return (
     <div className="space-y-5">
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {/* Mobile tab switcher, hidden on xl where columns show side by side */}
+      <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 xl:hidden dark:border-slate-700 dark:bg-slate-800/50">
         {(["live", "upcoming", "ended"] as const).map((key) => {
           const Icon = key === "live" ? Radio : key === "upcoming" ? CalendarClock : Video;
           return (
-            <div
+            <button
               key={key}
-              className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.55)] dark:border-slate-700 dark:bg-slate-800/90"
+              onClick={() => setActiveColumn(key)}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition ${activeColumn === key ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`inline-flex size-8 items-center justify-center rounded-lg bg-gradient-to-br text-white ${COLUMN_META[key].tone}`}
-                  >
-                    <Icon className="size-4" />
-                  </div>
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{COLUMN_META[key].label}</p>
-                </div>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${COLUMN_META[key].chip}`}>
-                  {grouped[key].length}
-                </span>
-              </div>
-            </div>
+              <Icon className="size-3.5" />
+              {COLUMN_META[key].label}
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${COLUMN_META[key].chip}`}>
+                {grouped[key].length}
+              </span>
+            </button>
           );
         })}
-      </section>
+      </div>
 
       {canHost ? (
         <section className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.5)] sm:p-5 dark:border-slate-700 dark:bg-slate-900/95">
@@ -386,18 +393,18 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="space-y-1">
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Start Date and Time</p>
-                <Input
-                  className="kat-date-input"
+                <DateInput
                   type="datetime-local"
+                  placeholder="Select start date & time"
                   value={startTime}
                   onChange={(event) => setStartTime(event.target.value)}
                 />
               </div>
               <div className="space-y-1">
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">End Date and Time</p>
-                <Input
-                  className="kat-date-input"
+                <DateInput
                   type="datetime-local"
+                  placeholder="Select end date & time"
                   value={endTime}
                   onChange={(event) => setEndTime(event.target.value)}
                 />
@@ -483,28 +490,31 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
             </div>
           ) : null}
 
-          <div className="mt-4 flex max-h-28 flex-wrap gap-2 overflow-y-auto pr-1">
-            {selectedParticipants.map((participantId) => {
-              const participant = contactsById.get(participantId);
-              return (
-                <button
-                  key={participantId}
-                  type="button"
-                  className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
-                  onClick={() => removeParticipant(participantId)}
-                >
-                  {participant ? `${participant.firstName} ${participant.lastName}` : participantId} x
-                </button>
-              );
-            })}
-          </div>
+          {selectedParticipants.length > 0 && (
+            <div className="mt-3">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Selected ({selectedParticipants.length})
+              </p>
+              <div className="flex max-h-28 flex-wrap gap-1.5 overflow-y-auto pr-1">
+                {selectedParticipants.map((participantId) => {
+                  const participant = contactsById.get(participantId);
+                  return (
+                    <button
+                      key={participantId}
+                      type="button"
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 py-1 pl-3 pr-2 text-xs font-medium text-slate-700 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-700 dark:text-slate-300 dark:hover:border-rose-800 dark:hover:bg-rose-950 dark:hover:text-rose-300"
+                      onClick={() => removeParticipant(participantId)}
+                    >
+                      {participant ? `${participant.firstName} ${participant.lastName}` : participantId}
+                      <X className="size-3 opacity-60" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              {requiresAutoRecording
-                ? "This meeting is marked AUTO_REQUIRED. Ensure Zoho host settings have automatic recording enabled (or start recording manually at session start)."
-                : "This meeting will use manual recording mode."}
-            </p>
+          <div className="mt-4 flex justify-end">
             <Button className="w-full sm:min-w-44 sm:w-auto" disabled={busy} onClick={() => void createMeeting()}>
               {busy ? "Scheduling..." : "Schedule Session"}
             </Button>
@@ -519,7 +529,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
           return (
             <div
               key={key}
-              className="flex flex-col rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.5)] dark:border-slate-700 dark:bg-slate-900/95"
+              className={`flex flex-col rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.5)] dark:border-slate-700 dark:bg-slate-900/95 ${activeColumn === key ? "block" : "hidden xl:flex"}`}
             >
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -544,8 +554,9 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                     <Skeleton className="h-24 w-full rounded-xl" />
                   </>
                 ) : columnMeetings.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-                    No {key} meetings.
+                  <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 px-4 py-10 text-center dark:border-slate-700 dark:bg-slate-800/30">
+                    <Icon className="size-7 text-slate-300 dark:text-slate-600" />
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{COLUMN_META[key].emptyLabel}</p>
                   </div>
                 ) : (
                   columnMeetings.map((meeting, index) => {
@@ -557,82 +568,136 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.04 }}
-                        className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/70"
+                        className={`rounded-xl border border-l-4 border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800/80 ${COLUMN_META[key].accent}`}
                       >
+                        {/* Title row */}
                         <div className="flex items-start justify-between gap-2">
-                          <p className="break-words font-medium text-slate-900 dark:text-slate-100">{meeting.title}</p>
-                          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                          <div className="flex min-w-0 items-start gap-2">
+                            {key === "live" && (
+                              <span className="relative mt-1 flex shrink-0 size-2">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+                              </span>
+                            )}
+                            <p className="break-words text-sm font-semibold leading-snug text-slate-900 dark:text-slate-100">
+                              {meeting.title}
+                            </p>
+                          </div>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${COLUMN_META[key].chip}`}>
                             {meeting.status}
                           </span>
                         </div>
-                        <p className="mt-2 break-words text-xs text-slate-600 dark:text-slate-400">
-                          {new Date(meeting.startTime).toLocaleString()} - {new Date(meeting.endTime).toLocaleString()}
-                        </p>
-                        <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                          <Users className="size-3.5" />
-                          {meeting.participants.length} participant(s)
-                        </p>
 
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                            {recordingModeLabel(meeting.recordingMode)}
-                          </span>
-                          <span
-                            className={
-                              meeting.recordingStatus === "AVAILABLE"
-                                ? "rounded-full bg-emerald-100 px-2 py-1 text-[11px] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
-                                : meeting.recordingStatus === "FAILED"
-                                  ? "rounded-full bg-rose-100 px-2 py-1 text-[11px] text-rose-700 dark:bg-rose-900/40 dark:text-rose-400"
-                                  : "rounded-full bg-amber-100 px-2 py-1 text-[11px] text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
-                            }
-                          >
-                            {recordingStatusLabel(meeting.recordingStatus)}
-                          </span>
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-2">
+                        {/* Role badge */}
+                        <div className="mt-1.5">
                           <span
                             className={
                               meeting.host.id === userId
-                                ? "inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-[11px] font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
-                                : "inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                                ? "inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                                : "inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
                             }
                           >
-                            {meeting.host.id === userId ? "Joining as host" : "Joining as attendee"}
+                            {meeting.host.id === userId ? "Host" : "Attendee"}
                           </span>
-                          <Button
-                            size="sm"
-                            className="w-full sm:w-auto"
-                            onClick={() => window.open(meeting.dailyRoomUrl, "_blank", "noopener,noreferrer")}
-                          >
-                            Join
-                          </Button>
+                        </div>
+
+                        {/* Date/time + participants */}
+                        <div className="mt-2.5 space-y-1">
+                          <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-slate-600 dark:text-slate-400">
+                            <CalendarClock className="size-3.5 shrink-0 text-slate-400" />
+                            <span>{new Date(meeting.startTime).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>
+                            <span className="text-slate-300 dark:text-slate-600">·</span>
+                            <span>{new Date(meeting.startTime).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })} – {new Date(meeting.endTime).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
+                          </p>
+                          <p className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                            <Users className="size-3.5 shrink-0 text-slate-400" />
+                            {meeting.participants.length} participant{meeting.participants.length !== 1 ? "s" : ""}
+                          </p>
+                        </div>
+
+                        {/* Recording chips */}
+                        <div className="mt-2.5 flex flex-wrap gap-1.5">
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                            {recordingModeLabel(meeting.recordingMode)}
+                          </span>
+                          {meeting.recordingStatus !== "NOT_REQUESTED" && (
+                            <span
+                              className={
+                                meeting.recordingStatus === "AVAILABLE"
+                                  ? "rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                                  : meeting.recordingStatus === "FAILED"
+                                    ? "rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-400"
+                                    : "rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                              }
+                            >
+                              {recordingStatusLabel(meeting.recordingStatus)}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Recording mode selector (super_admin) */}
+                        {role === "SUPER_ADMIN" && (
+                          <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-700/60">
+                            <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Recording Mode</p>
+                            <Select
+                              value={meeting.recordingMode}
+                              onValueChange={(v) => void setRecordingMode(meeting.id, v as MeetingRecordingModeValue)}
+                            >
+                              <SelectTrigger className="h-8 w-full rounded-lg border-slate-200 bg-slate-50 text-xs dark:border-slate-700 dark:bg-slate-800 sm:w-52">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="NONE">No recording</SelectItem>
+                                <SelectItem value="MANUAL">Manual recording</SelectItem>
+                                <SelectItem value="AUTO_REQUIRED">Auto recording (Jibri)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        {/* Actions footer */}
+                        <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3 dark:border-slate-700/60">
+                          {(meeting.status === "LIVE" || meeting.status === "UPCOMING") && (
+                            <Button
+                              size="sm"
+                              className="h-8 flex-1 sm:flex-none"
+                              disabled={joiningId === meeting.id}
+                              onClick={() => void joinMeeting(meeting.id)}
+                            >
+                              {joiningId === meeting.id ? "Joining..." : meeting.status === "LIVE" ? "Join Now" : "Join"}
+                            </Button>
+                          )}
                           {canWatchRecordings && recordingUrl ? (
                             <Button
                               size="sm"
                               variant="outline"
-                              className="w-full sm:w-auto"
+                              className="h-8 flex-1 sm:flex-none"
                               onClick={() => window.open(recordingUrl, "_blank")}
                             >
-                              Watch Recording
+                              Watch
                             </Button>
                           ) : null}
-                          {canSyncRecordings &&
-                          meeting.status === "ENDED" &&
-                          meeting.recordingMode === "AUTO_REQUIRED" &&
-                          meeting.recordingStatus !== "AVAILABLE" ? (
+                          {role === "SUPER_ADMIN" && meeting.recordingDownloadUrl ? (
+                            <a href={meeting.recordingDownloadUrl} download>
+                              <Button size="sm" variant="outline" className="h-8">
+                                <Download className="size-3.5" />
+                              </Button>
+                            </a>
+                          ) : null}
+                          {canCancelMeeting(meeting) && meeting.status !== "ENDED" && meeting.status !== "CANCELLED" ? (
+                            <Button size="sm" variant="outline" className="h-8 flex-1 sm:flex-none" onClick={() => void cancelMeeting(meeting.id)}>
+                              Cancel
+                            </Button>
+                          ) : null}
+                          {(meeting.status === "ENDED" || meeting.status === "CANCELLED") &&
+                            (role === "SUPER_ADMIN" || ((role === "ADMIN" || role === "INSTRUCTOR") && meeting.host.id === userId)) ? (
                             <Button
                               size="sm"
                               variant="outline"
-                              className="w-full sm:w-auto"
-                              disabled={recordingSyncingId === meeting.id}
-                              onClick={() => void syncMeetingRecording(meeting.id)}
+                              className="h-8 flex-1 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 sm:flex-none dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950"
+                              onClick={() => void removeMeeting(meeting.id)}
                             >
-                              {recordingSyncingId === meeting.id ? "Syncing..." : "Sync Recording"}
-                            </Button>
-                          ) : null}
-                          {canCancelMeeting(meeting) && meeting.status !== "ENDED" && meeting.status !== "CANCELLED" ? (
-                            <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => void cancelMeeting(meeting.id)}>
-                              Cancel
+                              Remove
                             </Button>
                           ) : null}
                         </div>
@@ -675,83 +740,79 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                 <Skeleton className="h-24 w-full rounded-xl" />
               </>
             ) : recordingLibrary.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-                No ended meetings with recording mode found yet.
+              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 px-4 py-10 text-center dark:border-slate-700 dark:bg-slate-800/30">
+                <Video className="size-7 text-slate-300 dark:text-slate-600" />
+                <p className="text-sm text-slate-500 dark:text-slate-400">No ended meetings with recordings found yet.</p>
               </div>
             ) : (
-              recordingLibrary.map((meeting) => {
-                const recordingUrl = meeting.recordingPlayUrl ?? meeting.recordingDownloadUrl;
-                return (
-                  <div key={`recording-${meeting.id}`} className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/70">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div>
-                        <p className="font-medium text-slate-900 dark:text-slate-100">{meeting.title}</p>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">
-                          Host: {meeting.host.firstName} {meeting.host.lastName}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-                          {new Date(meeting.startTime).toLocaleString()} - {new Date(meeting.endTime).toLocaleString()}
-                        </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {recordingLibrary.map((meeting) => {
+                  const recordingUrl = meeting.recordingPlayUrl ?? meeting.recordingDownloadUrl;
+                  return (
+                    <div key={`recording-${meeting.id}`} className="flex flex-col rounded-xl border border-l-4 border-slate-200 border-l-slate-300 bg-white p-3 shadow-sm dark:border-slate-700 dark:border-l-slate-600 dark:bg-slate-800/80">
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{meeting.title}</p>
+                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                            Host: {meeting.host.firstName} {meeting.host.lastName}
+                          </p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                          {meeting.status}
+                        </span>
                       </div>
-                      <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                        {meeting.status}
-                      </span>
-                    </div>
 
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                        {recordingModeLabel(meeting.recordingMode)}
-                      </span>
-                      <span
-                        className={
-                          meeting.recordingStatus === "AVAILABLE"
-                            ? "rounded-full bg-emerald-100 px-2 py-1 text-[11px] text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
-                            : meeting.recordingStatus === "FAILED"
-                              ? "rounded-full bg-rose-100 px-2 py-1 text-[11px] text-rose-700 dark:bg-rose-900/40 dark:text-rose-400"
-                              : "rounded-full bg-amber-100 px-2 py-1 text-[11px] text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
-                        }
-                      >
-                        {recordingStatusLabel(meeting.recordingStatus)}
-                      </span>
-                    </div>
+                      {/* Date/time */}
+                      <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-slate-600 dark:text-slate-400">
+                        <CalendarClock className="size-3.5 shrink-0 text-slate-400" />
+                        <span>{new Date(meeting.startTime).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>
+                        <span className="text-slate-300 dark:text-slate-600">·</span>
+                        <span>{new Date(meeting.startTime).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })} – {new Date(meeting.endTime).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
+                      </p>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <span
-                        className={
-                          meeting.host.id === userId
-                            ? "inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-[11px] font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
-                            : "inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-                        }
-                      >
-                        {meeting.host.id === userId ? "Joining as host" : "Joining as attendee"}
-                      </span>
-                      {recordingUrl ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full sm:w-auto"
-                          onClick={() => window.open(recordingUrl, "_blank")}
+                      {/* Recording chips */}
+                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                          {recordingModeLabel(meeting.recordingMode)}
+                        </span>
+                        <span
+                          className={
+                            meeting.recordingStatus === "AVAILABLE"
+                              ? "rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                              : meeting.recordingStatus === "FAILED"
+                                ? "rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-400"
+                                : "rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                          }
                         >
-                          Watch Recording
-                        </Button>
-                      ) : null}
-                      {canSyncRecordings &&
-                      meeting.recordingMode === "AUTO_REQUIRED" &&
-                      meeting.recordingStatus !== "AVAILABLE" ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full sm:w-auto"
-                          disabled={recordingSyncingId === meeting.id}
-                          onClick={() => void syncMeetingRecording(meeting.id)}
-                        >
-                          {recordingSyncingId === meeting.id ? "Syncing..." : "Sync Recording"}
-                        </Button>
-                      ) : null}
+                          {recordingStatusLabel(meeting.recordingStatus)}
+                        </span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3 dark:border-slate-700/60">
+                        {recordingUrl ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 flex-1 sm:flex-none"
+                            onClick={() => window.open(recordingUrl, "_blank")}
+                          >
+                            Watch
+                          </Button>
+                        ) : null}
+                        {meeting.recordingDownloadUrl ? (
+                          <a href={meeting.recordingDownloadUrl} download>
+                            <Button size="sm" variant="outline" className="h-8">
+                              <Download className="size-3.5" />
+                            </Button>
+                          </a>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })}
+              </div>
             )}
           </div>
         </section>

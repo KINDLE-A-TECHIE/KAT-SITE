@@ -12,7 +12,9 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
-    "backfill:meeting-join-urls": "tsx prisma/backfill-meeting-join-urls.ts"
+    "backfill:meeting-join-urls": "tsx prisma/backfill-meeting-join-urls.ts",
+    "test": "vitest run --exclude \"**/integration/**\" --exclude \"**/node_modules/**\" --exclude \"**/e2e/**\"",
+    "test:integration": "vitest run src/__tests__/integration --testTimeout=60000 --hookTimeout=120000"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
@@ -20,7 +22,9 @@
     "@aws-sdk/s3-request-presigner": "^3.1011.0",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.2.2",
+    "@marsidev/react-turnstile": "^1.4.2",
     "@monaco-editor/react": "^4.7.0",
     "@prisma/client": "^6.4.1",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -49,6 +53,8 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@sentry/nextjs": "10.53.1",
+    "@types/dompurify": "^3.0.5",
     "@types/sharp": "^0.31.1",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.4",
@@ -57,10 +63,13 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
+    "dompurify": "^3.3.3",
     "embla-carousel-react": "^8.6.0",
     "emoji-mart": "^5.6.0",
+    "fflate": "^0.8.2",
     "framer-motion": "^11.15.0",
     "input-otp": "^1.4.2",
+    "jose": "4.15.9",
     "lucide-react": "^0.562.0",
     "next": "^15.2.0",
     "next-auth": "^4.24.11",
@@ -82,12 +91,16 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@next/eslint-plugin-next": "15.5.12",
+    "@playwright/test": "1.60.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^24.10.1",
     "@types/nodemailer": "^7.0.11",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "@vitest/coverage-v8": "4.1.6",
     "autoprefixer": "^10.4.23",
+    "dotenv": "16.6.1",
     "eslint": "^9.39.1",
     "eslint-config-next": "^15.2.0",
     "eslint-plugin-react-hooks": "^7.0.1",
@@ -99,6 +112,7 @@
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.20.3",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.46.4"
+    "typescript-eslint": "^8.46.4",
+    "vitest": "4.1.6"
   }
 }

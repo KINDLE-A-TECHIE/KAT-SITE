@@ -15,7 +15,6 @@ type UserTrendPoint = {
   label: string;
   logins: number;
   submissions: number;
-  messagesReceived: number;
   meetingsJoined: number;
 };
 
@@ -35,7 +34,7 @@ type AnalyticsResponse = {
     loginStats30d: number;
     activityLabel?: string;
     assessmentsSubmitted: number;
-    unreadMessages: number;
+    classesAttended: number;
     upcomingMeetings: number;
     trends: {
       rangeDays: number;
@@ -362,8 +361,9 @@ export function AnalyticsPanel() {
 
   const headlineSignals = useMemo(() => {
     if (!analytics?.platformAnalytics) {
+      const attended = analytics?.userAnalytics.classesAttended ?? 0;
       return [
-        `${analytics?.userAnalytics.unreadMessages ?? 0} unread message(s)`,
+        `${attended} class${attended === 1 ? "" : "es"} attended`,
         `${analytics?.userAnalytics.upcomingMeetings ?? 0} upcoming meeting(s)`,
       ];
     }
@@ -393,7 +393,7 @@ export function AnalyticsPanel() {
       ["User Metrics"],
       ["Logins (30d)", analytics.userAnalytics.loginStats30d],
       [primaryActivityLabel, analytics.userAnalytics.assessmentsSubmitted],
-      ["Unread Messages", analytics.userAnalytics.unreadMessages],
+      ["Classes Attended", analytics.userAnalytics.classesAttended],
       ["Upcoming Meetings", analytics.userAnalytics.upcomingMeetings],
     ];
 
@@ -537,7 +537,7 @@ export function AnalyticsPanel() {
     const keyMetrics = [
       ["Logins (30d)", analytics.userAnalytics.loginStats30d],
       [primaryActivityLabel, analytics.userAnalytics.assessmentsSubmitted],
-      ["Unread Messages", analytics.userAnalytics.unreadMessages],
+      ["Classes Attended", analytics.userAnalytics.classesAttended],
       ["Upcoming Meetings", analytics.userAnalytics.upcomingMeetings],
     ];
 
@@ -574,8 +574,8 @@ export function AnalyticsPanel() {
         alert.upcomingMeetings,
         formatLastLogin(alert.lastLoginDaysAgo),
         alert.overdueAssessments,
-        alert.passRate !== null ? `${alert.passRate}%` : "—",
-        alert.daysSinceLastSubmission !== null ? `${alert.daysSinceLastSubmission}d ago` : "—",
+        alert.passRate !== null ? `${alert.passRate}%` : ", ",
+        alert.daysSinceLastSubmission !== null ? `${alert.daysSinceLastSubmission}d ago` : ", ",
         alert.riskScore,
       ]);
       const cohortRows = platform.cohortLeaderboard.map((cohort) => [
@@ -639,8 +639,8 @@ export function AnalyticsPanel() {
           p.programName,
           p.totalAssessments,
           p.totalSubmissions,
-          p.passRate !== null ? `${p.passRate}%` : "—",
-          p.avgScore !== null ? p.avgScore : "—",
+          p.passRate !== null ? `${p.passRate}%` : ", ",
+          p.avgScore !== null ? p.avgScore : ", ",
           p.pendingGrading,
         ]);
         sections.push(
@@ -664,9 +664,9 @@ export function AnalyticsPanel() {
             s.role,
             s.assessmentsCreated,
             s.submissionsGraded,
-            s.avgTurnaroundHours ?? "—",
-            s.avgFeedbackLength ?? "—",
-            s.studentPassRate !== null ? `${s.studentPassRate}%` : "—",
+            s.avgTurnaroundHours ?? ", ",
+            s.avgFeedbackLength ?? ", ",
+            s.studentPassRate !== null ? `${s.studentPassRate}%` : ", ",
           ]),
           "No instructor data yet.",
         ),
@@ -891,15 +891,6 @@ export function AnalyticsPanel() {
         });
       }
     } else {
-      if (analytics.userAnalytics.unreadMessages > 0) {
-        list.push({
-          title: "Clear communication backlog",
-          detail: `You currently have ${analytics.userAnalytics.unreadMessages} unread messages.`,
-          action: "Block 15 minutes to respond and remove pending blockers.",
-          tone: analytics.userAnalytics.unreadMessages >= 8 ? "critical" : "focus",
-        });
-      }
-
       const mid = Math.max(1, Math.floor(userTrendPoints.length / 2));
       const loginFirst = userTrendPoints.slice(0, mid).reduce((sum, point) => sum + point.logins, 0);
       const loginSecond = userTrendPoints.slice(mid).reduce((sum, point) => sum + point.logins, 0);
@@ -1043,7 +1034,7 @@ export function AnalyticsPanel() {
           : [
               { label: "Logins (30d)", value: analytics.userAnalytics.loginStats30d },
               { label: primaryActivityLabel, value: analytics.userAnalytics.assessmentsSubmitted },
-              { label: "Unread Messages", value: analytics.userAnalytics.unreadMessages },
+              { label: "Classes Attended", value: analytics.userAnalytics.classesAttended },
               { label: "Upcoming Meetings", value: analytics.userAnalytics.upcomingMeetings },
             ].map((item, index) => (
               <motion.div
@@ -1063,7 +1054,7 @@ export function AnalyticsPanel() {
 
       <section className="kat-card">
         <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">My Activity Trend</h3>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Daily movement across communication, learning, and attendance.</p>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Daily movement across logins, learning activity, and class attendance.</p>
         {loading || !analytics ? (
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
@@ -1071,20 +1062,13 @@ export function AnalyticsPanel() {
             ))}
           </div>
         ) : (
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             <TrendMiniCard
               title="Logins"
               subtitle={`${range.toUpperCase()} activity`}
               points={userTrendPoints}
               colorClass="bg-blue-500"
               getValue={(point) => point.logins}
-            />
-            <TrendMiniCard
-              title="Messages Received"
-              subtitle="Incoming message volume"
-              points={userTrendPoints}
-              colorClass="bg-cyan-500"
-              getValue={(point) => point.messagesReceived}
             />
             <TrendMiniCard
               title={primaryActivityLabel}
@@ -1217,7 +1201,7 @@ export function AnalyticsPanel() {
                           <td className="py-3">{prog.totalSubmissions}</td>
                           <td className="py-3">
                             {prog.passRate === null ? (
-                              <span className="text-slate-400 dark:text-slate-500">—</span>
+                              <span className="text-slate-400 dark:text-slate-500">, </span>
                             ) : (
                               <div className="flex min-w-[110px] items-center gap-2">
                                 <div className="flex-1">
@@ -1233,7 +1217,7 @@ export function AnalyticsPanel() {
                             )}
                           </td>
                           <td className="py-3">
-                            {prog.avgScore === null ? <span className="text-slate-400 dark:text-slate-500">—</span> : prog.avgScore}
+                            {prog.avgScore === null ? <span className="text-slate-400 dark:text-slate-500">, </span> : prog.avgScore}
                           </td>
                           <td className="py-3">
                             {prog.pendingGrading > 0 ? (
@@ -1305,12 +1289,12 @@ export function AnalyticsPanel() {
                             {alert.overdueAssessments > 0 ? (
                               <span className="font-semibold text-rose-600 dark:text-rose-400">{alert.overdueAssessments}</span>
                             ) : (
-                              <span className="text-slate-400 dark:text-slate-500">—</span>
+                              <span className="text-slate-400 dark:text-slate-500">, </span>
                             )}
                           </td>
                           <td className="py-3 max-[360px]:py-2">
                             {alert.passRate === null ? (
-                              <span className="text-slate-400 dark:text-slate-500">—</span>
+                              <span className="text-slate-400 dark:text-slate-500">, </span>
                             ) : (
                               <span className={cn("font-semibold", alert.passRate < 60 ? "text-rose-600 dark:text-rose-400" : alert.passRate < 75 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400")}>
                                 {alert.passRate}%
@@ -1319,7 +1303,7 @@ export function AnalyticsPanel() {
                           </td>
                           <td className="py-3 max-[360px]:py-2">
                             {alert.daysSinceLastSubmission === null ? (
-                              <span className="text-slate-400 dark:text-slate-500">—</span>
+                              <span className="text-slate-400 dark:text-slate-500">, </span>
                             ) : (
                               <span className={alert.daysSinceLastSubmission >= 14 ? "text-amber-600 dark:text-amber-400" : "text-slate-700 dark:text-slate-300"}>
                                 {alert.daysSinceLastSubmission === 0 ? "Today" : `${alert.daysSinceLastSubmission}d ago`}
@@ -1507,7 +1491,7 @@ export function AnalyticsPanel() {
                     <td className="py-3 max-[360px]:py-2">{s.submissionsGraded}</td>
                     <td className="py-3 max-[360px]:py-2">
                       {s.avgTurnaroundHours === null ? (
-                        <span className="text-slate-400 dark:text-slate-500">—</span>
+                        <span className="text-slate-400 dark:text-slate-500">, </span>
                       ) : (
                         <span className={cn("font-semibold", s.avgTurnaroundHours <= 24 ? "text-emerald-700 dark:text-emerald-400" : s.avgTurnaroundHours <= 72 ? "text-amber-700 dark:text-amber-400" : "text-rose-700 dark:text-rose-400")}>
                           {s.avgTurnaroundHours < 24
@@ -1518,7 +1502,7 @@ export function AnalyticsPanel() {
                     </td>
                     <td className="py-3 max-[360px]:py-2">
                       {s.avgFeedbackLength === null ? (
-                        <span className="text-slate-400 dark:text-slate-500">—</span>
+                        <span className="text-slate-400 dark:text-slate-500">, </span>
                       ) : (
                         <span className={cn("font-semibold", s.avgFeedbackLength >= 100 ? "text-emerald-700 dark:text-emerald-400" : s.avgFeedbackLength >= 40 ? "text-amber-700 dark:text-amber-400" : "text-rose-700 dark:text-rose-400")}>
                           {s.avgFeedbackLength} chars
@@ -1527,7 +1511,7 @@ export function AnalyticsPanel() {
                     </td>
                     <td className="py-3 max-[360px]:py-2">
                       {s.studentPassRate === null ? (
-                        <span className="text-slate-400 dark:text-slate-500">—</span>
+                        <span className="text-slate-400 dark:text-slate-500">, </span>
                       ) : (
                         <div className="flex min-w-[110px] items-center gap-2">
                           <div className="flex-1">

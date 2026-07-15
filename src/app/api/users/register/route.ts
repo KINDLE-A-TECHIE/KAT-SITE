@@ -6,6 +6,7 @@ import { ensureDefaultOrganization } from "@/lib/default-organization";
 import { registerSchema } from "@/lib/validators";
 import { trackEvent } from "@/lib/analytics";
 import { registerLimiter, getClientIp, rateLimitResponse } from "@/lib/ratelimit";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 export async function POST(request: Request) {
   try {
@@ -15,7 +16,10 @@ export async function POST(request: Request) {
       if (!success) return rateLimitResponse(reset);
     }
 
-    const body = await request.json();
+    const body = (await request.json()) as { turnstileToken?: string };
+    const turnstileOk = await verifyTurnstile(body?.turnstileToken);
+    if (!turnstileOk) return fail("Bot verification failed. Please refresh and try again.", 400);
+
     const parsed = registerSchema.safeParse(body);
 
     if (!parsed.success) {

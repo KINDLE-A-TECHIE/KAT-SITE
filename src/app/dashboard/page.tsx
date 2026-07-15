@@ -49,7 +49,7 @@ export default async function DashboardPage() {
   return (
     <section className="space-y-6">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-[#0D1F45] px-6 py-7 text-white">
+      <header className="relative overflow-hidden rounded-2xl bg-kat-dark px-6 py-7 text-white">
         {/* Subtle background blobs */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-blue-500/20 blur-3xl" />
@@ -57,7 +57,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="relative">
-          <span className="inline-flex items-center rounded-full border border-blue-400/30 bg-blue-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-blue-300">
+          <span className="inline-flex items-center rounded-full border border-blue-400/30 bg-blue-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-blue-100">
             {meta.label}
           </span>
           <h1 className="mt-3 [font-family:var(--font-space-grotesk)] text-2xl font-bold tracking-tight">
@@ -69,7 +69,7 @@ export default async function DashboardPage() {
             {meta.sub}
           </p>
         </div>
-      </div>
+      </header>
 
       <OverviewPanel role={role} firstName={firstName} />
     </section>

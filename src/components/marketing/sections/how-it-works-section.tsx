@@ -1,50 +1,49 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HOW_IT_WORKS } from "../landing-tokens";
+import { HOW_IT_WORKS, STAMP_CTA_DARK } from "../landing-tokens";
 
+/*
+ * The ONE place the 01/02/03 device is used. It was previously repeated on the feature
+ * cards too, which turned an editorial motif into decoration. Numbering a sequence is
+ * meaningful; numbering an unordered grid is not.
+ */
 export function HowItWorksSection() {
   return (
-    <section
-      className="kat-defer py-16 sm:py-20"
-      style={{ background: "linear-gradient(135deg, #0D1F45 0%, #132B5E 45%, #1E5FAF 100%)" }}
-    >
+    <section className="kat-defer bg-[var(--kat-ink)] py-16 text-[var(--kat-paper)] sm:py-24">
       <div className="kat-page">
-        <div className="mb-10 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-300">How It Works</p>
-          <h2 className="mt-2 [font-family:var(--font-space-grotesk)] text-3xl font-bold text-white sm:text-4xl">
-            From sign-up to your child&apos;s first build
+        <div className="max-w-2xl border-l-2 border-[var(--kat-sun)] pl-5">
+          <p className="font-mono text-xs font-medium uppercase tracking-[0.28em] text-[var(--kat-sun)]">
+            How it works
+          </p>
+          <h2 className="mt-3 font-display text-3xl font-bold leading-tight sm:text-[2.5rem]">
+            From sign-up to their first shipped project, in a week.
           </h2>
         </div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {HOW_IT_WORKS.map((step, i) => (
-            <div
-              key={step.step}
-              className="relative rounded-2xl p-6"
-              style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
-            >
-              {i < HOW_IT_WORKS.length - 1 && (
-                <div className="absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 text-white/25 sm:block">
-                  <ArrowRight className="size-5" />
-                </div>
-              )}
-              <div className="mb-4 [font-family:var(--font-space-grotesk)] text-5xl font-bold text-white/15">
+
+        <div className="mt-12 grid gap-px border-t border-white/15 sm:grid-cols-3">
+          {HOW_IT_WORKS.map((step) => (
+            <div key={step.step} className="border-b border-white/15 py-8 sm:border-r sm:pr-6 sm:last:border-r-0 sm:[&:not(:first-child)]:pl-6">
+              <span className="font-mono text-sm font-medium tracking-[0.22em] text-[var(--kat-sun)]">
                 {step.step}
-              </div>
-              <h3 className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-white">{step.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-blue-200">{step.description}</p>
+              </span>
+              <h3 className="mt-4 font-display text-xl font-bold">{step.title}</h3>
+              <p className="mt-2 font-body text-sm leading-relaxed text-[var(--kat-paper)]/70">
+                {step.description}
+              </p>
             </div>
           ))}
         </div>
-        <div className="mt-10 text-center">
+
+        <div className="mt-10">
           <Button
             asChild
             size="lg"
-            className="rounded-xl bg-white px-8 font-semibold text-[var(--kat-primary-blue)] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3)] hover:bg-slate-100"
+            className={`gap-2 px-8 ${STAMP_CTA_DARK}`}
           >
             <Link href="/register">
-              Start Your Journey
-              <ArrowRight className="ml-2 size-4" />
+              Start your child&apos;s first module
+              <ArrowRight className="size-4" />
             </Link>
           </Button>
         </div>

@@ -30,7 +30,7 @@ const reviewSchema = z.object({
   reviewNotes: z.string().trim().max(2000).optional(),
 });
 
-// GET — admin sees all applications; students see their own.
+// GET, admin sees all applications; students see their own.
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -76,7 +76,7 @@ export async function GET(request: Request) {
   return ok({ applications: normalised });
 }
 
-// POST — student submits an application.
+// POST, student submits an application.
 export async function POST(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
       if (existing.status === ApplicationStatus.APPROVED) {
         return fail("Your application was already approved.", 409);
       }
-      // Rejected — allow re-application by updating.
+      // Rejected, allow re-application by updating.
       const updated = await prisma.fellowApplication.update({
         where: { id: existing.id },
         data: {
@@ -154,7 +154,7 @@ export async function POST(request: Request) {
   }
 }
 
-// PATCH — admin approves or rejects an application.
+// PATCH, admin approves or rejects an application.
 // Guest (external) applications:
 //   APPROVED → create user account, promote to FELLOW, send setup email, clear guest fields.
 //   REJECTED → delete the application entirely (no personal data retained).
@@ -194,7 +194,7 @@ export async function PATCH(request: Request) {
     // ── REJECTION ────────────────────────────────────────────────────────────
     if (parsed.data.status === "REJECTED") {
       if (isGuest) {
-        // Delete entirely — no personal data retained for rejected guest applicants.
+        // Delete entirely, no personal data retained for rejected guest applicants.
         await prisma.fellowApplication.delete({ where: { id: application.id } });
 
         sendEmail({
@@ -206,7 +206,7 @@ export async function PATCH(request: Request) {
           }),
         }).catch((err: unknown) => console.error("[fellows/applications] Email send failed:", err));
       } else {
-        // Authenticated student — mark rejected so they can re-apply later.
+        // Authenticated student, mark rejected so they can re-apply later.
         await prisma.fellowApplication.update({
           where: { id: application.id },
           data: {
@@ -301,7 +301,7 @@ export async function PATCH(request: Request) {
         ),
       }).catch((err: unknown) => console.error("[fellows/applications] Email send failed:", err));
     } else {
-      // Authenticated student — promote existing user.
+      // Authenticated student, promote existing user.
       fellowUserId = application.applicant!.id;
       fellowFirstName = application.applicant!.firstName;
       fellowEmail = application.applicant!.email;

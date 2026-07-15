@@ -9,6 +9,19 @@ import { ensureDefaultOrganization } from "./default-organization";
 import { loginSchema } from "./validators";
 import { trackEvent } from "./analytics";
 import { loginLimiter } from "./ratelimit";
+import { verifyTurnstile } from "./turnstile";
+import { cache } from "react";
+
+/**
+ * A user's school memberships. `cache()` dedupes this within a single request, so the session
+ * callback firing several times in one render does not become several queries.
+ */
+const getSchoolMemberships = cache(async (userId: string) =>
+  prisma.schoolMembership.findMany({
+    where: { userId },
+    select: { schoolId: true, role: true },
+  }),
+);
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
@@ -29,8 +42,12 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        turnstileToken: { label: "Turnstile Token", type: "text" },
       },
       async authorize(credentials) {
+        const turnstileOk = await verifyTurnstile(credentials?.turnstileToken);
+        if (!turnstileOk) throw new Error("Bot verification failed. Please refresh and try again.");
+
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) {
           return null;
@@ -95,7 +112,7 @@ export const authOptions: NextAuthOptions = {
             const roleCookie = cookieStore.get("oauth_register_role")?.value;
             if (roleCookie === UserRole.PARENT) role = UserRole.PARENT;
           } catch {
-            // Ignore — use default role
+            // Ignore, use default role
           }
 
           const rawName = (profile as { name?: string } | undefined)?.name ?? user.name ?? "";
@@ -154,6 +171,13 @@ export const authOptions: NextAuthOptions = {
         session.user.organizationId = (token.organizationId as string | null) ?? null;
         session.user.firstName = (token.firstName as string) ?? "";
         session.user.lastName = (token.lastName as string) ?? "";
+
+        // Re-read from the DB every request (deduped per request by React cache), never from the
+        // JWT. See the note in next-auth.d.ts: a stale membership is a child-data boundary that
+        // stays open after it should have closed.
+        const memberships = await getSchoolMemberships(token.sub);
+        session.user.schoolMemberships = memberships;
+        session.user.activeSchoolId = memberships[0]?.schoolId ?? null;
         session.user.sessionToken = token.sessionId;
       }
       return session;

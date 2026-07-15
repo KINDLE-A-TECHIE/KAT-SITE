@@ -1,8 +1,9 @@
 import { LandingPage } from "@/components/marketing/landing-page";
+import type { Build } from "@/components/marketing/landing-tokens";
 import { prisma } from "@/lib/prisma";
-import { EnrollmentStatus } from "@prisma/client";
+import { CourseAudience, EnrollmentStatus, ProjectStatus } from "@prisma/client";
 
-const BASE = process.env.NEXTAUTH_URL ?? "https://kat.africa";
+const BASE = process.env.NEXTAUTH_URL ?? "https://kindleatechie.com";
 
 const organizationSchema = {
   "@context": "https://schema.org",
@@ -14,10 +15,10 @@ const organizationSchema = {
   description:
     "Coding education for African children and teens aged 8–19. Live mentors, project-based learning, and parent visibility.",
   sameAs: [
-    "https://twitter.com/katacademy",
-    "https://instagram.com/katacademy",
-    "https://linkedin.com/company/katacademy",
-    "https://youtube.com/@katacademy",
+    "https://twitter.com/katLearning",
+    "https://instagram.com/kindleatechie",
+    "https://linkedin.com/company/kindle-a-techie",
+    "https://youtube.com/@katlearning",
   ],
 };
 
@@ -103,6 +104,68 @@ async function getOpenCohorts() {
   }
 }
 
+async function getApprovedTestimonials() {
+  try {
+    return await prisma.testimonial.findMany({
+      where: { status: "APPROVED", featuredOnPage: true },
+      select: {
+        id: true,
+        quote: true,
+        rating: true,
+        childName: true,
+        author: { select: { firstName: true, lastName: true, profile: { select: { avatarUrl: true } } } },
+      },
+      orderBy: { submittedAt: "desc" },
+      take: 12,
+    });
+  } catch {
+    return [];
+  }
+}
+
+/*
+ * Real, APPROVED student builds for the build-log marquee and the hero artifact.
+ *
+ * TENANT SCOPE (load-bearing, not a nicety): this filters on `program.audience = B2C`,
+ * so a school's pupils can never surface here. The marquee prints a child's FIRST NAME
+ * on a public, unauthenticated page; a school's children are minors we hold under a
+ * B2B contract and have no consent to display. Filtering on the PROGRAM (not the
+ * student's role) is what closes it, a SCHOOL_STUDENT whose role was mis-assigned
+ * still cannot leak through, and the optional program relation means a project with no
+ * program is EXCLUDED rather than admitted. It fails closed.
+ *
+ * If nothing is approved, this returns [] and the marquee renders nothing. There is no
+ * placeholder fallback, by design: an invented "Temi, 11" is the failure mode, not the
+ * empty state.
+ */
+async function getRealBuilds(): Promise<Build[]> {
+  try {
+    const projects = await prisma.project.findMany({
+      where: {
+        status: ProjectStatus.APPROVED,
+        program: { audience: CourseAudience.B2C },
+      },
+      select: {
+        id: true,
+        title: true,
+        student: { select: { firstName: true } },
+        program: { select: { name: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 12,
+    });
+
+    return projects.map((p) => ({
+      id: p.id,
+      firstName: p.student.firstName,
+      title: p.title,
+      program: p.program?.name ?? null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 async function getLiveStats() {
   try {
     const [enrollmentCount, gradedCount] = await Promise.all([
@@ -136,7 +199,12 @@ async function getLiveStats() {
 }
 
 export default async function HomePage() {
-  const [stats, openCohorts] = await Promise.all([getLiveStats(), getOpenCohorts()]);
+  const [stats, openCohorts, testimonials, builds] = await Promise.all([
+    getLiveStats(),
+    getOpenCohorts(),
+    getApprovedTestimonials(),
+    getRealBuilds(),
+  ]);
   return (
     <>
       <script
@@ -154,6 +222,8 @@ export default async function HomePage() {
         enrollments={stats.enrollments}
         passRate={stats.passRate}
         openCohorts={openCohorts}
+        testimonials={testimonials}
+        builds={builds}
       />
     </>
   );

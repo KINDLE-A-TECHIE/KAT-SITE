@@ -47,7 +47,7 @@ function makePrismaClient() {
               raw.includes("ConnectionReset") ||
               code === "P1001" ||
               code === "P1002" ||
-              code === "P2024"; // connection pool exhausted — wait for in-flight queries to finish
+              code === "P2024"; // connection pool exhausted, wait for in-flight queries to finish
             if (!isConnError || attempt === delays.length) break;
             await new Promise((r) => setTimeout(r, delays[attempt]));
           }

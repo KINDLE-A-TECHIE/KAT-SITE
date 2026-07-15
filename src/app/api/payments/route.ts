@@ -2,6 +2,7 @@ import { type Prisma, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { orgScope } from "@/lib/tenant";
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -46,9 +47,9 @@ export async function GET(request: Request) {
     const childIds = childLinks.map((l) => l.childId);
     where = { userId: { in: [session.user.id, ...childIds] } };
   } else if (isAdmin) {
-    where = { user: { organizationId: session.user.organizationId ?? undefined } };
+    where = { user: orgScope(session.user.organizationId) };
   } else {
-    // STUDENT — own payments (read-only; parents pay on their behalf).
+    // STUDENT, own payments (read-only; parents pay on their behalf).
     where = { userId: session.user.id };
   }
 

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Check, Loader2, Plus, ShoppingCart, Tag, Trash2, User, UserMinus, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -272,7 +273,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
     <div className="space-y-5">
       {/* Step 1: Select child */}
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Step 1 — Who are you paying for?</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Step 1. Who are you paying for?</p>
         <div className="grid gap-2 sm:grid-cols-2">
           {children.map((child) => (
             <button
@@ -302,7 +303,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
       {/* Step 2: Select program */}
       {selectedChild && (
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Step 2 — Select a program</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Step 2. Select a program</p>
           {programs.length === 0 ? (
             <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">No programs available yet.</p>
           ) : (
@@ -341,7 +342,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
       {/* Step 3: Billing month + Promo code + Add to Cart */}
       {selectedProgram && selectedChild && (
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Step 3 — Billing month &amp; discount</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Step 3. Billing month &amp; discount</p>
           <Input className="kat-date-input mb-3" type="month" value={billingMonth} onChange={(e) => setBillingMonth(e.target.value)} />
 
           {/* Promo code */}
@@ -597,7 +598,7 @@ function AdminPayForStudentForm({ onSuccess }: { onSuccess: () => void }) {
         <Select value={programId || undefined} onValueChange={setProgramId} disabled={!selectedUser}>
           <SelectTrigger className="h-10 w-full rounded-xl border border-slate-300 bg-slate-50/70 px-3 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"><SelectValue placeholder="Select program" /></SelectTrigger>
           <SelectContent className="max-h-56 overflow-y-auto" position="popper" sideOffset={6}>
-            {programs.map((p) => <SelectItem key={p.id} value={p.id}>{p.name} — NGN {p.monthlyFee.toLocaleString()}/mo</SelectItem>)}
+            {programs.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}. NGN {p.monthlyFee.toLocaleString()}/mo</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -870,8 +871,8 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
               </p>
               <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
                 {type === "WAIVED"
-                  ? "No payment required — scholarship or admin grant"
-                  : "Billing starts today — 30-day cycle"}
+                  ? "No payment required, scholarship or admin grant"
+                  : "Billing starts today, 30-day cycle"}
               </p>
             </button>
           ))}
@@ -882,7 +883,7 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
         <p className="text-xs text-slate-500 dark:text-slate-400">
           This will create <strong>{totalEnrollments}</strong> enrollment{totalEnrollments !== 1 ? "s" : ""}{" "}
           ({selectedUsers.length} student{selectedUsers.length !== 1 ? "s" : ""} × {selectedProgramIds.size} program{selectedProgramIds.size !== 1 ? "s" : ""}){" "}
-          — <span className={billingType === "WAIVED" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}>
+          <span className={billingType === "WAIVED" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}>
             {billingType === "WAIVED" ? "billing waived" : "first payment due in 30 days"}
           </span>.
         </p>
@@ -1024,7 +1025,7 @@ function EnrollmentsManager() {
                     </span>
                   </div>
                   <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
-                    {e.program?.name ?? "—"}
+                    {e.program?.name ?? ", "}
                     {e.cohort ? ` · ${e.cohort.name}` : ""}
                     {" · "}Enrolled {new Date(e.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                     {e.isBillingWaived
@@ -1187,7 +1188,7 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">Description</label>
                 <Input
-                  placeholder="Internal note (e.g. Scholarship — John Doe)"
+                  placeholder="Internal note (e.g. Scholarship. John Doe)"
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 />
@@ -1202,7 +1203,7 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">Max uses</label>
                   <Input
@@ -1215,9 +1216,9 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">Expires</label>
-                  <Input
+                  <DateInput
                     type="date"
-                    className="kat-date-input"
+                    placeholder="Select expiry date"
                     value={form.expiresAt}
                     onChange={(e) => setForm((f) => ({ ...f, expiresAt: e.target.value }))}
                   />
@@ -1253,13 +1254,13 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
                   <Tag className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <span className="font-mono text-sm font-bold text-slate-800 dark:text-slate-200">{dc.code}</span>
                     <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">
                       {dc.discountPercent}% off
                     </span>
                     {dc.program && (
-                      <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-700">
+                      <span className="max-w-[120px] truncate rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-700 sm:max-w-none">
                         {dc.program.name}
                       </span>
                     )}
@@ -1267,10 +1268,10 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
                       <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-700 dark:text-slate-400">Inactive</span>
                     )}
                   </div>
-                  <div className="mt-0.5 flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-400 dark:text-slate-500">
                     <span>{dc._count.redemptions} use{dc._count.redemptions !== 1 ? "s" : ""}{dc.maxUses ? ` / ${dc.maxUses}` : ""}</span>
                     {dc.expiresAt && <span>Expires {new Date(dc.expiresAt).toLocaleDateString()}</span>}
-                    {dc.description && <span className="truncate max-w-[180px]">{dc.description}</span>}
+                    {dc.description && <span className="min-w-0 truncate">{dc.description}</span>}
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
@@ -1459,10 +1460,11 @@ export function PaymentsPanel({ role }: { role: string }) {
       )}
 
       <section className="kat-card">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Financial History</h3>
           {total > 0 && <p className="text-xs text-slate-400 dark:text-slate-500">Page {currentPage} · {total} total</p>}
         </div>
+        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 sm:hidden">Swipe left to see all columns →</p>
 
         <div className="mt-4 max-h-96 overflow-auto pb-1">
           {loading ? (
@@ -1488,10 +1490,10 @@ export function PaymentsPanel({ role }: { role: string }) {
                     <td className="py-3 pr-4 font-mono text-xs">{payment.reference}</td>
                     {showFor && (
                       <td className="py-3 pr-4">
-                        {payment.user ? `${payment.user.firstName} ${payment.user.lastName}` : <span className="text-slate-400 dark:text-slate-500">—</span>}
+                        {payment.user ? `${payment.user.firstName} ${payment.user.lastName}` : <span className="text-slate-400 dark:text-slate-500">, </span>}
                       </td>
                     )}
-                    <td className="py-3 pr-4">{payment.program?.name ?? "—"}</td>
+                    <td className="py-3 pr-4">{payment.program?.name ?? ", "}</td>
                     <td className="py-3 pr-4">
                       {new Date(payment.billingMonth).toLocaleDateString("en-NG", { month: "short", year: "numeric" })}
                     </td>
@@ -1506,7 +1508,7 @@ export function PaymentsPanel({ role }: { role: string }) {
                         <a href={`/dashboard/payments/receipt/${payment.receipt.id}`} className="text-xs font-medium text-sky-600 hover:underline">
                           {payment.receipt.receiptNumber}
                         </a>
-                      ) : <span className="text-slate-400 dark:text-slate-500">—</span>}
+                      ) : <span className="text-slate-400 dark:text-slate-500">, </span>}
                     </td>
                   </motion.tr>
                 ))}

@@ -6,10 +6,10 @@ import { sendEmail, buildPaymentReminderEmail } from "@/lib/email";
 // Runs daily. Secured by Authorization: Bearer <CRON_SECRET>.
 //
 // Timeline per billing period:
-//   Day  0    — payment verified → currentPeriodEnd = now + 30 days, status = ACTIVE
-//   Day 27    — "due in 3 days" warning sent to parent
-//   Day 30    — period ends → grace starts, "grace period" warning sent
-//   Day 30+4  — grace expires → status = SUSPENDED
+//   Day  0  , payment verified → currentPeriodEnd = now + 30 days, status = ACTIVE
+//   Day 27   . "due in 3 days" warning sent to parent
+//   Day 30  , period ends → grace starts, "grace period" warning sent
+//   Day 30+4, grace expires → status = SUSPENDED
 
 const GRACE_DAYS   = 4;
 const WARN_DAYS    = 3; // days before period end to send first warning
@@ -113,8 +113,13 @@ export async function POST(request: Request) {
         where: { id: enrollment.id },
         data: { status: "SUSPENDED" },
       });
+      // Close the current enrollment period
+      await prisma.enrollmentPeriod.updateMany({
+        where: { enrollmentId: enrollment.id, endedAt: null },
+        data: { endedAt: now, endReason: "SUSPENDED" },
+      });
 
-      const title = `Enrolment suspended — ${program.name}`;
+      const title = `Enrolment suspended, ${program.name}`;
       const text  = `${student.firstName}'s access to ${program.name} has been suspended due to non-payment. Pay now to restore access.`;
       for (const r of recipients) {
         await notifyIfNew(r.id, "WARNING", title, text);
@@ -141,7 +146,12 @@ export async function POST(request: Request) {
       enrollment.status === "ACTIVE" &&
       withinWindow(periodEnd, now, -1, 0)
     ) {
-      const title = `4-day grace period started — ${program.name}`;
+      // Mark the current period as payment-pending (grace has started)
+      await prisma.enrollmentPeriod.updateMany({
+        where: { enrollmentId: enrollment.id, endedAt: null },
+        data: { endedAt: now, endReason: "PAYMENT_PENDING" },
+      });
+      const title = `4-day grace period started, ${program.name}`;
       const text  = `${student.firstName}'s ${program.name} enrolment expired. You have 4 days to pay before access is suspended.`;
       for (const r of recipients) {
         await notifyIfNew(r.id, "WARNING", title, text);
@@ -168,7 +178,7 @@ export async function POST(request: Request) {
       enrollment.status === "ACTIVE" &&
       withinWindow(periodEnd, now, WARN_DAYS - 0.5, WARN_DAYS + 0.5)
     ) {
-      const title = `Payment due in 3 days — ${program.name}`;
+      const title = `Payment due in 3 days, ${program.name}`;
       const text  = `${student.firstName}'s ${program.name} enrolment renews on ${formatDate(periodEnd)}. Pay to avoid disruption.`;
       for (const r of recipients) {
         await notifyIfNew(r.id, "INFO", title, text);

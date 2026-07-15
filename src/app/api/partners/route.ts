@@ -15,28 +15,31 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { name, organization, type, email, phone, message } = body as Record<string, string>;
+  const { name, organization, type, email, phone, message, programs } = body as Record<string, unknown>;
 
-  if (!name?.trim() || !organization?.trim() || !email?.trim() || !message?.trim()) {
+  if (!String(name ?? "").trim() || !String(organization ?? "").trim() || !String(email ?? "").trim() || !String(message ?? "").trim()) {
     return NextResponse.json({ error: "name, organization, email, and message are required" }, { status: 400 });
   }
 
-  if (!VALID_TYPES.has(type)) {
+  if (!VALID_TYPES.has(String(type))) {
     return NextResponse.json({ error: "Invalid partner type" }, { status: 400 });
   }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
     return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
   }
 
+  const programList = Array.isArray(programs) ? programs.filter((p): p is string => typeof p === "string") : [];
+
   const inquiry = await prisma.partnerInquiry.create({
     data: {
-      name: name.trim(),
-      organization: organization.trim(),
-      type: type as PartnerType,
-      email: email.trim().toLowerCase(),
-      phone: phone?.trim() || null,
-      message: message.trim(),
+      name: String(name).trim(),
+      organization: String(organization).trim(),
+      type: String(type) as PartnerType,
+      email: String(email).trim().toLowerCase(),
+      phone: String(phone ?? "").trim() || null,
+      programs: programList,
+      message: String(message).trim(),
     },
   });
 
@@ -46,13 +49,14 @@ export async function POST(req: Request) {
     type: inquiry.type,
     email: inquiry.email,
     phone: inquiry.phone,
+    programs: inquiry.programs,
     message: inquiry.message,
   });
 
   await sendEmail({
     to: PARTNER_NOTIFY_EMAIL,
     replyTo: inquiry.email,
-    subject: `Partnership enquiry from ${inquiry.name} — ${inquiry.organization}`,
+    subject: `Partnership enquiry from ${inquiry.name}, ${inquiry.organization}`,
     html,
     text,
   });

@@ -1,106 +1,95 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { type TrackId, PROGRAM_TRACKS } from "../landing-tokens";
+import { type TrackId, PROGRAM_TRACKS, STAMP_CTA } from "../landing-tokens";
 
 export function TracksSection() {
   const [activeTrack, setActiveTrack] = useState<TrackId>("explorers");
-  const selectedTrack = useMemo(
-    () => PROGRAM_TRACKS.find((t) => t.id === activeTrack) ?? PROGRAM_TRACKS[0],
-    [activeTrack],
-  );
 
   return (
-    <section id="tracks" className="kat-page kat-defer py-16 sm:py-20">
-      <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--kat-primary-blue)]">
-          Program Tracks
-        </p>
-        <h2 className="mt-2 [font-family:var(--font-space-grotesk)] text-3xl font-bold text-[var(--kat-text-primary)] sm:text-4xl">
-          A path for every age and skill level
+    <section id="tracks" className="kat-page kat-defer py-16 sm:py-24">
+      <div className="max-w-2xl border-l-2 border-[var(--kat-clay)] pl-5">
+        <p className="kat-eyebrow">Program tracks</p>
+        <h2 className="mt-3 font-display text-3xl font-bold leading-tight text-[var(--kat-ink)] sm:text-[2.5rem]">
+          Start where they are. Go as far as they can.
         </h2>
-        <p className="mt-2 text-[var(--kat-text-secondary)]">
-          Pick the track that fits your child&apos;s age. Move up as they grow.
-        </p>
       </div>
 
-      <div className="rounded-3xl border border-[var(--kat-border)] bg-white p-5 shadow-[0_16px_60px_-24px_rgba(19,43,94,0.12)] sm:p-7">
+      <div className="mt-10 border border-[var(--kat-border)] bg-[var(--kat-raised)] p-5 sm:p-7">
         <Tabs value={activeTrack} onValueChange={(v) => setActiveTrack(v as TrackId)}>
-          <TabsList className="mb-5 h-auto w-full flex-wrap justify-start gap-2 rounded-2xl bg-[#EAF4FF] p-2">
+          <TabsList className="mb-6 h-auto w-full flex-wrap justify-start gap-2 rounded-none border-b border-[var(--kat-border)] bg-transparent p-0">
             {PROGRAM_TRACKS.map((track) => (
               <TabsTrigger
                 key={track.id}
                 value={track.id}
-                className="rounded-xl border border-transparent px-4 py-2.5 text-left data-[state=active]:border-blue-200 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                className="rounded-none border-b-2 border-transparent px-4 py-3 text-left data-[state=active]:border-[var(--kat-clay)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
-                <span className="block text-sm font-semibold">{track.label}</span>
-                <span className="text-[11px] text-[var(--kat-text-secondary)]">{track.ages}</span>
+                <span className="block font-display text-sm font-semibold text-[var(--kat-ink)]">
+                  {track.label}
+                </span>
+                <span className="font-mono text-[0.7rem] tracking-wider text-[var(--kat-muted)]">
+                  {track.ages}
+                </span>
               </TabsTrigger>
             ))}
           </TabsList>
 
           {PROGRAM_TRACKS.map((track) => (
             <TabsContent key={track.id} value={track.id}>
-              <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-                <Card className="rounded-2xl border-[var(--kat-border)] py-5 shadow-sm">
-                  <CardHeader className="px-5 pb-3">
-                    <CardTitle className="[font-family:var(--font-space-grotesk)] text-xl text-[var(--kat-text-primary)]">
-                      {track.label}
-                    </CardTitle>
-                    <CardDescription className="text-[var(--kat-text-secondary)]">{track.summary}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4 px-5">
+              <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+                <div>
+                  <p className="max-w-xl font-body leading-relaxed text-[var(--kat-muted)]">
+                    {track.summary}
+                  </p>
+
+                  <div className="mt-7 space-y-4">
                     {track.modules.map((mod) => (
                       <div key={mod.title}>
                         <div className="mb-1.5 flex items-center justify-between text-xs">
-                          <span className="font-medium text-[var(--kat-text-secondary)]">{mod.title}</span>
-                          <span className="font-bold text-[var(--kat-text-primary)]">{mod.progress}%</span>
+                          <span className="font-medium text-[var(--kat-ink)]">{mod.title}</span>
+                          <span className="font-mono font-bold text-[var(--kat-muted)]">
+                            {mod.progress}%
+                          </span>
                         </div>
                         <Progress
                           value={mod.progress}
-                          className="h-2 bg-blue-100 [&>[data-slot=progress-indicator]]:bg-[var(--kat-primary-blue)]"
+                          className="h-1.5 rounded-none bg-[var(--kat-border)] [&>[data-slot=progress-indicator]]:bg-[var(--kat-clay)]"
                         />
                       </div>
                     ))}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
-                <Card className="rounded-2xl border-[var(--kat-border)] bg-[#F8FBFF] py-5 shadow-sm">
-                  <CardHeader className="px-5 pb-3">
-                    <CardTitle className="[font-family:var(--font-space-grotesk)] text-lg text-[var(--kat-text-primary)]">
-                      Capstone Project
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 px-5">
-                    <p className="text-sm leading-relaxed text-[var(--kat-text-secondary)]">{track.project}</p>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge className="border-0 bg-green-100 text-green-700 hover:bg-green-100">Mentor Support</Badge>
-                      <Badge className="border-0 bg-amber-100 text-amber-700 hover:bg-amber-100">Weekly Reviews</Badge>
-                      <Badge className="border-0 bg-blue-100 text-[var(--kat-primary-blue)] hover:bg-blue-100">Portfolio Ready</Badge>
-                    </div>
-                    <Button
-                      asChild
-                      className="w-full rounded-xl text-white"
-                      style={{ background: "var(--kat-gradient)" }}
-                    >
-                      <Link href="/register">Enroll My Child</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div className="border-t border-[var(--kat-border)] pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+                  <p className="kat-eyebrow">Capstone</p>
+                  <p className="mt-3 font-body leading-relaxed text-[var(--kat-ink)]">
+                    {track.project}
+                  </p>
+
+                  <ul className="mt-5 space-y-1.5">
+                    {["Mentor support", "Weekly reviews", "Portfolio ready"].map((item) => (
+                      <li
+                        key={item}
+                        className="flex items-center gap-2 font-mono text-[0.7rem] uppercase tracking-wider text-[var(--kat-muted)]"
+                      >
+                        <span className="size-1 rounded-full bg-[var(--kat-pine)]" aria-hidden />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Button asChild className={`mt-7 w-full ${STAMP_CTA}`}>
+                    <Link href="/register">Enroll my child</Link>
+                  </Button>
+                </div>
               </div>
             </TabsContent>
           ))}
         </Tabs>
-        <p className="mt-3 text-xs text-[var(--kat-text-secondary)]">
-          Viewing:{" "}
-          <span className="font-semibold text-[var(--kat-text-primary)]">{selectedTrack.label}</span>
-        </p>
       </div>
     </section>
   );

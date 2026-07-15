@@ -1,4 +1,4 @@
-import { PaymentStatus, UserRole } from "@prisma/client";
+import { EnrollmentPeriodReason, PaymentStatus, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -154,9 +154,30 @@ export async function POST(request: Request) {
         const baseDate = existingEnd && existingEnd > now ? existingEnd : now;
         const periodEnd = new Date(baseDate);
         periodEnd.setDate(periodEnd.getDate() + 30);
+
+        const currentEnrollment = await prisma.enrollment.findUnique({
+          where: { id: payment.enrollmentId },
+          select: { status: true },
+        });
+        const wasReactivated = currentEnrollment?.status === "SUSPENDED";
+
         await prisma.enrollment.update({
           where: { id: payment.enrollmentId },
           data: { currentPeriodEnd: periodEnd, status: "ACTIVE" },
+        });
+
+        // Close any open period and start a new one
+        await prisma.enrollmentPeriod.updateMany({
+          where: { enrollmentId: payment.enrollmentId, endedAt: null },
+          data: { endedAt: now, endReason: "PAYMENT_PENDING" },
+        });
+        await prisma.enrollmentPeriod.create({
+          data: {
+            enrollmentId: payment.enrollmentId,
+            startReason: wasReactivated
+              ? EnrollmentPeriodReason.REACTIVATION
+              : EnrollmentPeriodReason.PAYMENT,
+          },
         });
       }
     }

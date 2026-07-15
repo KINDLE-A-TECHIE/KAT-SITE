@@ -3,6 +3,7 @@ import { z } from "zod";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { orgScope } from "@/lib/tenant";
 
 interface Params { params: Promise<{ programId: string }> }
 
@@ -23,7 +24,7 @@ export async function PATCH(request: Request, { params }: Params) {
   const { programId } = await params;
 
   const program = await prisma.program.findFirst({
-    where: { id: programId, organizationId: session.user.organizationId ?? undefined },
+    where: { id: programId, ...orgScope(session.user.organizationId) },
   });
   if (!program) return fail("Program not found.", 404);
 
@@ -59,11 +60,11 @@ export async function DELETE(_request: Request, { params }: Params) {
   const { programId } = await params;
 
   const program = await prisma.program.findFirst({
-    where: { id: programId, organizationId: session.user.organizationId ?? undefined },
+    where: { id: programId, ...orgScope(session.user.organizationId) },
   });
   if (!program) return fail("Program not found.", 404);
 
-  // Toggle archive — archived programs are hidden from learners but data is preserved
+  // Toggle archive, archived programs are hidden from learners but data is preserved
   const updated = await prisma.program.update({
     where: { id: programId },
     data: { isActive: !program.isActive },

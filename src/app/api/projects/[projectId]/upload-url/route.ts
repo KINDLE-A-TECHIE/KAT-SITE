@@ -5,6 +5,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generatePresignedUploadUrl, r2PublicUrl } from "@/lib/r2";
 import { randomUUID } from "crypto";
+import { projectUploadLimiter, rateLimitResponse } from "@/lib/ratelimit";
 
 interface Params { params: Promise<{ projectId: string }> }
 
@@ -17,12 +18,12 @@ const ALLOWED_TYPES = [
   "application/json",
 ];
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 
 const schema = z.object({
   name: z.string().min(1).max(255),
   mimeType: z.string().refine((t) => ALLOWED_TYPES.includes(t), { message: "File type not allowed." }),
-  size: z.number().int().positive().max(MAX_FILE_SIZE, { message: "File too large (max 50 MB)." }),
+  size: z.number().int().positive().max(MAX_FILE_SIZE, { message: "File too large (max 20 MB)." }),
 });
 
 export async function POST(request: Request, { params }: Params) {
@@ -45,6 +46,11 @@ export async function POST(request: Request, { params }: Params) {
   const role = session.user.role;
   if (role !== UserRole.STUDENT && role !== UserRole.FELLOW) {
     return fail("Forbidden", 403);
+  }
+
+  if (projectUploadLimiter) {
+    const { success, reset } = await projectUploadLimiter.limit(session.user.id);
+    if (!success) return rateLimitResponse(reset);
   }
 
   const body = await request.json() as unknown;

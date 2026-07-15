@@ -1,10 +1,11 @@
-import { AssessmentVerificationStatus, UserRole } from "@prisma/client";
+import { CourseAudience, AssessmentVerificationStatus, NotificationType, UserRole } from "@prisma/client";
 import { z } from "zod";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAssessmentSchema } from "@/lib/validators";
 import { trackEvent } from "@/lib/analytics";
+import { orgScope } from "@/lib/tenant";
 
 const CREATOR_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
 const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW];
@@ -25,13 +26,12 @@ export async function GET() {
   if (CREATOR_ROLES.includes(role)) {
     const assessments = await prisma.assessment.findMany({
       where: {
+        // Scoped to B2C programmes. This query keys on the PROGRAM, not the student's role, so a
+        // role fix alone would not stop a KAT instructor seeing a school's pupils' work.
+        program: { audience: CourseAudience.B2C },
         OR: [
           { createdById: session.user.id },
-          {
-            program: {
-              organizationId: session.user.organizationId ?? undefined,
-            },
-          },
+          { program: orgScope(session.user.organizationId) },
         ],
       },
       orderBy: { createdAt: "desc" },
@@ -191,11 +191,18 @@ export async function POST(request: Request) {
         title: parsed.data.title,
         description: parsed.data.description,
         type: parsed.data.type,
+        weekNumber: parsed.data.weekNumber ?? null,
         passScore: parsed.data.passScore,
         totalPoints,
         dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : undefined,
         published: parsed.data.published ?? false,
-        verificationStatus: AssessmentVerificationStatus.PENDING,
+        // Challenges are created by trusted CREATOR_ROLES and don't require a separate
+        // verification step, auto-approve them so they're immediately visible to students
+        // once published. Other assessment types remain PENDING until reviewed.
+        verificationStatus:
+          parsed.data.type === "CHALLENGE"
+            ? AssessmentVerificationStatus.APPROVED
+            : AssessmentVerificationStatus.PENDING,
         verifiedById: null,
         verifiedAt: null,
         verificationNote: null,
@@ -309,6 +316,51 @@ export async function PATCH(request: Request) {
         verificationStatus: updated.verificationStatus,
       },
     });
+
+    // When a CHALLENGE is approved and published, notify eligible students.
+    // If the challenge is scoped to a module, only students who have reached
+    // that module receive the notification; otherwise notify all active enrollees.
+    if (
+      parsed.data.action === "APPROVE" &&
+      assessment.type === "CHALLENGE" &&
+      assessment.published
+    ) {
+      let recipientIds: string[];
+
+      if (assessment.moduleId) {
+        // Module-scoped: only students who have a gate status for this module
+        const gateStatuses = await prisma.moduleGateStatus.findMany({
+          where: {
+            moduleId: assessment.moduleId,
+            enrollment: { programId: assessment.programId, status: "ACTIVE" },
+          },
+          select: { userId: true },
+        });
+        recipientIds = gateStatuses.map((g) => g.userId);
+      } else {
+        // Global challenge: notify all active enrollees
+        const enrollments = await prisma.enrollment.findMany({
+          where: { programId: assessment.programId, status: "ACTIVE" },
+          select: { userId: true },
+        });
+        recipientIds = enrollments.map((e) => e.userId);
+      }
+
+      if (recipientIds.length > 0) {
+        await prisma.notification.createMany({
+          data: recipientIds.map((userId) => ({
+            recipientId: userId,
+            creatorId: session.user.id,
+            type: NotificationType.INFO,
+            title: "New challenge available",
+            body: JSON.stringify({
+              text: `A new challenge is live: "${updated.title}". Head to your challenges tab to enter!`,
+              targetPath: "/dashboard/challenges",
+            }),
+          })),
+        });
+      }
+    }
 
     return ok({ assessment: updated });
   } catch (error) {

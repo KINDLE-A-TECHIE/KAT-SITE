@@ -69,7 +69,7 @@ export async function GET(request: Request) {
   return ok({ fellows });
 }
 
-// POST — assign an approved fellow to a program (creates an Enrollment with no billing cycle).
+// POST, assign an approved fellow to a program (creates an Enrollment with no billing cycle).
 export async function POST(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
   }, 201);
 }
 
-// DELETE — remove a fellow's program enrollment.
+// DELETE, remove a fellow's program enrollment.
 export async function DELETE(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);

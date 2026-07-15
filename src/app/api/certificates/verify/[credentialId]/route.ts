@@ -1,29 +1,35 @@
 import { fail, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 
-// Public — verify a certificate by credentialId (no auth required)
-export async function GET(_req: Request, { params }: { params: Promise<{ credentialId: string }> }) {
+// Public endpoint, no auth required.
+// Verifies a certificate by its unique credentialId.
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ credentialId: string }> },
+) {
   const { credentialId } = await params;
 
-  const cert = await prisma.certificate.findUnique({
+  const certificate = await prisma.certificate.findUnique({
     where: { credentialId },
     include: {
-      user: { select: { firstName: true, lastName: true } },
-      program: { select: { name: true, level: true } },
+      user:    { select: { firstName: true, lastName: true } },
+      program: { select: { id: true, name: true, level: true } },
       issuedBy: { select: { firstName: true, lastName: true } },
     },
   });
 
-  if (!cert) return fail("Certificate not found", 404);
-  if (cert.status !== "APPROVED") return fail("Certificate not found", 404);
+  if (!certificate || certificate.status !== "APPROVED") {
+    return fail("Certificate not found or not yet approved.", 404);
+  }
 
   return ok({
-    valid: true,
-    credentialId: cert.credentialId,
-    recipientName: `${cert.user.firstName} ${cert.user.lastName}`,
-    programName: cert.program.name,
-    programLevel: cert.program.level,
-    issuedAt: cert.issuedAt,
-    issuedBy: `${cert.issuedBy.firstName} ${cert.issuedBy.lastName}`,
+    certificate: {
+      credentialId: certificate.credentialId,
+      recipientName: `${certificate.user.firstName} ${certificate.user.lastName}`,
+      program: certificate.program,
+      issuedAt: certificate.issuedAt,
+      approvedAt: certificate.approvedAt,
+      issuedBy: `${certificate.issuedBy.firstName} ${certificate.issuedBy.lastName}`,
+    },
   });
 }
