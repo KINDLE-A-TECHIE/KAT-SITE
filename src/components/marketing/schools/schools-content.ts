@@ -73,7 +73,7 @@ export const PILOT_STEPS: PilotStep[] = [
     step: "02",
     title: "Onboard your teachers",
     description:
-      "Your own teachers get the curriculum-in-a-box: lesson plans, slides and worksheets for the digital-literacy strand, and the live platform for the coding strand. No specialist hire, no lab to build.",
+      "Your own teachers get the curriculum-in-a-box: lesson plans, slides and worksheets for the digital-literacy strand, and the live platform for the coding strand. No specialist to hire, and it runs on the computers you already have.",
   },
   {
     step: "03",

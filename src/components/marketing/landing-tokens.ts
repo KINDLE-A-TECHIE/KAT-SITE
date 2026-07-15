@@ -1,19 +1,43 @@
-import type { CSSProperties } from "react";
+/*
+ * Copy and structure for the landing page. NOT colour.
+ *
+ * This file used to export a DESIGN_TOKENS object that components applied as an inline
+ * style. That made it a SECOND source of truth for the palette, and the two drifted:
+ * the schools landing was written against warm tokens this file never defined, so it
+ * rendered with invalid colours and looked like nothing had changed. The palette now
+ * lives in exactly one place, `:root` in src/app/globals.css. Do not reintroduce a
+ * token object here.
+ */
 
-export const DESIGN_TOKENS = {
-  "--kat-deep-navy": "#132B5E",
-  "--kat-primary-blue": "#1E5FAF",
-  "--kat-accent-sky": "#4DB3E6",
-  "--kat-gradient": "linear-gradient(90deg, #1E5FAF, #4DB3E6)",
-  "--kat-bg": "#F5F7FA",
-  "--kat-surface": "#FFFFFF",
-  "--kat-text-primary": "#0F172A",
-  "--kat-text-secondary": "#64748B",
-  "--kat-border": "#E2E8F0",
-  "--kat-success": "#16A34A",
-  "--kat-warning": "#F59E0B",
-  "--kat-danger": "#DC2626",
-} as CSSProperties;
+/*
+ * THE PRIMARY CALL-TO-ACTION BUTTON, one definition, both landing surfaces.
+ *
+ * The "stamped" clay button (square, a hard offset shadow, presses in on hover) is the
+ * shared primary CTA for the whole marketing surface, the B2C kid site AND the B2B
+ * schools site. It lived inline in three spots on the schools page and nowhere on the
+ * kid site, so the two pages had visibly different buttons. Defining it ONCE here means
+ * they stay identical and cannot drift, the same lesson as the palette.
+ *
+ * Two grounds, because an ink-coloured offset shadow is invisible on a dark section:
+ *   STAMP_CTA        , on paper / light backgrounds (shadow = ink)
+ *   STAMP_CTA_DARK   , on ink / pine dark backgrounds (shadow = sun)
+ *   STAMP_CTA_SM     , compact header variant (smaller offset)
+ *
+ * Pass as `className` to a shadcn <Button> (twMerge lets bg-[var(--kat-clay)] win over
+ * the default variant) or to a plain <Link>. These are class strings, not colour, the
+ * hexes all resolve through the :root tokens guarded by the design-tokens test.
+ */
+const STAMP_BASE =
+  "rounded-none bg-[var(--kat-clay)] font-semibold text-[var(--kat-paper)] transition-transform hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-[var(--kat-clay-deep)]";
+
+export const STAMP_CTA =
+  `${STAMP_BASE} shadow-[4px_4px_0_0_var(--kat-ink)] hover:shadow-[2px_2px_0_0_var(--kat-ink)]`;
+
+export const STAMP_CTA_DARK =
+  `${STAMP_BASE} shadow-[4px_4px_0_0_var(--kat-sun)] hover:shadow-[2px_2px_0_0_var(--kat-sun)]`;
+
+export const STAMP_CTA_SM =
+  `${STAMP_BASE} shadow-[3px_3px_0_0_var(--kat-ink)] hover:shadow-[1px_1px_0_0_var(--kat-ink)]`;
 
 export const NAV_ITEMS = [
   { href: "#features", label: "Features" },
@@ -21,6 +45,7 @@ export const NAV_ITEMS = [
   { href: "#fellowship", label: "Fellowship" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
+  { href: "/schools", label: "For Schools" },
   { href: "/partners", label: "Partner with Us" },
 ];
 
@@ -74,42 +99,41 @@ export const PROGRAM_TRACKS: ProgramTrack[] = [
   },
 ];
 
+/*
+ * No per-card `color`. The six-hue icon-chip grid was the most template-like thing on
+ * the page; the grid is now flat and monochrome, and the palette's energy is spent in
+ * one place (the build-log marquee).
+ */
 export const FEATURES = [
   {
     title: "Live Tech Classes",
     description: "1-on-1 live sessions with a dedicated mentor in coding, robotics, AI, UI/UX design, and game development. No recorded videos. Your child builds something in every session.",
     iconName: "Code2" as const,
-    color: "bg-blue-500",
   },
   {
     title: "Parent Visibility",
     description: "See your child's attendance, current project, and mentor feedback, without having to ask them. It is all on one dashboard.",
     iconName: "Shield" as const,
-    color: "bg-indigo-500",
   },
   {
     title: "Build Real Projects",
     description: "No textbook exercises. Students build games, apps, websites, robots, and UI designs, Real work they can show anyone.",
     iconName: "Layers3" as const,
-    color: "bg-sky-500",
   },
   {
     title: "Mastery-Based Learning",
     description: "Students advance by demonstrating real understanding through assessments, projects and instructor reviews. Attendance alone does not advance them.",
     iconName: "Brain" as const,
-    color: "bg-violet-500",
   },
   {
     title: "Weekly Challenges",
     description: "Coding missions, friendly leaderboards, and peer shoutouts give students something to aim for each week.",
     iconName: "Flame" as const,
-    color: "bg-orange-500",
   },
   {
     title: "Path to Fellowship",
     description: "The best learners go on to become KAT Fellows. They mentor juniors, lead impact projects and build something of their own.",
     iconName: "Compass" as const,
-    color: "bg-emerald-500",
   },
 ];
 
@@ -131,42 +155,14 @@ export const HOW_IT_WORKS = [
   },
 ];
 
-export const TESTIMONIALS = [
-  {
-    name: "Adaeze O.",
-    role: "Parent of a Teen Builder",
-    location: "Lagos, Nigeria",
-    initials: "AO",
-    quote:
-      "My daughter went from 'coding is boring' to building her own portfolio site in 8 weeks. The mentors genuinely care, it shows.",
-    stars: 5,
-  },
-  {
-    name: "Chukwuemeka A.",
-    role: "Student, Future Innovators",
-    location: "Abuja, Nigeria",
-    initials: "CA",
-    quote:
-      "KAT taught me real skills, not just theory. I shipped my first API project, built a portfolio, and got accepted into a fellowship, all in one year.",
-    stars: 5,
-  },
-  {
-    name: "Funmilayo B.",
-    role: "Parent of a Junior Explorer",
-    location: "Port Harcourt, Nigeria",
-    initials: "FB",
-    quote:
-      "The parent dashboard is everything. I can see exactly what Temi is working on, how he scored, and what his mentor said, every single week.",
-    stars: 5,
-  },
-];
-
-export const SCHEDULE_ROWS = [
-  { day: "Monday", className: "Web Design Studio", level: "Builders", time: "4:00 PM WAT", status: "Open" as const },
-  { day: "Wednesday", className: "Python Mission Lab", level: "Innovators", time: "5:00 PM WAT", status: "Few Seats" as const },
-  { day: "Friday", className: "Game Jam for Juniors", level: "Explorers", time: "3:30 PM WAT", status: "Open" as const },
-  { day: "Saturday", className: "Mentor Office Hours", level: "All Tracks", time: "10:00 AM WAT", status: "Live" as const },
-];
+/*
+ * The invented TESTIMONIALS / SCHEDULE_ROWS / SIDEBAR_ITEMS arrays that used to live
+ * here are deleted, not commented out. "Adaeze O., Lagos" was never a real parent, and
+ * a fabricated quote on a page selling a service to parents of children is exactly the
+ * generic-template failure this redesign exists to fix. Every human on this page now
+ * comes from the database or the section hides itself. See getRealBuilds() in
+ * src/app/page.tsx and the APPROVED-testimonial query beside it.
+ */
 
 export type PricingTier = {
   id: string;
@@ -291,7 +287,6 @@ export const EVENTS = [
       "Intensive multi-day sprints where students build and ship real projects under close mentor guidance. Ideal for students ready to accelerate fast.",
     modes: ["Physical", "Virtual", "Hybrid"] as const,
     iconName: "Rocket" as const,
-    color: "bg-violet-500",
   },
   {
     title: "Hackathons",
@@ -299,7 +294,6 @@ export const EVENTS = [
       "Team-based competitions where students tackle real-world challenges, present solutions, and compete for recognition across schools and regions.",
     modes: ["Physical", "Virtual", "Hybrid"] as const,
     iconName: "Trophy" as const,
-    color: "bg-amber-500",
   },
   {
     title: "School Programmes",
@@ -307,11 +301,8 @@ export const EVENTS = [
       "Coding clubs, tech labs, and after-school programmes delivered inside partner schools, with KAT mentors, curriculum, and tools included.",
     modes: ["Physical", "Hybrid"] as const,
     iconName: "School" as const,
-    color: "bg-emerald-500",
   },
 ];
-
-export const SIDEBAR_ITEMS = ["My Classes", "Projects", "Challenges", "Messages", "Badges"];
 
 
 /**

@@ -4,6 +4,45 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Writing & Copy Style (read before writing ANY text)
+
+Applies to everything you produce: user-facing UI copy, code comments, commit messages,
+docs, PR descriptions, and chat replies.
+
+**No em-dashes. This is a hard rule.** Never use the em-dash (`—`, U+2014) as punctuation,
+anywhere. It is the single clearest AI-writing tell. Rewrite with a comma, a period, a colon,
+or parentheses. If a sentence seems to need an em-dash, it is two sentences. The app `src/` was
+scrubbed of em-dashes once already (commit `a32d01f`) and is currently at zero; keep it that way.
+
+**En-dashes (`–`, U+2013) only in numeric or date ranges** (`8–19`, `Primary 1–3`, a start date
+`–` an end date), never as sentence punctuation. Ordinary hyphens in compound words
+(`NERDC-aligned`, `per-seat`, `curriculum-in-a-box`) are correct and fine.
+
+**No AI-writing tells. Write like a person, not a model.** Avoid:
+- The "not just X, it's Y" / "it's not about X, it's about Y" construction.
+- Filler verbs and adjectives: delve, leverage, utilize, underscore, robust, seamless, elevate,
+  unlock, empower, foster, harness, streamline, cutting-edge, best-in-class, game-changing.
+- Puffery openers: "In today's fast-paced world", "In an era of", "Imagine a...".
+- Padding phrases: "It's worth noting that", "It's important to remember", "Needless to say".
+- Rule-of-three for its own sake, and starting consecutive sentences with the same scaffold.
+- Title Case On Every Heading, and emoji sprinkled into UI copy or docs.
+- Vague reassurance in place of a concrete claim. Say what the thing does, with real numbers and
+  names (see the real-data discipline in the School product section). "No lab to build" was pulled
+  for exactly this reason: it overreached, so it became "runs on the computers you already have".
+
+**Check before you commit copy or docs.** This must print nothing:
+```bash
+# Any em-dash (—) in the app source is a failure. ripgrep is Unicode-safe and gitignore-aware;
+# `grep -P` does NOT work in this shell's locale. Scoped to src/ (minus .bak backups), the code
+# and copy this rule governs, which is currently em-dash-free.
+rg -n '—' src -g '!*.bak'
+```
+If it prints a line, rewrite it before committing. En-dashes in ranges are allowed, so they are
+deliberately not in this check. (Legacy devops files, `scripts/*.sh` and `.env.example`, still
+carry em-dashes in author comments and are out of scope here.)
+
+---
+
 ## Commands
 
 ```bash

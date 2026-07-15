@@ -1,8 +1,7 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { AlertTriangle, ArrowLeft, ShieldCheck } from "lucide-react";
-import { DESIGN_TOKENS } from "../landing-tokens";
 import { CopyBlock } from "./copy-block";
 
 /**
@@ -32,10 +31,7 @@ const NAV = [
 
 export function DeveloperDocs() {
   return (
-    <main
-      style={DESIGN_TOKENS as CSSProperties}
-      className="relative min-h-screen bg-[var(--kat-paper)] font-serif text-[var(--kat-ink)]"
-    >
+    <main className="relative min-h-screen bg-[var(--kat-paper)] font-serif text-[var(--kat-ink)]">
       {/* Header, same slim, quiet register as the schools landing. */}
       <header className="sticky top-0 z-40 border-b border-[var(--kat-line)] bg-[var(--kat-paper)]/90 backdrop-blur-xl">
         <div className="kat-page flex h-16 items-center justify-between">

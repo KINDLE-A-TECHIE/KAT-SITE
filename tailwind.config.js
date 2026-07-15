@@ -54,20 +54,33 @@ const config = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // KAT Brand Colors
+        // KAT brand. Values track the :root tokens in globals.css, which are the
+        // source of truth; these keys exist so `bg-kat-clay` etc. work in Tailwind.
         kat: {
-          dark: "#0D1F45",
-          navy: "#132B5E",
-          blue: "#1E5FAF",
-          light: "#4DB3E6",
-          surface: "#FFFFFF",
-          background: "#F5F7FA",
-          text: "#0F172A",
-          "text-secondary": "#64748B",
-          border: "#E2E8F0",
-          success: "#16A34A",
-          warning: "#F59E0B",
-          danger: "#DC2626",
+          ink: "#1A1714",
+          clay: "#B2401D",
+          "clay-deep": "#8F3316",
+          sun: "#F2B705",
+          paper: "#F4EEE2",
+          pine: "#1F5C4A",
+          raised: "#FBF7F0",
+          border: "#E0D5C3",
+          muted: "#6E6459",
+
+          // Deprecated aliases (retired blue names), repointed onto the warm palette
+          // so unconverted surfaces render on-brand rather than blue. Do not use in
+          // new code; the design-tokens test rejects them in src/components/marketing.
+          dark: "#1A1714",
+          navy: "#1A1714",
+          blue: "#B2401D",
+          light: "#F2B705",
+          surface: "#FBF7F0",
+          background: "#F4EEE2",
+          text: "#1A1714",
+          "text-secondary": "#6E6459",
+          success: "#1F5C4A",
+          warning: "#8A6A00",
+          danger: "#B3261E",
         },
       },
       borderRadius: {
@@ -79,11 +92,19 @@ const config = {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-        'kat': '0 4px 20px -2px rgba(19, 43, 94, 0.15)',
-        'kat-lg': '0 10px 40px -4px rgba(19, 43, 94, 0.2)',
+        // Warm-tinted shadows. A neutral/blue-black shadow on paper reads grey and dirty.
+        'kat': '0 4px 20px -2px rgba(26, 23, 20, 0.10)',
+        'kat-lg': '0 10px 40px -4px rgba(26, 23, 20, 0.14)',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        // The faces are loaded via next/font in layout.tsx, which sets the underlying
+        // --font-* vars. Never list Inter/Geist/Poppins here: falling back to a default
+        // grotesk is precisely how this brand loses its voice.
+        sans: ['var(--font-ui)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'system-ui', 'sans-serif'],
+        body: ['var(--font-body)', 'Georgia', 'serif'],
+        serif: ['var(--font-body)', 'Georgia', 'serif'],
+        mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },
       keyframes: {
         "accordion-down": {
@@ -106,6 +127,12 @@ const config = {
           from: { opacity: "0", transform: "translateX(-20px)" },
           to: { opacity: "1", transform: "translateX(0)" },
         },
+        // Build-log marquee. The track renders its content twice, so translating by
+        // exactly -50% lands on the identical second copy and the loop is seamless.
+        marquee: {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-50%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -113,6 +140,7 @@ const config = {
         "caret-blink": "caret-blink 1.25s ease-out infinite",
         "fade-in": "fade-in 0.5s ease-out forwards",
         "slide-in": "slide-in 0.4s ease-out forwards",
+        marquee: "marquee 42s linear infinite",
       },
     },
   },

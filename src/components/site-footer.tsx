@@ -5,6 +5,7 @@ const LINKS = {
   Company: [
     { label: "Our Programs", href: "/#tracks" },
     { label: "Pricing", href: "/#pricing" },
+    { label: "KAT for Schools", href: "/schools" },
     { label: "Partner with Us", href: "/partners" },
     { label: "FAQ", href: "/#faq" },
     { label: "Contact Us", href: "mailto:support@kindleatechie.com" },
@@ -63,29 +64,29 @@ const SOCIALS = [
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-slate-200 bg-white">
-      <div className="mx-auto max-w-6xl px-6 py-12">
+    <footer className="border-t border-[var(--kat-border)] bg-[var(--kat-paper)]">
+      <div className="mx-auto max-w-6xl px-6 py-14">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="kat-focus-ring flex items-center gap-2 rounded">
               <Image src="/kindle-a-techie.svg" alt="KAT logo" width={44} height={44} className="shrink-0" />
-              <span className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-900">
-                kindle <span className="bg-gradient-to-r from-[#1E5FAF] to-[#4DB3E6] bg-clip-text text-transparent">a techie</span>
+              <span className="font-display font-semibold text-[var(--kat-ink)]">
+                kindle <span className="text-[var(--kat-clay)]">a techie</span>
               </span>
             </Link>
-            <p className="mt-3 text-sm leading-relaxed text-slate-500">
+            <p className="mt-4 font-body text-sm leading-relaxed text-[var(--kat-muted)]">
               Empowering African kids and teens with world-class tech education,
               live mentorship, and real projects.
             </p>
             <a
               href="mailto:support@kindleatechie.com"
-              className="mt-2 block text-xs text-slate-400 transition hover:text-slate-700"
+              className="kat-focus-ring mt-2 block rounded font-mono text-xs text-[var(--kat-muted)] transition hover:text-[var(--kat-clay)]"
             >
               support@kindleatechie.com
             </a>
             {/* Socials */}
-            <div className="mt-4 flex gap-3">
+            <div className="mt-5 flex gap-3">
               {SOCIALS.map((s) => (
                 <a
                   key={s.label}
@@ -93,7 +94,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={s.label}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:text-slate-800"
+                  className="kat-focus-ring flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--kat-border)] text-[var(--kat-muted)] transition hover:border-[var(--kat-clay)] hover:text-[var(--kat-clay)]"
                 >
                   {s.icon}
                 </a>
@@ -104,7 +105,7 @@ export function SiteFooter() {
           {/* Link columns */}
           {Object.entries(LINKS).map(([heading, links]) => (
             <div key={heading}>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
+              <p className="mb-3 font-mono text-[0.7rem] font-medium uppercase tracking-[0.22em] text-[var(--kat-muted)]">
                 {heading}
               </p>
               <ul className="space-y-2">
@@ -113,14 +114,14 @@ export function SiteFooter() {
                     {link.href.startsWith("mailto:") ? (
                       <a
                         href={link.href}
-                        className="text-sm text-slate-500 transition hover:text-slate-900"
+                        className="kat-focus-ring rounded font-body text-sm text-[var(--kat-muted)] transition hover:text-[var(--kat-clay)]"
                       >
                         {link.label}
                       </a>
                     ) : (
                       <Link
                         href={link.href}
-                        className="text-sm text-slate-500 transition hover:text-slate-900"
+                        className="kat-focus-ring rounded font-body text-sm text-[var(--kat-muted)] transition hover:text-[var(--kat-clay)]"
                       >
                         {link.label}
                       </Link>
@@ -133,14 +134,14 @@ export function SiteFooter() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-slate-100 pt-6 sm:flex-row">
-          <p className="text-xs text-slate-400">
-            © {new Date().getFullYear()} Kindle a Techie · kindleatechie.com · All rights reserved.
+        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-[var(--kat-border)] pt-6 sm:flex-row">
+          <p className="font-mono text-[0.7rem] uppercase tracking-wider text-[var(--kat-muted)]">
+            © {new Date().getFullYear()} Kindle a Techie · kindleatechie.com
           </p>
-          <div className="flex gap-4 text-xs text-slate-400">
-            <Link href="/privacy" className="hover:text-slate-600">Privacy</Link>
-            <Link href="/terms" className="hover:text-slate-600">Terms</Link>
-            <Link href="/cookies" className="hover:text-slate-600">Cookies</Link>
+          <div className="flex gap-4 font-mono text-[0.7rem] uppercase tracking-wider text-[var(--kat-muted)]">
+            <Link href="/privacy" className="kat-focus-ring rounded hover:text-[var(--kat-clay)]">Privacy</Link>
+            <Link href="/terms" className="kat-focus-ring rounded hover:text-[var(--kat-clay)]">Terms</Link>
+            <Link href="/cookies" className="kat-focus-ring rounded hover:text-[var(--kat-clay)]">Cookies</Link>
           </div>
         </div>
       </div>
