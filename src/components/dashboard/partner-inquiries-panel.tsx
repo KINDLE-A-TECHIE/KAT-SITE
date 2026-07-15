@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Mail, Phone, Building2, School } from "lucide-react";
+import { Mail, Phone, Building2, School, MapPin, Users2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProvisionSchoolDialog } from "@/components/dashboard/provision-school-dialog";
@@ -15,6 +15,8 @@ type Inquiry = {
   type: "SCHOOL" | "CORPORATE" | "GOVERNMENT" | "OTHER";
   email: string;
   phone: string | null;
+  state: string | null;
+  estimatedStudents: number | null;
   programs: string[];
   message: string;
   status: "NEW" | "CONTACTED" | "APPROVED" | "ARCHIVED";
@@ -200,6 +202,16 @@ export function PartnerInquiriesPanel({ canProvision = false }: { canProvision?:
                   >
                     <Phone className="size-3.5" /> {inq.phone}
                   </a>
+                ) : null}
+                {inq.state ? (
+                  <span className="inline-flex items-center gap-1.5 text-stone-600 dark:text-stone-300">
+                    <MapPin className="size-3.5" /> {inq.state}
+                  </span>
+                ) : null}
+                {inq.estimatedStudents != null ? (
+                  <span className="inline-flex items-center gap-1.5 text-stone-600 dark:text-stone-300">
+                    <Users2 className="size-3.5" /> {inq.estimatedStudents.toLocaleString()} students
+                  </span>
                 ) : null}
               </div>
 

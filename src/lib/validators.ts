@@ -13,6 +13,24 @@ export const loginSchema = z.object({
   password: z.string().min(8),
 });
 
+/**
+ * Public partner / school-pilot enquiry intake (POST /api/partners). A school pilot lead is a
+ * PartnerInquiry with type = SCHOOL (see SCHOOL-BUILD-NOTES.md), not a separate model. `state`
+ * and `estimatedStudents` are the pilot-specific fields; both optional (corporate/government
+ * leads omit them). `programs` carries the NERDC levels the admin inbox expects.
+ */
+export const partnerInquiryCreateSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  organization: z.string().trim().min(2).max(160),
+  type: z.enum(["SCHOOL", "CORPORATE", "GOVERNMENT", "OTHER"]),
+  email: z.string().trim().email().toLowerCase().max(200),
+  phone: z.string().trim().max(40).optional().or(z.literal("")),
+  state: z.string().trim().max(80).optional().or(z.literal("")),
+  estimatedStudents: z.coerce.number().int().positive().max(1_000_000).optional(),
+  message: z.string().trim().min(1).max(4000),
+  programs: z.array(z.string().max(60)).max(20).optional(),
+});
+
 export const registerSchema = z.object({
   firstName: z.string().trim().min(2).max(100),
   lastName: z.string().trim().min(2).max(100),

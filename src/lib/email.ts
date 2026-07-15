@@ -576,10 +576,18 @@ export function buildPartnerEnquiryNotificationEmail(opts: {
   type: string;
   email: string;
   phone?: string | null;
+  state?: string | null;
+  estimatedStudents?: number | null;
   programs?: string[];
   message: string;
 }) {
   const programLabels: Record<string, string> = {
+    // Current NERDC levels (what the SCHOOL form sends).
+    primary_1_3: "Primary 1–3",
+    primary_4_6: "Primary 4–6",
+    jss: "JSS 1–3",
+    sss: "SSS 1–3",
+    // Legacy values from older submissions.
     coding_clubs: "Coding Clubs",
     tech_labs: "Tech Labs",
     after_school: "After-School Programmes",
@@ -605,7 +613,9 @@ export function buildPartnerEnquiryNotificationEmail(opts: {
         ${infoRow("Name", opts.name)}
         ${infoRow("Organisation", opts.organization)}
         ${infoRow("Type", opts.type)}
-        ${programsDisplay ? infoRow("Programmes of Interest", programsDisplay) : ""}
+        ${opts.state ? infoRow("State", opts.state) : ""}
+        ${opts.estimatedStudents != null ? infoRow("Estimated Students", String(opts.estimatedStudents)) : ""}
+        ${programsDisplay ? infoRow("Levels / Programmes", programsDisplay) : ""}
         ${infoRow("Email", `<a href="mailto:${opts.email}" style="color:#B2401D;text-decoration:none;">${opts.email}</a>`)}
         ${opts.phone ? infoRow("Phone", opts.phone) : ""}
       </tbody>
@@ -624,7 +634,9 @@ export function buildPartnerEnquiryNotificationEmail(opts: {
     `Name: ${opts.name}\n` +
     `Organisation: ${opts.organization}\n` +
     `Type: ${opts.type}\n` +
-    (programsDisplay ? `Programmes of Interest: ${programsDisplay}\n` : "") +
+    (opts.state ? `State: ${opts.state}\n` : "") +
+    (opts.estimatedStudents != null ? `Estimated Students: ${opts.estimatedStudents}\n` : "") +
+    (programsDisplay ? `Levels / Programmes: ${programsDisplay}\n` : "") +
     `Email: ${opts.email}\n` +
     (opts.phone ? `Phone: ${opts.phone}\n` : "") +
     `\nMessage:\n${opts.message}\n`;
