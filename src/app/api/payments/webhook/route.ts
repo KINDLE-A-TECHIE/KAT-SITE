@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { PaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { markInvoicePaidAndActivate } from "@/lib/school-billing";
 
 export const runtime = "nodejs";
 
@@ -60,6 +61,17 @@ export async function POST(request: Request) {
   const ref = event.data.reference;
 
   if (event.event === "charge.success" && ref) {
+    // School invoices use the KAT-SCH- reference prefix (see generateInvoiceReference) and are
+    // SchoolInvoice rows, not Payment rows. Route them to the idempotent invoice activation.
+    // This webhook is the RELIABLE path: a school paying by bank transfer, or an admin who never
+    // returns from Paystack checkout, only reaches us here, never via the client-return
+    // /api/school/billing/verify endpoint. markInvoicePaidAndActivate is idempotent, so a webhook
+    // re-delivery (or the verify endpoint having already run) is safe.
+    if (ref.startsWith("KAT-SCH-")) {
+      await markInvoicePaidAndActivate(ref);
+      return new Response("OK", { status: 200 });
+    }
+
     const payment = await prisma.payment.findUnique({
       where: { reference: ref },
     });
