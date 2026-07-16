@@ -89,7 +89,7 @@ export function ProvisionSchoolDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-1.5 bg-orange-600 text-white hover:bg-orange-700">
+        <Button size="sm" className="gap-1.5 bg-orange-700 text-white hover:bg-orange-800">
           <School className="size-3.5" />
           Provision school
         </Button>
@@ -188,7 +188,7 @@ export function ProvisionSchoolDialog({
           <Button
             onClick={submit}
             disabled={busy || !schoolName.trim() || !slug.trim() || !adminEmail.trim()}
-            className="bg-orange-600 text-white hover:bg-orange-700"
+            className="bg-orange-700 text-white hover:bg-orange-800"
           >
             {busy ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : null}
             {busy ? "Provisioning…" : "Provision"}

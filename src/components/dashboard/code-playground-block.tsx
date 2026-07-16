@@ -2168,7 +2168,7 @@ ${code}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {pendingInvite.sessionId && (
-              <button onClick={() => void acceptInviteSession()} disabled={joiningPeer} className="rounded bg-orange-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-orange-700 disabled:opacity-50">
+              <button onClick={() => void acceptInviteSession()} disabled={joiningPeer} className="rounded bg-orange-700 px-3 py-1 text-xs font-semibold text-white transition hover:bg-orange-800 disabled:opacity-50">
                 {joiningPeer ? "Joining…" : "Join Session"}
               </button>
             )}
@@ -2197,7 +2197,7 @@ ${code}
             <button
               onClick={() => void installPackage()}
               disabled={installingPkg || !packageInput.trim()}
-              className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-700 disabled:opacity-50"
+              className="rounded-md bg-orange-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-800 disabled:opacity-50"
             >
               {installingPkg ? "Installing…" : "Install"}
             </button>
@@ -2493,7 +2493,7 @@ ${code}
                       onClick={() => toggleStudent(s)}
                       className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-white/5 ${selected ? "bg-orange-900/30" : ""}`}
                     >
-                      <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px] font-bold transition ${selected ? "border-orange-500 bg-orange-600 text-white" : "border-stone-600 text-transparent"}`}>
+                      <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px] font-bold transition ${selected ? "border-orange-500 bg-orange-700 text-white" : "border-stone-600 text-transparent"}`}>
                         ✓
                       </div>
                       <div className="min-w-0">
@@ -2543,7 +2543,7 @@ ${code}
               <button
                 onClick={() => void sendInvites()}
                 disabled={sendingInvites || selectedStudents.length === 0}
-                className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-orange-700 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg bg-orange-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-orange-800 disabled:opacity-50"
               >
                 <UserPlus className="h-3.5 w-3.5" />
                 {sendingInvites ? "Sending…" : "Send Invite"}
@@ -2610,7 +2610,7 @@ ${code}
                 <button
                   onClick={() => void submitCodeAsProject()}
                   disabled={submitting}
-                  className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-700 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-lg bg-orange-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-800 disabled:opacity-50"
                 >
                   {submitting
                     ? <><AlertCircle className="h-3 w-3 animate-pulse" /> Submitting…</>

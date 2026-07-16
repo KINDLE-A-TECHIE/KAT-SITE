@@ -1506,7 +1506,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                     message.deletedAt
                       ? "border border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-700 italic text-stone-400 dark:text-stone-500"
                       : mine
-                      ? "bg-orange-600 text-white"
+                      ? "bg-orange-700 text-white"
                       : "border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
                   }`}>
                     {showGroupSenderMeta && !message.deletedAt ? (
@@ -1561,7 +1561,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                             type="button"
                             onClick={() => void saveEdit()}
                             disabled={savingEdit || !editDraft.trim()}
-                            className="flex items-center gap-1 rounded-md bg-orange-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-orange-700 disabled:opacity-50"
+                            className="flex items-center gap-1 rounded-md bg-orange-700 px-2 py-0.5 text-xs font-medium text-white hover:bg-orange-800 disabled:opacity-50"
                           >
                             <Check className="h-3 w-3" /> Save
                           </button>

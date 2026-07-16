@@ -891,7 +891,7 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
 
       <Button
         disabled={busy || selectedUsers.length === 0 || selectedProgramIds.size === 0}
-        className="w-full bg-orange-600 hover:bg-orange-700"
+        className="w-full bg-orange-700 hover:bg-orange-800"
         onClick={() => void enroll()}
       >
         {busy

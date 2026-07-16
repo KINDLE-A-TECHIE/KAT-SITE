@@ -166,7 +166,7 @@ export function BillingPanel() {
         <Button
           onClick={() => setOpen(true)}
           disabled={noPrice}
-          className="gap-1.5 bg-orange-600 text-white hover:bg-orange-700"
+          className="gap-1.5 bg-orange-700 text-white hover:bg-orange-800"
         >
           <Plus className="size-4" />
           Confirm seats for a term
@@ -313,7 +313,7 @@ export function BillingPanel() {
             <Button
               onClick={createInvoice}
               disabled={busy || !term.trim() || !(seatCount > 0)}
-              className="bg-orange-600 text-white hover:bg-orange-700"
+              className="bg-orange-700 text-white hover:bg-orange-800"
             >
               {busy ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : null}
               {busy ? "Creating…" : "Raise invoice & pay"}

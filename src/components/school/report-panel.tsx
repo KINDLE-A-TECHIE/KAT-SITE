@@ -228,7 +228,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
             Print
           </Button>
           {term ? (
-            <Button asChild className="gap-1.5 bg-orange-600 text-white hover:bg-orange-700">
+            <Button asChild className="gap-1.5 bg-orange-700 text-white hover:bg-orange-800">
               <a
                 href={`/api/school/reports/pdf?${new URLSearchParams(
                   classId !== "ALL" ? { term, classId } : { term },
@@ -241,7 +241,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
               </a>
             </Button>
           ) : (
-            <Button disabled className="gap-1.5 bg-orange-600 text-white">
+            <Button disabled className="gap-1.5 bg-orange-700 text-white">
               <FileDown className="size-4" />
               Download PDF
             </Button>

@@ -503,7 +503,7 @@ export function ProjectAssessmentView({ assessment }: { assessment: AssessmentFo
               )}
               <Button
                 size="sm"
-                className="ml-auto gap-1.5 bg-orange-600 hover:bg-orange-700"
+                className="ml-auto gap-1.5 bg-orange-700 hover:bg-orange-800"
                 disabled={submitting}
                 onClick={() => void submitProject()}
               >
