@@ -53,11 +53,23 @@ type LoginValues = z.infer<typeof loginSchema>;
  * session cookie there, leaving the school host still signed out. Deciding it
  * server-side also avoids a hydration flash of a button we're about to hide.
  */
-export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
+export function LoginForm({
+  googleEnabled,
+  fallback = "/dashboard",
+}: {
+  googleEnabled: boolean;
+  /**
+   * Default post-login target when neither callbackUrl nor redirect is present. Resolved by the
+   * server page from the host: the school host defaults to the workspace (/home, which routes to
+   * /admin or /teach by role), the apex to /dashboard. A gated user (callbackUrl) always wins.
+   */
+  fallback?: string;
+}) {
   const searchParams = useSearchParams();
   const redirectTo = resolveLoginRedirect(
     searchParams.get("callbackUrl"),
     searchParams.get("redirect"),
+    fallback,
   );
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -274,7 +286,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
             <p className="mt-6 text-center text-sm text-stone-500">
               Don&apos;t have an account?{" "}
               <Link
-                href={redirectTo !== "/dashboard" ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}
+                href={redirectTo !== fallback ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}
                 className="font-semibold text-kat-blue hover:underline"
               >
                 Create one
