@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Check, Code2, Download, FileText, Printer, X } from "lucide-react";
+import { Check, Code2, Download, FileDown, FileText, Printer, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -223,14 +223,29 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
             <Download className="size-4" />
             Coverage CSV
           </Button>
-          <Button
-            onClick={() => window.print()}
-            disabled={!data}
-            className="gap-1.5 bg-orange-600 text-white hover:bg-orange-700"
-          >
+          <Button variant="outline" onClick={() => window.print()} disabled={!data} className="gap-1.5">
             <Printer className="size-4" />
-            Print / Save PDF
+            Print
           </Button>
+          {term ? (
+            <Button asChild className="gap-1.5 bg-orange-600 text-white hover:bg-orange-700">
+              <a
+                href={`/api/school/reports/pdf?${new URLSearchParams(
+                  classId !== "ALL" ? { term, classId } : { term },
+                ).toString()}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <FileDown className="size-4" />
+                Download PDF
+              </a>
+            </Button>
+          ) : (
+            <Button disabled className="gap-1.5 bg-orange-600 text-white">
+              <FileDown className="size-4" />
+              Download PDF
+            </Button>
+          )}
         </div>
       </div>
 

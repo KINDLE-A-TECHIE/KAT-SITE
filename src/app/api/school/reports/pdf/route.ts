@@ -1,22 +1,20 @@
 import { SchoolRole } from "@prisma/client";
-import { fail, ok } from "@/lib/http";
+import { fail } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { requireActiveSchool } from "@/lib/school";
 import { getSchoolReport, ReportClassNotFoundError } from "@/lib/school-report-data";
+import { renderSchoolReportPdf } from "@/lib/school-report-pdf";
 import { captureError } from "@/lib/sentry";
 
+// @react-pdf/renderer needs the Node runtime (not Edge).
+export const runtime = "nodejs";
+
 /**
- * GET /api/school/reports?term=…&classId=…
+ * GET /api/school/reports/pdf?term=…&classId=…
  *
- * The termly progress & NERDC-coverage report, per class, or across the whole school
- * for a term.
- *
- *   SCHOOL_ADMIN → any class in their school, or the whole school for a term
- *   TEACHER      → their OWN classes only (scoped schoolId AND teacherId)
- *
- * STRICTLY schoolId-scoped: the class list is derived from a query filtered by
- * schoolId, never from ids supplied by the caller.
- *
+ * Server-generated PDF of the termly progress & NERDC-coverage report. Same authorization and
+ * STRICT schoolId scoping as the JSON /api/school/reports route (they share getSchoolReport):
+ *   SCHOOL_ADMIN → any class in their school; TEACHER → their own classes only (schoolId AND teacherId).
  * Only class ids and the term travel in the query string, never a student's id or name.
  */
 export async function GET(request: Request) {
@@ -36,10 +34,23 @@ export async function GET(request: Request) {
 
   try {
     const report = await getSchoolReport(schoolId, role, session!.user.id, { term, classId });
-    return ok(report);
+    const pdf = await renderSchoolReportPdf(report);
+
+    const slug = (report.school.name || "school").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const termSlug = term ? "-" + term.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : "";
+    const filename = `kat-report-${slug}${termSlug}.pdf`;
+
+    return new Response(new Uint8Array(pdf), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-store",
+      },
+    });
   } catch (error) {
     if (error instanceof ReportClassNotFoundError) return fail("Class not found.", 404);
     captureError(error);
-    return fail("Could not build the report.", 500);
+    return fail("Could not build the report PDF.", 500);
   }
 }
