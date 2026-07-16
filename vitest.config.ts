@@ -5,6 +5,10 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  // tsconfig sets jsx:"preserve" (Next.js compiles it). This Vite uses OXC, which would otherwise
+  // honour that and leave JSX untransformed, so any .tsx a test imports (e.g. the @react-pdf report
+  // renderer) fails vite's import-analysis. Force the automatic JSX runtime for the test transform.
+  oxc: { jsx: { runtime: "automatic" } },
   test: {
     environment: "node",
     globals: true,
