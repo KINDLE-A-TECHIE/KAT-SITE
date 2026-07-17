@@ -21,7 +21,7 @@ describe("live simulation reaches 'won' like the batch engine", () => {
   it("solves a simple delivery (level01)", () => {
     const sim = new LabSimulation(getLevel("level01")!);
     expect(
-      playToWin(sim, [{ from: "Carol", payload: { network: { srcip: "Carol", dstip: "Doug" } } }]),
+      playToWin(sim, [{ from: "Toni", payload: { network: { srcip: "Toni", dstip: "Tamara" } } }]),
     ).toBe(true);
   });
 
@@ -30,8 +30,8 @@ describe("live simulation reaches 'won' like the batch engine", () => {
     expect(
       playToWin(sim, [
         {
-          from: "Alice",
-          payload: { network: { srcip: "Alice", dstip: "Google" }, transport: { proto: "ICMP" } },
+          from: "Chinagorom",
+          payload: { network: { srcip: "Chinagorom", dstip: "Search Server" }, transport: { proto: "ICMP" } },
         },
       ]),
     ).toBe(true);
@@ -41,7 +41,22 @@ describe("live simulation reaches 'won' like the batch engine", () => {
     const sim = new LabSimulation(getLevel("dos01")!);
     expect(
       playToWin(sim, [
-        { from: "Alice", payload: { network: { srcip: "Alice", dstip: "Google" } }, repeat: 45 },
+        { from: "Chinagorom", payload: { network: { srcip: "Chinagorom", dstip: "Search Server" } }, repeat: 45 },
+      ]),
+    ).toBe(true);
+  });
+
+  it("drives a web-unit request/response (http01, exercises the webServer script)", () => {
+    const sim = new LabSimulation(getLevel("http01")!);
+    expect(
+      playToWin(sim, [
+        {
+          from: "Amaka",
+          payload: {
+            network: { srcip: "Amaka", dstip: "katlearning.ng" },
+            application: { type: "http_request" },
+          },
+        },
       ]),
     ).toBe(true);
   });

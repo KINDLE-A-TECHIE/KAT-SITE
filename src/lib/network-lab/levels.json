@@ -4,20 +4,20 @@
   "unit": "basics",
   "devices": [
    {
-    "id": "Alice",
+    "id": "Chinagorom",
     "ports": 1,
     "x": 0.33,
     "y": 0.33
    },
    {
-    "id": "Bob",
+    "id": "Amaka",
     "image": "iphone-1",
     "ports": 1,
     "x": 0.67,
     "y": 0.33
    },
    {
-    "id": "Carol",
+    "id": "Toni",
     "image": "macbook",
     "ports": 1,
     "x": 0.33,
@@ -25,7 +25,7 @@
     "player": "true"
    },
    {
-    "id": "Doug",
+    "id": "Tamara",
     "image": "monitor",
     "ports": 1,
     "x": 0.67,
@@ -34,15 +34,15 @@
   ],
   "links": [
    {
-    "src": "Alice",
+    "src": "Chinagorom",
     "srcport": 0,
-    "dst": "Bob",
+    "dst": "Amaka",
     "dstport": 0
    },
    {
-    "src": "Carol",
+    "src": "Toni",
     "srcport": 0,
-    "dst": "Doug",
+    "dst": "Tamara",
     "dstport": 0
    }
   ],
@@ -50,33 +50,33 @@
    {
     "type": "packet",
     "at": 50,
-    "from": "Bob",
+    "from": "Amaka",
     "payload": {
      "network": {
-      "srcip": "Bob",
-      "dstip": "Alice"
+      "srcip": "Amaka",
+      "dstip": "Chinagorom"
      }
     }
    },
    {
     "type": "packet",
     "at": 1050,
-    "from": "Alice",
+    "from": "Chinagorom",
     "payload": {
      "network": {
-      "srcip": "Alice",
-      "dstip": "Bob"
+      "srcip": "Chinagorom",
+      "dstip": "Amaka"
      }
     }
    },
    {
     "type": "packet",
     "at": 2050,
-    "from": "Bob",
+    "from": "Amaka",
     "payload": {
      "network": {
-      "srcip": "Bob",
-      "dstip": "Alice"
+      "srcip": "Amaka",
+      "dstip": "Chinagorom"
      }
     }
    }
@@ -84,7 +84,7 @@
   "triggers": [
    {
     "type": "packet",
-    "device": "Doug"
+    "device": "Tamara"
    }
   ],
   "nextLevel": 2
@@ -94,7 +94,7 @@
   "unit": "basics",
   "devices": [
    {
-    "id": "Alice",
+    "id": "Chinagorom",
     "ports": 1,
     "image": "iphone-1",
     "x": 0.25,
@@ -102,7 +102,7 @@
     "player": true
    },
    {
-    "id": "Bob",
+    "id": "Amaka",
     "ports": 1,
     "x": 0.75,
     "y": 0.5
@@ -110,9 +110,9 @@
   ],
   "links": [
    {
-    "src": "Alice",
+    "src": "Chinagorom",
     "srcport": 0,
-    "dst": "Bob",
+    "dst": "Amaka",
     "dstport": 0
    }
   ],
@@ -120,33 +120,33 @@
    {
     "type": "packet",
     "at": 500,
-    "from": "Bob",
+    "from": "Amaka",
     "payload": {
      "network": {
-      "srcip": "Bob",
-      "dstip": "Alice"
+      "srcip": "Amaka",
+      "dstip": "Chinagorom"
      }
     }
    },
    {
     "type": "packet",
     "at": 2000,
-    "from": "Bob",
+    "from": "Amaka",
     "payload": {
      "network": {
-      "srcip": "Bob",
-      "dstip": "Alice"
+      "srcip": "Amaka",
+      "dstip": "Chinagorom"
      }
     }
    },
    {
     "type": "packet",
     "at": 4000,
-    "from": "Bob",
+    "from": "Amaka",
     "payload": {
      "network": {
-      "srcip": "Bob",
-      "dstip": "Alice"
+      "srcip": "Amaka",
+      "dstip": "Chinagorom"
      }
     }
    }
@@ -154,11 +154,11 @@
   "triggers": [
    {
     "type": "packet",
-    "device": "Bob",
+    "device": "Amaka",
     "payload": {
      "network": {
-      "srcip": "Alice",
-      "dstip": "Bob"
+      "srcip": "Chinagorom",
+      "dstip": "Amaka"
      }
     }
    }
@@ -170,7 +170,7 @@
   "unit": "basics",
   "devices": [
    {
-    "id": "Alice",
+    "id": "Chinagorom",
     "ports": 1,
     "x": 0.25,
     "y": 0.5,
@@ -178,7 +178,7 @@
     "bufferWait": 10000000
    },
    {
-    "id": "Google",
+    "id": "Search Server",
     "ports": 1,
     "x": 0.75,
     "y": 0.5,
@@ -188,9 +188,9 @@
   ],
   "links": [
    {
-    "src": "Alice",
+    "src": "Chinagorom",
     "srcport": 0,
-    "dst": "Google",
+    "dst": "Search Server",
     "dstport": 0
    }
   ],
@@ -198,11 +198,11 @@
    {
     "type": "packet",
     "at": 500,
-    "from": "Alice",
+    "from": "Chinagorom",
     "payload": {
      "network": {
-      "srcip": "Alice",
-      "dstip": "Google"
+      "srcip": "Chinagorom",
+      "dstip": "Search Server"
      },
      "transport": {
       "proto": "ICMP"
@@ -213,11 +213,11 @@
   "triggers": [
    {
     "type": "packet",
-    "device": "Alice",
+    "device": "Chinagorom",
     "payload": {
      "network": {
-      "srcip": "Google",
-      "dstip": "Alice"
+      "srcip": "Search Server",
+      "dstip": "Chinagorom"
      },
      "transport": {
       "proto": "ICMP"
@@ -233,7 +233,7 @@
   "unit": "basics",
   "devices": [
    {
-    "id": "Alice",
+    "id": "Chinagorom",
     "ports": 1,
     "x": 0.5,
     "y": 0.1,
@@ -241,7 +241,7 @@
     "image": "imac"
    },
    {
-    "id": "Bob",
+    "id": "Amaka",
     "ports": 1,
     "x": 0.25,
     "y": 0.75,
@@ -249,7 +249,7 @@
     "player": true
    },
    {
-    "id": "Carol",
+    "id": "Toni",
     "ports": 1,
     "x": 0.75,
     "y": 0.75,
@@ -265,15 +265,15 @@
     "script": "manualRouter",
     "rules": [
      {
-      "dstip": "Alice",
+      "dstip": "Chinagorom",
       "portNum": 0
      },
      {
-      "dstip": "Bob",
+      "dstip": "Amaka",
       "portNum": 1
      },
      {
-      "dstip": "Carol",
+      "dstip": "Toni",
       "portNum": 2
      }
     ]
@@ -288,15 +288,15 @@
     "script": "manualRouter",
     "rules": [
      {
-      "dstip": "Bob",
+      "dstip": "Amaka",
       "portNum": 0
      },
      {
-      "dstip": "Alice",
+      "dstip": "Chinagorom",
       "portNum": 1
      },
      {
-      "dstip": "Carol",
+      "dstip": "Toni",
       "portNum": 2
      }
     ]
@@ -311,15 +311,15 @@
     "script": "manualRouter",
     "rules": [
      {
-      "dstip": "Carol",
+      "dstip": "Toni",
       "portNum": 0
      },
      {
-      "dstip": "Alice",
+      "dstip": "Chinagorom",
       "portNum": 1
      },
      {
-      "dstip": "Bob",
+      "dstip": "Amaka",
       "portNum": 2
      }
     ]
@@ -327,19 +327,19 @@
   ],
   "links": [
    {
-    "src": "Alice",
+    "src": "Chinagorom",
     "srcport": 0,
     "dst": "Router 1",
     "dstport": 0
    },
    {
-    "src": "Bob",
+    "src": "Amaka",
     "srcport": 0,
     "dst": "Router 2",
     "dstport": 0
    },
    {
-    "src": "Carol",
+    "src": "Toni",
     "srcport": 0,
     "dst": "Router 3",
     "dstport": 0
@@ -367,44 +367,44 @@
    {
     "type": "packet",
     "at": 50,
-    "from": "Alice",
+    "from": "Chinagorom",
     "payload": {
      "network": {
-      "dstip": "Bob",
-      "srcip": "Alice"
+      "dstip": "Amaka",
+      "srcip": "Chinagorom"
      }
     }
    },
    {
     "type": "packet",
     "at": 150,
-    "from": "Bob",
+    "from": "Amaka",
     "payload": {
      "network": {
-      "dstip": "Alice",
-      "srcip": "Bob"
+      "dstip": "Chinagorom",
+      "srcip": "Amaka"
      }
     }
    },
    {
     "type": "packet",
     "at": 210,
-    "from": "Alice",
+    "from": "Chinagorom",
     "payload": {
      "network": {
-      "dstip": "Carol",
-      "srcip": "Alice"
+      "dstip": "Toni",
+      "srcip": "Chinagorom"
      }
     }
    },
    {
     "type": "packet",
     "at": 270,
-    "from": "Carol",
+    "from": "Toni",
     "payload": {
      "network": {
-      "dstip": "Bob",
-      "srcip": "Carol"
+      "dstip": "Amaka",
+      "srcip": "Toni"
      }
     }
    }
@@ -412,11 +412,11 @@
   "triggers": [
    {
     "type": "packet",
-    "device": "Carol",
+    "device": "Toni",
     "payload": {
      "network": {
-      "srcip": "Bob",
-      "dstip": "Carol"
+      "srcip": "Amaka",
+      "dstip": "Toni"
      }
     }
    }
@@ -428,14 +428,14 @@
   "unit": "basics",
   "devices": [
    {
-    "id": "Alice",
+    "id": "Chinagorom",
     "ports": 1,
     "x": 0.2,
     "y": 0.6,
     "player": true
    },
    {
-    "id": "Google",
+    "id": "Search Server",
     "image": "server",
     "ports": 1,
     "x": 0.8,
@@ -443,7 +443,7 @@
     "script": "ping"
    },
    {
-    "id": "Bob",
+    "id": "Amaka",
     "ports": 1,
     "x": 0.2,
     "y": 0.2,
@@ -460,13 +460,13 @@
   ],
   "links": [
    {
-    "src": "Alice",
+    "src": "Chinagorom",
     "srcport": 0,
     "dst": "Home",
     "dstport": 1
    },
    {
-    "src": "Bob",
+    "src": "Amaka",
     "srcport": 0,
     "dst": "Home",
     "dstport": 2
@@ -474,7 +474,7 @@
    {
     "src": "Home",
     "srcport": 0,
-    "dst": "Google",
+    "dst": "Search Server",
     "dstport": 0
    }
   ],
@@ -482,22 +482,22 @@
    {
     "type": "packet",
     "at": 500,
-    "from": "Alice",
+    "from": "Chinagorom",
     "payload": {
      "network": {
-      "srcip": "Alice",
-      "dstip": "Google"
+      "srcip": "Chinagorom",
+      "dstip": "Search Server"
      }
     }
    },
    {
     "type": "packet",
     "at": 1000,
-    "from": "Bob",
+    "from": "Amaka",
     "payload": {
      "network": {
-      "srcip": "Bob",
-      "dstip": "Google"
+      "srcip": "Amaka",
+      "dstip": "Search Server"
      },
      "transport": {
       "proto": "example"
@@ -508,11 +508,11 @@
   "triggers": [
    {
     "type": "packet",
-    "device": "Alice",
+    "device": "Chinagorom",
     "payload": {
      "network": {
-      "srcip": "Google",
-      "dstip": "Alice"
+      "srcip": "Search Server",
+      "dstip": "Chinagorom"
      },
      "transport": {
       "proto": "ICMP"
@@ -527,7 +527,7 @@
   "unit": "spoofs",
   "devices": [
    {
-    "id": "Alice",
+    "id": "Chinagorom",
     "image": "iphone-1",
     "ports": 1,
     "x": 0.5,
@@ -535,13 +535,13 @@
     "player": true
    },
    {
-    "id": "Bob",
+    "id": "Amaka",
     "ports": 1,
     "x": 0.25,
     "y": 0.75
    },
    {
-    "id": "Carol",
+    "id": "Toni",
     "image": "macbook",
     "ports": 1,
     "x": 0.75,
@@ -556,15 +556,15 @@
     "script": "manualRouter",
     "rules": [
      {
-      "dstip": "Alice",
+      "dstip": "Chinagorom",
       "portNum": 0
      },
      {
-      "dstip": "Bob",
+      "dstip": "Amaka",
       "portNum": 1
      },
      {
-      "dstip": "Carol",
+      "dstip": "Toni",
       "portNum": 2
      }
     ]
@@ -578,15 +578,15 @@
     "script": "manualRouter",
     "rules": [
      {
-      "dstip": "Bob",
+      "dstip": "Amaka",
       "portNum": 0
      },
      {
-      "dstip": "Alice",
+      "dstip": "Chinagorom",
       "portNum": 1
      },
      {
-      "dstip": "Carol",
+      "dstip": "Toni",
       "portNum": 2
      }
     ]
@@ -600,15 +600,15 @@
     "script": "manualRouter",
     "rules": [
      {
-      "dstip": "Carol",
+      "dstip": "Toni",
       "portNum": 0
      },
      {
-      "dstip": "Alice",
+      "dstip": "Chinagorom",
       "portNum": 1
      },
      {
-      "dstip": "Bob",
+      "dstip": "Amaka",
       "portNum": 2
      }
     ]
@@ -616,19 +616,19 @@
   ],
   "links": [
    {
-    "src": "Alice",
+    "src": "Chinagorom",
     "srcport": 0,
     "dst": "Router 1",
     "dstport": 0
    },
    {
-    "src": "Bob",
+    "src": "Amaka",
     "srcport": 0,
     "dst": "Router 2",
     "dstport": 0
    },
    {
-    "src": "Carol",
+    "src": "Toni",
     "srcport": 0,
     "dst": "Router 3",
     "dstport": 0
@@ -656,40 +656,40 @@
    {
     "type": "packet",
     "at": 50,
-    "from": "Alice",
+    "from": "Chinagorom",
     "payload": {
      "network": {
-      "dstip": "Bob"
+      "dstip": "Amaka"
      }
     }
    },
    {
     "type": "packet",
     "at": 150,
-    "from": "Bob",
+    "from": "Amaka",
     "payload": {
      "network": {
-      "dstip": "Alice"
+      "dstip": "Chinagorom"
      }
     }
    },
    {
     "type": "packet",
     "at": 210,
-    "from": "Alice",
+    "from": "Chinagorom",
     "payload": {
      "network": {
-      "dstip": "Carol"
+      "dstip": "Toni"
      }
     }
    },
    {
     "type": "packet",
     "at": 270,
-    "from": "Bob",
+    "from": "Amaka",
     "payload": {
      "network": {
-      "dstip": "Carol"
+      "dstip": "Toni"
      }
     }
    }
@@ -697,11 +697,11 @@
   "triggers": [
    {
     "type": "packet",
-    "device": "Bob",
+    "device": "Amaka",
     "payload": {
      "network": {
-      "srcip": "Carol",
-      "dstip": "Bob"
+      "srcip": "Toni",
+      "dstip": "Amaka"
      }
     }
    },
@@ -710,8 +710,8 @@
     "device": "Router 1",
     "payload": {
      "network": {
-      "srcip": "Carol",
-      "dstip": "Bob"
+      "srcip": "Toni",
+      "dstip": "Amaka"
      }
     }
    }
@@ -723,7 +723,7 @@
   "unit": "spoofs",
   "devices": [
    {
-    "id": "Alice",
+    "id": "Chinagorom",
     "image": "macbook",
     "ports": 1,
     "x": 0.25,
@@ -731,14 +731,14 @@
     "player": "true"
    },
    {
-    "id": "Bob",
+    "id": "Amaka",
     "image": "macbook",
     "ports": 1,
     "x": 0.25,
     "y": 0.5
    },
    {
-    "id": "Charlie",
+    "id": "Ife",
     "image": "iphone-1",
     "ports": 1,
     "x": 0.25,
@@ -754,7 +754,7 @@
     "rules": []
    },
    {
-    "id": "Google",
+    "id": "Search Server",
     "image": "server",
     "ports": 1,
     "x": 0.75,
@@ -764,25 +764,25 @@
   ],
   "links": [
    {
-    "src": "Alice",
+    "src": "Chinagorom",
     "srcport": 0,
     "dst": "Central Hub",
     "dstport": 0
    },
    {
-    "src": "Bob",
+    "src": "Amaka",
     "srcport": 0,
     "dst": "Central Hub",
     "dstport": 1
    },
    {
-    "src": "Charlie",
+    "src": "Ife",
     "srcport": 0,
     "dst": "Central Hub",
     "dstport": 2
    },
    {
-    "src": "Google",
+    "src": "Search Server",
     "srcport": 0,
     "dst": "Central Hub",
     "dstport": 3
@@ -792,44 +792,44 @@
    {
     "type": "packet",
     "at": 500,
-    "from": "Google",
+    "from": "Search Server",
     "payload": {
      "network": {
-      "srcip": "Google",
-      "dstip": "Bob"
+      "srcip": "Search Server",
+      "dstip": "Amaka"
      }
     }
    },
    {
     "type": "packet",
     "at": 1000,
-    "from": "Google",
+    "from": "Search Server",
     "payload": {
      "network": {
-      "srcip": "Google",
-      "dstip": "Bob"
+      "srcip": "Search Server",
+      "dstip": "Amaka"
      }
     }
    },
    {
     "type": "packet",
     "at": 2000,
-    "from": "Google",
+    "from": "Search Server",
     "payload": {
      "network": {
-      "srcip": "Google",
-      "dstip": "Bob"
+      "srcip": "Search Server",
+      "dstip": "Amaka"
      }
     }
    },
    {
     "type": "packet",
     "at": 3000,
-    "from": "Charlie",
+    "from": "Ife",
     "payload": {
      "network": {
-      "srcip": "Charlie",
-      "dstip": "Google"
+      "srcip": "Ife",
+      "dstip": "Search Server"
      },
      "transport": {
       "proto": "ICMP"
@@ -839,11 +839,11 @@
    {
     "type": "packet",
     "at": 5000,
-    "from": "Charlie",
+    "from": "Ife",
     "payload": {
      "network": {
-      "srcip": "Charlie",
-      "dstip": "Google"
+      "srcip": "Ife",
+      "dstip": "Search Server"
      },
      "transport": {
       "proto": "ICMP"
@@ -854,11 +854,11 @@
   "triggers": [
    {
     "type": "packet",
-    "device": "Alice",
+    "device": "Chinagorom",
     "payload": {
      "network": {
-      "srcip": "Google",
-      "dstip": "Charlie"
+      "srcip": "Search Server",
+      "dstip": "Ife"
      }
     }
    }
@@ -870,7 +870,7 @@
   "unit": "dos",
   "devices": [
    {
-    "id": "Alice",
+    "id": "Chinagorom",
     "image": "imac",
     "ports": 1,
     "x": 0.25,
@@ -878,7 +878,7 @@
     "player": true
    },
    {
-    "id": "Google",
+    "id": "Search Server",
     "image": "server",
     "ports": 1,
     "x": 0.75,
@@ -888,9 +888,9 @@
   ],
   "links": [
    {
-    "src": "Alice",
+    "src": "Chinagorom",
     "srcport": 0,
-    "dst": "Google",
+    "dst": "Search Server",
     "dstport": 0
    }
   ],
@@ -898,7 +898,7 @@
   "triggers": [
    {
     "type": "flood",
-    "device": "Google"
+    "device": "Search Server"
    }
   ],
   "nextLevel": 9
@@ -908,7 +908,7 @@
   "unit": "dos",
   "devices": [
    {
-    "id": "Alice",
+    "id": "Chinagorom",
     "image": "macbook",
     "ports": 1,
     "x": 0.25,
@@ -939,7 +939,7 @@
     "player": true
    },
    {
-    "id": "Google",
+    "id": "Search Server",
     "image": "server",
     "ports": 1,
     "x": 0.8,
@@ -947,7 +947,7 @@
     "capacity": 3
    },
    {
-    "id": "Google's Firewall",
+    "id": "Search Server Firewall",
     "image": "router",
     "ports": 5,
     "x": 0.6,
@@ -955,40 +955,40 @@
     "script": "firewall",
     "rules": [
      {
-      "srcip": "Alice"
+      "srcip": "Chinagorom"
      }
     ]
    }
   ],
   "links": [
    {
-    "src": "Alice",
+    "src": "Chinagorom",
     "srcport": 0,
-    "dst": "Google's Firewall",
+    "dst": "Search Server Firewall",
     "dstport": 4
    },
    {
     "src": "Zombie 1",
     "srcport": 0,
-    "dst": "Google's Firewall",
+    "dst": "Search Server Firewall",
     "dstport": 1
    },
    {
     "src": "Zombie 2",
     "srcport": 0,
-    "dst": "Google's Firewall",
+    "dst": "Search Server Firewall",
     "dstport": 2
    },
    {
     "src": "Zombie 3",
     "srcport": 0,
-    "dst": "Google's Firewall",
+    "dst": "Search Server Firewall",
     "dstport": 3
    },
    {
-    "src": "Google",
+    "src": "Search Server",
     "srcport": 0,
-    "dst": "Google's Firewall",
+    "dst": "Search Server Firewall",
     "dstport": 0
    }
   ],
@@ -996,12 +996,12 @@
    {
     "type": "packet",
     "at": 50,
-    "from": "Alice",
+    "from": "Chinagorom",
     "times": 20,
     "payload": {
      "network": {
-      "srcip": "Alice",
-      "dstip": "Google"
+      "srcip": "Chinagorom",
+      "dstip": "Search Server"
      }
     }
    }
@@ -1009,7 +1009,7 @@
   "triggers": [
    {
     "type": "flood",
-    "device": "Google"
+    "device": "Search Server"
    }
   ],
   "nextLevel": 10
@@ -1019,7 +1019,7 @@
   "unit": "dos",
   "devices": [
    {
-    "id": "Alice",
+    "id": "Chinagorom",
     "image": "macbook",
     "ports": 1,
     "x": 0.25,
@@ -1027,7 +1027,7 @@
     "player": true
    },
    {
-    "id": "Barbara",
+    "id": "Musa",
     "image": "iphone-1",
     "ports": 1,
     "x": 0.25,
@@ -1035,7 +1035,7 @@
     "script": "ping"
    },
    {
-    "id": "Carol",
+    "id": "Toni",
     "image": "macbook",
     "ports": 1,
     "x": 0.25,
@@ -1043,14 +1043,14 @@
     "script": "ping"
    },
    {
-    "id": "Darcy",
+    "id": "Bassey",
     "ports": 1,
     "x": 0.25,
     "y": 0.8,
     "script": "ping"
    },
    {
-    "id": "Google",
+    "id": "Search Server",
     "image": "server",
     "ports": 1,
     "x": 0.8,
@@ -1066,23 +1066,23 @@
     "script": "broadcast",
     "rules": [
      {
-      "dstip": "Alice",
+      "dstip": "Chinagorom",
       "portNum": 0
      },
      {
-      "dstip": "Barbara",
+      "dstip": "Musa",
       "portNum": 1
      },
      {
-      "dstip": "Carol",
+      "dstip": "Toni",
       "portNum": 2
      },
      {
-      "dstip": "Darcy",
+      "dstip": "Bassey",
       "portNum": 3
      },
      {
-      "dstip": "Google",
+      "dstip": "Search Server",
       "portNum": 4
      }
     ]
@@ -1090,31 +1090,31 @@
   ],
   "links": [
    {
-    "src": "Alice",
+    "src": "Chinagorom",
     "srcport": 0,
     "dst": "Router",
     "dstport": 0
    },
    {
-    "src": "Barbara",
+    "src": "Musa",
     "srcport": 0,
     "dst": "Router",
     "dstport": 1
    },
    {
-    "src": "Carol",
+    "src": "Toni",
     "srcport": 0,
     "dst": "Router",
     "dstport": 2
    },
    {
-    "src": "Darcy",
+    "src": "Bassey",
     "srcport": 0,
     "dst": "Router",
     "dstport": 3
    },
    {
-    "src": "Google",
+    "src": "Search Server",
     "srcport": 0,
     "dst": "Router",
     "dstport": 4
@@ -1124,7 +1124,7 @@
   "triggers": [
    {
     "type": "flood",
-    "device": "Google"
+    "device": "Search Server"
    }
   ],
   "nextLevel": 11
@@ -1134,14 +1134,14 @@
   "unit": "attacks",
   "devices": [
    {
-    "id": "Example Alice",
+    "id": "Example Chinagorom",
     "ports": 1,
     "x": 0.25,
     "y": 0.35,
     "script": "encryption"
    },
    {
-    "id": "Example Bob",
+    "id": "Example Amaka",
     "image": "iphone-1",
     "ports": 1,
     "x": 0.75,
@@ -1149,7 +1149,7 @@
     "script": "encryption"
    },
    {
-    "id": "Alice",
+    "id": "Chinagorom",
     "ports": 1,
     "x": 0.25,
     "y": 0.6,
@@ -1164,18 +1164,18 @@
     "script": "tappedRouter",
     "rules": [
      {
-      "dstip": "Alice",
+      "dstip": "Chinagorom",
       "portNum": 1
      },
      {
-      "dstip": "Bob",
+      "dstip": "Amaka",
       "portNum": 2
      }
     ],
     "player": false
    },
    {
-    "id": "Eve",
+    "id": "Zainab",
     "image": "macbook",
     "ports": 1,
     "x": 0.5,
@@ -1183,7 +1183,7 @@
     "player": true
    },
    {
-    "id": "Bob",
+    "id": "Amaka",
     "image": "iphone-1",
     "ports": 1,
     "x": 0.75,
@@ -1193,7 +1193,7 @@
   ],
   "links": [
    {
-    "src": "Alice",
+    "src": "Chinagorom",
     "srcport": 0,
     "dst": "Router",
     "dstport": 1
@@ -1201,19 +1201,19 @@
    {
     "src": "Router",
     "srcport": 2,
-    "dst": "Bob",
+    "dst": "Amaka",
     "dstport": 0
    },
    {
     "src": "Router",
     "srcport": 0,
-    "dst": "Eve",
+    "dst": "Zainab",
     "dstport": 0
    },
    {
-    "src": "Example Alice",
+    "src": "Example Chinagorom",
     "srcport": 0,
-    "dst": "Example Bob",
+    "dst": "Example Amaka",
     "dstport": 0
    }
   ],
@@ -1221,11 +1221,11 @@
    {
     "type": "packet",
     "at": 500,
-    "from": "Alice",
+    "from": "Chinagorom",
     "payload": {
      "network": {
-      "srcip": "Alice",
-      "dstip": "Bob"
+      "srcip": "Chinagorom",
+      "dstip": "Amaka"
      },
      "transport": {
       "proto": "encryption"
@@ -1238,11 +1238,11 @@
    {
     "type": "packet",
     "at": 500,
-    "from": "Example Alice",
+    "from": "Example Chinagorom",
     "payload": {
      "network": {
-      "srcip": "Example Alice",
-      "dstip": "Example Bob"
+      "srcip": "Example Chinagorom",
+      "dstip": "Example Amaka"
      },
      "transport": {
       "proto": "encryption"
@@ -1256,11 +1256,11 @@
   "triggers": [
    {
     "type": "packet",
-    "device": "Eve",
+    "device": "Zainab",
     "payload": {
      "network": {
-      "srcip": "Alice",
-      "dstip": "Bob"
+      "srcip": "Chinagorom",
+      "dstip": "Amaka"
      },
      "transport": {
       "proto": "encryption"
@@ -1273,11 +1273,11 @@
    },
    {
     "type": "packet",
-    "device": "Bob",
+    "device": "Amaka",
     "payload": {
      "network": {
-      "srcip": "Alice",
-      "dstip": "Bob"
+      "srcip": "Chinagorom",
+      "dstip": "Amaka"
      },
      "transport": {
       "proto": "encryption"
@@ -1296,7 +1296,7 @@
   "unit": "attacks",
   "devices": [
    {
-    "id": "Alice",
+    "id": "Chinagorom",
     "ports": 1,
     "x": 0.25,
     "y": 0.6,
@@ -1312,7 +1312,7 @@
     "script": "manualRouter",
     "rules": [
      {
-      "dstip": "Alice",
+      "dstip": "Chinagorom",
       "portNum": 0
      },
      {
@@ -1352,7 +1352,7 @@
   ],
   "links": [
    {
-    "src": "Alice",
+    "src": "Chinagorom",
     "srcport": 0,
     "dst": "Censor",
     "dstport": 0
@@ -1386,10 +1386,10 @@
    {
     "type": "packet",
     "at": 500,
-    "from": "Alice",
+    "from": "Chinagorom",
     "payload": {
      "network": {
-      "srcip": "Alice",
+      "srcip": "Chinagorom",
       "dstip": "Allowed Site"
      }
     }
@@ -1397,10 +1397,10 @@
    {
     "type": "packet",
     "at": 1500,
-    "from": "Alice",
+    "from": "Chinagorom",
     "payload": {
      "network": {
-      "srcip": "Alice",
+      "srcip": "Chinagorom",
       "dstip": "Blocked Site"
      }
     }
@@ -1412,7 +1412,7 @@
     "device": "Blocked Site",
     "payload": {
      "network": {
-      "srcip": "Alice",
+      "srcip": "Chinagorom",
       "dstip": "Blocked Site"
      }
     }
@@ -1425,7 +1425,7 @@
   "unit": "attacks",
   "devices": [
    {
-    "id": "Alice",
+    "id": "Chinagorom",
     "ports": 1,
     "x": 0.1,
     "y": 0.3,
@@ -1440,7 +1440,7 @@
     "script": "manualRouter",
     "rules": [
      {
-      "dstip": "Alice",
+      "dstip": "Chinagorom",
       "portNum": 0
      },
      {
@@ -1456,7 +1456,7 @@
       "portNum": 1
      },
      {
-      "dstip": "Google",
+      "dstip": "Search Server",
       "portNum": 1
      }
     ],
@@ -1471,7 +1471,7 @@
     "script": "manualRouter",
     "rules": [
      {
-      "dstip": "Alice",
+      "dstip": "Chinagorom",
       "portNum": 0
      },
      {
@@ -1487,7 +1487,7 @@
       "portNum": 1
      },
      {
-      "dstip": "Google",
+      "dstip": "Search Server",
       "portNum": 1
      }
     ],
@@ -1502,7 +1502,7 @@
     "script": "manualRouter",
     "rules": [
      {
-      "dstip": "Alice",
+      "dstip": "Chinagorom",
       "portNum": 0
      },
      {
@@ -1518,7 +1518,7 @@
       "portNum": 1
      },
      {
-      "dstip": "Google",
+      "dstip": "Search Server",
       "portNum": 1
      }
     ],
@@ -1533,7 +1533,7 @@
     "script": "manualRouter",
     "rules": [
      {
-      "dstip": "Alice",
+      "dstip": "Chinagorom",
       "portNum": 0
      },
      {
@@ -1549,14 +1549,14 @@
       "portNum": 0
      },
      {
-      "dstip": "Google",
+      "dstip": "Search Server",
       "portNum": 1
      }
     ],
     "secret": true
    },
    {
-    "id": "Google",
+    "id": "Search Server",
     "image": "server",
     "ports": 1,
     "x": 0.85,
@@ -1566,7 +1566,7 @@
   ],
   "links": [
    {
-    "src": "Alice",
+    "src": "Chinagorom",
     "srcport": 0,
     "dst": "Waterloo",
     "dstport": 0
@@ -1592,7 +1592,7 @@
    {
     "src": "Mountain View",
     "srcport": 1,
-    "dst": "Google",
+    "dst": "Search Server",
     "dstport": 0
    }
   ],
@@ -1600,11 +1600,11 @@
    {
     "type": "packet",
     "at": 1000,
-    "from": "Alice",
+    "from": "Chinagorom",
     "payload": {
      "network": {
-      "srcip": "Alice",
-      "dstip": "Google"
+      "srcip": "Chinagorom",
+      "dstip": "Search Server"
      },
      "transport": {
       "proto": "ICMP",
@@ -1615,11 +1615,11 @@
    {
     "type": "packet",
     "at": 2000,
-    "from": "Alice",
+    "from": "Chinagorom",
     "payload": {
      "network": {
-      "srcip": "Alice",
-      "dstip": "Google"
+      "srcip": "Chinagorom",
+      "dstip": "Search Server"
      },
      "transport": {
       "proto": "ICMP",
@@ -1634,7 +1634,7 @@
     "device": "Waterloo",
     "payload": {
      "network": {
-      "srcip": "Alice",
+      "srcip": "Chinagorom",
       "dstip": "Waterloo"
      },
      "transport": {
@@ -1647,7 +1647,7 @@
     "device": "Toronto",
     "payload": {
      "network": {
-      "srcip": "Alice",
+      "srcip": "Chinagorom",
       "dstip": "Toronto"
      },
      "transport": {
@@ -1660,7 +1660,7 @@
     "device": "New York",
     "payload": {
      "network": {
-      "srcip": "Alice",
+      "srcip": "Chinagorom",
       "dstip": "New York"
      },
      "transport": {
@@ -1673,11 +1673,178 @@
     "device": "Mountain View",
     "payload": {
      "network": {
-      "srcip": "Alice",
+      "srcip": "Chinagorom",
       "dstip": "Mountain View"
      },
      "transport": {
       "proto": "ICMP"
+     }
+    }
+   }
+  ]
+ },
+ "dns01": {
+  "id": 14,
+  "unit": "web",
+  "devices": [
+   {
+    "id": "Chinagorom",
+    "image": "macbook",
+    "x": 0.18,
+    "y": 0.5,
+    "ports": 1,
+    "player": true
+   },
+   {
+    "id": "Gateway",
+    "image": "router",
+    "x": 0.42,
+    "y": 0.5,
+    "ports": 3,
+    "script": "manualRouter",
+    "rules": [
+     {
+      "dstip": "Chinagorom",
+      "portNum": 0
+     },
+     {
+      "dstip": "DNS",
+      "portNum": 1
+     },
+     {
+      "dstip": "10.0.0.5",
+      "portNum": 2
+     }
+    ]
+   },
+   {
+    "id": "DNS",
+    "image": "server",
+    "x": 0.72,
+    "y": 0.3,
+    "ports": 1,
+    "script": "dnsServer",
+    "rules": {
+     "katlearning": "10.0.0.5"
+    }
+   },
+   {
+    "id": "10.0.0.5",
+    "image": "server",
+    "x": 0.72,
+    "y": 0.7,
+    "ports": 1
+   }
+  ],
+  "links": [
+   {
+    "src": "Chinagorom",
+    "srcport": 0,
+    "dst": "Gateway",
+    "dstport": 0
+   },
+   {
+    "src": "Gateway",
+    "srcport": 1,
+    "dst": "DNS",
+    "dstport": 0
+   },
+   {
+    "src": "Gateway",
+    "srcport": 2,
+    "dst": "10.0.0.5",
+    "dstport": 0
+   }
+  ],
+  "timeline": [],
+  "triggers": [
+   {
+    "type": "packet",
+    "device": "DNS",
+    "payload": {
+     "application": {
+      "type": "dns_query",
+      "key": "katlearning"
+     }
+    }
+   },
+   {
+    "type": "packet",
+    "device": "10.0.0.5"
+   }
+  ],
+  "nextLevel": 15
+ },
+ "http01": {
+  "id": 15,
+  "unit": "web",
+  "devices": [
+   {
+    "id": "Amaka",
+    "image": "macbook",
+    "x": 0.2,
+    "y": 0.5,
+    "ports": 1,
+    "player": true
+   },
+   {
+    "id": "Router",
+    "image": "router",
+    "x": 0.5,
+    "y": 0.5,
+    "ports": 2,
+    "script": "manualRouter",
+    "rules": [
+     {
+      "dstip": "Amaka",
+      "portNum": 0
+     },
+     {
+      "dstip": "katlearning.ng",
+      "portNum": 1
+     }
+    ]
+   },
+   {
+    "id": "katlearning.ng",
+    "image": "server",
+    "x": 0.8,
+    "y": 0.5,
+    "ports": 1,
+    "script": "webServer"
+   }
+  ],
+  "links": [
+   {
+    "src": "Amaka",
+    "srcport": 0,
+    "dst": "Router",
+    "dstport": 0
+   },
+   {
+    "src": "Router",
+    "srcport": 1,
+    "dst": "katlearning.ng",
+    "dstport": 0
+   }
+  ],
+  "timeline": [],
+  "triggers": [
+   {
+    "type": "packet",
+    "device": "katlearning.ng",
+    "payload": {
+     "application": {
+      "type": "http_request"
+     }
+    }
+   },
+   {
+    "type": "packet",
+    "device": "Amaka",
+    "payload": {
+     "application": {
+      "type": "http_response"
      }
     }
    }

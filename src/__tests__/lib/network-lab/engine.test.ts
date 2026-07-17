@@ -21,89 +21,110 @@ import {
 
 // Each entry is the player launcher(s) that solve the level.
 const SOLUTIONS: Record<string, PlayerPacket[]> = {
-  // Send anything to Doug (any packet arriving satisfies the trigger).
-  level01: [{ from: "Carol", payload: { network: { srcip: "Carol", dstip: "Doug" } } }],
-  // A packet from Alice to Bob.
-  level02: [{ from: "Alice", payload: { network: { srcip: "Alice", dstip: "Bob" } } }],
-  // Ping Google; its `ping` script echoes back. Trigger wants 5 replies.
+  // Send anything to Tamara (any packet arriving satisfies the trigger).
+  level01: [{ from: "Toni", payload: { network: { srcip: "Toni", dstip: "Tamara" } } }],
+  // A packet from Chinagorom to Amaka.
+  level02: [{ from: "Chinagorom", payload: { network: { srcip: "Chinagorom", dstip: "Amaka" } } }],
+  // Ping Search Server; its `ping` script echoes back. Trigger wants 5 replies.
   level03: [
     {
-      from: "Alice",
-      payload: { network: { srcip: "Alice", dstip: "Google" }, transport: { proto: "ICMP" } },
+      from: "Chinagorom",
+      payload: { network: { srcip: "Chinagorom", dstip: "Search Server" }, transport: { proto: "ICMP" } },
       repeat: 6,
     },
   ],
-  // Bob routes a packet to Carol across the router mesh.
-  level04: [{ from: "Bob", payload: { network: { srcip: "Bob", dstip: "Carol" } } }],
-  // Alice pings Google through the home NAT modem; the reply comes back mapped to Alice.
+  // Amaka routes a packet to Toni across the router mesh.
+  level04: [{ from: "Amaka", payload: { network: { srcip: "Amaka", dstip: "Toni" } } }],
+  // Chinagorom pings Search Server through the home NAT modem; the reply comes back mapped to Chinagorom.
   level05: [
     {
-      from: "Alice",
-      payload: { network: { srcip: "Alice", dstip: "Google" }, transport: { proto: "ICMP" } },
+      from: "Chinagorom",
+      payload: { network: { srcip: "Chinagorom", dstip: "Search Server" }, transport: { proto: "ICMP" } },
     },
   ],
-  // Spoof Carol as the source of a packet to Bob (both the router and Bob see it).
-  spoofs01: [{ from: "Alice", payload: { network: { srcip: "Carol", dstip: "Bob" } } }],
-  // Poison the switch (teach it Charlie is on Alice's port), then reflect Google->Charlie back.
+  // Spoof Toni as the source of a packet to Amaka (both the router and Amaka see it).
+  spoofs01: [{ from: "Chinagorom", payload: { network: { srcip: "Toni", dstip: "Amaka" } } }],
+  // Poison the switch (teach it Ife is on Chinagorom's port), then reflect Search Server->Ife back.
   spoofs02: [
-    { from: "Alice", payload: { network: { srcip: "Charlie", dstip: "Bob" } } },
-    { from: "Alice", payload: { network: { srcip: "Google", dstip: "Charlie" } } },
+    { from: "Chinagorom", payload: { network: { srcip: "Ife", dstip: "Amaka" } } },
+    { from: "Chinagorom", payload: { network: { srcip: "Search Server", dstip: "Ife" } } },
   ],
-  // Flood Google (capacity 1).
-  dos01: [{ from: "Alice", payload: { network: { srcip: "Alice", dstip: "Google" } }, repeat: 45 }],
-  // Alice is firewalled; the zombies are not. Flood from the zombies (capacity 3, behind firewall).
+  // Flood Search Server (capacity 1).
+  dos01: [{ from: "Chinagorom", payload: { network: { srcip: "Chinagorom", dstip: "Search Server" } }, repeat: 45 }],
+  // Chinagorom is firewalled; the zombies are not. Flood from the zombies (capacity 3, behind firewall).
   dos02: [
-    { from: "Zombie 1", payload: { network: { srcip: "Zombie 1", dstip: "Google" } }, repeat: 20 },
-    { from: "Zombie 2", payload: { network: { srcip: "Zombie 2", dstip: "Google" } }, repeat: 20 },
-    { from: "Zombie 3", payload: { network: { srcip: "Zombie 3", dstip: "Google" } }, repeat: 20 },
+    { from: "Zombie 1", payload: { network: { srcip: "Zombie 1", dstip: "Search Server" } }, repeat: 20 },
+    { from: "Zombie 2", payload: { network: { srcip: "Zombie 2", dstip: "Search Server" } }, repeat: 20 },
+    { from: "Zombie 3", payload: { network: { srcip: "Zombie 3", dstip: "Search Server" } }, repeat: 20 },
   ],
-  // Smurf: a broadcast spoofed as Google makes every host reply to Google (3x amplification).
+  // Smurf: a broadcast spoofed as Search Server makes every host reply to Search Server (3x amplification).
   dos03: [
     {
-      from: "Alice",
-      payload: { network: { srcip: "Google", dstip: "Broadcast" }, transport: { proto: "ICMP" } },
+      from: "Chinagorom",
+      payload: { network: { srcip: "Search Server", dstip: "Broadcast" }, transport: { proto: "ICMP" } },
       repeat: 45,
     },
   ],
-  // MITM: Eve feeds Alice a fake key (Alice then leaks a message Eve can read), and delivers the
-  // real-key message to Bob.
+  // MITM: Zainab feeds Chinagorom a fake key (Chinagorom then leaks a message Zainab can read), and delivers the
+  // real-key message to Amaka.
   attacks01: [
     {
-      from: "Eve",
+      from: "Zainab",
       payload: {
-        network: { srcip: "Bob", dstip: "Alice" },
+        network: { srcip: "Amaka", dstip: "Chinagorom" },
         transport: { proto: "encryption" },
         application: { type: "keyresponse", key: "31337" },
       },
     },
     {
-      from: "Eve",
+      from: "Zainab",
       payload: {
-        network: { srcip: "Alice", dstip: "Bob" },
+        network: { srcip: "Chinagorom", dstip: "Amaka" },
         transport: { proto: "encryption" },
         application: { type: "message", key: "123456" },
       },
     },
   ],
   // Censorship evasion: reach the blocked site by sending via the proxy.
-  attacks02: [{ from: "Alice", payload: { network: { srcip: "Alice", dstip: "Proxy" } } }],
+  attacks02: [{ from: "Chinagorom", payload: { network: { srcip: "Chinagorom", dstip: "Proxy" } } }],
   // Traceroute: address an ICMP packet to each router along the path.
   attacks03: [
     {
-      from: "Alice",
-      payload: { network: { srcip: "Alice", dstip: "Waterloo" }, transport: { proto: "ICMP" } },
+      from: "Chinagorom",
+      payload: { network: { srcip: "Chinagorom", dstip: "Waterloo" }, transport: { proto: "ICMP" } },
     },
     {
-      from: "Alice",
-      payload: { network: { srcip: "Alice", dstip: "Toronto" }, transport: { proto: "ICMP" } },
+      from: "Chinagorom",
+      payload: { network: { srcip: "Chinagorom", dstip: "Toronto" }, transport: { proto: "ICMP" } },
     },
     {
-      from: "Alice",
-      payload: { network: { srcip: "Alice", dstip: "New York" }, transport: { proto: "ICMP" } },
+      from: "Chinagorom",
+      payload: { network: { srcip: "Chinagorom", dstip: "New York" }, transport: { proto: "ICMP" } },
     },
     {
-      from: "Alice",
-      payload: { network: { srcip: "Alice", dstip: "Mountain View" }, transport: { proto: "ICMP" } },
+      from: "Chinagorom",
+      payload: { network: { srcip: "Chinagorom", dstip: "Mountain View" }, transport: { proto: "ICMP" } },
+    },
+  ],
+  // Ask DNS for the address, then connect to it.
+  dns01: [
+    {
+      from: "Chinagorom",
+      payload: {
+        network: { srcip: "Chinagorom", dstip: "DNS" },
+        application: { type: "dns_query", key: "katlearning" },
+      },
+    },
+    { from: "Chinagorom", payload: { network: { srcip: "Chinagorom", dstip: "10.0.0.5" } } },
+  ],
+  // Send an HTTP request; the web server's response comes back to you.
+  http01: [
+    {
+      from: "Amaka",
+      payload: {
+        network: { srcip: "Amaka", dstip: "katlearning.ng" },
+        application: { type: "http_request" },
+      },
     },
   ],
 };
@@ -116,14 +137,16 @@ describe("every level is winnable by its intended solution", () => {
     expect(result.won, `${key} did not win (steps=${result.steps}, t=${result.time})`).toBe(true);
   });
 
-  it("covers all 13 shipped levels", () => {
-    expect(Object.keys(SOLUTIONS).length).toBe(13);
+  it("covers all 15 shipped levels", () => {
+    expect(Object.keys(SOLUTIONS).length).toBe(15);
   });
 
-  it("does NOT win on an empty solution (guards against a vacuous pass)", () => {
-    // level02 needs a specific packet; with no launcher, its timeline alone must not win it.
-    const level = getLevel("level02")!;
-    expect(runLevel(level, []).won).toBe(false);
+  it.each(Object.keys(SOLUTIONS))("%s is NOT won by an empty solution", (key) => {
+    // Every level must REQUIRE player action: its scripted timeline alone (or nothing at all) must
+    // not satisfy its triggers. This is the pair to "intended solution wins", together they catch a
+    // mis-authored trigger that a timeline packet accidentally completes (the original level01 link
+    // bug was exactly this class of mistake).
+    expect(runLevel(getLevel(key)!, []).won).toBe(false);
   });
 });
 
@@ -193,7 +216,7 @@ describe("switch learning powers the Spoofs 2 steal", () => {
   it("floods an unknown dst, learns src->port, then reflects to the learned port", () => {
     const dev: DeviceRuntime = {
       id: "Hub",
-      ports: ["Alice", "Bob", "Charlie", "Google"],
+      ports: ["Chinagorom", "Amaka", "Ife", "Search Server"],
       rules: [],
     };
     const sends: { port: number; dstip?: string }[] = [];
@@ -203,16 +226,16 @@ describe("switch learning powers the Spoofs 2 steal", () => {
     };
     const sw = DEVICE_SCRIPTS.switch;
 
-    // A packet spoofing Charlie as the source, arriving on Alice's port (0), to unknown dst Bob.
-    sw(dev as unknown as ScriptDevice, { network: { srcip: "Charlie", dstip: "Bob" } }, 0, api);
-    // Bob is unknown -> flood to every port except the incoming one (0).
+    // A packet spoofing Ife as the source, arriving on Chinagorom's port (0), to unknown dst Amaka.
+    sw(dev as unknown as ScriptDevice, { network: { srcip: "Ife", dstip: "Amaka" } }, 0, api);
+    // Amaka is unknown -> flood to every port except the incoming one (0).
     expect(sends.map((s) => s.port)).toEqual([1, 2, 3]);
-    // ...and it learned that Charlie lives on port 0.
-    expect(dev.rules).toContainEqual({ dstip: "Charlie", portNum: 0 });
+    // ...and it learned that Ife lives on port 0.
+    expect(dev.rules).toContainEqual({ dstip: "Ife", portNum: 0 });
 
-    // Now a packet to Charlie: the switch sends it ONLY to the learned port 0 (back to Alice = steal).
+    // Now a packet to Ife: the switch sends it ONLY to the learned port 0 (back to Chinagorom = steal).
     sends.length = 0;
-    sw(dev as unknown as ScriptDevice, { network: { srcip: "Google", dstip: "Charlie" } }, 0, api);
-    expect(sends).toEqual([{ port: 0, dstip: "Charlie" }]);
+    sw(dev as unknown as ScriptDevice, { network: { srcip: "Search Server", dstip: "Ife" } }, 0, api);
+    expect(sends).toEqual([{ port: 0, dstip: "Ife" }]);
   });
 });

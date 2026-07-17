@@ -156,7 +156,7 @@ const broadcast: DeviceScript = (device, packet, portNum, api) => {
     api.sendPacket(device.id, rule.portNum, packet);
   } else if (packet.network?.dstip === "Broadcast") {
     for (let i = 0; i < device.ports.length; i++) {
-      if (i !== portNum && api.getPortRecipient(device.id, i) !== "Google") {
+      if (i !== portNum && api.getPortRecipient(device.id, i) !== "Search Server") {
         const newPacket = copyPacket(packet);
         newPacket.network = newPacket.network ?? {};
         newPacket.network.dstip = api.getPortRecipient(device.id, i) ?? undefined;
@@ -166,7 +166,7 @@ const broadcast: DeviceScript = (device, packet, portNum, api) => {
   }
 };
 
-// Key-exchange model Eve subverts. Note the hardcoded real key "123456".
+// Key-exchange model Zainab subverts. Note the hardcoded real key "123456".
 const encryption: DeviceScript = (device, packet, portNum, api) => {
   if (packet.transport?.proto === "encryption" && packet.application?.type !== undefined) {
     const type = packet.application.type;
@@ -186,7 +186,7 @@ const encryption: DeviceScript = (device, packet, portNum, api) => {
   }
 };
 
-// Eve's router: port 0 is the tap. Traffic from the tap is delivered; everything else is mirrored
+// Zainab's router: port 0 is the tap. Traffic from the tap is delivered; everything else is mirrored
 // to the tap. This is the man-in-the-middle in Attacks 1.
 const tappedRouter: DeviceScript = (device, packet, portNum, api) => {
   const rules = device.rules as RouteRule[];
@@ -195,6 +195,32 @@ const tappedRouter: DeviceScript = (device, packet, portNum, api) => {
       if (portNum === 0) api.sendPacket(device.id, rule.portNum, packet);
       else api.sendPacket(device.id, 0, packet);
     }
+  }
+};
+
+// Answers name-resolution requests. On a `dns_query` addressed to it, replies with a `dns_answer`
+// carrying the resolved address (looked up in the device's name->address `rules` map). Teaches:
+// names are not addresses; a lookup precedes connection.
+const dnsServer: DeviceScript = (device, packet, portNum, api) => {
+  if (packet.network?.dstip === device.id && packet.application?.type === "dns_query") {
+    const rules = device.rules as Record<string, string> | undefined;
+    const name = packet.application.key;
+    const address = name !== undefined && rules ? rules[name] : undefined;
+    api.sendPacket(device.id, portNum, {
+      network: { srcip: device.id, dstip: packet.network.srcip },
+      application: { type: "dns_answer", key: address },
+    });
+  }
+};
+
+// Answers web requests. On an `http_request` addressed to it, replies with an `http_response` back
+// to the sender, echoing any requested path in `key`. Teaches: request then response, client vs server.
+const webServer: DeviceScript = (device, packet, portNum, api) => {
+  if (packet.network?.dstip === device.id && packet.application?.type === "http_request") {
+    api.sendPacket(device.id, portNum, {
+      network: { srcip: device.id, dstip: packet.network.srcip },
+      application: { type: "http_response", key: packet.application.key },
+    });
   }
 };
 
@@ -208,7 +234,6 @@ export const DEVICE_SCRIPTS: Record<DeviceScriptName, DeviceScript> = {
   encryption,
   tappedRouter,
   proxy,
-  // Phase 4 will implement these; declared so the map is total over DeviceScriptName.
-  dnsServer: () => {},
-  webServer: () => {},
+  dnsServer,
+  webServer,
 };
