@@ -1540,6 +1540,7 @@ enum LessonContentType {
   EXTERNAL_VIDEO
   DOCUMENT_LINK
   CODE_PLAYGROUND
+  NETWORK_LAB
 }
 
 enum ContentReviewStatus {

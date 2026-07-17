@@ -99,7 +99,7 @@ export function EmbedLessonBody({
               </a>
             ) : null}
 
-            {c.type === "CODE_PLAYGROUND" ? (
+            {c.type === "CODE_PLAYGROUND" || c.type === "NETWORK_LAB" ? (
               <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                 This activity needs the full editor.{" "}
                 <a

@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Code2, FileText, Link as LinkIcon, Video, Youtube, Plus, X, Send } from "lucide-react";
+import { Code2, FileText, Link as LinkIcon, Network, Video, Youtube, Plus, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SUPPORTED_LANGUAGES } from "@/components/dashboard/code-playground-block";
+import { LEVELS } from "@/lib/network-lab/levels";
 
-type Tab = "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND";
+type Tab = "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "RICH_TEXT",       label: "Rich Text", icon: <FileText className="h-3.5 w-3.5" /> },
@@ -17,6 +18,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "EXTERNAL_VIDEO",  label: "Video URL", icon: <Video className="h-3.5 w-3.5" /> },
   { id: "DOCUMENT_LINK",   label: "Document",  icon: <LinkIcon className="h-3.5 w-3.5" /> },
   { id: "CODE_PLAYGROUND", label: "Code",      icon: <Code2 className="h-3.5 w-3.5" /> },
+  { id: "NETWORK_LAB",     label: "Network Lab", icon: <Network className="h-3.5 w-3.5" /> },
 ];
 
 const TAB_ICON: Record<Tab, React.ReactNode> = {
@@ -25,6 +27,7 @@ const TAB_ICON: Record<Tab, React.ReactNode> = {
   EXTERNAL_VIDEO:  <Video className="h-3.5 w-3.5" />,
   DOCUMENT_LINK:   <LinkIcon className="h-3.5 w-3.5" />,
   CODE_PLAYGROUND: <Code2 className="h-3.5 w-3.5" />,
+  NETWORK_LAB:     <Network className="h-3.5 w-3.5" />,
 };
 
 const TAB_LABEL: Record<Tab, string> = {
@@ -33,7 +36,10 @@ const TAB_LABEL: Record<Tab, string> = {
   EXTERNAL_VIDEO:  "Video URL",
   DOCUMENT_LINK:   "Document",
   CODE_PLAYGROUND: "Code",
+  NETWORK_LAB:     "Network Lab",
 };
+
+const LAB_LEVELS = Object.entries(LEVELS).map(([key, level]) => ({ key, unit: level.unit }));
 
 const STARTER_CODE: Record<string, string> = {
   // Popular
@@ -104,6 +110,7 @@ export function ContentCreateForm({
   const [url, setUrl] = useState("");
   const [language, setLanguage] = useState<string>(SUPPORTED_LANGUAGES[0].value);
   const [starterCode, setStarterCode] = useState(STARTER_CODE[SUPPORTED_LANGUAGES[0].value] ?? "");
+  const [labLevel, setLabLevel] = useState<string>(LAB_LEVELS[0]?.key ?? "");
   const [queue, setQueue] = useState<QueuedBlock[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -113,6 +120,7 @@ export function ContentCreateForm({
     setUrl("");
     setLanguage(SUPPORTED_LANGUAGES[0].value);
     setStarterCode(STARTER_CODE[SUPPORTED_LANGUAGES[0].value] ?? "");
+    setLabLevel(LAB_LEVELS[0]?.key ?? "");
     setTab("RICH_TEXT");
   };
 
@@ -128,10 +136,13 @@ export function ContentCreateForm({
       toast.error("URL is required."); return;
     }
     if (tab === "CODE_PLAYGROUND" && !starterCode.trim()) { toast.error("Starter code is required."); return; }
+    if (tab === "NETWORK_LAB" && !labLevel) { toast.error("Choose a level."); return; }
 
+    // NETWORK_LAB stores the chosen level key in `body`, the same slot CODE_PLAYGROUND uses for code.
+    const blockBody = tab === "NETWORK_LAB" ? labLevel : body;
     setQueue((prev) => [
       ...prev,
-      { localId: `${Date.now()}-${Math.random()}`, type: tab, title: title.trim(), body, url: url.trim(), language, starterCode },
+      { localId: `${Date.now()}-${Math.random()}`, type: tab, title: title.trim(), body: blockBody, url: url.trim(), language, starterCode },
     ]);
     resetForm();
   };
@@ -148,6 +159,7 @@ export function ContentCreateForm({
         const payload: Record<string, unknown> = { type: block.type, title: block.title };
         if (block.type === "RICH_TEXT")         payload.body = block.body;
         else if (block.type === "CODE_PLAYGROUND") { payload.body = block.starterCode; payload.language = block.language; }
+        else if (block.type === "NETWORK_LAB")  payload.body = block.body;
         else                                    payload.url = block.url;
 
         const res = await fetch(`/api/curriculum/lessons/${lessonId}/contents`, {
@@ -293,6 +305,26 @@ export function ContentCreateForm({
               Learners can edit this code freely in their Monaco editor and run it directly.
             </p>
           </div>
+        </div>
+      )}
+
+      {tab === "NETWORK_LAB" && (
+        <div className="space-y-1.5">
+          <Label htmlFor="lab-level" className="text-sm">Level</Label>
+          <select
+            id="lab-level"
+            value={labLevel}
+            onChange={(e) => setLabLevel(e.target.value)}
+            className="w-full rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-[#B2401D] focus:outline-none focus:ring-1 focus:ring-[#B2401D]"
+          >
+            {LAB_LEVELS.map((l) => (
+              <option key={l.key} value={l.key}>{l.key} · {l.unit}</option>
+            ))}
+          </select>
+          <p className="text-xs text-stone-400 dark:text-stone-500">
+            Learners build and launch packets to complete this network level. Add a Rich Text block
+            for the instructions.
+          </p>
         </div>
       )}
 

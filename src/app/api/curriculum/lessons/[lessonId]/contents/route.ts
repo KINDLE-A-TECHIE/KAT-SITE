@@ -30,7 +30,12 @@ export async function POST(request: Request, { params }: Params) {
     if (!parsed.data.body) return fail("Starter code is required for code playground.", 400);
     if (!parsed.data.language) return fail("Language is required for code playground.", 400);
   }
-  if (parsed.data.type !== "RICH_TEXT" && parsed.data.type !== "CODE_PLAYGROUND" && !parsed.data.url) {
+  // NETWORK_LAB stores the chosen level key in `body`, the same slot CODE_PLAYGROUND uses.
+  if (parsed.data.type === "NETWORK_LAB" && !parsed.data.body) {
+    return fail("A level is required for the network lab.", 400);
+  }
+  const URL_TYPES = ["YOUTUBE_EMBED", "EXTERNAL_VIDEO", "DOCUMENT_LINK"] as const;
+  if ((URL_TYPES as readonly string[]).includes(parsed.data.type) && !parsed.data.url) {
     return fail("URL is required for this content type.", 400);
   }
 

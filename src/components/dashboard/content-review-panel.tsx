@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CheckCircle2, ChevronDown, ExternalLink, FileText,
-  Link as LinkIcon, RefreshCw, Terminal, Video, XCircle, Youtube,
+  Link as LinkIcon, Network, RefreshCw, Terminal, Video, XCircle, Youtube,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 type ContentItem = {
   id: string;
-  type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND";
+  type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB";
   title: string;
   body: string | null;
   url: string | null;
@@ -54,6 +54,7 @@ const TYPE_ICONS = {
   EXTERNAL_VIDEO:  <Video className="h-4 w-4 text-orange-500" />,
   DOCUMENT_LINK:   <LinkIcon className="h-4 w-4 text-orange-500" />,
   CODE_PLAYGROUND: <Terminal className="h-4 w-4 text-emerald-500" />,
+  NETWORK_LAB:     <Network className="h-4 w-4 text-amber-500" />,
 };
 
 function extractYouTubeId(url: string): string | null {
@@ -197,6 +198,14 @@ function ReviewCard({
                   <pre className="max-h-64 overflow-auto bg-[#1e1e1e] px-4 py-3 font-mono text-xs text-stone-200">
                     {content.body}
                   </pre>
+                </div>
+              )}
+              {content.type === "NETWORK_LAB" && content.body && (
+                <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm dark:border-amber-900/40 dark:bg-amber-950/30">
+                  <Network className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <span className="text-stone-700 dark:text-stone-300">
+                    Network Lab level: <span className="font-mono">{content.body}</span>
+                  </span>
                 </div>
               )}
 

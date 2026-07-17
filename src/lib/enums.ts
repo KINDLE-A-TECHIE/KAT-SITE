@@ -44,6 +44,7 @@ export const LESSON_CONTENT_TYPES = [
   "EXTERNAL_VIDEO",
   "DOCUMENT_LINK",
   "CODE_PLAYGROUND",
+  "NETWORK_LAB",
 ] as const;
 export type LessonContentTypeValue = (typeof LESSON_CONTENT_TYPES)[number];
 

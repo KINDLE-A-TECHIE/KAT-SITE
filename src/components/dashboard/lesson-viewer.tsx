@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ExternalLink,
-  FileText, Link as LinkIcon, Plus, Sparkles,
+  FileText, Link as LinkIcon, Network, Plus, Sparkles,
   Terminal, Video, Youtube, XCircle,
 } from "lucide-react";
 import DOMPurify from "dompurify";
@@ -16,10 +16,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ContentCreateForm } from "@/components/dashboard/content-create-form";
 import { CodePlaygroundBlock } from "@/components/dashboard/code-playground-block";
+import { NetworkLabBlock } from "@/components/network-lab/network-lab-block";
 
 type ContentItem = {
   id: string;
-  type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND";
+  type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB";
   title: string;
   body: string | null;
   url: string | null;
@@ -57,6 +58,7 @@ const TYPE_CONFIG = {
   EXTERNAL_VIDEO:  { label: "Video",    Icon: Video,     accent: "bg-orange-500", ring: "ring-orange-100 dark:ring-orange-900/50", iconBg: "bg-orange-100 dark:bg-orange-900/40", iconColor: "text-orange-600 dark:text-orange-400" },
   DOCUMENT_LINK:   { label: "Resource", Icon: LinkIcon,  accent: "bg-orange-500", ring: "ring-orange-100 dark:ring-orange-900/50", iconBg: "bg-orange-100 dark:bg-orange-900/40", iconColor: "text-orange-600 dark:text-orange-400" },
   CODE_PLAYGROUND: { label: "Try it!",  Icon: Terminal,  accent: "bg-emerald-500",ring: "ring-emerald-100 dark:ring-emerald-900/50",iconBg:"bg-emerald-100 dark:bg-emerald-900/40",iconColor:"text-emerald-600 dark:text-emerald-400"},
+  NETWORK_LAB:     { label: "Network Lab", Icon: Network, accent: "bg-amber-500", ring: "ring-amber-100 dark:ring-amber-900/50", iconBg: "bg-amber-100 dark:bg-amber-900/40", iconColor: "text-amber-600 dark:text-amber-400" },
 } as const;
 
 const REVIEW_STYLE = {
@@ -148,6 +150,7 @@ function ContentBlock({
   programId,
   moduleId,
   onReview,
+  onLabComplete,
 }: {
   content: ContentItem;
   index: number;
@@ -158,6 +161,7 @@ function ContentBlock({
   programId?: string;
   moduleId?: string;
   onReview: (id: string, action: "PUBLISH" | "REJECT", note?: string) => Promise<void>;
+  onLabComplete?: () => void;
 }) {
   const [showReject, setShowReject] = useState(false);
   const [rejectNote, setRejectNote] = useState("");
@@ -241,6 +245,10 @@ function ContentBlock({
             programId={programId}
             moduleId={moduleId}
           />
+        )}
+
+        {content.type === "NETWORK_LAB" && content.body && (
+          <NetworkLabBlock levelKey={content.body} onComplete={onLabComplete} />
         )}
       </div>
 
@@ -504,6 +512,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
               programId={programId}
               moduleId={lesson.module.id}
               onReview={reviewContent}
+              onLabComplete={markComplete}
             />
           </motion.div>
         ))}

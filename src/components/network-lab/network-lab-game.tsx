@@ -40,7 +40,7 @@ function initialSnapshot(level: Level): LabSnapshot {
   };
 }
 
-export function NetworkLabGame({ level }: { level: Level }) {
+export function NetworkLabGame({ level, onWin }: { level: Level; onWin?: () => void }) {
   const simRef = useRef<LabSimulation | null>(null);
   if (simRef.current === null) simRef.current = new LabSimulation(level);
 
@@ -55,12 +55,15 @@ export function NetworkLabGame({ level }: { level: Level }) {
   const lastRealRef = useRef<number | null>(null);
   const pausedRef = useRef(paused);
   const speedRef = useRef(speed);
+  const onWinRef = useRef(onWin);
+  const wonFiredRef = useRef(false);
 
-  // Mirror the latest paused/speed into refs the rAF loop reads, without re-subscribing the loop.
+  // Mirror the latest paused/speed/onWin into refs the rAF loop reads, without re-subscribing it.
   useEffect(() => {
     pausedRef.current = paused;
     speedRef.current = speed;
-  }, [paused, speed]);
+    onWinRef.current = onWin;
+  }, [paused, speed, onWin]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -80,6 +83,10 @@ export function NetworkLabGame({ level }: { level: Level }) {
         simTimeRef.current += (t - last) * SPEED_FACTOR[speedRef.current];
         sim.step(simTimeRef.current);
         setSnap(sim.snapshot());
+        if (sim.won && !wonFiredRef.current) {
+          wonFiredRef.current = true;
+          onWinRef.current?.();
+        }
       }
       raf = requestAnimationFrame(loop);
     };
@@ -92,6 +99,7 @@ export function NetworkLabGame({ level }: { level: Level }) {
     sim.reset();
     simTimeRef.current = 0;
     lastRealRef.current = null;
+    wonFiredRef.current = false;
     setSelectedDeviceId(null);
     setSelectedPacketId(null);
     setPaused(false);
