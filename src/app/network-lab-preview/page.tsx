@@ -1,4 +1,4 @@
-import { LevelTopology } from "@/components/network-lab/level-topology";
+import { NetworkLabGame } from "@/components/network-lab/network-lab-game";
 import { getLevelById } from "@/lib/network-lab/levels";
 
 /**
@@ -21,12 +21,12 @@ export default function NetworkLabPreviewPage() {
         {level ? `Level ${level.id} · ${level.unit}` : "Level not found"}
       </h1>
       <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-        Static topology only. No animation or interaction yet. Dev-only route, not the real mount.
+        Playable: build a packet and launch it. Dev-only route, not the real mount.
       </p>
 
       <div className="mt-6">
         {level ? (
-          <LevelTopology level={level} />
+          <NetworkLabGame level={level} />
         ) : (
           <p className="text-sm text-stone-500">levels.json has no level with id 1.</p>
         )}
