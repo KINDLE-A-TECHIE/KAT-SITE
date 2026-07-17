@@ -229,6 +229,10 @@ After running `npm run prisma:seed`, the following demo accounts exist (password
 - **Jitsi + Jibri**: setup scripts in `scripts/jitsi-jibri/`
 - **Judge0 CE**: Docker-based, setup in `scripts/judge0/`
 
+## Network Lab (module)
+
+In-browser network/cybersecurity practical (ported CS4G Netsim). Module code and its own nested `CLAUDE.md` + build guide live in `src/lib/network-lab/`; read that CLAUDE.md before touching the module.
+
 ## School (B2B / NERDC) Product
 
 ### Current foundation (per 2026-07-05 audit, already shipped)
@@ -341,3 +345,6 @@ when you add a route, do not create a second harness.
   progress and certificates with them, and a deleted key destroys the record of what it did.
 - NEVER fetch a school-supplied URL without `assertSafeWebhookUrl()` (SSRF: 169.254.169.254 is our
   cloud credentials).
+
+## Network lab
+  Network Lab (in-browser network/cybersecurity practical) lives in lib/network-lab/ — see its own CLAUDE.md for engine details.
