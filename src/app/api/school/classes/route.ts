@@ -53,9 +53,13 @@ export async function GET() {
   }
 
   try {
+    // Consumed by the classes panel AND the roster-import class picker, both of which need the
+    // full set (no offset control). Flat safety cap only, a default page would drop classes from
+    // the picker. 200 is generous for one school's classes.
     const classes = await prisma.schoolClass.findMany({
       where: { schoolId },
       orderBy: { createdAt: "desc" },
+      take: 200,
       select: {
         id: true,
         name: true,
