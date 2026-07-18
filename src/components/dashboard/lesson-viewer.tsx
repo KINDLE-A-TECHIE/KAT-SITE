@@ -434,7 +434,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       {/* Hero header */}
-      <div ref={heroRef} className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#1A1714] to-[#B2401D] px-4 py-5 text-white shadow-md sm:px-6 sm:py-6">
+      <div ref={heroRef} className="overflow-hidden rounded-2xl bg-kat-ink px-4 py-5 text-white sm:px-6 sm:py-6">
         {/* Back link */}
         <Link
           href={`/dashboard/curriculum/${program.id}`}
@@ -485,7 +485,6 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
       {/* Empty state */}
       {visibleContents.length === 0 && !showAddContent && (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-stone-200 py-16 text-center dark:border-stone-700">
-          <span className="text-5xl">📚</span>
           <p className="font-medium text-stone-600 dark:text-stone-400">
             {isCreator ? "No content yet, add your first block below." : "Nothing here yet. Check back soon!"}
           </p>

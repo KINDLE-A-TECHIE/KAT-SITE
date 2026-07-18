@@ -2333,10 +2333,10 @@ ${code}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition border-b-2 ${outputTab === "turtle" ? "border-emerald-500 text-stone-200" : "border-transparent text-stone-500 hover:text-stone-300"}`}
                   >
                     {/\bimport\s+pgzrun\b|from\s+pgzrun\s+import/.test(code)
-                      ? "🎮 Pygame Zero"
+                      ? "Pygame Zero"
                       : /\bimport\s+pygame\b|from\s+pygame\s+import/.test(code)
-                        ? "🎮 Pygame"
-                        : "🐢 Turtle"}
+                        ? "Pygame"
+                        : "Turtle"}
                   </button>
                   {outputTab === "turtle" && (
                     <button

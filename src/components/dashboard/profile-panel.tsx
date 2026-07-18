@@ -669,7 +669,7 @@ export function ProfilePanel() {
               <span className="font-semibold text-stone-800 dark:text-stone-200">{profileCompletion}%</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-600">
-              <div className="h-full rounded-full bg-gradient-to-r from-orange-600 to-orange-500" style={{ width: `${profileCompletion}%` }} />
+              <div className="h-full rounded-full bg-kat-clay" style={{ width: `${profileCompletion}%` }} />
             </div>
           </div>
 

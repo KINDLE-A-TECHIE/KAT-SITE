@@ -1,21 +1,21 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { GraduationCap, Users, Armchair, ReceiptText, FileBarChart } from "lucide-react";
+import { Users, ReceiptText, FileBarChart } from "lucide-react";
 import { SchoolRole, SchoolLicenseStatus } from "@prisma/client";
 import { requireActiveSchool } from "@/lib/school";
 import { prisma } from "@/lib/prisma";
 import type { SchoolMembershipClaim } from "@/lib/rbac";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { StatLedger, StatusDot } from "@/components/stat-ledger";
 import { SchoolClassesPanel } from "@/components/school/school-classes-panel";
 import { RosterImportPanel } from "@/components/school/roster-import-panel";
 
-const LICENCE_BADGE: Record<SchoolLicenseStatus, string> = {
-  ACTIVE: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-400",
-  PENDING: "bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/40 dark:text-orange-400",
-  EXPIRED: "bg-stone-200 text-stone-600 hover:bg-stone-200 dark:bg-stone-700 dark:text-stone-300",
-  CANCELLED: "bg-rose-100 text-rose-700 hover:bg-rose-100 dark:bg-rose-900/40 dark:text-rose-400",
+// Status reads as text + a dot, not a pastel pill.
+const LICENCE_TONE: Record<SchoolLicenseStatus, "pine" | "sun" | "clay" | "muted"> = {
+  ACTIVE: "pine",
+  PENDING: "sun",
+  EXPIRED: "muted",
+  CANCELLED: "clay",
 };
 
 /** SCHOOL_ADMIN overview: classes, seats, current-term licence. */
@@ -57,10 +57,10 @@ export default async function SchoolAdminPage() {
     <section className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">
+          <p className="font-mono text-xs font-medium uppercase tracking-[0.28em] text-orange-700 dark:text-orange-500">
             School admin
           </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl dark:text-stone-100">
+          <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl dark:text-stone-100">
             {school?.name ?? "Your school"}
           </h1>
         </div>
@@ -90,18 +90,20 @@ export default async function SchoolAdminPage() {
         </div>
       </header>
 
-      {/* Stat cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={<GraduationCap className="size-4" />} label="Classes" value={classCount} />
-        <StatCard icon={<Users className="size-4" />} label="Teachers" value={teacherCount} />
-        <StatCard icon={<Users className="size-4" />} label="Students" value={studentCount} />
-        <StatCard
-          icon={<Armchair className="size-4" />}
-          label="Seats used"
-          value={licence ? `${licence.seatsUsed} / ${licence.seatLimit}` : "n/a"}
-          note={licence ? undefined : "No licence yet"}
-        />
-      </div>
+      {/* Stat ledger: one flat container, mono numerals, hairline dividers. */}
+      <StatLedger
+        columns={4}
+        entries={[
+          { label: "Classes", value: classCount },
+          { label: "Teachers", value: teacherCount },
+          { label: "Students", value: studentCount },
+          {
+            label: "Seats used",
+            value: licence ? `${licence.seatsUsed} / ${licence.seatLimit}` : "n/a",
+            hint: licence ? undefined : "No licence yet",
+          },
+        ]}
+      />
 
       {/* Current-term licence */}
       <Card>
@@ -111,14 +113,14 @@ export default async function SchoolAdminPage() {
               <ReceiptText className="size-4 text-orange-600" />
               Current-term licence
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="font-mono text-xs tabular-nums">
               {licence
                 ? `Term ${licence.term} · ₦${Number(licence.pricePerSeat).toLocaleString("en-NG")} per seat`
                 : "Seats unlock once a term licence is paid and active."}
             </CardDescription>
           </div>
           {licence ? (
-            <Badge className={LICENCE_BADGE[licence.status]}>{licence.status}</Badge>
+            <StatusDot tone={LICENCE_TONE[licence.status]} label={licence.status} />
           ) : null}
         </CardHeader>
 
@@ -131,9 +133,21 @@ export default async function SchoolAdminPage() {
                 </strong>{" "}
                 of {licence.seatLimit} seats used
               </span>
-              <span className="text-xs text-stone-400">{seatPct}%</span>
+              <span className="font-mono text-xs tabular-nums text-stone-400">{seatPct}%</span>
             </div>
-            <Progress value={seatPct} className="h-2" />
+            {/* Seat bar: pine while healthy, sun near the limit, clay at or over it. */}
+            <div className="h-2 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
+              <div
+                className={`h-full rounded-full ${
+                  seatPct >= 100
+                    ? "bg-[var(--kat-clay)]"
+                    : seatPct >= 80
+                      ? "bg-[var(--kat-sun)]"
+                      : "bg-[var(--kat-pine)]"
+                }`}
+                style={{ width: `${seatPct}%` }}
+              />
+            </div>
           </CardContent>
         ) : (
           <CardContent>
@@ -151,30 +165,5 @@ export default async function SchoolAdminPage() {
       {/* Roster import. CSV parsed server-side; no student PII in URLs */}
       <RosterImportPanel />
     </section>
-  );
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-  note,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-  note?: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-stone-400">
-          <span className="text-orange-600">{icon}</span>
-          {label}
-        </div>
-        <p className="mt-2 text-2xl font-bold text-stone-900 dark:text-stone-100">{value}</p>
-        {note ? <p className="mt-0.5 text-xs text-stone-400">{note}</p> : null}
-      </CardContent>
-    </Card>
   );
 }

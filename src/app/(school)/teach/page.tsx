@@ -14,8 +14,10 @@ export default async function SchoolTeachPage() {
   return (
     <section className="space-y-6">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">Teaching</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl dark:text-stone-100">
+        <p className="font-mono text-xs font-medium uppercase tracking-[0.28em] text-orange-700 dark:text-orange-500">
+          Teaching
+        </p>
+        <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl dark:text-stone-100">
           Your classes
         </h1>
       </header>

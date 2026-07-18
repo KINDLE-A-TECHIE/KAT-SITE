@@ -45,7 +45,7 @@ const s = StyleSheet.create({
   footer: { position: "absolute", bottom: 24, left: 42, right: 42, flexDirection: "row", justifyContent: "space-between", fontSize: 7, color: MUTED, borderTopWidth: 1, borderTopColor: LINE, paddingTop: 6 },
 });
 
-const pct = (v: number | null) => (v == null ? "—" : `${Math.round(v)}%`);
+const pct = (v: number | null) => (v == null ? "n/a" : `${Math.round(v)}%`);
 
 function ClassSection({ section }: { section: SchoolReportSection }) {
   const { summary, coverage } = section;

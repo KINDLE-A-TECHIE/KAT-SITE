@@ -44,26 +44,27 @@ type MeetingsPanelProps = {
 const HOST_ROLES: UserRoleValue[] = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR", "FELLOW"];
 const SKILL_DISCOVERY_ROLES: UserRoleValue[] = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR"];
 const RECORDING_VIEW_ROLES: UserRoleValue[] = ["SUPER_ADMIN", "ADMIN"];
+// Flat column tones on the warm palette: pine = live, clay = upcoming, stone = ended.
 const COLUMN_META = {
   live: {
     label: "Live",
-    tone: "from-emerald-500 to-orange-400",
+    tone: "bg-kat-pine",
     chip: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-    accent: "border-l-emerald-400 dark:border-l-emerald-500",
+    accent: "border-l-[var(--kat-pine)]",
     emptyIcon: Radio,
     emptyLabel: "No live sessions right now.",
   },
   upcoming: {
     label: "Upcoming",
-    tone: "from-orange-600 to-orange-500",
+    tone: "bg-kat-clay",
     chip: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
-    accent: "border-l-orange-400 dark:border-l-orange-500",
+    accent: "border-l-[var(--kat-clay)]",
     emptyIcon: CalendarClock,
     emptyLabel: "No upcoming sessions scheduled.",
   },
   ended: {
     label: "Ended",
-    tone: "from-stone-600 to-stone-500",
+    tone: "bg-stone-500 dark:bg-stone-600",
     chip: "bg-stone-200 text-stone-700 dark:bg-stone-600 dark:text-stone-300",
     accent: "border-l-stone-300 dark:border-l-stone-600",
     emptyIcon: Video,
@@ -534,7 +535,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div
-                    className={`inline-flex size-8 items-center justify-center rounded-lg bg-gradient-to-br text-white ${COLUMN_META[key].tone}`}
+                    className={`inline-flex size-8 items-center justify-center rounded-lg text-white ${COLUMN_META[key].tone}`}
                   >
                     <Icon className="size-4" />
                   </div>

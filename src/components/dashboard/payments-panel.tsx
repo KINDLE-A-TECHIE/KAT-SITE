@@ -286,7 +286,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
                   : "border-stone-200 bg-white hover:border-stone-300 dark:border-stone-700 dark:bg-stone-900 dark:hover:border-stone-600"
               }`}
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-xs font-bold text-white">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-kat-clay text-xs font-bold text-white">
                 {child.firstName[0]}{child.lastName[0]}
               </div>
               <div className="min-w-0">
@@ -589,7 +589,7 @@ function AdminPayForStudentForm({ onSuccess }: { onSuccess: () => void }) {
                 className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-stone-50 dark:hover:bg-stone-800"
                 onMouseDown={() => selectUser(u)}
               >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-xs font-bold text-white">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-kat-clay text-xs font-bold text-white">
                   {u.firstName[0]}{u.lastName[0]}
                 </div>
                 <div className="min-w-0">
@@ -813,7 +813,7 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
                   className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors ${already ? "bg-orange-50 dark:bg-orange-950/40" : "hover:bg-stone-50 dark:hover:bg-stone-800"}`}
                   onMouseDown={() => { if (!already) void addUser(u); }}
                 >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-xs font-bold text-white">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-kat-clay text-xs font-bold text-white">
                     {u.firstName[0]}{u.lastName[0]}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -1037,7 +1037,7 @@ function EnrollmentsManager() {
                 className={`flex items-center gap-3 rounded-xl border p-3 transition-colors ${e.status === "DROPPED" ? "border-stone-100 bg-stone-50 opacity-60 dark:border-stone-800 dark:bg-stone-800/50" : "border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900"}`}
               >
                 {/* Avatar */}
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-xs font-bold text-white">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-kat-clay text-xs font-bold text-white">
                   {e.user?.firstName?.[0] ?? "?"}{e.user?.lastName?.[0] ?? ""}
                 </div>
 

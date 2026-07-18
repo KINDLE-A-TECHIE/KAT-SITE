@@ -5,6 +5,7 @@ import { ApplicationStatus, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { generateResetToken, hashResetToken } from "@/lib/reset-token";
 import { readPageOffset, pageMeta } from "@/lib/pagination";
 import { trackEvent } from "@/lib/analytics";
 import {
@@ -292,10 +293,11 @@ export async function PATCH(request: Request) {
       });
 
       // Send account setup link (reuse password-reset flow, 72 h TTL).
-      const setupToken = await prisma.passwordResetToken.create({
-        data: { userId: newUser.id, expiresAt: new Date(Date.now() + SETUP_TOKEN_TTL_MS) },
+      const rawSetupToken = generateResetToken();
+      await prisma.passwordResetToken.create({
+        data: { userId: newUser.id, token: hashResetToken(rawSetupToken), expiresAt: new Date(Date.now() + SETUP_TOKEN_TTL_MS) },
       });
-      const setupUrl = `${BASE_URL}/reset-password?token=${setupToken.token}`;
+      const setupUrl = `${BASE_URL}/reset-password?token=${rawSetupToken}`;
 
       sendEmail({
         to: fellowEmail,

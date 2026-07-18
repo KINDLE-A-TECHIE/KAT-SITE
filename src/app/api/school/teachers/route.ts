@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { fail, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { generateResetToken, hashResetToken } from "@/lib/reset-token";
 import { requireActiveSchool } from "@/lib/school";
 import { getServerAuthSession } from "@/lib/auth";
 import { teacherInviteSchema } from "@/lib/validators";
@@ -114,11 +115,11 @@ export async function POST(request: Request) {
         });
         userId = created.id;
         userFirst = created.firstName;
-        const token = await tx.passwordResetToken.create({
-          data: { userId, expiresAt: new Date(Date.now() + SETUP_TOKEN_TTL_MS) },
-          select: { token: true },
+        const rawToken = generateResetToken();
+        await tx.passwordResetToken.create({
+          data: { userId, token: hashResetToken(rawToken), expiresAt: new Date(Date.now() + SETUP_TOKEN_TTL_MS) },
         });
-        setupUrl = `${BASE_URL}/reset-password?token=${token.token}`;
+        setupUrl = `${BASE_URL}/reset-password?token=${rawToken}`;
       }
 
       // Idempotent: unique(schoolId, userId). Never demote an existing SCHOOL_ADMIN via

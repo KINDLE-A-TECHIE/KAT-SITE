@@ -80,7 +80,7 @@ const CARD_ACCENTS = [
   "border-l-orange-400", "border-l-orange-400", "border-l-amber-400", "border-l-rose-400",
   "border-l-emerald-400", "border-l-orange-400", "border-l-orange-400", "border-l-orange-400",
 ];
-const MEDAL_EMOJI: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
+const MEDAL_LABEL: Record<number, string> = { 1: "1st", 2: "2nd", 3: "3rd" };
 const LEARNER_ROLES: UserRoleValue[] = ["STUDENT", "FELLOW"];
 const MANAGER_ROLES: UserRoleValue[] = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR"];
 
@@ -92,11 +92,11 @@ function accentFor(id: string) {
 
 function rankTitle(score: number, max: number) {
   const p = max > 0 ? score / max : 0;
-  if (p >= 1) return "Perfect Score! 🌟";
-  if (p >= 0.9) return "Code Wizard 🧙";
-  if (p >= 0.75) return "Bug Slayer ⚔️";
-  if (p >= 0.6) return "Loop Master 🔄";
-  return "Rising Star ✨";
+  if (p >= 1) return "Perfect Score";
+  if (p >= 0.9) return "Code Wizard";
+  if (p >= 0.75) return "Bug Slayer";
+  if (p >= 0.6) return "Loop Master";
+  return "Rising Star";
 }
 
 function dueMeta(dueDate: string | null): { label: string; urgent: boolean; ended: boolean } {
@@ -148,7 +148,6 @@ function LeaderboardDialog({ challenge, open, onClose }: {
           <div className="space-y-2 pt-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>
         ) : entries.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
-            <span className="text-5xl">🌱</span>
             <p className="font-semibold text-stone-600 dark:text-stone-400">No scores yet</p>
             <p className="text-sm text-stone-400">Be the first on the board!</p>
           </div>
@@ -156,7 +155,7 @@ function LeaderboardDialog({ challenge, open, onClose }: {
           <div className="space-y-2 pt-1">
             {myEntry && myEntry.rank > 5 && (
               <p className="rounded-lg bg-orange-50 px-3 py-2 text-center text-sm font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                You&apos;re ranked #{myEntry.rank}, keep going! 💪
+                You&apos;re ranked #{myEntry.rank}, keep going!
               </p>
             )}
             {entries.length >= 3 && (
@@ -168,7 +167,7 @@ function LeaderboardDialog({ challenge, open, onClose }: {
                   if (!e) return null;
                   return (
                     <div key={e.studentId} className="flex flex-col items-center gap-1">
-                      <span className="text-2xl">{MEDAL_EMOJI[e.rank]}</span>
+                      <span className="font-mono text-xs font-bold text-stone-500 dark:text-stone-400">{MEDAL_LABEL[e.rank]}</span>
                       <div className={`flex w-20 items-end justify-center rounded-t-xl ${bg[pos]} pb-2 text-center text-xs font-bold ${textColor[pos]} truncate px-1 ${heights[pos]}`}>
                         {e.studentName.split(" ")[0]}
                       </div>
@@ -182,9 +181,13 @@ function LeaderboardDialog({ challenge, open, onClose }: {
                 className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${e.isCurrentUser ? "bg-orange-50 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:ring-orange-700" : "bg-stone-50 dark:bg-stone-800/50"}`}
               >
                 <span className="w-6 text-center text-base">
-                  {e.rank <= 3 ? MEDAL_EMOJI[e.rank] : <span className="text-xs font-bold text-stone-400">#{e.rank}</span>}
+                  {e.rank <= 3 ? (
+                    <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">{MEDAL_LABEL[e.rank]}</span>
+                  ) : (
+                    <span className="text-xs font-bold text-stone-400">#{e.rank}</span>
+                  )}
                 </span>
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-500 text-[11px] font-bold text-white">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-kat-clay text-[11px] font-bold text-white">
                   {e.studentName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -198,7 +201,7 @@ function LeaderboardDialog({ challenge, open, onClose }: {
                     {e.score}<span className="text-[10px] font-normal text-stone-400">/{e.maxPoints}</span>
                   </p>
                   <div className="mt-0.5 h-1.5 w-16 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
-                    <div className="h-full rounded-full bg-gradient-to-r from-orange-400 to-orange-500" style={{ width: `${Math.round((e.score / Math.max(e.maxPoints, 1)) * 100)}%` }} />
+                    <div className="h-full rounded-full bg-kat-clay" style={{ width: `${Math.round((e.score / Math.max(e.maxPoints, 1)) * 100)}%` }} />
                   </div>
                 </div>
               </motion.div>
@@ -271,7 +274,7 @@ function SubmitDialog({ challenge, open, onClose, onSubmitted }: {
         toast.error(err.error ?? "Submission failed");
         return;
       }
-      toast.success("Challenge submitted! 🎉 Check the leaderboard for your score!");
+      toast.success("Challenge submitted! Check the leaderboard for your score.");
       reset(); onSubmitted(); onClose();
     } catch {
       toast.error("Something went wrong. Please try again.");
@@ -429,7 +432,6 @@ function GradeSubmissionsDialog({ challenge, open, onClose }: {
           <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}</div>
         ) : submissions.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
-            <span className="text-5xl">📭</span>
             <p className="font-semibold text-stone-600 dark:text-stone-400">No submissions yet</p>
           </div>
         ) : (
@@ -540,7 +542,7 @@ function CreateChallengeDialog({ open, onClose, onCreated }: {
         toast.error(err.error ?? "Failed to create challenge");
         return;
       }
-      toast.success(form.published ? "Challenge published! 🎉" : "Challenge saved as draft");
+      toast.success(form.published ? "Challenge published!" : "Challenge saved as draft");
       onCreated(); onClose();
       setForm({ programId: "", moduleId: "none", title: "", description: "", weekNumber: "", points: "100", dueDate: "", published: true });
     } catch {
@@ -663,7 +665,7 @@ function ChallengeCard({ challenge, isLearner, onRefresh }: {
         body: JSON.stringify({ published: !challenge.published }),
       });
       if (!res.ok) { toast.error("Failed to update challenge."); return; }
-      toast.success(challenge.published ? "Challenge unpublished" : "Challenge published! Students notified 🎉");
+      toast.success(challenge.published ? "Challenge unpublished" : "Challenge published! Students notified.");
       onRefresh();
     } catch {
       toast.error("Something went wrong.");
@@ -844,32 +846,27 @@ export function ChallengesPanel({ role }: { role: UserRoleValue }) {
       <AnimatePresence>
         {isLearner && featured && (
           <motion.div key={featured.id} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1A1714] via-[#B2401D] to-orange-600 px-4 py-5 sm:px-6 sm:py-6 text-white"
+            className="rounded-2xl bg-kat-clay px-4 py-5 text-white sm:px-6 sm:py-6"
           >
-            <div className="pointer-events-none absolute inset-0 overflow-hidden">
-              <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
-              <div className="absolute -bottom-8 left-10 h-32 w-32 rounded-full bg-orange-300/10 blur-2xl" />
-            </div>
-            <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <span className="text-xl">🔥</span>
                   <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider">This Week&apos;s Challenge</span>
                   {featured.weekNumber && <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium">Week {featured.weekNumber}</span>}
                 </div>
-                <h2 className="text-lg font-bold leading-snug sm:text-xl">{featured.title}</h2>
-                {featured.module && <p className="mt-0.5 text-sm text-orange-200">{featured.module.title}</p>}
+                <h2 className="font-display text-lg font-bold leading-snug sm:text-xl">{featured.title}</h2>
+                {featured.module && <p className="mt-0.5 text-sm text-white/75">{featured.module.title}</p>}
                 {featured.dueDate && (
-                  <p className="mt-1 flex items-center gap-1 text-xs text-orange-200">
+                  <p className="mt-1 flex items-center gap-1 text-xs text-white/75">
                     <Clock className="size-3.5" />{dueMeta(featured.dueDate).label}
                   </p>
                 )}
               </div>
               <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-                <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold">
-                  <Star className="size-4 text-amber-300" />{featured.points} pts
+                <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 font-mono text-sm font-semibold tabular-nums">
+                  <Star className="size-4 text-[var(--kat-sun)]" />{featured.points} pts
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-orange-200">
+                <div className="flex items-center gap-1.5 text-xs text-white/75">
                   <Users className="size-3.5" />{featured._count.submissions} on the board
                 </div>
               </div>
@@ -903,7 +900,6 @@ export function ChallengesPanel({ role }: { role: UserRoleValue }) {
         </div>
       ) : displayed.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-stone-200 py-16 text-center dark:border-stone-700">
-          <span className="text-5xl">{tab === "active" ? "🚀" : tab === "draft" ? "📝" : "📚"}</span>
           <p className="font-medium text-stone-600 dark:text-stone-400">
             {tab === "active" ? "No active challenges right now" : tab === "draft" ? "No drafts" : "No past challenges yet"}
           </p>
@@ -913,7 +909,7 @@ export function ChallengesPanel({ role }: { role: UserRoleValue }) {
             </Button>
           )}
           {isLearner && tab === "active" && (
-            <p className="text-sm text-stone-400">Check back soon, a new challenge is coming! 💪</p>
+            <p className="text-sm text-stone-400">Check back soon, a new challenge is coming.</p>
           )}
         </div>
       ) : (
