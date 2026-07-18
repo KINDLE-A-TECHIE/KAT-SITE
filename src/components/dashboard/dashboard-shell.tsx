@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { SignOutButton } from "@/components/sign-out-button";
 import { motion } from "framer-motion";
 import {
   Award,
@@ -299,13 +299,10 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
                 </Link>
               );
             })()}
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="flex flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200 lg:w-full lg:gap-2.5 lg:py-2.5"
-            >
+            <SignOutButton className="flex flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200 lg:w-full lg:gap-2.5 lg:py-2.5">
               <LogOut className="size-4 shrink-0 text-stone-400 dark:text-stone-500" />
               <span>Sign out</span>
-            </button>
+            </SignOutButton>
           </div>
         </aside>
 

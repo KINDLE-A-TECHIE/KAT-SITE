@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { SchoolRole } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
+import { SignOutButton } from "@/components/sign-out-button";
 
 export const metadata: Metadata = {
   title: "KAT for Schools",
@@ -58,12 +59,9 @@ export default async function SchoolLayout({ children }: { children: ReactNode }
             </nav>
           </div>
 
-          <Link
-            href="/api/auth/signout"
-            className="text-sm font-medium text-stone-500 transition hover:text-orange-600 dark:text-stone-400"
-          >
+          <SignOutButton className="text-sm font-medium text-stone-500 transition hover:text-orange-600 dark:text-stone-400">
             Sign out
-          </Link>
+          </SignOutButton>
         </div>
       </header>
 
