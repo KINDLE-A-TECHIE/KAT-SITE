@@ -152,7 +152,7 @@ export function SchoolClassesPanel() {
                 : `${classes.length} class${classes.length === 1 ? "" : "es"}.`}
           </CardDescription>
         </div>
-        <Button size="sm" onClick={openCreate} className="gap-1.5 bg-orange-600 text-white hover:bg-orange-700">
+        <Button size="sm" onClick={openCreate} className="gap-1.5 bg-orange-700 text-white hover:bg-orange-800">
           <Plus className="size-3.5" />
           New class
         </Button>
@@ -293,7 +293,7 @@ export function SchoolClassesPanel() {
             <Button
               onClick={() => save()}
               disabled={busy || !draft.name.trim() || !draft.term.trim()}
-              className="bg-orange-600 text-white hover:bg-orange-700"
+              className="bg-orange-700 text-white hover:bg-orange-800"
             >
               {busy ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : null}
               {busy ? "Saving…" : editing?.id ? "Save changes" : "Create class"}

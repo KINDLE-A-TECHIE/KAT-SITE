@@ -94,32 +94,32 @@ export function CertificatePrint({
       {/* ── Toolbar (hidden on print) ─────────────────────────── */}
       <div
         id="no-print"
-        className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 py-3 sm:px-6"
+        className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200 bg-white px-4 py-3 sm:px-6"
       >
         <div className="flex items-center gap-3">
           <button
             onClick={() => window.history.length > 1 ? router.back() : router.push("/")}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
+            className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-600 transition hover:bg-stone-50"
           >
             <ArrowLeft className="size-4" />
             Back
           </button>
           <div className="flex items-center gap-2">
             <Image src="/kindle-a-techie.svg" alt="KAT Learning" width={28} height={28} />
-            <span className="hidden text-sm font-semibold text-slate-800 sm:inline">KAT Learning</span>
+            <span className="hidden text-sm font-semibold text-stone-800 sm:inline">KAT Learning</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => void copyLink()}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
+            className="flex items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-600 transition hover:bg-stone-50"
           >
             {copied ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
             <span>{copied ? "Copied!" : "Copy Link"}</span>
           </button>
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-2 rounded-lg bg-[#0D1F45] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#162d5e]"
+            className="flex items-center gap-2 rounded-lg bg-[#1A1714] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#162d5e]"
           >
             <Printer className="size-4" />
             <span>Print / Save PDF</span>
@@ -135,7 +135,7 @@ export function CertificatePrint({
       {/* ── Gray page background (hidden on print) ────────────── */}
       <div
         id="cert-bg"
-        className="flex min-h-[calc(100vh-57px)] items-center justify-center overflow-x-auto bg-slate-100 p-4 sm:p-6"
+        className="flex min-h-[calc(100vh-57px)] items-center justify-center overflow-x-auto bg-stone-100 p-4 sm:p-6"
       >
 
         {/* ── Certificate card ──────────────────────────────────── */}
@@ -153,7 +153,7 @@ export function CertificatePrint({
           >
             <defs>
               <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-                <circle cx="2" cy="2" r="1.5" fill="#0D1F45" />
+                <circle cx="2" cy="2" r="1.5" fill="#1A1714" />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#dots)" />
@@ -168,7 +168,7 @@ export function CertificatePrint({
 
           {/* ══ Gold outer + navy inner border frames ══════════════ */}
           <div className="pointer-events-none absolute inset-2 border-2 border-[#c9a84c]/60" />
-          <div className="pointer-events-none absolute inset-[10px] border border-[#0D1F45]/15" />
+          <div className="pointer-events-none absolute inset-[10px] border border-[#1A1714]/15" />
 
           {/* ══ Corner star ornaments ═══════════════════════════════ */}
           {[
@@ -188,17 +188,17 @@ export function CertificatePrint({
           {/* ══ Left column, branding strip ═══════════════════════ */}
           <div
             className="absolute inset-y-0 left-0 flex w-[23%] flex-col items-center justify-between py-8"
-            style={{ background: "linear-gradient(180deg, #0D1F45 0%, #132B5E 100%)" }}
+            style={{ background: "linear-gradient(180deg, #1A1714 0%, #1A1714 100%)" }}
           >
             {/* Logo on white pill */}
             <div className="flex flex-col items-center gap-2">
               <div className="flex items-center justify-center rounded-xl bg-white p-2 shadow-md">
                 <Image src="/kindle-a-techie.svg" alt="KAT Learning" width={40} height={40} />
               </div>
-              <p className="mt-1 text-center text-[9px] font-semibold uppercase tracking-[0.18em] text-blue-200">
+              <p className="mt-1 text-center text-[9px] font-semibold uppercase tracking-[0.18em] text-orange-200">
                 KAT Learning
               </p>
-              <p className="text-[8px] text-blue-300/60">by Kindle a Techie</p>
+              <p className="text-[8px] text-orange-300/60">by Kindle a Techie</p>
             </div>
 
             {/* Trophy medallion */}
@@ -242,13 +242,13 @@ export function CertificatePrint({
             </div>
 
             {/* "This is to certify that" */}
-            <p className="mt-3 text-[10px] uppercase tracking-[0.2em] text-slate-400">
+            <p className="mt-3 text-[10px] uppercase tracking-[0.2em] text-stone-400">
               This is to certify that
             </p>
 
             {/* Recipient name */}
             <h1
-              className="mt-1 leading-tight text-[#0D1F45]"
+              className="mt-1 leading-tight text-[#1A1714]"
               style={{
                 fontFamily: "Georgia, 'Times New Roman', serif",
                 fontSize: "clamp(1.4rem, 3vw, 2.4rem)",
@@ -266,13 +266,13 @@ export function CertificatePrint({
             </div>
 
             {/* Completion text */}
-            <p className="text-[10px] uppercase tracking-[0.15em] text-slate-400">
+            <p className="text-[10px] uppercase tracking-[0.15em] text-stone-400">
               has successfully completed
             </p>
 
             {/* Programme name */}
             <h2
-              className="mt-1 font-bold text-[#0D1F45]"
+              className="mt-1 font-bold text-[#1A1714]"
               style={{ fontSize: "clamp(0.85rem, 1.8vw, 1.15rem)" }}
             >
               {programName}
@@ -281,9 +281,9 @@ export function CertificatePrint({
             {/* Bottom row, date, verified seal, issuer */}
             <div className="mt-5 flex w-full items-end justify-between">
               <div className="text-left">
-                <div className="mb-1 w-28 border-b border-slate-300" />
-                <p className="text-[9px] uppercase tracking-widest text-slate-400">Date issued</p>
-                <p className="text-[11px] font-medium text-slate-700">{date}</p>
+                <div className="mb-1 w-28 border-b border-stone-300" />
+                <p className="text-[9px] uppercase tracking-widest text-stone-400">Date issued</p>
+                <p className="text-[11px] font-medium text-stone-700">{date}</p>
               </div>
 
               {/* Verified seal */}
@@ -292,28 +292,28 @@ export function CertificatePrint({
                   className="flex h-12 w-12 items-center justify-center rounded-full"
                   style={{
                     background: "linear-gradient(135deg, #e0f2fe, #bfdbfe)",
-                    border: "2px solid #0D1F45",
+                    border: "2px solid #1A1714",
                     boxShadow: "0 0 10px rgba(13,31,69,0.15)",
                   }}
                 >
-                  <ShieldCheck className="size-5 text-[#0D1F45]" strokeWidth={1.5} />
+                  <ShieldCheck className="size-5 text-[#1A1714]" strokeWidth={1.5} />
                 </div>
-                <p className="text-[8px] uppercase tracking-wider text-slate-400">Verified</p>
+                <p className="text-[8px] uppercase tracking-wider text-stone-400">Verified</p>
               </div>
 
               <div className="text-right">
-                <div className="mb-1 ml-auto w-28 border-b border-slate-300" />
-                <p className="text-[9px] uppercase tracking-widest text-slate-400">Authorised by</p>
-                <p className="text-[11px] font-medium text-slate-700">{issuedBy}</p>
+                <div className="mb-1 ml-auto w-28 border-b border-stone-300" />
+                <p className="text-[9px] uppercase tracking-widest text-stone-400">Authorised by</p>
+                <p className="text-[11px] font-medium text-stone-700">{issuedBy}</p>
               </div>
             </div>
 
             {/* Credential footer */}
-            <div className="mt-3 flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-4 py-1">
-              <p className="text-[8px] uppercase tracking-widest text-slate-400">ID</p>
-              <p className="font-mono text-[8.5px] text-slate-500">{credentialId}</p>
-              <span className="text-slate-300">·</span>
-              <p className="text-[8px] text-slate-400 truncate max-w-[200px]">{verifyUrl}</p>
+            <div className="mt-3 flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-4 py-1">
+              <p className="text-[8px] uppercase tracking-widest text-stone-400">ID</p>
+              <p className="font-mono text-[8.5px] text-stone-500">{credentialId}</p>
+              <span className="text-stone-300">·</span>
+              <p className="text-[8px] text-stone-400 truncate max-w-[200px]">{verifyUrl}</p>
             </div>
           </div>
 

@@ -94,9 +94,9 @@ const TYPE_CONFIG: Record<NotificationTypeValue, {
   },
   INFO: {
     Icon: Info,
-    iconClass: "text-blue-600 dark:text-blue-400",
-    bgClass: "bg-blue-100 dark:bg-blue-900/40",
-    borderClass: "border-l-blue-500",
+    iconClass: "text-orange-600 dark:text-orange-400",
+    bgClass: "bg-orange-100 dark:bg-orange-900/40",
+    borderClass: "border-l-orange-500",
     label: "Info",
   },
 };
@@ -104,11 +104,11 @@ const TYPE_CONFIG: Record<NotificationTypeValue, {
 function NotificationSkeleton() {
   return (
     <div className="flex gap-3 px-4 py-3.5">
-      <div className="mt-0.5 h-8 w-8 shrink-0 animate-pulse rounded-full bg-slate-100 dark:bg-slate-700" />
+      <div className="mt-0.5 h-8 w-8 shrink-0 animate-pulse rounded-full bg-stone-100 dark:bg-stone-700" />
       <div className="flex-1 space-y-2">
-        <div className="h-3.5 w-3/4 animate-pulse rounded bg-slate-100 dark:bg-slate-700" />
-        <div className="h-3 w-full animate-pulse rounded bg-slate-100 dark:bg-slate-700" />
-        <div className="h-3 w-1/2 animate-pulse rounded bg-slate-100 dark:bg-slate-700" />
+        <div className="h-3.5 w-3/4 animate-pulse rounded bg-stone-100 dark:bg-stone-700" />
+        <div className="h-3 w-full animate-pulse rounded bg-stone-100 dark:bg-stone-700" />
+        <div className="h-3 w-1/2 animate-pulse rounded bg-stone-100 dark:bg-stone-700" />
       </div>
     </div>
   );
@@ -223,14 +223,14 @@ export function NotificationsPopover() {
           aria-label="Open notifications"
           className={cn(
             "relative rounded-full border p-2 transition-all duration-150",
-            "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-            "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100",
-            open && "bg-slate-50 dark:bg-slate-700",
+            "border-stone-200 bg-white text-stone-600 hover:bg-stone-50 hover:text-stone-900",
+            "dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-stone-100",
+            open && "bg-stone-50 dark:bg-stone-700",
           )}
         >
           <Bell className={cn("size-4 transition-transform duration-150", open && "scale-110")} />
           {unreadCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 py-px text-[10px] font-bold leading-none text-white ring-2 ring-white dark:ring-slate-900">
+            <span className="absolute -right-1 -top-1 flex min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 py-px text-[10px] font-bold leading-none text-white ring-2 ring-white dark:ring-stone-900">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -244,15 +244,15 @@ export function NotificationsPopover() {
         className="w-[min(95vw,380px)] overflow-hidden p-0 shadow-xl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex items-center justify-between border-b border-stone-100 bg-white px-4 py-3 dark:border-stone-700 dark:bg-stone-900">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0D1F45]/10 dark:bg-blue-900/40">
-              <Bell className="size-3.5 text-[#0D1F45] dark:text-blue-400" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1A1714]/10 dark:bg-orange-900/40">
+              <Bell className="size-3.5 text-[#1A1714] dark:text-orange-400" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Notifications</p>
+              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">Notifications</p>
               {unreadCount > 0 && (
-                <p className="text-[11px] leading-none text-slate-400 dark:text-slate-500">
+                <p className="text-[11px] leading-none text-stone-400 dark:text-stone-500">
                   {unreadCount} unread
                 </p>
               )}
@@ -263,7 +263,7 @@ export function NotificationsPopover() {
               type="button"
               onClick={() => void markAllAsRead()}
               disabled={busy}
-              className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-stone-500 transition hover:bg-stone-100 hover:text-stone-700 disabled:opacity-50 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200"
             >
               Mark all read
             </button>
@@ -271,25 +271,25 @@ export function NotificationsPopover() {
         </div>
 
         {/* Body */}
-        <div className="max-h-[min(60vh,420px)] overflow-y-auto overscroll-contain bg-slate-50 dark:bg-slate-900/50">
+        <div className="max-h-[min(60vh,420px)] overflow-y-auto overscroll-contain bg-stone-50 dark:bg-stone-900/50">
           {loading ? (
-            <div className="divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
+            <div className="divide-y divide-stone-100 bg-white dark:divide-stone-800 dark:bg-stone-900">
               <NotificationSkeleton />
               <NotificationSkeleton />
               <NotificationSkeleton />
             </div>
           ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-                <Sparkles className="size-5 text-slate-400 dark:text-slate-500" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-100 dark:bg-stone-800">
+                <Sparkles className="size-5 text-stone-400 dark:text-stone-500" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-300">All caught up!</p>
-                <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">No new notifications.</p>
+                <p className="text-sm font-medium text-stone-600 dark:text-stone-300">All caught up!</p>
+                <p className="mt-0.5 text-xs text-stone-400 dark:text-stone-500">No new notifications.</p>
               </div>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
+            <div className="divide-y divide-stone-100 bg-white dark:divide-stone-800 dark:bg-stone-900">
               {notifications.map((notification) => {
                 const cfg = TYPE_CONFIG[notification.type] ?? TYPE_CONFIG.INFO;
                 const { Icon } = cfg;
@@ -304,7 +304,7 @@ export function NotificationsPopover() {
                     disabled={busy}
                     className={cn(
                       "group w-full border-l-[3px] px-4 py-3.5 text-left transition-colors",
-                      "hover:bg-slate-50 dark:hover:bg-slate-800/60",
+                      "hover:bg-stone-50 dark:hover:bg-stone-800/60",
                       "disabled:opacity-60",
                       isUnread
                         ? cfg.borderClass
@@ -320,17 +320,17 @@ export function NotificationsPopover() {
                       {/* Content */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="line-clamp-1 text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#1E5FAF] dark:group-hover:text-blue-400">
+                          <p className="line-clamp-1 text-sm font-semibold text-stone-900 dark:text-stone-100 group-hover:text-[#B2401D] dark:group-hover:text-orange-400">
                             {notification.title}
                           </p>
                           {isUnread && (
-                            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+                            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-orange-500" />
                           )}
                         </div>
-                        <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                        <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-stone-500 dark:text-stone-400">
                           {parsed.text}
                         </p>
-                        <p className="mt-1.5 text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                        <p className="mt-1.5 text-[11px] font-medium text-stone-400 dark:text-stone-500">
                           {formatTimestamp(notification.createdAt)}
                         </p>
                       </div>
@@ -344,8 +344,8 @@ export function NotificationsPopover() {
 
         {/* Footer */}
         {notifications.length > 0 && (
-          <div className="border-t border-slate-100 bg-white px-4 py-2.5 dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-center text-[11px] text-slate-400 dark:text-slate-500">
+          <div className="border-t border-stone-100 bg-white px-4 py-2.5 dark:border-stone-700 dark:bg-stone-900">
+            <p className="text-center text-[11px] text-stone-400 dark:text-stone-500">
               Click a notification to dismiss and navigate
             </p>
           </div>

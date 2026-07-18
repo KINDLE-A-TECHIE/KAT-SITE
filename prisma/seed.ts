@@ -9,6 +9,9 @@ import {
   PaymentProvider,
   PaymentStatus,
   MeetingStatus,
+  SchoolRole,
+  NerdcLevel,
+  SchoolLicenseStatus,
 } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -307,13 +310,66 @@ async function main() {
     });
   }
 
+  // ── School (B2B) demo tenant ─────────────────────────────────────────────────
+  // Makes the school surface testable: a real school with an admin and a teacher, a class,
+  // and an ACTIVE licence. School authority is the SchoolMembership, NOT User.role: the staff
+  // users are UserRole.SCHOOL_STAFF (which grants nothing on B2C), scoped into the school by
+  // their membership. See CLAUDE.md "A role is a CAPABILITY, never a tenant".
+  const SCHOOL_TERM = "2025/2026 Term 1";
+
+  const school = await prisma.school.upsert({
+    where: { slug: "demo-academy" },
+    update: { name: "Demo Academy", pricePerSeat: 2500 },
+    create: { name: "Demo Academy", slug: "demo-academy", pricePerSeat: 2500 },
+  });
+
+  const schoolAdmin = await createUser({
+    email: "schooladmin@kindleatechie.com", firstName: "Ada", lastName: "Principal",
+    role: UserRole.SCHOOL_STAFF, organizationId: org.id, password: "Passw0rd!",
+  });
+  const schoolTeacher = await createUser({
+    email: "schoolteacher@kindleatechie.com", firstName: "Tunde", lastName: "Teacher",
+    role: UserRole.SCHOOL_STAFF, organizationId: org.id, password: "Passw0rd!",
+  });
+
+  for (const [userId, role] of [
+    [schoolAdmin.id, SchoolRole.SCHOOL_ADMIN],
+    [schoolTeacher.id, SchoolRole.TEACHER],
+  ] as const) {
+    await prisma.schoolMembership.upsert({
+      where: { schoolId_userId: { schoolId: school.id, userId } },
+      update: { role },
+      create: { schoolId: school.id, userId, role },
+    });
+  }
+
+  await prisma.schoolClass.upsert({
+    where: { id: "seed-demo-jss-class" },
+    update: { name: "JSS 1 Blue", nerdcLevel: NerdcLevel.JSS, term: SCHOOL_TERM, teacherId: schoolTeacher.id },
+    create: {
+      id: "seed-demo-jss-class", schoolId: school.id, name: "JSS 1 Blue",
+      nerdcLevel: NerdcLevel.JSS, term: SCHOOL_TERM, teacherId: schoolTeacher.id,
+    },
+  });
+
+  await prisma.schoolLicense.upsert({
+    where: { schoolId_term: { schoolId: school.id, term: SCHOOL_TERM } },
+    update: { status: SchoolLicenseStatus.ACTIVE, seatLimit: 50, pricePerSeat: 2500 },
+    create: {
+      schoolId: school.id, term: SCHOOL_TERM, seatLimit: 50, seatsUsed: 0,
+      status: SchoolLicenseStatus.ACTIVE, pricePerSeat: 2500,
+    },
+  });
+
   console.log("✅ Seed complete. All accounts use password: Passw0rd!");
-  console.log("   superadmin@kindleatechie.com  →  SUPER_ADMIN");
-  console.log("   admin@kindleatechie.com       →  ADMIN");
-  console.log("   instructor@kindleatechie.com  →  INSTRUCTOR");
-  console.log("   fellow@kindleatechie.com      →  FELLOW");
-  console.log("   student@kindleatechie.com     →  STUDENT");
-  console.log("   parent@kindleatechie.com      →  PARENT");
+  console.log("   superadmin@kindleatechie.com    →  SUPER_ADMIN");
+  console.log("   admin@kindleatechie.com         →  ADMIN");
+  console.log("   instructor@kindleatechie.com    →  INSTRUCTOR");
+  console.log("   fellow@kindleatechie.com        →  FELLOW");
+  console.log("   student@kindleatechie.com       →  STUDENT");
+  console.log("   parent@kindleatechie.com        →  PARENT");
+  console.log("   schooladmin@kindleatechie.com   →  SCHOOL_STAFF + SchoolMembership(SCHOOL_ADMIN) @ Demo Academy");
+  console.log("   schoolteacher@kindleatechie.com →  SCHOOL_STAFF + SchoolMembership(TEACHER) @ Demo Academy");
 }
 
 main()

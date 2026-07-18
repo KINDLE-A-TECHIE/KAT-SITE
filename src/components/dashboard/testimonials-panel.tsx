@@ -50,7 +50,7 @@ function StarRating({ rating, interactive = false, onChange }: {
             "size-4 transition-colors",
             (hover || rating) >= s
               ? "fill-amber-400 text-amber-400"
-              : "fill-transparent text-slate-300 dark:text-slate-600",
+              : "fill-transparent text-stone-300 dark:text-stone-600",
             interactive ? "cursor-pointer" : "",
           ].join(" ")}
           onMouseEnter={() => interactive && setHover(s)}
@@ -98,11 +98,11 @@ function TestimonialCard({ t, busy, onAction, onRejectOpen, onDeleteOpen }: Test
             </div>
           )}
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
+            <p className="text-sm font-semibold text-stone-800 dark:text-stone-200 truncate">
               {t.author ? `${t.author.firstName} ${t.author.lastName}` : "Unknown"}
             </p>
             {t.childName && (
-              <p className="text-xs text-slate-500 dark:text-slate-400">re: {t.childName}</p>
+              <p className="text-xs text-stone-500 dark:text-stone-400">re: {t.childName}</p>
             )}
           </div>
         </div>
@@ -111,7 +111,7 @@ function TestimonialCard({ t, busy, onAction, onRejectOpen, onDeleteOpen }: Test
             {t.status}
           </span>
           {t.featuredOnPage && t.status === "APPROVED" && (
-            <span className="inline-block rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
+            <span className="inline-block rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-semibold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
               Featured
             </span>
           )}
@@ -119,12 +119,12 @@ function TestimonialCard({ t, busy, onAction, onRejectOpen, onDeleteOpen }: Test
       </div>
 
       {/* Quote */}
-      <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 italic">
+      <p className="text-sm leading-relaxed text-stone-700 dark:text-stone-300 italic">
         &ldquo;{t.quote}&rdquo;
       </p>
       <div className="flex items-center gap-3">
         <StarRating rating={t.rating} />
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-stone-400">
           {new Date(t.submittedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
         </span>
       </div>
@@ -177,7 +177,7 @@ function TestimonialCard({ t, busy, onAction, onRejectOpen, onDeleteOpen }: Test
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 text-xs border-sky-300 text-sky-600 hover:bg-sky-50 dark:border-sky-700 dark:text-sky-400"
+                className="h-8 text-xs border-orange-300 text-orange-600 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400"
                 disabled={isBusy}
                 onClick={() => onAction(t.id, "feature")}
               >
@@ -211,7 +211,7 @@ function TestimonialCard({ t, busy, onAction, onRejectOpen, onDeleteOpen }: Test
         <Button
           size="sm"
           variant="ghost"
-          className="h-8 text-xs text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 ml-auto"
+          className="h-8 text-xs text-stone-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 ml-auto"
           disabled={isBusy}
           onClick={() => onDeleteOpen(t)}
         >
@@ -236,9 +236,9 @@ function TestimonialSection({ title, items, busy, onAction, onRejectOpen, onDele
   if (items.length === 0) return null;
   return (
     <div className="space-y-3">
-      <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+      <h3 className="text-xs font-semibold uppercase tracking-widest text-stone-500 dark:text-stone-400">
         {title}{" "}
-        <span className="ml-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs">
+        <span className="ml-1 rounded-full bg-stone-100 dark:bg-stone-800 px-2 py-0.5 text-xs">
           {items.length}
         </span>
       </h3>
@@ -330,18 +330,18 @@ export function ParentTestimonialsPanel() {
                     {existing.status}
                   </span>
                   {existing.featuredOnPage && existing.status === "APPROVED" && (
-                    <span className="inline-block rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
+                    <span className="inline-block rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-semibold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
                       Featured
                     </span>
                   )}
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-slate-300 italic">
+                <p className="mt-3 text-sm leading-relaxed text-stone-700 dark:text-stone-300 italic">
                   &ldquo;{existing.quote}&rdquo;
                 </p>
                 <div className="mt-2 flex items-center gap-3">
                   <StarRating rating={existing.rating} />
                   {existing.childName && (
-                    <span className="text-xs text-slate-500 dark:text-slate-400">re: {existing.childName}</span>
+                    <span className="text-xs text-stone-500 dark:text-stone-400">re: {existing.childName}</span>
                   )}
                 </div>
                 {existing.rejectionNote && (
@@ -352,7 +352,7 @@ export function ParentTestimonialsPanel() {
               </div>
             </div>
             {existing.status === "REJECTED" && (
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-stone-500 dark:text-stone-400">
                 You can submit a revised testimonial below.
               </p>
             )}
@@ -363,23 +363,23 @@ export function ParentTestimonialsPanel() {
       {canSubmit && (
         <div className="kat-card space-y-5">
           <div>
-            <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-800 dark:text-slate-200">
+            <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-stone-800 dark:text-stone-200">
               {existing?.status === "REJECTED" ? "Submit a revised testimonial" : "Share your experience"}
             </h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
               Tell us about your child&apos;s journey with KAT. Approved testimonials may appear on our website.
             </p>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+            <label className="text-xs font-medium text-stone-600 dark:text-stone-400 uppercase tracking-wide">
               Rating
             </label>
             <StarRating rating={rating} interactive onChange={setRating} />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+            <label className="text-xs font-medium text-stone-600 dark:text-stone-400 uppercase tracking-wide">
               Child&apos;s first name <span className="normal-case font-normal">(optional)</span>
             </label>
             <input
@@ -388,12 +388,12 @@ export function ParentTestimonialsPanel() {
               value={childName}
               onChange={(e) => setChildName(e.target.value)}
               placeholder="e.g. Temi"
-              className="w-full rounded-xl border border-[var(--kat-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--kat-primary-blue)]/30 text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
+              className="w-full rounded-xl border border-[var(--kat-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--kat-primary-blue)]/30 text-stone-800 dark:text-stone-200 placeholder:text-stone-400"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+            <label className="text-xs font-medium text-stone-600 dark:text-stone-400 uppercase tracking-wide">
               Your testimonial
             </label>
             <Textarea
@@ -404,7 +404,7 @@ export function ParentTestimonialsPanel() {
               placeholder="Share how KAT has impacted your child's learning journey…"
               className="resize-none rounded-xl border-[var(--kat-border)] text-sm"
             />
-            <p className="text-right text-xs text-slate-400">{quote.length}/600</p>
+            <p className="text-right text-xs text-stone-400">{quote.length}/600</p>
           </div>
 
           <Button
@@ -419,7 +419,7 @@ export function ParentTestimonialsPanel() {
       )}
 
       {!canSubmit && existing && (
-        <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">
+        <p className="text-sm text-stone-500 dark:text-stone-400 text-center py-4">
           {existing.status === "PENDING"
             ? "Your testimonial is under review. You'll be notified once it's been assessed."
             : "Your testimonial is live on our website. Thank you!"}
@@ -515,7 +515,7 @@ export function AdminTestimonialsPanel() {
 
   if (testimonials.length === 0) {
     return (
-      <div className="kat-card py-12 text-center text-slate-500 dark:text-slate-400">
+      <div className="kat-card py-12 text-center text-stone-500 dark:text-stone-400">
         <MessageSquare className="mx-auto mb-3 size-8 opacity-40" />
         <p className="text-sm">No testimonials yet.</p>
       </div>
@@ -558,7 +558,7 @@ export function AdminTestimonialsPanel() {
             <DialogTitle>Reject testimonial</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-stone-600 dark:text-stone-400">
               Optionally leave a note for the parent explaining why.
             </p>
             <Textarea
@@ -592,7 +592,7 @@ export function AdminTestimonialsPanel() {
           <DialogHeader>
             <DialogTitle>Delete testimonial?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-slate-600 dark:text-slate-400 pt-2">
+          <p className="text-sm text-stone-600 dark:text-stone-400 pt-2">
             This is permanent and cannot be undone. The parent will not be notified.
           </p>
           <div className="flex justify-end gap-3 pt-2">

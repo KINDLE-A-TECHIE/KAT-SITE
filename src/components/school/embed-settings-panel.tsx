@@ -153,7 +153,7 @@ curl -X POST https://${embedHost}/api/school/embed/token \\
               placeholder="https://portal.yourschool.edu.ng"
               className="font-mono text-sm"
             />
-            <Button onClick={addOrigin} disabled={busy} className="gap-1.5 bg-orange-600 text-white hover:bg-orange-700">
+            <Button onClick={addOrigin} disabled={busy} className="gap-1.5 bg-orange-700 text-white hover:bg-orange-800">
               {busy ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
               Add
             </Button>

@@ -1,11 +1,8 @@
 import { SchoolRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { requireActiveSchool } from "@/lib/school";
-import { getClassTermSummary } from "@/lib/school-report";
-import { getClassCoverage } from "@/lib/school-coverage";
-import { normalizeTerm } from "@/lib/school-license";
+import { getSchoolReport, ReportClassNotFoundError } from "@/lib/school-report-data";
 import { captureError } from "@/lib/sentry";
 
 /**
@@ -38,56 +35,10 @@ export async function GET(request: Request) {
   const classId = url.searchParams.get("classId");
 
   try {
-    const school = await prisma.school.findUnique({
-      where: { id: schoolId },
-      select: { name: true },
-    });
-
-    // The set of classes in scope. Always filtered by schoolId, and additionally by
-    // teacherId for a teacher, a schoolId filter alone would let a teacher report on
-    // a colleague's class.
-    const classes = await prisma.schoolClass.findMany({
-      where: {
-        schoolId, ...(classId ? { id: classId } : {}), ...(role === SchoolRole.TEACHER ? { teacherId: session!.user.id } : {}),
-      },
-      orderBy: { name: "asc" },
-      select: { id: true, term: true },
-    });
-
-    // Term is free text, so filter on the normalized form.
-    const wanted = term ? normalizeTerm(term) : null;
-    const inScope = wanted ? classes.filter((c) => normalizeTerm(c.term) === wanted) : classes;
-
-    if (classId && inScope.length === 0) {
-      return fail("Class not found.", 404);
-    }
-
-    const sections = await Promise.all(
-      inScope.map(async (c) => {
-        const [summary, coverage] = await Promise.all([
-          getClassTermSummary(schoolId, c.id),
-          getClassCoverage(schoolId, c.id),
-        ]);
-        return summary && coverage ? { summary, coverage } : null;
-      }),
-    );
-
-    const licences = await prisma.schoolLicense.findMany({
-      where: { schoolId, ...(wanted ? {} : {}) },
-      select: { term: true, status: true, seatLimit: true, seatsUsed: true },
-    });
-    const licence =
-      licences.find((l) => (wanted ? normalizeTerm(l.term) === wanted : false)) ?? null;
-
-    return ok({
-      school: { name: school?.name ?? "" },
-      term: term ?? null,
-      scope: classId ? "class" : "school",
-      licence,
-      generatedAt: new Date().toISOString(),
-      classes: sections.filter((s): s is NonNullable<typeof s> => s !== null),
-    });
+    const report = await getSchoolReport(schoolId, role, session!.user.id, { term, classId });
+    return ok(report);
   } catch (error) {
+    if (error instanceof ReportClassNotFoundError) return fail("Class not found.", 404);
     captureError(error);
     return fail("Could not build the report.", 500);
   }

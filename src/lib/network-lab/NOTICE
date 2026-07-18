@@ -1,0 +1,46 @@
+KAT Network Lab, third-party attribution
+========================================
+
+The simulation engine in this module (src/lib/network-lab/engine) is a
+reimplementation of CS4G Netsim, an MIT-licensed open-source network simulator.
+The device-script behaviours, port-based link resolution, trigger evaluation, and
+the flood-meter arithmetic are ported from:
+
+    https://github.com/errorinn/netsim
+
+Only the mechanics are derived. The React UI, the warm design system, the level
+instruction copy, and the device icons here are original to KAT. The origin's
+Flaticon device images (by madebyoliver) are NOT reused; the UI renders its own
+icons.
+
+The origin project shipped the MIT licence template without filling in the
+copyright line. It is reproduced verbatim below, with the source repository named
+above as the copyright holder of record, as the MIT licence requires the notice to
+be preserved.
+
+--------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) CS4G Netsim contributors (https://github.com/errorinn/netsim)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+--------------------------------------------------------------------------------
+
+This notice is for the repository only. It must never appear in student-facing UI
+(see src/lib/network-lab/CLAUDE.md, Brand).

@@ -2,6 +2,9 @@ node_modules
 .next
 dist
 coverage
+playwright-report
+test-results
+todo.md
 
 .env
 .env.local

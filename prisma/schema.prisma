@@ -1005,18 +1005,21 @@ model PeerSessionParticipant {
 }
 
 model PartnerInquiry {
-  id           String               @id @default(cuid())
-  name         String
-  organization String
-  type         PartnerType
-  email        String
-  phone        String?
-  message      String
-  createdAt    DateTime             @default(now())
-  programs     String[]
-  status       PartnerInquiryStatus @default(NEW)
-  schoolId     String?
-  school       School?              @relation(fields: [schoolId], references: [id])
+  id                String               @id @default(cuid())
+  name              String
+  organization      String
+  type              PartnerType
+  email             String
+  phone             String?
+  message           String
+  // Pilot-lead fields (school requests). Nullable: corporate/government leads leave them empty.
+  state             String?
+  estimatedStudents Int?
+  createdAt         DateTime             @default(now())
+  programs          String[]
+  status            PartnerInquiryStatus @default(NEW)
+  schoolId          String?
+  school            School?              @relation(fields: [schoolId], references: [id])
 
   @@index([createdAt])
   @@index([schoolId])
@@ -1537,6 +1540,7 @@ enum LessonContentType {
   EXTERNAL_VIDEO
   DOCUMENT_LINK
   CODE_PLAYGROUND
+  NETWORK_LAB
 }
 
 enum ContentReviewStatus {

@@ -1854,8 +1854,8 @@ ${code}
     NEEDS_WORK: "Needs Work", REJECTED: "Rejected",
   };
   const STATUS_COLOR: Record<LinkedProject["status"], string> = {
-    DRAFT:      "bg-slate-100 text-slate-600",
-    SUBMITTED:  "bg-blue-100 text-blue-700",
+    DRAFT:      "bg-stone-100 text-stone-600",
+    SUBMITTED:  "bg-orange-100 text-orange-700",
     APPROVED:   "bg-emerald-100 text-emerald-700",
     NEEDS_WORK: "bg-amber-100 text-amber-700",
     REJECTED:   "bg-rose-100 text-rose-700",
@@ -1871,27 +1871,27 @@ ${code}
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+    <div className="overflow-hidden rounded-xl border border-stone-200 dark:border-stone-700">
 
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-2 border-b border-slate-700 bg-[#1e1e1e] px-3 py-2">
+      <div className="flex items-center justify-between gap-2 border-b border-stone-700 bg-[#1e1e1e] px-3 py-2">
 
         {/* Left, language label + badges */}
         <div className="flex min-w-0 items-center gap-2">
           {isWebMode
-            ? <Globe className="h-3.5 w-3.5 shrink-0 text-sky-400" />
-            : <Terminal className="h-3.5 w-3.5 shrink-0 text-slate-400" />}
-          <span className="truncate text-xs font-medium text-slate-300">
+            ? <Globe className="h-3.5 w-3.5 shrink-0 text-orange-400" />
+            : <Terminal className="h-3.5 w-3.5 shrink-0 text-stone-400" />}
+          <span className="truncate text-xs font-medium text-stone-300">
             {isProjectMode ? (
               <span className="flex items-center gap-1">
-                <span className="text-slate-500">Project</span>
-                <ChevronRight className="h-3 w-3 text-slate-600" />
+                <span className="text-stone-500">Project</span>
+                <ChevronRight className="h-3 w-3 text-stone-600" />
                 <span>{entryFile ?? ", "}</span>
               </span>
             ) : langLabel}
           </span>
           {isWebMode && (
-            <span className="hidden shrink-0 rounded-full bg-sky-500/20 px-2 py-0.5 text-[10px] font-semibold text-sky-400 sm:inline">
+            <span className="hidden shrink-0 rounded-full bg-orange-500/20 px-2 py-0.5 text-[10px] font-semibold text-orange-400 sm:inline">
               Live Preview
             </span>
           )}
@@ -1906,7 +1906,7 @@ ${code}
             </span>
           )}
           {saveState !== "idle" && (
-            <span className={`shrink-0 text-[10px] transition-opacity ${saveState === "saved" ? "text-emerald-500" : "text-slate-500"}`}>
+            <span className={`shrink-0 text-[10px] transition-opacity ${saveState === "saved" ? "text-emerald-500" : "text-stone-500"}`}>
               {saveState === "saving" ? "Saving…" : "Saved"}
             </span>
           )}
@@ -1928,7 +1928,7 @@ ${code}
             <button
               onClick={() => { setPyodideMode((v) => !v); setResult(null); setError(null); }}
               title={pyodideMode ? "Switch to server execution (Judge0)" : "Switch to browser execution (Pyodide)"}
-              className={`hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium transition sm:flex ${pyodideMode ? "bg-amber-500/20 text-amber-400" : "text-slate-500 hover:bg-white/10 hover:text-slate-300"}`}
+              className={`hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium transition sm:flex ${pyodideMode ? "bg-amber-500/20 text-amber-400" : "text-stone-500 hover:bg-white/10 hover:text-stone-300"}`}
             >
               <Globe className="h-3 w-3" />
               {pyodideMode ? "Browser" : "Server"}
@@ -1940,7 +1940,7 @@ ${code}
             <button
               onClick={() => setShowPackages((v) => !v)}
               title="Manage Python packages"
-              className={`hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium transition sm:flex ${showPackages ? "bg-violet-500/20 text-violet-400" : "text-slate-500 hover:bg-white/10 hover:text-slate-300"}`}
+              className={`hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium transition sm:flex ${showPackages ? "bg-orange-500/20 text-orange-400" : "text-stone-500 hover:bg-white/10 hover:text-stone-300"}`}
             >
               <Package className="h-3 w-3" />
               <span>Packages{installedPkgs.length > 0 ? ` (${installedPkgs.length})` : ""}</span>
@@ -1951,7 +1951,7 @@ ${code}
           {isCreator && !inPeerSession && (
             <button onClick={() => void startPeerSession()} disabled={startingPeer}
               title="Start peer programming session"
-              className="hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300 disabled:opacity-50 sm:flex">
+              className="hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-stone-500 transition hover:bg-white/10 hover:text-stone-300 disabled:opacity-50 sm:flex">
               <Users className="h-3 w-3" />
               {startingPeer ? "Starting…" : "Peer"}
             </button>
@@ -1966,34 +1966,34 @@ ${code}
           {/* Invite students */}
           {isCreator && programId && (
             <button onClick={() => setShowInviteModal(true)} title="Invite students to this playground"
-              className="hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300 sm:flex">
+              className="hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-stone-500 transition hover:bg-white/10 hover:text-stone-300 sm:flex">
               <UserPlus className="h-3 w-3" />
               Invite
             </button>
           )}
 
           <button onClick={() => folderInputRef.current?.click()} title="Open project folder"
-            className="hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300 sm:flex">
+            className="hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-stone-500 transition hover:bg-white/10 hover:text-stone-300 sm:flex">
             <FolderOpen className="h-3 w-3" />
             <span>Folder</span>
           </button>
           <button onClick={() => fileInputRef.current?.click()} title="Add files"
-            className="hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:bg-white/10 hover:text-slate-300 sm:flex">
+            className="hidden items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-stone-500 transition hover:bg-white/10 hover:text-stone-300 sm:flex">
             <FilePlus className="h-3 w-3" />
             <span>Files</span>
           </button>
           <button onClick={downloadCode} title="Download"
-            className="hidden rounded p-1 text-slate-500 transition hover:bg-white/10 hover:text-slate-300 sm:block">
+            className="hidden rounded p-1 text-stone-500 transition hover:bg-white/10 hover:text-stone-300 sm:block">
             <Download className="h-3.5 w-3.5" />
           </button>
           {!isWebMode && (
             <button onClick={() => setShowStdin((v) => !v)} title="Toggle stdin"
-              className={`hidden rounded px-2 py-1 text-[10px] font-medium transition sm:block ${showStdin ? "bg-amber-500/20 text-amber-400" : "text-slate-500 hover:bg-white/10 hover:text-slate-300"}`}>
+              className={`hidden rounded px-2 py-1 text-[10px] font-medium transition sm:block ${showStdin ? "bg-amber-500/20 text-amber-400" : "text-stone-500 hover:bg-white/10 hover:text-stone-300"}`}>
               stdin
             </button>
           )}
           <button onClick={reset} title={isProjectMode ? "Close project" : "Reset to starter code"}
-            className="hidden rounded p-1 text-slate-500 transition hover:bg-white/10 hover:text-slate-300 sm:block">
+            className="hidden rounded p-1 text-stone-500 transition hover:bg-white/10 hover:text-stone-300 sm:block">
             <RotateCcw className="h-3.5 w-3.5" />
           </button>
 
@@ -2002,31 +2002,31 @@ ${code}
             <button
               onClick={() => setShowMoreMenu((v) => !v)}
               title="More options"
-              className="rounded p-1.5 text-slate-500 transition hover:bg-white/10 hover:text-slate-300"
+              className="rounded p-1.5 text-stone-500 transition hover:bg-white/10 hover:text-stone-300"
             >
               <MoreHorizontal className="h-4 w-4" />
             </button>
             {showMoreMenu && (
               <>
                 <div className="fixed inset-0 z-[40]" onClick={() => setShowMoreMenu(false)} />
-                <div className="absolute right-0 top-full z-[41] mt-1 w-44 overflow-hidden rounded-lg border border-slate-700 bg-[#1e1e1e] shadow-xl">
+                <div className="absolute right-0 top-full z-[41] mt-1 w-44 overflow-hidden rounded-lg border border-stone-700 bg-[#1e1e1e] shadow-xl">
                   {isPython && (
                     <button onClick={() => { setPyodideMode((v) => !v); setResult(null); setError(null); setShowMoreMenu(false); }}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5">
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-stone-300 hover:bg-white/5">
                       <Globe className="h-3.5 w-3.5 shrink-0" />
                       {pyodideMode ? "Switch to Server" : "Switch to Browser"}
                     </button>
                   )}
                   {isPython && pyodideMode && (
                     <button onClick={() => { setShowPackages((v) => !v); setShowMoreMenu(false); }}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5">
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-stone-300 hover:bg-white/5">
                       <Package className="h-3.5 w-3.5 shrink-0" />
                       Packages{installedPkgs.length > 0 ? ` (${installedPkgs.length})` : ""}
                     </button>
                   )}
                   {isCreator && !inPeerSession && (
                     <button onClick={() => { void startPeerSession(); setShowMoreMenu(false); }} disabled={startingPeer}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5 disabled:opacity-50">
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-stone-300 hover:bg-white/5 disabled:opacity-50">
                       <Users className="h-3.5 w-3.5 shrink-0" />
                       {startingPeer ? "Starting…" : "Start Peer Session"}
                     </button>
@@ -2040,29 +2040,29 @@ ${code}
                   )}
                   {isCreator && programId && (
                     <button onClick={() => { setShowInviteModal(true); setShowMoreMenu(false); }}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5">
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-stone-300 hover:bg-white/5">
                       <UserPlus className="h-3.5 w-3.5 shrink-0" />
                       Invite Students
                     </button>
                   )}
                   <button onClick={() => { folderInputRef.current?.click(); setShowMoreMenu(false); }}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5">
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-stone-300 hover:bg-white/5">
                     <FolderOpen className="h-3.5 w-3.5 shrink-0" />
                     Open Folder
                   </button>
                   <button onClick={() => { fileInputRef.current?.click(); setShowMoreMenu(false); }}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5">
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-stone-300 hover:bg-white/5">
                     <FilePlus className="h-3.5 w-3.5 shrink-0" />
                     Add Files
                   </button>
                   <button onClick={() => { downloadCode(); setShowMoreMenu(false); }}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5">
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-stone-300 hover:bg-white/5">
                     <Download className="h-3.5 w-3.5 shrink-0" />
                     Download
                   </button>
                   {!isWebMode && (
                     <button onClick={() => { setShowStdin((v) => !v); setShowMoreMenu(false); }}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-white/5">
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs text-stone-300 hover:bg-white/5">
                       <Terminal className="h-3.5 w-3.5 shrink-0" />
                       {showStdin ? "Hide stdin" : "Show stdin"}
                     </button>
@@ -2092,7 +2092,7 @@ ${code}
 
       {/* ── File tabs (project mode) ─────────────────────────────────────────── */}
       {isProjectMode && (
-        <div className="flex items-center gap-0 overflow-x-auto border-b border-slate-700 bg-[#252526] scrollbar-none">
+        <div className="flex items-center gap-0 overflow-x-auto border-b border-stone-700 bg-[#252526] scrollbar-none">
           {sortedFiles.map((path) => {
             const isActive = path === activeProjectFile;
             const isEntry  = path === entryFile;
@@ -2105,24 +2105,24 @@ ${code}
                 tabIndex={0}
                 onClick={() => setActiveProjectFile(path)}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setActiveProjectFile(path); }}
-                className={`group flex shrink-0 cursor-pointer items-center gap-1.5 border-r border-slate-700 px-3 py-1.5 text-[11px] transition ${isActive ? "bg-[#1e1e1e] text-slate-200" : "text-slate-500 hover:bg-[#2d2d2d] hover:text-slate-300"}`}
+                className={`group flex shrink-0 cursor-pointer items-center gap-1.5 border-r border-stone-700 px-3 py-1.5 text-[11px] transition ${isActive ? "bg-[#1e1e1e] text-stone-200" : "text-stone-500 hover:bg-[#2d2d2d] hover:text-stone-300"}`}
               >
                 {isEntry ? (
                   <span title="Entry point" className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm bg-emerald-600 text-[8px] font-bold text-white">▶</span>
                 ) : (
-                  <button onClick={(e) => { e.stopPropagation(); setEntryFile(path); }} title="Set as entry point" className="h-3.5 w-3.5 shrink-0 rounded-sm text-[8px] text-slate-600 opacity-0 transition hover:bg-emerald-600/30 hover:text-emerald-400 group-hover:opacity-100">▶</button>
+                  <button onClick={(e) => { e.stopPropagation(); setEntryFile(path); }} title="Set as entry point" className="h-3.5 w-3.5 shrink-0 rounded-sm text-[8px] text-stone-600 opacity-0 transition hover:bg-emerald-600/30 hover:text-emerald-400 group-hover:opacity-100">▶</button>
                 )}
                 <span className="max-w-[72px] truncate sm:max-w-[120px]" title={path}>{basename}</span>
-                <button onClick={(e) => { e.stopPropagation(); removeFile(path); }} title="Remove file" className="ml-0.5 shrink-0 rounded text-slate-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100">
+                <button onClick={(e) => { e.stopPropagation(); removeFile(path); }} title="Remove file" className="ml-0.5 shrink-0 rounded text-stone-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100">
                   <X className="h-2.5 w-2.5" />
                 </button>
               </div>
             );
           })}
-          <button onClick={createNewFile} title="New file" className="shrink-0 px-2 py-1.5 text-slate-600 transition hover:text-slate-300">
+          <button onClick={createNewFile} title="New file" className="shrink-0 px-2 py-1.5 text-stone-600 transition hover:text-stone-300">
             <FilePlus className="h-3.5 w-3.5" />
           </button>
-          <button onClick={closeProject} title="Close project" className="ml-auto shrink-0 px-2 py-1.5 text-slate-600 transition hover:text-rose-400">
+          <button onClick={closeProject} title="Close project" className="ml-auto shrink-0 px-2 py-1.5 text-stone-600 transition hover:text-rose-400">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -2130,10 +2130,10 @@ ${code}
 
       {/* ── Participants strip (peer session) ────────────────────────────────── */}
       {inPeerSession && peerParticipants.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto border-b border-slate-700 bg-[#1a1a1a] px-4 py-1.5 scrollbar-none">
-          <Users className="h-3 w-3 shrink-0 text-slate-500" />
+        <div className="flex items-center gap-1.5 overflow-x-auto border-b border-stone-700 bg-[#1a1a1a] px-4 py-1.5 scrollbar-none">
+          <Users className="h-3 w-3 shrink-0 text-stone-500" />
           {peerParticipants.map((p) => (
-            <span key={p.userId} className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${p.userId === userId ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-700 text-slate-400"}`}>
+            <span key={p.userId} className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${p.userId === userId ? "bg-emerald-500/20 text-emerald-400" : "bg-stone-700 text-stone-400"}`}>
               {p.userId === userId ? "You" : `${p.user.firstName} ${p.user.lastName}`}
             </span>
           ))}
@@ -2155,24 +2155,24 @@ ${code}
 
       {/* ── Student invite banner (from instructor) ───────────────────────────── */}
       {!isCreator && pendingInvite && !inPeerSession && (
-        <div className="flex items-center justify-between gap-3 border-b border-violet-500/30 bg-violet-950/40 px-4 py-2.5">
+        <div className="flex items-center justify-between gap-3 border-b border-orange-500/30 bg-orange-950/40 px-4 py-2.5">
           <div className="min-w-0">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-violet-300">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-orange-300">
               <UserPlus className="h-3.5 w-3.5 shrink-0" />
               {pendingInvite.invitedBy.firstName} {pendingInvite.invitedBy.lastName}
               {pendingInvite.sessionId ? " invited you to a live session" : " assigned you to this playground"}
             </span>
             {pendingInvite.message && (
-              <p className="mt-0.5 truncate pl-5 text-[10px] text-violet-400/70">"{pendingInvite.message}"</p>
+              <p className="mt-0.5 truncate pl-5 text-[10px] text-orange-400/70">"{pendingInvite.message}"</p>
             )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {pendingInvite.sessionId && (
-              <button onClick={() => void acceptInviteSession()} disabled={joiningPeer} className="rounded bg-violet-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50">
+              <button onClick={() => void acceptInviteSession()} disabled={joiningPeer} className="rounded bg-orange-700 px-3 py-1 text-xs font-semibold text-white transition hover:bg-orange-800 disabled:opacity-50">
                 {joiningPeer ? "Joining…" : "Join Session"}
               </button>
             )}
-            <button onClick={() => void dismissInvite()} disabled={dismissingInvite} className="rounded px-2 py-1 text-[10px] text-violet-400/60 transition hover:text-violet-300 disabled:opacity-50" title="Dismiss">
+            <button onClick={() => void dismissInvite()} disabled={dismissingInvite} className="rounded px-2 py-1 text-[10px] text-orange-400/60 transition hover:text-orange-300 disabled:opacity-50" title="Dismiss">
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -2181,8 +2181,8 @@ ${code}
 
       {/* ── Python Packages panel ─────────────────────────────────────────────── */}
       {showPackages && isPython && pyodideMode && (
-        <div className="border-b border-slate-700 bg-[#1a1a1a] px-4 py-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+        <div className="border-b border-stone-700 bg-[#1a1a1a] px-4 py-3">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-stone-500">
             Python Packages. Pyodide
           </p>
           <div className="flex items-center gap-2">
@@ -2192,12 +2192,12 @@ ${code}
               value={packageInput}
               onChange={(e) => setPackageInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") void installPackage(); }}
-              className="flex-1 rounded-md border border-slate-600 bg-slate-800 px-2.5 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              className="flex-1 rounded-md border border-stone-600 bg-stone-800 px-2.5 py-1.5 text-xs text-stone-200 placeholder:text-stone-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
             <button
               onClick={() => void installPackage()}
               disabled={installingPkg || !packageInput.trim()}
-              className="rounded-md bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
+              className="rounded-md bg-orange-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-800 disabled:opacity-50"
             >
               {installingPkg ? "Installing…" : "Install"}
             </button>
@@ -2205,12 +2205,12 @@ ${code}
           {installedPkgs.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {installedPkgs.map((pkg) => (
-                <span key={pkg} className="rounded-full bg-violet-900/40 px-2 py-0.5 text-[10px] text-violet-300">{pkg}</span>
+                <span key={pkg} className="rounded-full bg-orange-900/40 px-2 py-0.5 text-[10px] text-orange-300">{pkg}</span>
               ))}
             </div>
           )}
           {!pyodideReady && (
-            <p className="mt-1.5 text-[10px] text-slate-500">
+            <p className="mt-1.5 text-[10px] text-stone-500">
               Pyodide loads on first run (~10 MB, cached afterwards). Pure-Python packages only.
             </p>
           )}
@@ -2219,15 +2219,15 @@ ${code}
 
       {/* ── Stdin panel ───────────────────────────────────────────────────────── */}
       {showStdin && !isWebMode && (
-        <div className="border-b border-slate-700 bg-[#1e1e1e] px-4 py-2.5">
-          <p className="mb-1.5 text-[10px] font-medium text-slate-500">stdin, one value per line</p>
+        <div className="border-b border-stone-700 bg-[#1e1e1e] px-4 py-2.5">
+          <p className="mb-1.5 text-[10px] font-medium text-stone-500">stdin, one value per line</p>
           <textarea
             value={stdin}
             onChange={(e) => setStdin(e.target.value)}
             rows={2}
             spellCheck={false}
             placeholder={"e.g. 5\nhello world"}
-            className="w-full resize-none rounded bg-slate-900 px-2.5 py-1.5 font-mono text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-600"
+            className="w-full resize-none rounded bg-stone-900 px-2.5 py-1.5 font-mono text-xs text-stone-300 placeholder:text-stone-600 focus:outline-none focus:ring-1 focus:ring-stone-600"
           />
         </div>
       )}
@@ -2262,7 +2262,7 @@ ${code}
         </div>
 
         {/* Output / Preview pane */}
-        <div className="flex h-[260px] flex-col border-t border-slate-700 sm:h-[300px] lg:h-full lg:w-[45%] lg:border-l lg:border-t-0">
+        <div className="flex h-[260px] flex-col border-t border-stone-700 sm:h-[300px] lg:h-full lg:w-[45%] lg:border-l lg:border-t-0">
           {isWebMode ? (
             /* ── Web Preview ── */
             <>
@@ -2276,24 +2276,24 @@ ${code}
               <div
                 className={
                   previewFullscreen
-                    ? "fixed inset-1 z-[60] flex flex-col overflow-hidden rounded-xl border border-slate-700 shadow-2xl sm:inset-4 md:inset-8"
+                    ? "fixed inset-1 z-[60] flex flex-col overflow-hidden rounded-xl border border-stone-700 shadow-2xl sm:inset-4 md:inset-8"
                     : "flex h-full flex-col"
                 }
               >
-                <div className="flex shrink-0 items-center gap-2 border-b border-slate-800 bg-[#1a1a1a] px-3 py-1.5">
-                  <Globe className="h-3 w-3 text-sky-400" />
-                  <span className="text-[10px] font-medium text-slate-400">Preview</span>
+                <div className="flex shrink-0 items-center gap-2 border-b border-stone-800 bg-[#1a1a1a] px-3 py-1.5">
+                  <Globe className="h-3 w-3 text-orange-400" />
+                  <span className="text-[10px] font-medium text-stone-400">Preview</span>
                   <button
                     onClick={() => { if (iframeRef.current) iframeRef.current.srcdoc = buildWebDoc(); }}
                     title="Refresh preview"
-                    className="ml-auto text-[10px] text-slate-500 transition hover:text-slate-300"
+                    className="ml-auto text-[10px] text-stone-500 transition hover:text-stone-300"
                   >
                     ↺ Refresh
                   </button>
                   <button
                     onClick={() => setPreviewFullscreen((v) => !v)}
                     title={previewFullscreen ? "Exit fullscreen" : "Fullscreen preview"}
-                    className="rounded p-0.5 text-slate-500 transition hover:bg-white/10 hover:text-slate-200"
+                    className="rounded p-0.5 text-stone-500 transition hover:bg-white/10 hover:text-stone-200"
                   >
                     {previewFullscreen
                       ? <Minimize2 className="h-3.5 w-3.5" />
@@ -2311,14 +2311,14 @@ ${code}
             </>
           ) : (
             /* ── Terminal Output + Turtle Canvas ── */
-            <div className="flex h-full flex-col bg-slate-950">
+            <div className="flex h-full flex-col bg-stone-950">
 
               {/* Tab bar, only when Python + Pyodide */}
               {isPython && pyodideMode ? (
-                <div className="flex shrink-0 items-center border-b border-slate-800 bg-[#1a1a1a]">
+                <div className="flex shrink-0 items-center border-b border-stone-800 bg-[#1a1a1a]">
                   <button
                     onClick={() => setOutputTab("output")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition border-b-2 ${outputTab === "output" ? "border-emerald-500 text-slate-200" : "border-transparent text-slate-500 hover:text-slate-300"}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition border-b-2 ${outputTab === "output" ? "border-emerald-500 text-stone-200" : "border-transparent text-stone-500 hover:text-stone-300"}`}
                   >
                     <Terminal className="h-3 w-3" />
                     Output
@@ -2330,7 +2330,7 @@ ${code}
                   </button>
                   <button
                     onClick={() => setOutputTab("turtle")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition border-b-2 ${outputTab === "turtle" ? "border-emerald-500 text-slate-200" : "border-transparent text-slate-500 hover:text-slate-300"}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition border-b-2 ${outputTab === "turtle" ? "border-emerald-500 text-stone-200" : "border-transparent text-stone-500 hover:text-stone-300"}`}
                   >
                     {/\bimport\s+pgzrun\b|from\s+pgzrun\s+import/.test(code)
                       ? "🎮 Pygame Zero"
@@ -2342,29 +2342,29 @@ ${code}
                     <button
                       onClick={() => setTurtleFullscreen((v) => !v)}
                       title={turtleFullscreen ? "Exit fullscreen" : "Fullscreen canvas"}
-                      className="ml-auto rounded p-1 text-slate-500 transition hover:bg-white/10 hover:text-slate-200"
+                      className="ml-auto rounded p-1 text-stone-500 transition hover:bg-white/10 hover:text-stone-200"
                     >
                       {turtleFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
                     </button>
                   )}
                   {result && (result.time ?? result.memory) && (
-                    <span className="ml-auto flex items-center gap-2 px-3 text-[10px] text-slate-500">
+                    <span className="ml-auto flex items-center gap-2 px-3 text-[10px] text-stone-500">
                       {result.time   && <span>{result.time}s</span>}
                       {result.memory && <span>{Math.round(result.memory / 1024)} KB</span>}
                     </span>
                   )}
                 </div>
               ) : (
-                <div className="flex shrink-0 items-center gap-2 border-b border-slate-800 bg-[#1a1a1a] px-3 py-1.5">
-                  <Terminal className="h-3 w-3 text-slate-500" />
-                  <span className="text-[10px] font-medium text-slate-400">Output</span>
+                <div className="flex shrink-0 items-center gap-2 border-b border-stone-800 bg-[#1a1a1a] px-3 py-1.5">
+                  <Terminal className="h-3 w-3 text-stone-500" />
+                  <span className="text-[10px] font-medium text-stone-400">Output</span>
                   {result && (
                     <span className={`ml-auto text-[10px] font-semibold ${success ? "text-emerald-400" : "text-rose-400"}`}>
                       {success ? "✓ Exit 0" : `✗ Exit ${result.exitCode}`}
                     </span>
                   )}
                   {result && (result.time ?? result.memory) && (
-                    <span className="flex items-center gap-2 text-[10px] text-slate-500">
+                    <span className="flex items-center gap-2 text-[10px] text-stone-500">
                       {result.time   && <span>{result.time}s</span>}
                       {result.memory && <span>{Math.round(result.memory / 1024)} KB</span>}
                     </span>
@@ -2382,7 +2382,7 @@ ${code}
               <div
                 className={
                   turtleFullscreen && outputTab === "turtle" && isPython && pyodideMode
-                    ? "fixed inset-1 z-[60] flex items-center justify-center overflow-auto rounded-xl border border-slate-700 bg-white shadow-2xl sm:inset-4 md:inset-8"
+                    ? "fixed inset-1 z-[60] flex items-center justify-center overflow-auto rounded-xl border border-stone-700 bg-white shadow-2xl sm:inset-4 md:inset-8"
                     : outputTab === "turtle" && isPython && pyodideMode
                       ? "flex-1 overflow-auto bg-white flex items-start justify-center"
                       : "hidden"
@@ -2402,14 +2402,14 @@ ${code}
               <div className={`flex-1 overflow-auto ${outputTab === "turtle" && isPython && pyodideMode ? "hidden" : ""}`}>
                 {!result && !error && !running && (
                   <div className="flex h-full items-center justify-center px-4 text-center">
-                    <p className="text-xs text-slate-600">
+                    <p className="text-xs text-stone-600">
                       {pyodideMode && isPython ? "Browser execution via Pyodide" : "Press Run or Ctrl+Enter"}
                     </p>
                   </div>
                 )}
                 {running && (
                   <div className="flex h-full items-center justify-center">
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <div className="flex items-center gap-2 text-xs text-stone-500">
                       <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
                       {pyodideLoading ? "Loading Pyodide…" : "Running…"}
                     </div>
@@ -2419,19 +2419,19 @@ ${code}
                   <div className="p-4 space-y-3">
                     {result?.compileOutput && (
                       <div>
-                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Compiler</p>
+                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-stone-500">Compiler</p>
                         <pre className="whitespace-pre-wrap font-mono text-xs text-amber-300">{result.compileOutput}</pre>
                       </div>
                     )}
                     {result?.stdout && (
                       <div>
-                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-500">stdout</p>
+                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-stone-500">stdout</p>
                         <pre className="whitespace-pre-wrap font-mono text-xs text-emerald-300">{result.stdout}</pre>
                       </div>
                     )}
                     {result?.stderr && (
                       <div>
-                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-500">stderr</p>
+                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-stone-500">stderr</p>
                         <pre className="whitespace-pre-wrap font-mono text-xs text-rose-400">{result.stderr}</pre>
                       </div>
                     )}
@@ -2439,7 +2439,7 @@ ${code}
                       <pre className="whitespace-pre-wrap font-mono text-xs text-rose-400">{error}</pre>
                     )}
                     {result && !result.stdout && !result.stderr && !result.compileOutput && !error && (
-                      <p className="font-mono text-xs text-slate-600">(no output)</p>
+                      <p className="font-mono text-xs text-stone-600">(no output)</p>
                     )}
                   </div>
                 )}
@@ -2452,17 +2452,17 @@ ${code}
       {/* ── Invite Students Modal ─────────────────────────────────────────────── */}
       {showInviteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="flex w-full max-w-[calc(100%-2rem)] flex-col gap-4 rounded-2xl border border-slate-700 bg-[#1e1e1e] p-4 shadow-2xl sm:max-w-md sm:p-5">
+          <div className="flex w-full max-w-[calc(100%-2rem)] flex-col gap-4 rounded-2xl border border-stone-700 bg-[#1e1e1e] p-4 shadow-2xl sm:max-w-md sm:p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-100">Invite Students</p>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-sm font-semibold text-stone-100">Invite Students</p>
+                <p className="text-[11px] text-stone-400">
                   {inPeerSession ? "Invite to this live session" : "Assign to this playground"}
                 </p>
               </div>
               <button
                 onClick={() => { setShowInviteModal(false); setSelectedStudents([]); setStudentSearch(""); setInviteMessage(""); }}
-                className="rounded p-1 text-slate-500 transition hover:bg-white/10 hover:text-slate-300"
+                className="rounded p-1 text-stone-500 transition hover:bg-white/10 hover:text-stone-300"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -2473,15 +2473,15 @@ ${code}
               placeholder="Search by name or email…"
               value={studentSearch}
               onChange={(e) => setStudentSearch(e.target.value)}
-              className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              className="w-full rounded-lg border border-stone-600 bg-stone-800 px-3 py-2 text-xs text-stone-200 placeholder:text-stone-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               autoFocus
             />
 
-            <div className="max-h-52 overflow-y-auto rounded-lg border border-slate-700">
+            <div className="max-h-52 overflow-y-auto rounded-lg border border-stone-700">
               {loadingStudents ? (
-                <div className="p-4 text-center text-xs text-slate-500">Searching…</div>
+                <div className="p-4 text-center text-xs text-stone-500">Searching…</div>
               ) : studentResults.length === 0 ? (
-                <div className="p-4 text-center text-xs text-slate-500">
+                <div className="p-4 text-center text-xs text-stone-500">
                   {programId ? "No enrolled students found." : "No program linked to this lesson."}
                 </div>
               ) : (
@@ -2491,17 +2491,17 @@ ${code}
                     <button
                       key={s.id}
                       onClick={() => toggleStudent(s)}
-                      className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-white/5 ${selected ? "bg-violet-900/30" : ""}`}
+                      className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-white/5 ${selected ? "bg-orange-900/30" : ""}`}
                     >
-                      <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px] font-bold transition ${selected ? "border-violet-500 bg-violet-600 text-white" : "border-slate-600 text-transparent"}`}>
+                      <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px] font-bold transition ${selected ? "border-orange-500 bg-orange-700 text-white" : "border-stone-600 text-transparent"}`}>
                         ✓
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-medium text-slate-200">
+                        <p className="truncate text-xs font-medium text-stone-200">
                           {s.firstName} {s.lastName}
-                          <span className="ml-1.5 text-[10px] font-normal text-slate-500">{s.role}</span>
+                          <span className="ml-1.5 text-[10px] font-normal text-stone-500">{s.role}</span>
                         </p>
-                        <p className="truncate text-[10px] text-slate-500">{s.email}</p>
+                        <p className="truncate text-[10px] text-stone-500">{s.email}</p>
                       </div>
                     </button>
                   );
@@ -2512,9 +2512,9 @@ ${code}
             {selectedStudents.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {selectedStudents.map((s) => (
-                  <span key={s.id} className="flex items-center gap-1 rounded-full bg-violet-900/40 px-2.5 py-0.5 text-[11px] text-violet-300">
+                  <span key={s.id} className="flex items-center gap-1 rounded-full bg-orange-900/40 px-2.5 py-0.5 text-[11px] text-orange-300">
                     {s.firstName}
-                    <button onClick={() => toggleStudent(s)} className="ml-0.5 text-violet-400 hover:text-violet-200">
+                    <button onClick={() => toggleStudent(s)} className="ml-0.5 text-orange-400 hover:text-orange-200">
                       <X className="h-2.5 w-2.5" />
                     </button>
                   </span>
@@ -2528,7 +2528,7 @@ ${code}
               rows={2}
               value={inviteMessage}
               onChange={(e) => setInviteMessage(e.target.value)}
-              className="w-full resize-none rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              className="w-full resize-none rounded-lg border border-stone-600 bg-stone-800 px-3 py-2 text-xs text-stone-200 placeholder:text-stone-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
 
             {inPeerSession && (
@@ -2539,11 +2539,11 @@ ${code}
             )}
 
             <div className="flex items-center justify-between gap-3">
-              <span className="text-[11px] text-slate-500">{selectedStudents.length} selected</span>
+              <span className="text-[11px] text-stone-500">{selectedStudents.length} selected</span>
               <button
                 onClick={() => void sendInvites()}
                 disabled={sendingInvites || selectedStudents.length === 0}
-                className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg bg-orange-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-orange-800 disabled:opacity-50"
               >
                 <UserPlus className="h-3.5 w-3.5" />
                 {sendingInvites ? "Sending…" : "Send Invite"}
@@ -2555,14 +2555,14 @@ ${code}
 
       {/* ── Submit section (students only) ────────────────────────────────────── */}
       {!isCreator && (
-        <div className="border-t border-slate-200 dark:border-slate-700">
+        <div className="border-t border-stone-200 dark:border-stone-700">
 
           {linkedProject && !showSubmitForm && (
-            <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-900/40">
+            <div className="flex items-center justify-between gap-3 border-b border-stone-100 bg-stone-50 px-4 py-2.5 dark:border-stone-800 dark:bg-stone-900/40">
               <div className="flex items-center gap-2 text-xs">
-                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                <span className="text-slate-600 dark:text-slate-400">
-                  Submitted: <span className="font-medium text-slate-800 dark:text-slate-200">{linkedProject.title}</span>
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-stone-400" />
+                <span className="text-stone-600 dark:text-stone-400">
+                  Submitted: <span className="font-medium text-stone-800 dark:text-stone-200">{linkedProject.title}</span>
                 </span>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS_COLOR[linkedProject.status]}`}>
                   {STATUS_LABEL[linkedProject.status]}
@@ -2570,7 +2570,7 @@ ${code}
               </div>
               <button
                 onClick={() => setShowSubmitForm(true)}
-                className="shrink-0 text-[11px] text-blue-600 hover:underline dark:text-blue-400"
+                className="shrink-0 text-[11px] text-orange-600 hover:underline dark:text-orange-400"
               >
                 Submit again
               </button>
@@ -2580,12 +2580,12 @@ ${code}
           {showSubmitForm ? (
             <div className="space-y-2.5 px-4 py-3">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Submit code to instructor</p>
+                <p className="text-xs font-semibold text-stone-700 dark:text-stone-300">Submit code to instructor</p>
                 {checkingAssignment && (
-                  <span className="text-[10px] text-slate-400">Checking for linked assignment…</span>
+                  <span className="text-[10px] text-stone-400">Checking for linked assignment…</span>
                 )}
                 {!checkingAssignment && typeof assignmentMatch === "object" && assignmentMatch !== null && (
-                  <span className="text-[10px] text-blue-600 dark:text-blue-400">
+                  <span className="text-[10px] text-orange-600 dark:text-orange-400">
                     Linked to: {assignmentMatch.title}
                   </span>
                 )}
@@ -2596,7 +2596,7 @@ ${code}
                 maxLength={120}
                 value={submitTitle}
                 onChange={(e) => setSubmitTitle(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                className="w-full rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-orange-400 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
               />
               <textarea
                 placeholder="Short description, what does your project do? (min. 10 characters)"
@@ -2604,13 +2604,13 @@ ${code}
                 rows={2}
                 value={submitDesc}
                 onChange={(e) => setSubmitDesc(e.target.value)}
-                className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                className="w-full resize-none rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-orange-400 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
               />
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => void submitCodeAsProject()}
                   disabled={submitting}
-                  className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-lg bg-orange-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-orange-800 disabled:opacity-50"
                 >
                   {submitting
                     ? <><AlertCircle className="h-3 w-3 animate-pulse" /> Submitting…</>
@@ -2618,7 +2618,7 @@ ${code}
                 </button>
                 <button
                   onClick={() => { setShowSubmitForm(false); setSubmitTitle(""); setSubmitDesc(""); }}
-                  className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                  className="text-xs text-stone-500 hover:text-stone-700 dark:hover:text-stone-300"
                 >
                   Cancel
                 </button>
@@ -2627,7 +2627,7 @@ ${code}
           ) : !linkedProject ? (
             <button
               onClick={() => setShowSubmitForm(true)}
-              className="flex w-full items-center justify-center gap-1.5 px-4 py-2 text-xs text-slate-500 transition hover:bg-slate-50 hover:text-blue-600 dark:hover:bg-slate-800/50 dark:hover:text-blue-400"
+              className="flex w-full items-center justify-center gap-1.5 px-4 py-2 text-xs text-stone-500 transition hover:bg-stone-50 hover:text-orange-600 dark:hover:bg-stone-800/50 dark:hover:text-orange-400"
             >
               <Send className="h-3 w-3" />
               Submit code to instructor

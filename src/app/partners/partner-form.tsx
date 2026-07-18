@@ -34,6 +34,8 @@ export function PartnerForm() {
     type: "SCHOOL",
     email: "",
     phone: "",
+    state: "",
+    estimatedStudents: "",
     message: "",
   });
 
@@ -56,7 +58,12 @@ export function PartnerForm() {
       const res = await fetch("/api/partners", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, programs }),
+        body: JSON.stringify({
+          ...form,
+          // Omit when blank so the optional Zod field passes (empty string would coerce to 0).
+          estimatedStudents: form.estimatedStudents ? Number(form.estimatedStudents) : undefined,
+          programs,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -122,6 +129,30 @@ export function PartnerForm() {
       </div>
 
       {form.type === "SCHOOL" && (
+        <>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label className={labelCls}>State</label>
+            <input
+              placeholder="e.g. Lagos"
+              className={inputCls}
+              value={form.state}
+              onChange={set("state")}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className={labelCls}>Estimated students</label>
+            <input
+              type="number"
+              min="1"
+              inputMode="numeric"
+              placeholder="e.g. 120"
+              className={inputCls}
+              value={form.estimatedStudents}
+              onChange={set("estimatedStudents")}
+            />
+          </div>
+        </div>
         <div className="space-y-2">
           <label className={labelCls}>
             Levels you teach <span className="normal-case tracking-normal">(select all that apply)</span>
@@ -159,6 +190,7 @@ export function PartnerForm() {
             })}
           </div>
         </div>
+        </>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">

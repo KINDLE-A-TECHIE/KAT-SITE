@@ -75,7 +75,7 @@ export default async function SchoolAdminPage() {
         </Link>
         <Link
           href="/admin/billing"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-orange-700"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-orange-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-orange-800"
         >
           <ReceiptText className="size-4" />
           Billing &amp; seats

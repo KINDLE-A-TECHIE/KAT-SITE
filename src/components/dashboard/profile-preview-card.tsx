@@ -76,15 +76,15 @@ export function ProfilePreviewCard({ contact, compact = false }: ProfilePreviewC
     contact.profile.education.length > 0 ||
     contact.profile.experience.length > 0 ||
     Boolean(link);
-  const avatarClasses = compact ? "size-10 border border-slate-200 dark:border-slate-700" : "size-12 border border-slate-200 dark:border-slate-700";
+  const avatarClasses = compact ? "size-10 border border-stone-200 dark:border-stone-700" : "size-12 border border-stone-200 dark:border-stone-700";
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-xl border border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-900">
       <div className="flex items-start gap-3">
         {compact ? (
           <Avatar className={avatarClasses}>
             <AvatarImage src={contact.avatarUrl ?? undefined} alt={`${contact.firstName} ${contact.lastName}`} />
-            <AvatarFallback className="bg-slate-100 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+            <AvatarFallback className="bg-stone-100 text-xs font-semibold text-stone-700 dark:bg-stone-700 dark:text-stone-300">
               {initials(contact.firstName, contact.lastName)}
             </AvatarFallback>
           </Avatar>
@@ -92,7 +92,7 @@ export function ProfilePreviewCard({ contact, compact = false }: ProfilePreviewC
           <button
             type="button"
             aria-label={`View ${contact.firstName} ${contact.lastName} profile`}
-            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
             onClick={() => {
               if (hasDetails) {
                 setOpen(true);
@@ -101,22 +101,22 @@ export function ProfilePreviewCard({ contact, compact = false }: ProfilePreviewC
           >
             <Avatar className={avatarClasses}>
               <AvatarImage src={contact.avatarUrl ?? undefined} alt={`${contact.firstName} ${contact.lastName}`} />
-              <AvatarFallback className="bg-slate-100 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+              <AvatarFallback className="bg-stone-100 text-xs font-semibold text-stone-700 dark:bg-stone-700 dark:text-stone-300">
                 {initials(contact.firstName, contact.lastName)}
               </AvatarFallback>
             </Avatar>
           </button>
         )}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <p className="truncate text-sm font-semibold text-stone-900 dark:text-stone-100">
             {contact.firstName} {contact.lastName}
           </p>
-          <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">{contact.role}</p>
+          <p className="text-[11px] uppercase tracking-wide text-stone-500 dark:text-stone-400">{contact.role}</p>
           {contact.profile.headline ? (
-            <p className="mt-1 truncate text-xs text-slate-600 dark:text-slate-400">{contact.profile.headline}</p>
+            <p className="mt-1 truncate text-xs text-stone-600 dark:text-stone-400">{contact.profile.headline}</p>
           ) : null}
           {contact.profile.location ? (
-            <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+            <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-stone-500 dark:text-stone-400">
               <MapPin className="size-3" />
               {contact.profile.location}
             </p>
@@ -129,7 +129,7 @@ export function ProfilePreviewCard({ contact, compact = false }: ProfilePreviewC
           {contact.profile.skills.slice(0, 2).map((skill) => (
             <span
               key={skill}
-              className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-900 dark:border-sky-800 dark:bg-sky-900/40 dark:text-sky-400"
+              className="rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-medium text-orange-900 dark:border-orange-800 dark:bg-orange-900/40 dark:text-orange-400"
             >
               {skill}
             </span>
@@ -156,17 +156,17 @@ export function ProfilePreviewCard({ contact, compact = false }: ProfilePreviewC
             </DialogHeader>
 
             <div className="space-y-3">
-              {contact.profile.headline ? <p className="text-sm text-slate-700 dark:text-slate-300">{contact.profile.headline}</p> : null}
-              {contact.profile.bio ? <p className="text-sm text-slate-600 dark:text-slate-400">{contact.profile.bio}</p> : null}
+              {contact.profile.headline ? <p className="text-sm text-stone-700 dark:text-stone-300">{contact.profile.headline}</p> : null}
+              {contact.profile.bio ? <p className="text-sm text-stone-600 dark:text-stone-400">{contact.profile.bio}</p> : null}
 
               {contact.profile.skills.length > 0 ? (
                 <div>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Skills</p>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Skills</p>
                   <div className="flex flex-wrap gap-1.5">
                     {contact.profile.skills.map((skill) => (
                       <span
                         key={skill}
-                        className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-900 dark:border-sky-800 dark:bg-sky-900/40 dark:text-sky-400"
+                        className="rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-medium text-orange-900 dark:border-orange-800 dark:bg-orange-900/40 dark:text-orange-400"
                       >
                         {skill}
                       </span>
@@ -177,8 +177,8 @@ export function ProfilePreviewCard({ contact, compact = false }: ProfilePreviewC
 
               {contact.profile.experience.length > 0 ? (
                 <div>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Experience</p>
-                  <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Experience</p>
+                  <div className="space-y-1 text-sm text-stone-600 dark:text-stone-400">
                     {contact.profile.experience.map((item) => (
                       <p key={`${item.company}-${item.title}`}>
                         {item.title} @ {item.company}
@@ -191,8 +191,8 @@ export function ProfilePreviewCard({ contact, compact = false }: ProfilePreviewC
 
               {contact.profile.education.length > 0 ? (
                 <div>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Education</p>
-                  <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Education</p>
+                  <div className="space-y-1 text-sm text-stone-600 dark:text-stone-400">
                     {contact.profile.education.map((item) => (
                       <p key={`${item.school}-${item.degree}`}>
                         {item.degree} - {item.school}
@@ -207,7 +207,7 @@ export function ProfilePreviewCard({ contact, compact = false }: ProfilePreviewC
                   href={link}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-sm font-medium text-blue-700 hover:underline"
+                  className="inline-flex items-center gap-1 text-sm font-medium text-orange-700 hover:underline"
                 >
                   View link
                   <ExternalLink className="size-3" />

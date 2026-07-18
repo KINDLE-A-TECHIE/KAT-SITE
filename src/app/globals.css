@@ -203,15 +203,15 @@
   }
 
   .kat-date-input {
-    @apply h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    @apply h-11 w-full rounded-xl border border-stone-200 bg-white px-4 text-sm font-medium text-stone-700;
+    box-shadow: 0 1px 2px rgba(26, 23, 20, 0.05);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
     color-scheme: light;
   }
 
   .kat-date-input:hover {
-    @apply border-slate-300;
-    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
+    @apply border-stone-300;
+    box-shadow: 0 1px 4px rgba(26, 23, 20, 0.1);
   }
 
   .kat-date-input:focus {
@@ -279,12 +279,12 @@
   }
 
   .dark .kat-date-input {
-    @apply border-slate-700 bg-slate-800/70 text-slate-200;
+    @apply border-stone-700 bg-stone-800/70 text-stone-200;
     color-scheme: dark;
   }
 
   .dark .kat-date-input:hover {
-    @apply border-slate-600;
+    @apply border-stone-600;
   }
 
   .dark .kat-date-input:focus {

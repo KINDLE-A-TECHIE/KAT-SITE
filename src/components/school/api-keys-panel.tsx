@@ -192,7 +192,7 @@ export function ApiKeysPanel() {
           <Button
             onClick={issue}
             disabled={busy}
-            className="gap-1.5 bg-orange-600 text-white hover:bg-orange-700"
+            className="gap-1.5 bg-orange-700 text-white hover:bg-orange-800"
           >
             {busy ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
             Create key

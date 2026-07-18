@@ -124,7 +124,7 @@ function TranscriptContent() {
   if (!transcript) {
     return (
       <div className="kat-card">
-        <p className="text-sm text-slate-600">Transcript not available.</p>
+        <p className="text-sm text-stone-600">Transcript not available.</p>
       </div>
     );
   }
@@ -150,15 +150,15 @@ function TranscriptContent() {
       <div className="kat-card print:shadow-none">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
               KAT Learning. Academic Transcript
             </p>
-            <h2 className="mt-1 [font-family:var(--font-space-grotesk)] text-2xl font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="mt-1 [font-family:var(--font-space-grotesk)] text-2xl font-bold text-stone-900 dark:text-stone-100">
               {transcript.firstName} {transcript.lastName}
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400">{transcript.email}</p>
-            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{transcript.role}</p>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-stone-600 dark:text-stone-400">{transcript.email}</p>
+            <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">{transcript.role}</p>
+            <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
               Member since {formatDate(transcript.createdAt)}
             </p>
           </div>
@@ -181,9 +181,9 @@ function TranscriptContent() {
             { label: "Passed", value: `${passedCount} / ${gradedSubmissions.length}` },
             { label: "Avg Score", value: avgScore !== null ? `${avgScore}%` : ", " },
           ].map((item) => (
-            <div key={item.label} className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{item.label}</p>
-              <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{item.value}</p>
+            <div key={item.label} className="rounded-xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-700 dark:bg-stone-800/60">
+              <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">{item.label}</p>
+              <p className="mt-1 text-lg font-semibold text-stone-900 dark:text-stone-100">{item.value}</p>
             </div>
           ))}
         </div>
@@ -192,7 +192,7 @@ function TranscriptContent() {
       {/* Per-enrollment records */}
       {transcript.enrollments.length === 0 ? (
         <div className="kat-card">
-          <p className="text-sm text-slate-600 dark:text-slate-400">No enrollments on record.</p>
+          <p className="text-sm text-stone-600 dark:text-stone-400">No enrollments on record.</p>
         </div>
       ) : (
         transcript.enrollments.map((enrollment) => {
@@ -203,24 +203,24 @@ function TranscriptContent() {
             <div key={enrollment.id} className="kat-card print:shadow-none">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">
                     {enrollment.program.name}
                   </h3>
                   {enrollment.cohort && (
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                    <p className="text-sm text-stone-600 dark:text-stone-400">
                       Cohort: {enrollment.cohort.name}
                       {enrollment.cohort.startsAt &&
                         ` · ${formatDate(enrollment.cohort.startsAt)} – ${formatDate(enrollment.cohort.endsAt)}`}
                     </p>
                   )}
                   <div className="mt-1 flex flex-wrap gap-2">
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                    <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] uppercase tracking-wide text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
                       {enrollment.status}
                     </span>
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                    <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
                       Enrolled {formatDate(enrollment.enrolledAt)}
                     </span>
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                    <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
                       {submitted}/{assessments.length} submitted
                     </span>
                   </div>
@@ -228,12 +228,12 @@ function TranscriptContent() {
               </div>
 
               {assessments.length === 0 ? (
-                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No published assessments yet.</p>
+                <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">No published assessments yet.</p>
               ) : (
                 <div className="mt-3 overflow-x-auto">
                   <table className="min-w-[640px] w-full text-sm">
                     <thead>
-                      <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                      <tr className="border-b border-stone-200 text-left text-xs uppercase tracking-wide text-stone-500 dark:border-stone-700 dark:text-stone-400">
                         <th className="pb-2">Assessment</th>
                         <th className="pb-2">Type</th>
                         <th className="pb-2">Score</th>
@@ -243,15 +243,15 @@ function TranscriptContent() {
                         <th className="pb-2">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
                       {assessments.map((assessment) => {
                         const sub = assessment.submissions[0];
                         if (!sub) {
                           return (
                             <tr key={assessment.id}>
-                              <td className="py-2.5 font-medium text-slate-900 dark:text-slate-100">{assessment.title}</td>
-                              <td className="py-2.5 text-slate-500 dark:text-slate-400">{TYPE_LABEL[assessment.type]}</td>
-                              <td className="py-2.5 text-slate-400 dark:text-slate-500" colSpan={5}>
+                              <td className="py-2.5 font-medium text-stone-900 dark:text-stone-100">{assessment.title}</td>
+                              <td className="py-2.5 text-stone-500 dark:text-stone-400">{TYPE_LABEL[assessment.type]}</td>
+                              <td className="py-2.5 text-stone-400 dark:text-stone-500" colSpan={5}>
                                 Not submitted
                               </td>
                             </tr>
@@ -260,13 +260,13 @@ function TranscriptContent() {
                         const passed = sub.totalScore >= assessment.passScore;
                         return (
                           <tr key={assessment.id}>
-                            <td className="py-2.5 font-medium text-slate-900 dark:text-slate-100">{assessment.title}</td>
-                            <td className="py-2.5 text-slate-500 dark:text-slate-400">{TYPE_LABEL[assessment.type]}</td>
+                            <td className="py-2.5 font-medium text-stone-900 dark:text-stone-100">{assessment.title}</td>
+                            <td className="py-2.5 text-stone-500 dark:text-stone-400">{TYPE_LABEL[assessment.type]}</td>
                             <td className="py-2.5">
                               <span className={cn("font-semibold", gradeColor(sub.totalScore, assessment.totalPoints))}>
                                 {sub.totalScore}
                               </span>
-                              <span className="text-slate-400 dark:text-slate-500">/{assessment.totalPoints}</span>
+                              <span className="text-stone-400 dark:text-stone-500">/{assessment.totalPoints}</span>
                             </td>
                             <td className="py-2.5">
                               <span className={cn("font-bold", gradeColor(sub.totalScore, assessment.totalPoints))}>
@@ -286,12 +286,12 @@ function TranscriptContent() {
                                   {passed ? "Pass" : "Fail"}
                                 </span>
                               ) : (
-                                <span className="text-xs text-slate-400 dark:text-slate-500">Pending</span>
+                                <span className="text-xs text-stone-400 dark:text-stone-500">Pending</span>
                               )}
                             </td>
-                            <td className="py-2.5 text-slate-600 dark:text-slate-400">{formatDate(sub.submittedAt)}</td>
+                            <td className="py-2.5 text-stone-600 dark:text-stone-400">{formatDate(sub.submittedAt)}</td>
                             <td className="py-2.5">
-                              <span className="text-xs text-slate-500 dark:text-slate-400">
+                              <span className="text-xs text-stone-500 dark:text-stone-400">
                                 {STATUS_LABEL[sub.status] ?? sub.status}
                               </span>
                             </td>
@@ -307,7 +307,7 @@ function TranscriptContent() {
         })
       )}
 
-      <div className="kat-card print:block hidden text-center text-xs text-slate-500 dark:text-slate-400">
+      <div className="kat-card print:block hidden text-center text-xs text-stone-500 dark:text-stone-400">
         Generated {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} · KAT Learning · kindleatechie.com
       </div>
     </div>

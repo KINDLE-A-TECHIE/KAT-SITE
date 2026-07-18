@@ -102,7 +102,7 @@ export function EmbedLauncher({
         title="Your browser is blocking this window"
         body={`Safari and some privacy settings will not let ${schoolName}'s page keep you signed in inside a frame. Open your lessons in a tab instead, and everything works the same.`}
       >
-        <Button asChild className="gap-1.5 bg-orange-600 text-white hover:bg-orange-700">
+        <Button asChild className="gap-1.5 bg-orange-700 text-white hover:bg-orange-800">
           <a href={state.href} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="size-4" />
             Open my lessons

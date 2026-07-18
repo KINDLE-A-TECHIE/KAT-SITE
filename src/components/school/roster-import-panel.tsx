@@ -123,7 +123,7 @@ export function RosterImportPanel() {
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={busy || !classId}
-                className="flex-1 gap-1.5 bg-orange-600 text-white hover:bg-orange-700"
+                className="flex-1 gap-1.5 bg-orange-700 text-white hover:bg-orange-800"
               >
                 {busy ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
                 {busy ? "Importing…" : "Choose CSV"}

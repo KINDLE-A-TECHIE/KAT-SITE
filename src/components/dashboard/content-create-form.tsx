@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Code2, FileText, Link as LinkIcon, Video, Youtube, Plus, X, Send } from "lucide-react";
+import { Code2, FileText, Link as LinkIcon, Network, Video, Youtube, Plus, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SUPPORTED_LANGUAGES } from "@/components/dashboard/code-playground-block";
+import { LEVELS } from "@/lib/network-lab/levels";
 
-type Tab = "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND";
+type Tab = "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "RICH_TEXT",       label: "Rich Text", icon: <FileText className="h-3.5 w-3.5" /> },
@@ -17,6 +18,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "EXTERNAL_VIDEO",  label: "Video URL", icon: <Video className="h-3.5 w-3.5" /> },
   { id: "DOCUMENT_LINK",   label: "Document",  icon: <LinkIcon className="h-3.5 w-3.5" /> },
   { id: "CODE_PLAYGROUND", label: "Code",      icon: <Code2 className="h-3.5 w-3.5" /> },
+  { id: "NETWORK_LAB",     label: "Network Lab", icon: <Network className="h-3.5 w-3.5" /> },
 ];
 
 const TAB_ICON: Record<Tab, React.ReactNode> = {
@@ -25,6 +27,7 @@ const TAB_ICON: Record<Tab, React.ReactNode> = {
   EXTERNAL_VIDEO:  <Video className="h-3.5 w-3.5" />,
   DOCUMENT_LINK:   <LinkIcon className="h-3.5 w-3.5" />,
   CODE_PLAYGROUND: <Code2 className="h-3.5 w-3.5" />,
+  NETWORK_LAB:     <Network className="h-3.5 w-3.5" />,
 };
 
 const TAB_LABEL: Record<Tab, string> = {
@@ -33,7 +36,10 @@ const TAB_LABEL: Record<Tab, string> = {
   EXTERNAL_VIDEO:  "Video URL",
   DOCUMENT_LINK:   "Document",
   CODE_PLAYGROUND: "Code",
+  NETWORK_LAB:     "Network Lab",
 };
+
+const LAB_LEVELS = Object.entries(LEVELS).map(([key, level]) => ({ key, unit: level.unit }));
 
 const STARTER_CODE: Record<string, string> = {
   // Popular
@@ -104,6 +110,7 @@ export function ContentCreateForm({
   const [url, setUrl] = useState("");
   const [language, setLanguage] = useState<string>(SUPPORTED_LANGUAGES[0].value);
   const [starterCode, setStarterCode] = useState(STARTER_CODE[SUPPORTED_LANGUAGES[0].value] ?? "");
+  const [labLevel, setLabLevel] = useState<string>(LAB_LEVELS[0]?.key ?? "");
   const [queue, setQueue] = useState<QueuedBlock[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -113,6 +120,7 @@ export function ContentCreateForm({
     setUrl("");
     setLanguage(SUPPORTED_LANGUAGES[0].value);
     setStarterCode(STARTER_CODE[SUPPORTED_LANGUAGES[0].value] ?? "");
+    setLabLevel(LAB_LEVELS[0]?.key ?? "");
     setTab("RICH_TEXT");
   };
 
@@ -128,10 +136,13 @@ export function ContentCreateForm({
       toast.error("URL is required."); return;
     }
     if (tab === "CODE_PLAYGROUND" && !starterCode.trim()) { toast.error("Starter code is required."); return; }
+    if (tab === "NETWORK_LAB" && !labLevel) { toast.error("Choose a level."); return; }
 
+    // NETWORK_LAB stores the chosen level key in `body`, the same slot CODE_PLAYGROUND uses for code.
+    const blockBody = tab === "NETWORK_LAB" ? labLevel : body;
     setQueue((prev) => [
       ...prev,
-      { localId: `${Date.now()}-${Math.random()}`, type: tab, title: title.trim(), body, url: url.trim(), language, starterCode },
+      { localId: `${Date.now()}-${Math.random()}`, type: tab, title: title.trim(), body: blockBody, url: url.trim(), language, starterCode },
     ]);
     resetForm();
   };
@@ -148,6 +159,7 @@ export function ContentCreateForm({
         const payload: Record<string, unknown> = { type: block.type, title: block.title };
         if (block.type === "RICH_TEXT")         payload.body = block.body;
         else if (block.type === "CODE_PLAYGROUND") { payload.body = block.starterCode; payload.language = block.language; }
+        else if (block.type === "NETWORK_LAB")  payload.body = block.body;
         else                                    payload.url = block.url;
 
         const res = await fetch(`/api/curriculum/lessons/${lessonId}/contents`, {
@@ -175,15 +187,15 @@ export function ContentCreateForm({
   return (
     <div className="space-y-4">
       {/* Type tabs */}
-      <div className="flex gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-1">
+      <div className="flex gap-1 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 p-1">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
               tab === t.id
-                ? "bg-white dark:bg-slate-900 text-[#1E5FAF] shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                ? "bg-white dark:bg-stone-900 text-[#B2401D] shadow-sm"
+                : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300"
             }`}
           >
             {t.icon}
@@ -216,7 +228,7 @@ export function ContentCreateForm({
             rows={8}
             className="font-mono text-sm"
           />
-          <p className="text-xs text-slate-400 dark:text-slate-500">Basic HTML is supported. Script tags will be stripped.</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500">Basic HTML is supported. Script tags will be stripped.</p>
         </div>
       )}
 
@@ -230,7 +242,7 @@ export function ContentCreateForm({
             placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
             className="text-sm"
           />
-          <p className="text-xs text-slate-400 dark:text-slate-500">Paste any YouTube watch or share URL.</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500">Paste any YouTube watch or share URL.</p>
         </div>
       )}
 
@@ -244,7 +256,7 @@ export function ContentCreateForm({
             placeholder="https://example.com/video.mp4"
             className="text-sm"
           />
-          <p className="text-xs text-slate-400 dark:text-slate-500">Direct link to an .mp4 or other browser-supported video file.</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500">Direct link to an .mp4 or other browser-supported video file.</p>
         </div>
       )}
 
@@ -258,7 +270,7 @@ export function ContentCreateForm({
             placeholder="https://drive.google.com/... or https://docs.google.com/..."
             className="text-sm"
           />
-          <p className="text-xs text-slate-400 dark:text-slate-500">Link to a Google Doc, PDF, Notion page, or any public document URL.</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500">Link to a Google Doc, PDF, Notion page, or any public document URL.</p>
         </div>
       )}
 
@@ -270,7 +282,7 @@ export function ContentCreateForm({
               id="code-language"
               value={language}
               onChange={(e) => handleLanguageChange(e.target.value)}
-              className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:border-[#1E5FAF] focus:outline-none focus:ring-1 focus:ring-[#1E5FAF]"
+              className="w-full rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-[#B2401D] focus:outline-none focus:ring-1 focus:ring-[#B2401D]"
             >
               {SUPPORTED_LANGUAGES.map((l) => (
                 <option key={l.value} value={l.value}>{l.label}</option>
@@ -279,7 +291,7 @@ export function ContentCreateForm({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="starter-code" className="text-sm">
-              Starter Code <span className="font-normal text-slate-400 dark:text-slate-500">(learners will see this as their starting point)</span>
+              Starter Code <span className="font-normal text-stone-400 dark:text-stone-500">(learners will see this as their starting point)</span>
             </Label>
             <Textarea
               id="starter-code"
@@ -289,10 +301,30 @@ export function ContentCreateForm({
               className="font-mono text-sm"
               spellCheck={false}
             />
-            <p className="text-xs text-slate-400 dark:text-slate-500">
+            <p className="text-xs text-stone-400 dark:text-stone-500">
               Learners can edit this code freely in their Monaco editor and run it directly.
             </p>
           </div>
+        </div>
+      )}
+
+      {tab === "NETWORK_LAB" && (
+        <div className="space-y-1.5">
+          <Label htmlFor="lab-level" className="text-sm">Level</Label>
+          <select
+            id="lab-level"
+            value={labLevel}
+            onChange={(e) => setLabLevel(e.target.value)}
+            className="w-full rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-[#B2401D] focus:outline-none focus:ring-1 focus:ring-[#B2401D]"
+          >
+            {LAB_LEVELS.map((l) => (
+              <option key={l.key} value={l.key}>{l.key} · {l.unit}</option>
+            ))}
+          </select>
+          <p className="text-xs text-stone-400 dark:text-stone-500">
+            Learners build and launch packets to complete this network level. Add a Rich Text block
+            for the instructions.
+          </p>
         </div>
       )}
 
@@ -312,28 +344,28 @@ export function ContentCreateForm({
 
       {/* Queued blocks */}
       {queue.length > 0 && (
-        <div className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+        <div className="space-y-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/60 p-3">
+          <p className="text-xs font-medium text-stone-500 dark:text-stone-400">
             {queue.length} block{queue.length > 1 ? "s" : ""} ready to submit
           </p>
           <div className="space-y-1.5">
             {queue.map((block, i) => (
               <div
                 key={block.localId}
-                className="flex items-center gap-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2"
+                className="flex items-center gap-2.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2"
               >
-                <span className="flex size-5 shrink-0 items-center justify-center text-slate-400 dark:text-slate-500">
+                <span className="flex size-5 shrink-0 items-center justify-center text-stone-400 dark:text-stone-500">
                   {TAB_ICON[block.type]}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs font-medium text-slate-700 dark:text-slate-200">{block.title}</span>
-                  <span className="text-[11px] text-slate-400 dark:text-slate-500">{TAB_LABEL[block.type]}</span>
+                  <span className="block truncate text-xs font-medium text-stone-700 dark:text-stone-200">{block.title}</span>
+                  <span className="text-[11px] text-stone-400 dark:text-stone-500">{TAB_LABEL[block.type]}</span>
                 </span>
-                <span className="shrink-0 text-[11px] text-slate-300 dark:text-slate-600">#{i + 1}</span>
+                <span className="shrink-0 text-[11px] text-stone-300 dark:text-stone-600">#{i + 1}</span>
                 <button
                   type="button"
                   onClick={() => removeBlock(block.localId)}
-                  className="shrink-0 rounded p-0.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-rose-500"
+                  className="shrink-0 rounded p-0.5 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-700 hover:text-rose-500"
                   title="Remove block"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -345,7 +377,7 @@ export function ContentCreateForm({
             <Button
               onClick={() => void submitAll()}
               disabled={busy}
-              className="gap-1.5 bg-[#1E5FAF] text-sm hover:bg-[#1a4f8f]"
+              className="gap-1.5 bg-[#B2401D] text-sm hover:bg-[#8F3316]"
             >
               <Send className="h-3.5 w-3.5" />
               {busy ? "Submitting…" : `Submit ${queue.length} Block${queue.length > 1 ? "s" : ""} for Review`}

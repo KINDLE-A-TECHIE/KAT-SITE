@@ -5,15 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyPaymentSchema } from "@/lib/validators";
 import { getPaymentGateway } from "@/lib/payments/provider";
 import { trackEvent } from "@/lib/analytics";
-
-function generateReceiptNumber() {
-  const date = new Date();
-  const yyyy = date.getUTCFullYear();
-  const mm = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(date.getUTCDate()).padStart(2, "0");
-  const random = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `KAT-RCP-${yyyy}${mm}${dd}-${random}`;
-}
+import { generateReceiptNumber } from "@/lib/payments/receipt";
 
 export async function POST(request: Request) {
   const session = await getServerAuthSession();

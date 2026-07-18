@@ -29,8 +29,8 @@ type Program = {
 
 const LEVEL_COLORS: Record<string, string> = {
   BEGINNER:     "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
-  INTERMEDIATE: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400",
-  ADVANCED:     "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400",
+  INTERMEDIATE: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400",
+  ADVANCED:     "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400",
   FELLOWSHIP:   "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
 };
 
@@ -97,7 +97,7 @@ function ProgramForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-sm">Description <span className="font-normal text-slate-400 dark:text-slate-500">(optional)</span></Label>
+        <Label className="text-sm">Description <span className="font-normal text-stone-400 dark:text-stone-500">(optional)</span></Label>
         <Textarea value={form.description} onChange={set("description")} rows={3} placeholder="Brief program overview…" className="text-sm" />
       </div>
 
@@ -107,7 +107,7 @@ function ProgramForm({
           <select
             value={form.level}
             onChange={set("level")}
-            className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:border-[#1E5FAF] focus:outline-none focus:ring-1 focus:ring-[#1E5FAF]"
+            className="w-full rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-[#B2401D] focus:outline-none focus:ring-1 focus:ring-[#B2401D]"
           >
             {LEVELS.map((l) => <option key={l} value={l}>{l.charAt(0) + l.slice(1).toLowerCase()}</option>)}
           </select>
@@ -123,7 +123,7 @@ function ProgramForm({
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-sm">Discount <span className="font-normal text-slate-400 dark:text-slate-500">(%)</span></Label>
+          <Label className="text-sm">Discount <span className="font-normal text-stone-400 dark:text-stone-500">(%)</span></Label>
           <Input
             type="number" min={0} max={100} step={1}
             value={form.discountPercent}
@@ -145,7 +145,7 @@ function ProgramForm({
           size="sm"
           disabled={busy}
           onClick={() => void onSave(form)}
-          className="bg-[#1E5FAF] hover:bg-[#1a4f8f]"
+          className="bg-[#B2401D] hover:bg-[#8F3316]"
         >
           {busy ? "Saving…" : "Save Program"}
         </Button>
@@ -284,10 +284,10 @@ export function CurriculumPanel({ role }: { role: string }) {
       <div className="space-y-4">
         <div className="kat-card flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-stone-900 dark:text-stone-100">
               {isCreator ? "All Programs" : "Your Enrolled Programs"}
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               {isCreator
                 ? "Manage curriculum, lessons, and learning content."
                 : "Browse your program curriculum and learning materials."}
@@ -297,27 +297,27 @@ export function CurriculumPanel({ role }: { role: string }) {
             {isSA && (
               <button
                 onClick={() => setShowInactive((p) => !p)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${showInactive ? "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"}`}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${showInactive ? "bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300" : "text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-700"}`}
               >
                 {showInactive ? "Hide archived" : "Show archived"}
               </button>
             )}
             {isSA && (
-              <Button size="sm" onClick={openAdd} className="gap-1.5 bg-[#1E5FAF] hover:bg-[#1a4f8f]">
+              <Button size="sm" onClick={openAdd} className="gap-1.5 bg-[#B2401D] hover:bg-[#8F3316]">
                 <Plus className="h-3.5 w-3.5" /> Add Program
               </Button>
             )}
-            {!isSA && <GraduationCap className="h-8 w-8 text-slate-300" />}
+            {!isSA && <GraduationCap className="h-8 w-8 text-stone-300" />}
           </div>
         </div>
 
         {visiblePrograms.length === 0 ? (
           <div className="kat-card py-16 text-center">
-            <BookOpen className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-            <p className="font-medium text-slate-600 dark:text-slate-400">
+            <BookOpen className="mx-auto mb-3 h-10 w-10 text-stone-300" />
+            <p className="font-medium text-stone-600 dark:text-stone-400">
               {isCreator ? "No programs found." : "You are not enrolled in any programs yet."}
             </p>
-            <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">
+            <p className="mt-1 text-sm text-stone-400 dark:text-stone-500">
               {isCreator && isSA ? "Click \"Add Program\" to create one." : isCreator ? "Programs can be created by a super admin." : "Contact your admin to get enrolled."}
             </p>
           </div>
@@ -337,9 +337,9 @@ export function CurriculumPanel({ role }: { role: string }) {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <h3 className="truncate font-semibold text-slate-900 dark:text-slate-100">{program.name}</h3>
+                          <h3 className="truncate font-semibold text-stone-900 dark:text-stone-100">{program.name}</h3>
                           {!program.isActive && (
-                            <span className="shrink-0 rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <span className="shrink-0 rounded-full bg-stone-100 dark:bg-stone-700 px-2 py-0.5 text-xs font-medium text-stone-500 dark:text-stone-400">
                               Archived
                             </span>
                           )}
@@ -349,7 +349,7 @@ export function CurriculumPanel({ role }: { role: string }) {
                           const disc = program.discountPercent ? Number(program.discountPercent) : 0;
                           const effective = disc > 0 ? fee * (1 - disc / 100) : fee;
                           return (
-                            <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                            <p className="mt-0.5 text-xs text-stone-400 dark:text-stone-500">
                               {disc > 0 ? (
                                 <>
                                   <span className="line-through">₦{fee.toLocaleString()}</span>
@@ -366,15 +366,15 @@ export function CurriculumPanel({ role }: { role: string }) {
                         })()}
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${LEVEL_COLORS[program.level] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"}`}>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${LEVEL_COLORS[program.level] ?? "bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-400"}`}>
                           {program.level.charAt(0) + program.level.slice(1).toLowerCase()}
                         </span>
                         {isSA && (
                           <>
-                            <button onClick={() => openEdit(program)} title="Edit program" className="rounded p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300">
+                            <button onClick={() => openEdit(program)} title="Edit program" className="rounded p-1 text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-700 hover:text-stone-600 dark:hover:text-stone-300">
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
-                            <button onClick={() => setArchiveTarget(program)} title={program.isActive ? "Archive program" : "Restore program"} className="rounded p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300">
+                            <button onClick={() => setArchiveTarget(program)} title={program.isActive ? "Archive program" : "Restore program"} className="rounded p-1 text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-700 hover:text-stone-600 dark:hover:text-stone-300">
                               {program.isActive ? <Archive className="h-3.5 w-3.5" /> : <ArchiveRestore className="h-3.5 w-3.5" />}
                             </button>
                           </>
@@ -382,14 +382,14 @@ export function CurriculumPanel({ role }: { role: string }) {
                       </div>
                     </div>
                     {program.description && (
-                      <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-slate-500 dark:text-slate-400">{program.description}</p>
+                      <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-stone-500 dark:text-stone-400">{program.description}</p>
                     )}
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <Link href={`/dashboard/curriculum/${program.id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-[#1E5FAF] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1a52a0] transition-colors">
+                      <Link href={`/dashboard/curriculum/${program.id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-[#B2401D] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#8F3316] transition-colors">
                         <BookOpen className="h-3.5 w-3.5" />Manage Curriculum
                       </Link>
                       {(isSA || role === "ADMIN") && (
-                        <Link href={`/dashboard/curriculum/${program.id}/versions`} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                        <Link href={`/dashboard/curriculum/${program.id}/versions`} className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 dark:border-stone-700 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
                           <Settings className="h-3.5 w-3.5" />Versions
                         </Link>
                       )}
@@ -399,19 +399,19 @@ export function CurriculumPanel({ role }: { role: string }) {
                   /* ── Learner card ── */
                   <>
                     <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1E5FAF]/10 dark:bg-blue-900/30">
-                        <GraduationCap className="h-5 w-5 text-[#1E5FAF] dark:text-blue-400" />
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#B2401D]/10 dark:bg-orange-900/30">
+                        <GraduationCap className="h-5 w-5 text-[#B2401D] dark:text-orange-400" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold text-slate-900 dark:text-slate-100">{program.name}</h3>
+                        <h3 className="font-semibold text-stone-900 dark:text-stone-100">{program.name}</h3>
                         {program.description && (
-                          <p className="mt-0.5 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">{program.description}</p>
+                          <p className="mt-0.5 line-clamp-2 text-sm text-stone-500 dark:text-stone-400">{program.description}</p>
                         )}
                       </div>
                     </div>
                     <Link
                       href={`/dashboard/curriculum/${program.id}`}
-                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1E5FAF] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#1a52a0]"
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#B2401D] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#8F3316]"
                     >
                       <BookOpen className="h-4 w-4" />
                       Open Course
@@ -433,8 +433,8 @@ export function CurriculumPanel({ role }: { role: string }) {
             </DialogTitle>
             <DialogDescription>
               {archiveTarget?.isActive
-                ? <>Archiving <span className="font-medium text-slate-700 dark:text-slate-300">{archiveTarget?.name}</span> will hide it from learners and stop new enrollments. Existing data is preserved.</>
-                : <>Restoring <span className="font-medium text-slate-700 dark:text-slate-300">{archiveTarget?.name}</span> will make it visible to learners again.</>
+                ? <>Archiving <span className="font-medium text-stone-700 dark:text-stone-300">{archiveTarget?.name}</span> will hide it from learners and stop new enrollments. Existing data is preserved.</>
+                : <>Restoring <span className="font-medium text-stone-700 dark:text-stone-300">{archiveTarget?.name}</span> will make it visible to learners again.</>
               }
             </DialogDescription>
           </DialogHeader>

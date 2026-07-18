@@ -16,7 +16,12 @@ test.describe("GET /api/health", () => {
     expect(Date.parse(body.timestamp)).not.toBeNaN();
   });
 
-  test("responds in under 500 ms", async ({ request }) => {
+  test("responds in under 500 ms once warm", async ({ request }) => {
+    // Warm the route first. In dev the first hit COMPILES the route on demand (seconds), which is a
+    // property of the dev server, not of the endpoint. We are asserting served latency, so measure
+    // the second request.
+    await request.get("/api/health");
+
     const start = Date.now();
     await request.get("/api/health");
     expect(Date.now() - start).toBeLessThan(500);
