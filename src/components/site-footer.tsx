@@ -1,22 +1,37 @@
 import Link from "next/link";
 import Image from "next/image";
 
-const LINKS = {
-  Company: [
-    { label: "Our Programs", href: "/#tracks" },
-    { label: "Pricing", href: "/#pricing" },
-    { label: "KAT for Schools", href: "/schools" },
-    { label: "Partner with Us", href: "/partners" },
-    { label: "FAQ", href: "/#faq" },
-    { label: "Contact Us", href: "mailto:support@kindleatechie.com" },
-  ],
-  Account: [
-    { label: "Sign In", href: "/login" },
-    { label: "Register as a Parent", href: "/register" },
-    { label: "Parent Portal", href: "/dashboard" },
-    { label: "Student Portal", href: "/dashboard" },
-  ],
-};
+// The Company column is host-aware: the school host drops the consumer landing anchors
+// (tracks/pricing/faq live on the apex only) for school-relevant destinations.
+const B2C_COMPANY = [
+  { label: "Our Programs", href: "/#tracks" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "KAT for Schools", href: "/schools" },
+  { label: "Partner with Us", href: "/partners" },
+  { label: "FAQ", href: "/#faq" },
+  { label: "Contact Us", href: "mailto:support@kindleatechie.com" },
+];
+const SCHOOL_COMPANY = [
+  { label: "KAT for Schools", href: "/schools" },
+  { label: "For Developers", href: "/schools/developers" },
+  { label: "Partner with Us", href: "/partners" },
+  { label: "Contact Us", href: "mailto:hello@kindleatechie.com" },
+];
+
+// The Account column is host-aware too: on the school host it points at the school
+// workspace and pilot request, not the parent/student consumer flows.
+const B2C_ACCOUNT = [
+  { label: "Sign In", href: "/login" },
+  { label: "Register as a Parent", href: "/register" },
+  { label: "Parent Portal", href: "/dashboard" },
+  { label: "Student Portal", href: "/dashboard" },
+];
+const SCHOOL_ACCOUNT = [
+  { label: "Sign In", href: "/login" },
+  { label: "Request a Pilot", href: "/partners" },
+  { label: "Admin Dashboard", href: "/admin" },
+  { label: "Teacher Dashboard", href: "/teach" },
+];
 
 // Legal links depend on the surface: the school host and /schools/* pages are governed by the
 // B2B documents, everyone else by the consumer documents.
@@ -73,9 +88,9 @@ const SOCIALS = [
 export function SiteFooter({ schoolHost = false }: { schoolHost?: boolean }) {
   const legal = schoolHost ? SCHOOL_LEGAL : B2C_LEGAL;
   const columns = {
-    Company: LINKS.Company,
+    Company: schoolHost ? SCHOOL_COMPANY : B2C_COMPANY,
     Support: legal.map(({ label, href }) => ({ label, href })),
-    Account: LINKS.Account,
+    Account: schoolHost ? SCHOOL_ACCOUNT : B2C_ACCOUNT,
   };
   return (
     <footer className="border-t border-[var(--kat-border)] bg-[var(--kat-paper)]">
