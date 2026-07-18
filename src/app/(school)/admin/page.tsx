@@ -67,6 +67,13 @@ export default async function SchoolAdminPage() {
         {/* Always reachable, even with a lapsed licence, this is how the school pays. */}
         <div className="flex gap-2">
         <Link
+          href="/admin/teachers"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-700 dark:text-stone-200"
+        >
+          <Users className="size-4" />
+          Teachers
+        </Link>
+        <Link
           href="/admin/reports"
           className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-700 dark:text-stone-200"
         >

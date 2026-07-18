@@ -479,6 +479,12 @@ export const schoolInvoiceVerifySchema = z.object({
   reference: z.string().trim().min(1).max(120),
 });
 
+export const teacherInviteSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(200),
+  firstName: z.string().trim().min(1).max(80),
+  lastName: z.string().trim().min(1).max(80),
+});
+
 /**
  * A teacher attesting they delivered a scheme unit to their class.
  * No `markedById`: that is taken from the session, so an attestation is always attributed to the
