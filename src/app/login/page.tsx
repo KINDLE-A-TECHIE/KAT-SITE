@@ -30,7 +30,7 @@ export default async function LoginPage() {
     <Suspense
       fallback={<div className="flex min-h-screen items-center justify-center bg-stone-50" />}
     >
-      <LoginForm googleEnabled={googleEnabled} fallback={fallback} />
+      <LoginForm googleEnabled={googleEnabled} fallback={fallback} schoolHost={schoolHost} />
     </Suspense>
   );
 }

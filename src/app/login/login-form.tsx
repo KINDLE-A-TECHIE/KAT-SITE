@@ -56,8 +56,10 @@ type LoginValues = z.infer<typeof loginSchema>;
 export function LoginForm({
   googleEnabled,
   fallback = "/dashboard",
+  schoolHost = false,
 }: {
   googleEnabled: boolean;
+  schoolHost?: boolean;
   /**
    * Default post-login target when neither callbackUrl nor redirect is present. Resolved by the
    * server page from the host: the school host defaults to the workspace (/home, which routes to
@@ -295,7 +297,7 @@ export function LoginForm({
           </motion.div>
         </div>
       </main>
-      <SiteFooter />
+      <SiteFooter schoolHost={schoolHost} />
     </div>
   );
 }
