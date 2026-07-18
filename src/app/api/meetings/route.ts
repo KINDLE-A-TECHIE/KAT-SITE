@@ -27,18 +27,23 @@ export async function GET(request: Request) {
   const canLoadOrgRecordings = scope === "recordings" && isSuperAdmin && Boolean(session.user.organizationId);
   const canViewRecordings = RECORDING_VIEW_ROLES.includes(session.user.role);
 
+  const where = canLoadOrgRecordings
+    ? {
+        ...orgScope(session.user.organizationId),
+        status: MeetingStatus.ENDED,
+        recordingMode: { not: MeetingRecordingMode.NONE },
+      }
+    : {
+        participants: { some: { userId: session.user.id } },
+        status: status ?? undefined,
+      };
   const meetings = await prisma.meeting.findMany({
-    where: canLoadOrgRecordings
-      ? {
-          ...orgScope(session.user.organizationId),
-          status: MeetingStatus.ENDED,
-          recordingMode: { not: MeetingRecordingMode.NONE },
-        }
-      : {
-          participants: { some: { userId: session.user.id } },
-          status: status ?? undefined,
-        },
+    where,
     orderBy: { startTime: canLoadOrgRecordings ? "desc" : "asc" },
+    // Safety cap only, NOT offset paging: this board is time-ordered and grouped by status client
+    // side, so paging by startTime would hide upcoming meetings. A user's own meetings are bounded;
+    // this stops a pathological account (or the org recordings view) returning an unbounded set.
+    take: 200,
     include: {
       host: { select: { id: true, firstName: true, lastName: true, role: true } },
       participants: {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { PaginationControls } from "@/components/pagination-controls";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { ArrowDown, ArrowUp, CheckCircle2, ClipboardList, Eye, GripVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
@@ -148,6 +149,8 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [aMeta, setAMeta] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [sMeta, setSMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [answersDraft, setAnswersDraft] = useState<AnswersDraft>({});
   const [gradeDraft, setGradeDraft] = useState<GradeDraft>({});
   const [busy, setBusy] = useState(false);
@@ -176,14 +179,27 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
   const [draggingQuestionId, setDraggingQuestionId] = useState<string | null>(null);
   const [dragOverQuestionId, setDragOverQuestionId] = useState<string | null>(null);
 
+  const fetchAssessments = async (p: number) => {
+    const res = await fetch(`/api/assessments?page=${p}`);
+    if (res.ok) {
+      const payload = await res.json();
+      setAssessments(payload.assessments ?? []);
+      setAMeta({ page: payload.page ?? 1, totalPages: payload.totalPages ?? 1, total: payload.total ?? (payload.assessments?.length ?? 0) });
+    }
+  };
+
+  const fetchSubmissions = async (p: number) => {
+    const res = await fetch(`/api/assessments/submissions?page=${p}`);
+    if (res.ok) {
+      const payload = await res.json();
+      setSubmissions(payload.submissions ?? []);
+      setSMeta({ page: payload.page ?? 1, totalPages: payload.totalPages ?? 1, total: payload.total ?? (payload.submissions?.length ?? 0) });
+    }
+  };
+
   const load = async () => {
     setLoading(true);
-    const [programResponse, assessmentsResponse, submissionsResponse] = await Promise.all([
-      fetch("/api/programs"),
-      fetch("/api/assessments"),
-      fetch("/api/assessments/submissions"),
-    ]);
-
+    const programResponse = await fetch("/api/programs");
     if (programResponse.ok) {
       const payload = await programResponse.json();
       setPrograms((payload.programs ?? []).map((item: { id: string; name: string }) => ({ id: item.id, name: item.name })));
@@ -191,16 +207,8 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
         setProgramId(payload.programs[0].id);
       }
     }
-
-    if (assessmentsResponse.ok) {
-      const payload = await assessmentsResponse.json();
-      setAssessments(payload.assessments ?? []);
-    }
-
-    if (submissionsResponse.ok) {
-      const payload = await submissionsResponse.json();
-      setSubmissions(payload.submissions ?? []);
-    }
+    // Refresh both lists at their current page (initial mount + after any mutation).
+    await Promise.all([fetchAssessments(aMeta.page), fetchSubmissions(sMeta.page)]);
     setLoading(false);
   };
 
@@ -1150,6 +1158,13 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
             </div>
           )}
         </div>
+        <PaginationControls
+          page={aMeta.page}
+          totalPages={aMeta.totalPages}
+          total={aMeta.total}
+          onPageChange={(p) => void fetchAssessments(p)}
+          disabled={loading}
+        />
       </section>
 
       {roleCanVerify ? (
@@ -1389,6 +1404,13 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
               ))}
             </div>
           </div>
+          <PaginationControls
+            page={sMeta.page}
+            totalPages={sMeta.totalPages}
+            total={sMeta.total}
+            onPageChange={(p) => void fetchSubmissions(p)}
+            disabled={loading}
+          />
         </section>
       ) : null}
     </div>

@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { PaginationControls } from "@/components/pagination-controls";
 
 type ContentItem = {
   id: string;
@@ -276,20 +277,23 @@ export function ContentReviewPanel() {
   const [contents, setContents] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("PENDING_REVIEW");
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
 
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/curriculum/review?status=${statusFilter}`);
+      const res = await fetch(`/api/curriculum/review?status=${statusFilter}&page=${page}`);
       if (res.ok) {
-        const data = await res.json() as { items: ContentItem[] };
+        const data = await res.json() as { items: ContentItem[]; page?: number; totalPages?: number; total?: number };
         setContents(data.items);
+        setMeta({ page: data.page ?? 1, totalPages: data.totalPages ?? 1, total: data.total ?? data.items.length });
       }
     } catch { /* ignore */ }
     setLoading(false);
   };
 
-  useEffect(() => { void load(); }, [statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void load(); }, [statusFilter, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-4">
@@ -309,7 +313,7 @@ export function ContentReviewPanel() {
         {STATUS_FILTER_OPTIONS.map((opt) => (
           <button
             key={opt.value}
-            onClick={() => setStatusFilter(opt.value)}
+            onClick={() => { setStatusFilter(opt.value); setPage(1); }}
             className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               statusFilter === opt.value
                 ? "bg-[#B2401D] text-white"
@@ -338,7 +342,7 @@ export function ContentReviewPanel() {
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-xs text-stone-400 dark:text-stone-500">{contents.length} item{contents.length !== 1 ? "s" : ""}</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500">{meta.total} item{meta.total !== 1 ? "s" : ""}</p>
           <AnimatePresence>
             {contents.map((c, i) => (
               <motion.div
@@ -354,6 +358,14 @@ export function ContentReviewPanel() {
           </AnimatePresence>
         </div>
       )}
+
+      <PaginationControls
+        page={meta.page}
+        totalPages={meta.totalPages}
+        total={meta.total}
+        onPageChange={setPage}
+        disabled={loading}
+      />
     </div>
   );
 }

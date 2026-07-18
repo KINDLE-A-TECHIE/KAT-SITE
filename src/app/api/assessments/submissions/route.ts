@@ -6,6 +6,7 @@ import { manualGradeSchema, submitAssessmentSchema } from "@/lib/validators";
 import { trackEvent } from "@/lib/analytics";
 import { tryAwardModuleBadge } from "@/lib/badges";
 import { tryCompleteAssessmentGate } from "@/lib/mastery";
+import { readPageOffset, pageMeta } from "@/lib/pagination";
 
 const GRADER_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
 const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW];
@@ -18,14 +19,18 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const assessmentId = url.searchParams.get("assessmentId");
+  const { limit, page, skip } = readPageOffset(request);
 
   if (LEARNER_ROLES.includes(session.user.role)) {
+    const where = {
+      studentId: session.user.id,
+      assessmentId: assessmentId ?? undefined,
+    };
     const submissions = await prisma.assessmentSubmission.findMany({
-      where: {
-        studentId: session.user.id,
-        assessmentId: assessmentId ?? undefined,
-      },
+      where,
       orderBy: { submittedAt: "desc" },
+      skip,
+      take: limit,
       include: {
         assessment: {
           select: { id: true, title: true, totalPoints: true, passScore: true },
@@ -37,29 +42,33 @@ export async function GET(request: Request) {
         },
       },
     });
-    return ok({ submissions });
+    const total = await prisma.assessmentSubmission.count({ where });
+    return ok({ submissions, ...pageMeta(total, page, limit) });
   }
 
   if (!GRADER_ROLES.includes(session.user.role)) {
     return fail("Forbidden", 403);
   }
 
-  const submissions = await prisma.assessmentSubmission.findMany({
-    where: {
-      assessmentId: assessmentId ?? undefined,
-      assessment: {
-        // School submissions are served by /api/school/results, scoped by schoolId. This route is
-        // the B2C product; it must see B2C work and nothing else.
-        program: { audience: CourseAudience.B2C },
-        OR: [
-          { createdById: session.user.id },
-          ...(session.user.organizationId
-            ? [{ program: { organizationId: session.user.organizationId } }]
-            : []),
-        ],
-      },
+  const where = {
+    assessmentId: assessmentId ?? undefined,
+    assessment: {
+      // School submissions are served by /api/school/results, scoped by schoolId. This route is
+      // the B2C product; it must see B2C work and nothing else.
+      program: { audience: CourseAudience.B2C },
+      OR: [
+        { createdById: session.user.id },
+        ...(session.user.organizationId
+          ? [{ program: { organizationId: session.user.organizationId } }]
+          : []),
+      ],
     },
+  };
+  const submissions = await prisma.assessmentSubmission.findMany({
+    where,
     orderBy: { submittedAt: "desc" },
+    skip,
+    take: limit,
     include: {
       student: {
         select: { id: true, firstName: true, lastName: true, email: true },
@@ -75,8 +84,9 @@ export async function GET(request: Request) {
       },
     },
   });
+  const total = await prisma.assessmentSubmission.count({ where });
 
-  return ok({ submissions });
+  return ok({ submissions, ...pageMeta(total, page, limit) });
 }
 
 export async function POST(request: Request) {

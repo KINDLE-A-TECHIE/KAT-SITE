@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { createAssessmentSchema } from "@/lib/validators";
 import { trackEvent } from "@/lib/analytics";
 import { orgScope } from "@/lib/tenant";
+import { readPageOffset, pageMeta } from "@/lib/pagination";
 
 const CREATOR_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR];
 const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW];
@@ -15,26 +16,30 @@ const verifyAssessmentSchema = z.object({
   note: z.string().trim().max(2000).optional(),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) {
     return fail("Unauthorized", 401);
   }
 
   const role = session.user.role;
+  const { limit, page, skip } = readPageOffset(request);
 
   if (CREATOR_ROLES.includes(role)) {
+    const where = {
+      // Scoped to B2C programmes. This query keys on the PROGRAM, not the student's role, so a
+      // role fix alone would not stop a KAT instructor seeing a school's pupils' work.
+      program: { audience: CourseAudience.B2C },
+      OR: [
+        { createdById: session.user.id },
+        { program: orgScope(session.user.organizationId) },
+      ],
+    };
     const assessments = await prisma.assessment.findMany({
-      where: {
-        // Scoped to B2C programmes. This query keys on the PROGRAM, not the student's role, so a
-        // role fix alone would not stop a KAT instructor seeing a school's pupils' work.
-        program: { audience: CourseAudience.B2C },
-        OR: [
-          { createdById: session.user.id },
-          { program: orgScope(session.user.organizationId) },
-        ],
-      },
+      where,
       orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
         include: {
           program: { select: { id: true, name: true } },
           module: { select: { id: true, title: true } },
@@ -60,11 +65,12 @@ export async function GET() {
           },
         },
       });
-    return ok({ assessments });
+    const total = await prisma.assessment.count({ where });
+    return ok({ assessments, ...pageMeta(total, page, limit) });
   }
 
   if (!LEARNER_ROLES.includes(role)) {
-    return ok({ assessments: [] });
+    return ok({ assessments: [], ...pageMeta(0, page, limit) });
   }
 
   // Fellows see assessments for programs in their cohort (via FellowApplication).
@@ -89,19 +95,22 @@ export async function GET() {
     programIdFilter = { in: allIds.length ? allIds : ["__none__"] };
   }
 
+  const where = {
+    published: true,
+    verificationStatus: AssessmentVerificationStatus.APPROVED,
+    ...(role === UserRole.FELLOW
+      ? { programId: programIdFilter }
+      : {
+          program: {
+            enrollments: { some: { userId: session.user.id } },
+          },
+        }),
+  };
   const assessments = await prisma.assessment.findMany({
-    where: {
-      published: true,
-      verificationStatus: AssessmentVerificationStatus.APPROVED,
-      ...(role === UserRole.FELLOW
-        ? { programId: programIdFilter }
-        : {
-            program: {
-              enrollments: { some: { userId: session.user.id } },
-            },
-          }),
-    },
+    where,
     orderBy: { createdAt: "desc" },
+    skip,
+    take: limit,
     include: {
       program: { select: { id: true, name: true } },
       module: { select: { id: true, title: true } },
@@ -135,8 +144,9 @@ export async function GET() {
       },
     },
   });
+  const total = await prisma.assessment.count({ where });
 
-  return ok({ assessments });
+  return ok({ assessments, ...pageMeta(total, page, limit) });
 }
 
 export async function POST(request: Request) {

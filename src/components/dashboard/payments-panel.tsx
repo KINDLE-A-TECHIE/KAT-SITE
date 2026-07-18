@@ -473,25 +473,35 @@ function useOrgUsers(roles = "STUDENT,FELLOW,PARENT") {
   const [users, setUsers]   = useState<OrgUser[]>([]);
   const [query, setQuery]   = useState("");
   const [loading, setLoading] = useState(false);
+  const [page, setPage]     = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+
+  const fetchPage = async (p: number, replace: boolean) => {
+    setLoading(true);
+    const q = query.trim() ? `&q=${encodeURIComponent(query.trim())}` : "";
+    const res = await fetch(`/api/org-users?role=${roles}&page=${p}${q}`);
+    if (res.ok) {
+      const pl = await res.json() as { users?: OrgUser[]; hasMore?: boolean; page?: number };
+      setUsers((prev) => (replace ? (pl.users ?? []) : [...prev, ...(pl.users ?? [])]));
+      setHasMore(pl.hasMore ?? false);
+      setPage(pl.page ?? p);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    setLoading(true);
-    const timer = setTimeout(async () => {
-      const q = query.trim() ? `&q=${encodeURIComponent(query.trim())}` : "";
-      const res = await fetch(`/api/org-users?role=${roles}${q}`);
-      if (res.ok) { const p = await res.json() as { users?: OrgUser[] }; setUsers(p.users ?? []); }
-      setLoading(false);
-    }, 300);
+    const timer = setTimeout(() => void fetchPage(1, true), 300);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, roles]);
 
-  return { users, query, setQuery, loading };
+  return { users, query, setQuery, loading, hasMore, loadMore: () => void fetchPage(page + 1, false) };
 }
 
 // ── Admin: Pay for a Student ──────────────────────────────────────────────────
 
 function AdminPayForStudentForm({ onSuccess }: { onSuccess: () => void }) {
-  const { users, query, setQuery, loading: usersLoading } = useOrgUsers("STUDENT,FELLOW");
+  const { users, query, setQuery, loading: usersLoading, hasMore, loadMore } = useOrgUsers("STUDENT,FELLOW");
   const [programs, setPrograms]     = useState<Program[]>([]);
   const [selectedUser, setSelectedUser] = useState<OrgUser | null>(null);
   const [programId, setProgramId]   = useState("");
@@ -588,6 +598,15 @@ function AdminPayForStudentForm({ onSuccess }: { onSuccess: () => void }) {
                 </div>
               </button>
             ))}
+            {hasMore && (
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); loadMore(); }}
+                className="w-full px-3 py-2 text-center text-xs font-medium text-orange-600 hover:bg-stone-50 dark:hover:bg-stone-800"
+              >
+                Load more
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -663,7 +682,7 @@ function AdminPayForStudentForm({ onSuccess }: { onSuccess: () => void }) {
 // ── SA: Manual Enrollment ─────────────────────────────────────────────────────
 
 function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; onSuccess: () => void }) {
-  const { users, query, setQuery, loading: usersLoading } = useOrgUsers("STUDENT,FELLOW");
+  const { users, query, setQuery, loading: usersLoading, hasMore, loadMore } = useOrgUsers("STUDENT,FELLOW");
   const [selectedUsers, setSelectedUsers] = useState<OrgUser[]>([]);
   const [selectedProgramIds, setSelectedProgramIds] = useState<Set<string>>(new Set());
   const [billingType, setBillingType] = useState<"WAIVED" | "BILLABLE">("WAIVED");
@@ -805,6 +824,15 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
                 </button>
               );
             })}
+            {hasMore && (
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); loadMore(); }}
+                className="w-full px-3 py-2 text-center text-xs font-medium text-orange-600 hover:bg-stone-50 dark:hover:bg-stone-800"
+              >
+                Load more
+              </button>
+            )}
           </div>
         )}
       </div>

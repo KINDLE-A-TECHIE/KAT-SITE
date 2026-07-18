@@ -169,15 +169,6 @@ export async function saveIdempotency(
 }
 
 // ─────────────────────────────────────────────────────────── pagination
-
-export const PAGE_DEFAULT = 50;
-export const PAGE_MAX = 200;
-
-/** Cursor pagination. Opaque cursor = the last id seen; stable under insertion, unlike offsets. */
-export function readPaging(request: Request): { limit: number; cursor: string | null } {
-  const url = new URL(request.url);
-  const raw = Number(url.searchParams.get("limit"));
-  const limit =
-    Number.isFinite(raw) && raw > 0 ? Math.min(Math.floor(raw), PAGE_MAX) : PAGE_DEFAULT;
-  return { limit, cursor: url.searchParams.get("cursor") };
-}
+// The cursor-pagination convention now lives in one place (src/lib/pagination.ts) so the v1
+// API and the rest of the app cannot drift apart. Re-exported for existing v1 imports.
+export { PAGE_DEFAULT, PAGE_MAX, readPaging } from "@/lib/pagination";

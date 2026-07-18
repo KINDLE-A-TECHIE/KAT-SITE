@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PaginationControls } from "@/components/pagination-controls";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -29,21 +30,24 @@ export function FellowApplicationsPanel() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("PENDING");
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [expanded, setExpanded] = useState<string | null>(null);
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
-  const loadApplications = async (status: string) => {
+  const loadApplications = async (status: string, p: number = page) => {
     setLoading(true);
-    const res = await fetch(`/api/fellows/applications?status=${status}`);
+    const res = await fetch(`/api/fellows/applications?status=${status}&page=${p}`);
     if (res.ok) {
       const payload = await res.json();
       setApplications(payload.applications ?? []);
+      setMeta({ page: payload.page ?? 1, totalPages: payload.totalPages ?? 1, total: payload.total ?? (payload.applications?.length ?? 0) });
     }
     setLoading(false);
   };
 
-  useEffect(() => { void loadApplications(statusFilter); }, [statusFilter]);
+  useEffect(() => { void loadApplications(statusFilter, page); }, [statusFilter, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const review = async (applicationId: string, decision: "APPROVED" | "REJECTED") => {
     setBusy(applicationId);
@@ -73,7 +77,7 @@ export function FellowApplicationsPanel() {
       {/* Filter */}
       <div className="kat-card flex items-center gap-3">
         <span className="text-sm text-stone-600 dark:text-stone-400">Filter by status:</span>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
           <SelectTrigger className="h-9 w-40 rounded-xl border border-stone-300 dark:border-stone-600 text-sm">
             <SelectValue />
           </SelectTrigger>
@@ -182,6 +186,13 @@ export function FellowApplicationsPanel() {
           ))
         )}
       </div>
+      <PaginationControls
+        page={meta.page}
+        totalPages={meta.totalPages}
+        total={meta.total}
+        onPageChange={setPage}
+        disabled={loading}
+      />
     </div>
   );
 }

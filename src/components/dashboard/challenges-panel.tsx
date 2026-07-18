@@ -117,19 +117,20 @@ function LeaderboardDialog({ challenge, open, onClose }: {
 }) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [total, setTotal] = useState(0);
+  const [myRankEntry, setMyRankEntry] = useState<LeaderboardEntry | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setLoading(true);
     fetch(`/api/challenges/${challenge.id}/leaderboard`)
-      .then((r) => r.ok ? r.json() as Promise<{ leaderboard: LeaderboardEntry[]; totalSubmissions: number }> : Promise.reject())
-      .then((d) => { setEntries(d.leaderboard); setTotal(d.totalSubmissions); })
+      .then((r) => r.ok ? r.json() as Promise<{ leaderboard: LeaderboardEntry[]; totalSubmissions: number; currentUserEntry: LeaderboardEntry | null }> : Promise.reject())
+      .then((d) => { setEntries(d.leaderboard); setTotal(d.totalSubmissions); setMyRankEntry(d.currentUserEntry ?? null); })
       .catch(() => toast.error("Could not load leaderboard"))
       .finally(() => setLoading(false));
   }, [open, challenge.id]);
 
-  const myEntry = entries.find((e) => e.isCurrentUser);
+  const myEntry = entries.find((e) => e.isCurrentUser) ?? myRankEntry;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>

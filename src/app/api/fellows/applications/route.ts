@@ -5,6 +5,7 @@ import { ApplicationStatus, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { readPageOffset, pageMeta } from "@/lib/pagination";
 import { trackEvent } from "@/lib/analytics";
 import {
   sendEmail,
@@ -50,6 +51,7 @@ export async function GET(request: Request) {
       : { applicantId: session.user.id }),
   };
 
+  const { limit, page, skip } = readPageOffset(request);
   const applications = await prisma.fellowApplication.findMany({
     where,
     include: {
@@ -60,7 +62,10 @@ export async function GET(request: Request) {
       reviewedBy: { select: { firstName: true, lastName: true } },
     },
     orderBy: { submittedAt: "desc" },
+    skip,
+    take: limit,
   });
+  const total = await prisma.fellowApplication.count({ where });
 
   // For admin views, merge guest fields into a normalised applicant shape.
   const normalised = applications.map((app) => ({
@@ -73,7 +78,7 @@ export async function GET(request: Request) {
     } : null),
   }));
 
-  return ok({ applications: normalised });
+  return ok({ applications: normalised, ...pageMeta(total, page, limit) });
 }
 
 // POST, student submits an application.

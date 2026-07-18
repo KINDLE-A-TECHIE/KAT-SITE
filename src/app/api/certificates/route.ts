@@ -2,6 +2,8 @@ import { NotificationType } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { generateCredentialId } from "@/lib/certificate";
+import { readPageOffset, pageMeta } from "@/lib/pagination";
 
 const ISSUER_ROLES = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR"];
 
@@ -29,13 +31,19 @@ export async function GET(request: Request) {
     ? status ? { status } : {}
     : { userId: id, status: "APPROVED" as const };
 
-  const certificates = await prisma.certificate.findMany({
-    where,
-    include: CERT_INCLUDE,
-    orderBy: { issuedAt: "desc" },
-  });
+  const { limit, page, skip } = readPageOffset(request);
+  const [certificates, total] = await prisma.$transaction([
+    prisma.certificate.findMany({
+      where,
+      include: CERT_INCLUDE,
+      orderBy: { issuedAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.certificate.count({ where }),
+  ]);
 
-  return ok({ certificates });
+  return ok({ certificates, ...pageMeta(total, page, limit) });
 }
 
 // POST, issue (SUPER_ADMIN → auto-approved) or request (ADMIN/INSTRUCTOR → PENDING)
@@ -78,6 +86,8 @@ export async function POST(request: Request) {
 
   const certificate = await prisma.certificate.create({
     data: {
+      // Crypto-random, unguessable public verification id (NOT the cuid schema default).
+      credentialId: generateCredentialId(),
       userId,
       programId,
       issuedById: session.user.id,
