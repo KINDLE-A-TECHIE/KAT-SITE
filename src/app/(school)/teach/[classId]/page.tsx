@@ -8,6 +8,7 @@ import { checkClassLicense } from "@/lib/school-license";
 import { prisma } from "@/lib/prisma";
 import { ClassResultsPanel } from "@/components/school/class-results-panel";
 import { UnitDeliveryPanel } from "@/components/school/unit-delivery-panel";
+import { StartClassPanel } from "@/components/school/start-class-panel";
 import type { SchoolMembershipClaim } from "@/lib/rbac";
 
 /**
@@ -58,6 +59,8 @@ export default async function TeachClassPage({
           the same payload the Phase 4 termly report renders. */}
       {/* Teacher-attested scheme delivery, the only record of TEACHING, and what the
           school's NERDC coverage report reports. */}
+      <StartClassPanel classId={classId} />
+
       <UnitDeliveryPanel classId={classId} />
 
       <ClassResultsPanel classId={classId} />
