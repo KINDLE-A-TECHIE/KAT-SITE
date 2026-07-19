@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { CertificatePrint } from "./certificate-print";
 
-type Props = { params: Promise<{ credentialId: string }> };
+type Props = {
+  params: Promise<{ credentialId: string }>;
+  searchParams: Promise<{ theme?: string }>;
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { credentialId } = await params;
@@ -18,8 +21,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function CertificatePage({ params }: Props) {
+export default async function CertificatePage({ params, searchParams }: Props) {
   const { credentialId } = await params;
+  const { theme } = await searchParams;
 
   const cert = await prisma.certificate.findUnique({
     where: { credentialId },
@@ -47,6 +51,7 @@ export default async function CertificatePage({ params }: Props) {
       issuedBy={`${cert.issuedBy.firstName} ${cert.issuedBy.lastName}`}
       issuedAt={cert.issuedAt.toISOString()}
       credentialId={cert.credentialId}
+      initialTheme={theme}
     />
   );
 }
