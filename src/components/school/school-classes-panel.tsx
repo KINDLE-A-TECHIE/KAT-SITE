@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { AlertTriangle, ArrowRight, Loader2, Pencil, Plus } from "lucide-react";
+import { AlertTriangle, ArrowRight, IdCard, Loader2, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,6 +65,37 @@ export function SchoolClassesPanel() {
   const [editing, setEditing] = useState<{ id: string | null } | null>(null);
   const [handover, setHandover] = useState<Handover | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  const [cardsBusy, setCardsBusy] = useState<string | null>(null);
+
+  // Generates fresh PINs for a class and downloads printable sign-in cards. The server renders the
+  // PDF (PINs never leave that response) and returns it directly; we just save the blob. Regenerating
+  // invalidates any earlier cards, which is the intent when one is lost.
+  const makeCards = async (classId: string, className: string) => {
+    setCardsBusy(classId);
+    try {
+      const res = await fetch(`/api/school/classes/${classId}/login-cards`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data?.error ?? "Could not generate sign-in cards.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `sign-in-cards-${className.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "class"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      const joinCode = res.headers.get("X-Join-Code");
+      toast.success(joinCode ? `New PINs generated. Class code ${joinCode}.` : "New PINs generated.");
+    } catch {
+      toast.error("Could not generate sign-in cards.");
+    } finally {
+      setCardsBusy(null);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -199,6 +230,16 @@ export function SchoolClassesPanel() {
                     Results
                     <ArrowRight className="size-3.5" />
                   </Link>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    disabled={cardsBusy === c.id || c._count.enrollments === 0}
+                    onClick={() => void makeCards(c.id, c.name)}
+                  >
+                    {cardsBusy === c.id ? <Loader2 className="size-3.5 animate-spin" /> : <IdCard className="size-3.5" />}
+                    Sign-in cards
+                  </Button>
                   <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openEdit(c)}>
                     <Pencil className="size-3.5" />
                     Edit
