@@ -53,12 +53,12 @@ type LessonData = {
 const CREATOR_ROLES = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR"];
 
 const TYPE_CONFIG = {
-  RICH_TEXT:       { label: "Reading",  Icon: FileText,  accent: "bg-orange-500",   ring: "ring-orange-100 dark:ring-orange-900/50",   iconBg: "bg-orange-100 dark:bg-orange-900/40",   iconColor: "text-orange-600 dark:text-orange-400"   },
-  YOUTUBE_EMBED:   { label: "Video",    Icon: Youtube,   accent: "bg-red-500",    ring: "ring-red-100 dark:ring-red-900/50",     iconBg: "bg-red-100 dark:bg-red-900/40",     iconColor: "text-red-600 dark:text-red-400"     },
-  EXTERNAL_VIDEO:  { label: "Video",    Icon: Video,     accent: "bg-orange-500", ring: "ring-orange-100 dark:ring-orange-900/50", iconBg: "bg-orange-100 dark:bg-orange-900/40", iconColor: "text-orange-600 dark:text-orange-400" },
-  DOCUMENT_LINK:   { label: "Resource", Icon: LinkIcon,  accent: "bg-orange-500", ring: "ring-orange-100 dark:ring-orange-900/50", iconBg: "bg-orange-100 dark:bg-orange-900/40", iconColor: "text-orange-600 dark:text-orange-400" },
-  CODE_PLAYGROUND: { label: "Try it!",  Icon: Terminal,  accent: "bg-emerald-500",ring: "ring-emerald-100 dark:ring-emerald-900/50",iconBg:"bg-emerald-100 dark:bg-emerald-900/40",iconColor:"text-emerald-600 dark:text-emerald-400"},
-  NETWORK_LAB:     { label: "Network Lab", Icon: Network, accent: "bg-amber-500", ring: "ring-amber-100 dark:ring-amber-900/50", iconBg: "bg-amber-100 dark:bg-amber-900/40", iconColor: "text-amber-600 dark:text-amber-400" },
+  RICH_TEXT:       { label: "Reading",     Icon: FileText },
+  YOUTUBE_EMBED:   { label: "Video",       Icon: Youtube },
+  EXTERNAL_VIDEO:  { label: "Video",       Icon: Video },
+  DOCUMENT_LINK:   { label: "Resource",    Icon: LinkIcon },
+  CODE_PLAYGROUND: { label: "Try it",      Icon: Terminal },
+  NETWORK_LAB:     { label: "Network Lab", Icon: Network },
 } as const;
 
 const REVIEW_STYLE = {
@@ -140,28 +140,95 @@ function VideoEmbed({ url, title }: { url: string; title: string }) {
   );
 }
 
-function ContentBlock({
+/**
+ * Renders the body of one content block. Shared by the learner player (one
+ * step at a time) and the creator outline (stacked), so the two views can
+ * never drift in what they can display.
+ */
+function ContentBody({
+  content,
+  isCreator,
+  userId,
+  programId,
+  moduleId,
+  onLabComplete,
+}: {
+  content: ContentItem;
+  isCreator: boolean;
+  userId?: string;
+  programId?: string;
+  moduleId?: string;
+  onLabComplete?: () => void;
+}) {
+  return (
+    <>
+      {content.type === "RICH_TEXT" && content.body && (
+        <div
+          className="prose prose-stone dark:prose-invert mx-auto max-w-3xl text-sm leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.body) }}
+        />
+      )}
+
+      {(content.type === "YOUTUBE_EMBED" || content.type === "EXTERNAL_VIDEO") && content.url && (
+        <VideoEmbed url={content.url} title={content.title} />
+      )}
+
+      {content.type === "DOCUMENT_LINK" && content.url && (
+        <a
+          href={content.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center gap-3 rounded-lg border border-orange-100 bg-orange-50 p-3 transition hover:border-orange-200 hover:bg-orange-100 dark:border-orange-900/40 dark:bg-orange-950/30 dark:hover:bg-orange-950/50 sm:gap-4 sm:p-4"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/50 sm:h-12 sm:w-12">
+            <FileText className="h-5 w-5 text-orange-600 dark:text-orange-400 sm:h-6 sm:w-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-orange-900 dark:text-orange-100">{content.title}</p>
+            <p className="mt-0.5 truncate text-xs text-orange-500 dark:text-orange-400">{content.url}</p>
+          </div>
+          <ExternalLink className="h-4 w-4 shrink-0 text-orange-400 transition group-hover:text-orange-600 dark:group-hover:text-orange-300" />
+        </a>
+      )}
+
+      {content.type === "CODE_PLAYGROUND" && content.language && (
+        <CodePlaygroundBlock
+          contentId={content.id}
+          starterCode={content.body ?? ""}
+          language={content.language}
+          isCreator={isCreator}
+          userId={userId}
+          programId={programId}
+          moduleId={moduleId}
+        />
+      )}
+
+      {content.type === "NETWORK_LAB" && content.body && (
+        <NetworkLabBlock levelKey={content.body} onComplete={onLabComplete} />
+      )}
+    </>
+  );
+}
+
+/** Creator outline block: full chrome, review controls, stacked view only. */
+function ReviewBlock({
   content,
   index,
   total,
-  isCreator,
   isSA,
   userId,
   programId,
   moduleId,
   onReview,
-  onLabComplete,
 }: {
   content: ContentItem;
   index: number;
   total: number;
-  isCreator: boolean;
   isSA: boolean;
   userId?: string;
   programId?: string;
   moduleId?: string;
   onReview: (id: string, action: "PUBLISH" | "REJECT", note?: string) => Promise<void>;
-  onLabComplete?: () => void;
 }) {
   const [showReject, setShowReject] = useState(false);
   const [rejectNote, setRejectNote] = useState("");
@@ -179,87 +246,39 @@ function ContentBlock({
   };
 
   return (
-    <div className={`overflow-hidden rounded-lg bg-white ring-1 shadow-sm dark:bg-stone-900 ${cfg.ring}`}>
-      {/* Colored accent bar */}
-      <div className={`h-1.5 w-full ${cfg.accent}`} />
-
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 px-3 pb-3 pt-4 sm:px-5">
-        <div className="flex items-center gap-3">
-          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${cfg.iconBg}`}>
-            <Icon className={`h-4 w-4 ${cfg.iconColor}`} />
-          </div>
-          <div>
-            <p className="font-semibold text-stone-900 dark:text-stone-100 leading-tight">{content.title}</p>
-            <p className={`text-[11px] font-medium ${cfg.iconColor}`}>{cfg.label}</p>
-          </div>
+    <div className="overflow-hidden rounded-lg border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
+      <div className="flex items-center justify-between gap-3 border-b border-stone-100 px-4 py-3 dark:border-stone-800 sm:px-5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <Icon className="h-4 w-4 shrink-0 text-stone-400" />
+          <p className="truncate font-semibold text-stone-900 dark:text-stone-100">{content.title}</p>
+          <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-stone-400">
+            {cfg.label}
+          </span>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {isCreator && (
-            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${REVIEW_STYLE[content.reviewStatus]}`}>
-              {content.reviewStatus.replace("_", " ")}
-            </span>
-          )}
+          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${REVIEW_STYLE[content.reviewStatus]}`}>
+            {content.reviewStatus.replace("_", " ")}
+          </span>
           <span className="text-[11px] text-stone-400 dark:text-stone-500">{index + 1}/{total}</span>
         </div>
       </div>
 
-      {/* Body */}
-      <div className="px-3 pb-4 sm:px-5 sm:pb-5">
-        {content.type === "RICH_TEXT" && content.body && (
-          <div
-            className="prose prose-stone dark:prose-invert max-w-none text-sm leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.body) }}
-          />
-        )}
-
-        {(content.type === "YOUTUBE_EMBED" || content.type === "EXTERNAL_VIDEO") && content.url && (
-          <VideoEmbed url={content.url} title={content.title} />
-        )}
-
-        {content.type === "DOCUMENT_LINK" && content.url && (
-          <a
-            href={content.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-3 rounded-lg border border-orange-100 bg-orange-50 p-3 transition hover:border-orange-200 hover:bg-orange-100 dark:border-orange-900/40 dark:bg-orange-950/30 dark:hover:bg-orange-950/50 sm:gap-4 sm:p-4"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/50 sm:h-12 sm:w-12">
-              <FileText className="h-5 w-5 text-orange-600 dark:text-orange-400 sm:h-6 sm:w-6" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-orange-900 dark:text-orange-100">{content.title}</p>
-              <p className="mt-0.5 truncate text-xs text-orange-500 dark:text-orange-400">{content.url}</p>
-            </div>
-            <ExternalLink className="h-4 w-4 shrink-0 text-orange-400 transition group-hover:text-orange-600 dark:group-hover:text-orange-300" />
-          </a>
-        )}
-
-        {content.type === "CODE_PLAYGROUND" && content.language && (
-          <CodePlaygroundBlock
-            contentId={content.id}
-            starterCode={content.body ?? ""}
-            language={content.language}
-            isCreator={isCreator}
-            userId={userId}
-            programId={programId}
-            moduleId={moduleId}
-          />
-        )}
-
-        {content.type === "NETWORK_LAB" && content.body && (
-          <NetworkLabBlock levelKey={content.body} onComplete={onLabComplete} />
-        )}
+      <div className="px-4 py-4 sm:px-5">
+        <ContentBody
+          content={content}
+          isCreator
+          userId={userId}
+          programId={programId}
+          moduleId={moduleId}
+        />
       </div>
 
-      {/* Rejection note */}
       {content.reviewNote && content.reviewStatus === "REJECTED" && (
         <div className="border-t border-rose-100 bg-rose-50 px-5 py-3 text-xs text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400">
           <strong>Rejection note:</strong> {content.reviewNote}
         </div>
       )}
 
-      {/* SA review controls */}
       {isSA && content.reviewStatus === "PENDING_REVIEW" && (
         <div className="border-t border-stone-100 px-5 py-3 dark:border-stone-800">
           {!showReject ? (
@@ -306,10 +325,9 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
   const [loading, setLoading] = useState(true);
   const [showAddContent, setShowAddContent] = useState(false);
   const completionFired = useRef(false);
-  const heroRef = useRef<HTMLDivElement>(null);
-  const contentRefs = useRef<(HTMLElement | null)[]>([]);
-  const [showStickyNav, setShowStickyNav] = useState(false);
-  const [activeContentIndex, setActiveContentIndex] = useState(0);
+
+  // The learner's position. step === contents.length is the completion step.
+  const [step, setStep] = useState(0);
 
   const isCreator = CREATOR_ROLES.includes(role);
   const isSA = role === "SUPER_ADMIN";
@@ -336,41 +354,11 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
 
   useEffect(() => { void load(); }, [lessonId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reset per-lesson state when navigating to a different lesson
-  useEffect(() => {
-    contentRefs.current = [];
-    setActiveContentIndex(0);
-    setShowStickyNav(false);
-  }, [lessonId]);
+  // Reset position when navigating to a different lesson
+  useEffect(() => { setStep(0); }, [lessonId]);
 
-  // Show floating nav pill once the hero header scrolls out of view
-  useEffect(() => {
-    const el = heroRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setShowStickyNav(!(entry?.isIntersecting ?? true)),
-      { threshold: 0 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [lesson]);
-
-  // Track which content block is in view to drive the progress dots
-  useEffect(() => {
-    const els = contentRefs.current.filter(Boolean) as HTMLElement[];
-    if (els.length === 0) return;
-    const observers = els.map((el, i) => {
-      const obs = new IntersectionObserver(
-        ([entry]) => { if (entry?.isIntersecting) setActiveContentIndex(i); },
-        { threshold: 0.4, rootMargin: "0px 0px -30% 0px" },
-      );
-      obs.observe(el);
-      return obs;
-    });
-    return () => observers.forEach((o) => o.disconnect());
-  }, [lesson]);
-
-  // Mark lesson complete when the completion footer is shown (learners only)
+  // Completion is EARNED: it fires when the learner reaches the final step by
+  // stepping through the lesson (or wins the network lab). Never on page load.
   const markComplete = async () => {
     if (isCreator || completionFired.current) return;
     completionFired.current = true;
@@ -406,9 +394,9 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
   if (loading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-36 rounded-lg" />
-        <Skeleton className="h-56 rounded-lg" />
-        <Skeleton className="h-40 rounded-lg" />
+        <Skeleton className="h-14 rounded-lg" />
+        <Skeleton className="h-72 rounded-lg" />
+        <Skeleton className="h-12 rounded-lg" />
       </div>
     );
   }
@@ -431,181 +419,54 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
     ? lesson.contents
     : lesson.contents.filter((c) => c.reviewStatus === "PUBLISHED");
 
-  return (
-    <div className="mx-auto max-w-3xl space-y-5">
-      {/* Hero header */}
-      <div ref={heroRef} className="overflow-hidden rounded-2xl bg-kat-ink px-4 py-5 text-white sm:px-6 sm:py-6">
-        {/* Back link */}
-        <Link
-          href={`/dashboard/curriculum/${program.id}`}
-          className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/80 transition hover:bg-white/20 hover:text-white"
-        >
-          <ArrowLeft className="h-3 w-3" />
-          {program.name}
-        </Link>
-
-        {/* Module chip */}
-        <div className="mt-3 flex items-center gap-2">
-          <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white/70">
+  /* ── Creator outline: everything at once, with review chrome ─────────── */
+  if (isCreator) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-4">
+        <header className="border-b border-stone-200 pb-4 dark:border-stone-800">
+          <Link
+            href={`/dashboard/curriculum/${program.id}`}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 transition hover:text-kat-clay dark:text-stone-400"
+          >
+            <ArrowLeft className="h-3 w-3" />
+            {program.name}
+          </Link>
+          <p className="mt-2 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-stone-400 dark:text-stone-500">
             {lesson.module.title}
-          </span>
-          {isCompleted && (
-            <span className="flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">
-              <CheckCircle2 className="h-3 w-3" /> Completed
-            </span>
+          </p>
+          <h1 className="mt-1 font-display text-xl font-bold leading-snug text-stone-900 dark:text-stone-100 sm:text-2xl">
+            {lesson.title}
+          </h1>
+          {lesson.description && (
+            <p className="mt-1 text-sm leading-relaxed text-stone-500 dark:text-stone-400">{lesson.description}</p>
           )}
-        </div>
+          <p className="mt-2 text-xs text-stone-400 dark:text-stone-500">
+            {visibleContents.length} block{visibleContents.length !== 1 ? "s" : ""} · learners see published blocks one step at a time
+          </p>
+        </header>
 
-        {/* Lesson title */}
-        <h1 className="mt-2 [font-family:var(--font-space-grotesk)] text-xl font-bold leading-snug sm:text-2xl">
-          {lesson.title}
-        </h1>
-        {lesson.description && (
-          <p className="mt-1.5 text-sm leading-relaxed text-white/70">{lesson.description}</p>
-        )}
-
-        {/* Progress dots */}
-        {visibleContents.length > 0 && (
-          <div className="mt-4 flex items-center gap-1.5">
-            {visibleContents.map((_, i) => (
-              <div
-                key={i}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === activeContentIndex ? "w-6 bg-white" : "w-1.5 bg-white/30"
-                }`}
-              />
-            ))}
-            <span className="ml-2 text-[11px] text-white/50">
-              {visibleContents.length} section{visibleContents.length !== 1 ? "s" : ""}
-            </span>
+        {visibleContents.length === 0 && !showAddContent && (
+          <div className="rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
+            <p className="font-medium text-stone-600 dark:text-stone-400">No content yet, add your first block below.</p>
           </div>
         )}
-      </div>
 
-      {/* Empty state */}
-      {visibleContents.length === 0 && !showAddContent && (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
-          <p className="font-medium text-stone-600 dark:text-stone-400">
-            {isCreator ? "No content yet, add your first block below." : "Nothing here yet. Check back soon!"}
-          </p>
-        </div>
-      )}
-
-      {/* Content blocks */}
-      <div className="space-y-4">
-        {visibleContents.map((content, i) => (
-          <motion.div
-            key={content.id}
-            ref={(el) => { contentRefs.current[i] = el; }}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06, duration: 0.3 }}
-          >
-            <ContentBlock
+        <div className="space-y-4">
+          {visibleContents.map((content, i) => (
+            <ReviewBlock
+              key={content.id}
               content={content}
               index={i}
               total={visibleContents.length}
-              isCreator={isCreator}
               isSA={isSA}
               userId={userId}
               programId={programId}
               moduleId={lesson.module.id}
               onReview={reviewContent}
-              onLabComplete={markComplete}
             />
-          </motion.div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      {/* Completion footer (learners only) */}
-      {!isCreator && visibleContents.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: visibleContents.length * 0.06 + 0.1 }}
-          onAnimationComplete={markComplete}
-          className="overflow-hidden rounded-lg border border-emerald-100 bg-emerald-50 py-8 text-center dark:border-emerald-900/40 dark:bg-emerald-950/20"
-        >
-          <div className="flex flex-col items-center gap-3 px-6">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
-              <Sparkles className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div>
-              <p className="font-bold text-emerald-800 dark:text-emerald-300">You&apos;ve reached the end!</p>
-              <p className="mt-0.5 text-sm text-emerald-600 dark:text-emerald-500">Great work finishing this lesson.</p>
-            </div>
-
-            {/* Navigation buttons */}
-            <div className="mt-2 flex w-full flex-col items-stretch gap-2 px-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3 sm:px-0">
-              {prevLesson && (
-                <button
-                  onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${prevLesson.id}`)}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Previous
-                </button>
-              )}
-
-              {nextLesson ? (
-                <button
-                  onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${nextLesson.id}`)}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-kat-clay px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-kat-clay-deep"
-                >
-                  <span className="truncate">Next: {nextLesson.title.length > 22 ? nextLesson.title.slice(0, 22) + "…" : nextLesson.title}</span>
-                  <ArrowRight className="h-4 w-4 shrink-0" />
-                </button>
-              ) : (
-                <Link
-                  href={`/dashboard/curriculum/${program.id}`}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-kat-clay px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-kat-clay-deep"
-                >
-                  Back to Course
-                  <ArrowRight className="h-4 w-4 shrink-0" />
-                </Link>
-              )}
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Floating navigation pill, appears once the hero scrolls out of view */}
-      <AnimatePresence>
-        {showStickyNav && !isCreator && (prevLesson ?? nextLesson) && (
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 24 }}
-            transition={{ duration: 0.2 }}
-            className="pointer-events-none fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-0 right-0 z-50 flex justify-center px-3"
-          >
-            <div className="pointer-events-auto flex items-center gap-2 rounded-lg border border-stone-200 bg-white/95 px-4 py-2.5 shadow-lg backdrop-blur-sm dark:border-stone-800 dark:bg-stone-900/95">
-              {prevLesson && (
-                <button
-                  onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${prevLesson.id}`)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" /> Prev
-                </button>
-              )}
-              <span className="max-w-[100px] truncate text-xs font-medium text-stone-500 dark:text-stone-400 sm:max-w-[160px]">
-                {lesson.title}
-              </span>
-              {nextLesson && (
-                <button
-                  onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${nextLesson.id}`)}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-kat-clay px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-kat-clay-deep"
-                >
-                  Next <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Add content (creators) */}
-      {isCreator && (
         <AnimatePresence>
           {showAddContent ? (
             <motion.div
@@ -642,6 +503,174 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+    );
+  }
+
+  /* ── Learner player: one step per screen ──────────────────────────────── */
+  const totalSteps = visibleContents.length;
+  const onCompletionStep = step >= totalSteps;
+
+  const goTo = (next: number) => {
+    if (next >= totalSteps) void markComplete();
+    setStep(Math.max(0, Math.min(next, totalSteps)));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  if (totalSteps === 0) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <Link
+          href={`/dashboard/curriculum/${program.id}`}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 transition hover:text-kat-clay dark:text-stone-400"
+        >
+          <ArrowLeft className="h-3 w-3" /> {program.name}
+        </Link>
+        <div className="mt-4 rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
+          <p className="font-medium text-stone-600 dark:text-stone-400">Nothing here yet. Check back soon!</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-5xl flex-col">
+      {/* Slim sticky header: where am I, how far along am I */}
+      <header className="sticky top-0 z-30 -mx-2 flex items-center justify-between gap-3 border-b border-stone-200 bg-stone-50/95 px-2 py-3 backdrop-blur-sm dark:border-stone-800 dark:bg-stone-950/95">
+        <div className="flex min-w-0 items-center gap-3">
+          <Link
+            href={`/dashboard/curriculum/${program.id}`}
+            aria-label={`Back to ${program.name}`}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-stone-200 text-stone-500 transition hover:bg-white hover:text-kat-clay dark:border-stone-800 dark:text-stone-400 dark:hover:bg-stone-900"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-stone-900 dark:text-stone-100">{lesson.title}</p>
+            <p className="truncate text-[11px] text-stone-400 dark:text-stone-500">{lesson.module.title}</p>
+          </div>
+          {isCompleted && (
+            <span className="hidden shrink-0 items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 sm:flex">
+              <CheckCircle2 className="h-3 w-3" /> Completed
+            </span>
+          )}
+        </div>
+
+        {/* Step dots + counter. The dots are the true position, not scroll. */}
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="hidden items-center gap-1 sm:flex">
+            {visibleContents.map((_, i) => (
+              <button
+                key={i}
+                aria-label={`Go to step ${i + 1}`}
+                onClick={() => goTo(i)}
+                className={`h-2 rounded-full transition-all ${
+                  i === step
+                    ? "w-5 bg-kat-clay"
+                    : i < step || onCompletionStep
+                      ? "w-2 bg-kat-clay/40"
+                      : "w-2 bg-stone-300 dark:bg-stone-700"
+                }`}
+              />
+            ))}
+          </div>
+          <span className="font-mono text-[11px] tabular-nums text-stone-500 dark:text-stone-400">
+            {onCompletionStep ? "Done" : `${step + 1} / ${totalSteps}`}
+          </span>
+        </div>
+      </header>
+
+      {/* Steps. All stay mounted (hidden) so playground code and lab progress
+          survive stepping back and forth; only the active one is visible. */}
+      <div className="flex-1 py-5">
+        {visibleContents.map((content, i) => {
+          const cfg = TYPE_CONFIG[content.type];
+          const { Icon } = cfg;
+          return (
+            <section key={content.id} className={i === step ? "" : "hidden"} aria-hidden={i !== step}>
+              <div className="mb-3 flex items-center gap-2">
+                <Icon className="h-4 w-4 text-kat-clay" />
+                <h2 className="font-display text-lg font-bold text-stone-900 dark:text-stone-100">
+                  {content.title}
+                </h2>
+                <span className="text-[11px] font-medium uppercase tracking-wide text-stone-400">
+                  {cfg.label}
+                </span>
+              </div>
+              <ContentBody
+                content={content}
+                isCreator={false}
+                userId={userId}
+                programId={programId}
+                moduleId={lesson.module.id}
+                onLabComplete={markComplete}
+              />
+            </section>
+          );
+        })}
+
+        {/* Completion step, reached by finishing the lesson */}
+        {onCompletionStep && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="rounded-2xl bg-[var(--kat-pine)] px-6 py-12 text-center text-white"
+          >
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/15">
+              <Sparkles className="h-7 w-7 text-[var(--kat-sun)]" />
+            </div>
+            <p className="mt-4 font-display text-2xl font-bold">Lesson complete!</p>
+            <p className="mt-1 text-sm text-white/70">Great work finishing {lesson.title}.</p>
+
+            <div className="mt-6 flex flex-col items-stretch justify-center gap-2 sm:flex-row sm:items-center sm:gap-3">
+              {prevLesson && (
+                <button
+                  onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${prevLesson.id}`)}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/25 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Previous lesson
+                </button>
+              )}
+              {nextLesson ? (
+                <button
+                  onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${nextLesson.id}`)}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[var(--kat-pine)] transition hover:bg-white/90"
+                >
+                  <span className="truncate">Next: {nextLesson.title.length > 22 ? nextLesson.title.slice(0, 22) + "…" : nextLesson.title}</span>
+                  <ArrowRight className="h-4 w-4 shrink-0" />
+                </button>
+              ) : (
+                <Link
+                  href={`/dashboard/curriculum/${program.id}`}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[var(--kat-pine)] transition hover:bg-white/90"
+                >
+                  Back to Course
+                  <ArrowRight className="h-4 w-4 shrink-0" />
+                </Link>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Step navigation: big, obvious, never overlapping content */}
+      {!onCompletionStep && (
+        <footer className="sticky bottom-0 z-30 -mx-2 flex items-center justify-between gap-3 border-t border-stone-200 bg-stone-50/95 px-2 py-3 backdrop-blur-sm dark:border-stone-800 dark:bg-stone-950/95">
+          <button
+            onClick={() => goTo(step - 1)}
+            disabled={step === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-100 disabled:opacity-40 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back
+          </button>
+          <button
+            onClick={() => goTo(step + 1)}
+            className="inline-flex items-center gap-2 rounded-lg bg-kat-clay px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-kat-clay-deep"
+          >
+            {step === totalSteps - 1 ? "Finish lesson" : "Next"}
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </footer>
       )}
     </div>
   );
