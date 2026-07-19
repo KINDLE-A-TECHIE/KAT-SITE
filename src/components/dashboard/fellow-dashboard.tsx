@@ -66,9 +66,9 @@ function StatCard({
     >
       <Link
         href={href}
-        className="group flex items-center gap-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition hover:border-stone-300 hover:shadow-md dark:border-stone-700 dark:bg-stone-900 dark:hover:border-stone-600"
+        className="group flex items-center gap-4 rounded-lg border border-stone-200 bg-white p-5 shadow-sm transition hover:border-stone-300 hover:shadow-md dark:border-stone-800 dark:bg-stone-900 dark:hover:border-stone-600"
       >
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${accent}`}>
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${accent}`}>
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
@@ -108,9 +108,9 @@ function formatMeetingTime(iso: string | Date) {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-900">
+    <div className="rounded-lg border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
       <div className="flex items-center gap-4">
-        <Skeleton className="h-11 w-11 rounded-xl" />
+        <Skeleton className="h-11 w-11 rounded-lg" />
         <div className="flex-1 space-y-2">
           <Skeleton className="h-3 w-20" />
           <Skeleton className="h-7 w-12" />
@@ -176,7 +176,7 @@ export function FellowDashboard() {
               label="Mentees"
               value={data?.mentees.length ?? 0}
               href="/dashboard/messages"
-              accent="bg-orange-50 text-[#B2401D] dark:bg-orange-900/40 dark:text-orange-400"
+              accent="bg-orange-50 text-kat-clay dark:bg-orange-900/40 dark:text-orange-400"
               delay={0}
             />
             <StatCard
@@ -221,7 +221,7 @@ export function FellowDashboard() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.25 }}
-          className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-900"
+          className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900"
         >
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -268,7 +268,7 @@ export function FellowDashboard() {
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.22 + i * 0.04 }}
-                  className="group flex items-center gap-3 rounded-xl p-2 transition hover:bg-stone-50 dark:hover:bg-stone-800"
+                  className="group flex items-center gap-3 rounded-lg p-2 transition hover:bg-stone-50 dark:hover:bg-stone-800"
                 >
                   <MenteeAvatar
                     firstName={mentee.firstName}
@@ -300,7 +300,7 @@ export function FellowDashboard() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, duration: 0.25 }}
-          className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-900"
+          className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900"
         >
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -320,7 +320,7 @@ export function FellowDashboard() {
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="rounded-xl border border-stone-100 p-3 dark:border-stone-800">
+                <div key={i} className="rounded-lg border border-stone-100 p-3 dark:border-stone-800">
                   <Skeleton className="mb-2 h-3.5 w-36" />
                   <Skeleton className="h-3 w-24" />
                 </div>
@@ -347,7 +347,7 @@ export function FellowDashboard() {
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.27 + i * 0.05 }}
-                  className="flex items-start gap-3 rounded-xl border border-stone-100 bg-stone-50/50 p-3 dark:border-stone-800 dark:bg-stone-800/50"
+                  className="flex items-start gap-3 rounded-lg border border-stone-100 bg-stone-50/50 p-3 dark:border-stone-800 dark:bg-stone-800/50"
                 >
                   <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/40">
                     <Video className="h-4 w-4 text-orange-600" />
@@ -385,9 +385,9 @@ export function FellowDashboard() {
         >
           <Link
             href="/dashboard/assessments"
-            className="group flex items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 transition hover:border-amber-300 dark:border-amber-800 dark:bg-amber-900/20 dark:hover:border-amber-700"
+            className="group flex items-center gap-4 rounded-lg border border-amber-200 bg-amber-50 p-4 transition hover:border-amber-300 dark:border-amber-800 dark:bg-amber-900/20 dark:hover:border-amber-700"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/40">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/40">
               <AlertCircle className="h-5 w-5 text-amber-600" />
             </div>
             <div className="flex-1">
@@ -408,7 +408,7 @@ export function FellowDashboard() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.32, duration: 0.25 }}
-        className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-900"
+        className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900"
       >
         <h3 className="mb-4 [font-family:var(--font-space-grotesk)] font-semibold text-stone-900 dark:text-stone-100">
           Quick Actions
@@ -423,9 +423,9 @@ export function FellowDashboard() {
             <Link
               key={label}
               href={href}
-              className="group flex flex-col items-center gap-2 rounded-xl border border-stone-200 bg-stone-50/50 p-4 text-center transition hover:border-stone-300 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800/50 dark:hover:border-stone-600 dark:hover:bg-stone-800"
+              className="group flex flex-col items-center gap-2 rounded-lg border border-stone-200 bg-stone-50/50 p-4 text-center transition hover:border-stone-300 hover:bg-stone-50 dark:border-stone-800 dark:bg-stone-800/50 dark:hover:border-stone-600 dark:hover:bg-stone-800"
             >
-              <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${color}`}>
+              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${color}`}>
                 <Icon className="h-4 w-4" />
               </div>
               <span className="text-xs font-medium text-stone-700 dark:text-stone-300">{label}</span>

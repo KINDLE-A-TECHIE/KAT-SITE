@@ -96,7 +96,7 @@ export function PartnerInquiriesPanel({ canProvision = false }: { canProvision?:
       <div className="kat-card flex items-center gap-3">
         <span className="text-sm text-stone-600 dark:text-stone-400">Filter by type:</span>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="h-9 w-40 rounded-xl border border-stone-300 dark:border-stone-600 text-sm">
+          <SelectTrigger className="h-9 w-40 rounded-lg border border-stone-300 dark:border-stone-600 text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -115,7 +115,7 @@ export function PartnerInquiriesPanel({ canProvision = false }: { canProvision?:
       {/* List */}
       {loading ? (
         <div className="kat-card space-y-3">
-          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
+          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />)}
         </div>
       ) : inquiries.length === 0 ? (
         <div className="kat-card flex flex-col items-center gap-2 py-12 text-center">
@@ -174,7 +174,7 @@ export function PartnerInquiriesPanel({ canProvision = false }: { canProvision?:
                     onValueChange={(v) => updateStatus(inq.id, v as Inquiry["status"])}
                     disabled={busy === inq.id}
                   >
-                    <SelectTrigger className="h-8 w-32 rounded-xl border border-stone-300 dark:border-stone-600 text-xs">
+                    <SelectTrigger className="h-8 w-32 rounded-lg border border-stone-300 dark:border-stone-600 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -220,7 +220,7 @@ export function PartnerInquiriesPanel({ canProvision = false }: { canProvision?:
                   {inq.programs.map((p) => (
                     <span
                       key={p}
-                      className="rounded-full border border-stone-200 px-2 py-0.5 text-xs text-stone-600 dark:border-stone-700 dark:text-stone-300"
+                      className="rounded-full border border-stone-200 px-2 py-0.5 text-xs text-stone-600 dark:border-stone-800 dark:text-stone-300"
                     >
                       {PROGRAM_LABELS[p] ?? p}
                     </span>
@@ -228,7 +228,7 @@ export function PartnerInquiriesPanel({ canProvision = false }: { canProvision?:
                 </div>
               ) : null}
 
-              <p className="mt-3 whitespace-pre-wrap rounded-xl bg-stone-50 p-3 text-sm leading-relaxed text-stone-600 dark:bg-stone-800/50 dark:text-stone-300">
+              <p className="mt-3 whitespace-pre-wrap rounded-lg bg-stone-50 p-3 text-sm leading-relaxed text-stone-600 dark:bg-stone-800/50 dark:text-stone-300">
                 {inq.message}
               </p>
             </motion.div>

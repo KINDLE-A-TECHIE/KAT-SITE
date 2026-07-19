@@ -137,7 +137,7 @@ export function RosterImportPanel() {
 
         {/* Summary */}
         {summary ? (
-          <div className="space-y-3 rounded-xl border border-stone-200 p-4 dark:border-stone-700">
+          <div className="space-y-3 rounded-lg border border-stone-200 p-4 dark:border-stone-800">
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <span className="inline-flex items-center gap-1.5 font-medium text-emerald-700 dark:text-emerald-400">
                 <Check className="size-4" /> {summary.created} created

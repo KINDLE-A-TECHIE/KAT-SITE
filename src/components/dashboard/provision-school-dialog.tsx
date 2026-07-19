@@ -132,10 +132,10 @@ export function ProvisionSchoolDialog({
                   key={mode}
                   type="button"
                   onClick={() => setAdminMode(mode)}
-                  className={`rounded-xl border px-3 py-2.5 text-left text-sm transition ${
+                  className={`rounded-lg border px-3 py-2.5 text-left text-sm transition ${
                     adminMode === mode
                       ? "border-orange-500 bg-orange-50 font-medium text-orange-700 dark:bg-orange-950/40 dark:text-orange-400"
-                      : "border-stone-200 text-stone-600 hover:border-stone-300 dark:border-stone-700 dark:text-stone-300"
+                      : "border-stone-200 text-stone-600 hover:border-stone-300 dark:border-stone-800 dark:text-stone-300"
                   }`}
                 >
                   {mode === "create" ? "Create account" : "Invite existing user"}
@@ -174,7 +174,7 @@ export function ProvisionSchoolDialog({
               </div>
             </div>
           ) : (
-            <p className="rounded-xl bg-stone-50 p-3 text-xs leading-relaxed text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
+            <p className="rounded-lg bg-stone-50 p-3 text-xs leading-relaxed text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
               The user must already have a KAT account with this email. Their school access applies
               immediately, no sign-out required.
             </p>

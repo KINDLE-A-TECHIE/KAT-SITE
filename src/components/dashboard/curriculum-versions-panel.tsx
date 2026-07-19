@@ -74,8 +74,8 @@ export function CurriculumVersionsPanel({ programId, role }: { programId: string
   if (loading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-20 rounded-2xl" />
-        {[1, 2].map((i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
+        <Skeleton className="h-20 rounded-lg" />
+        {[1, 2].map((i) => <Skeleton key={i} className="h-28 rounded-lg" />)}
       </div>
     );
   }
@@ -89,14 +89,14 @@ export function CurriculumVersionsPanel({ programId, role }: { programId: string
           <p className="text-sm text-stone-500 dark:text-stone-400">Manage and activate curriculum versions for this program.</p>
         </div>
         {isSA && (
-          <Button size="sm" onClick={() => setCreating(true)} className="gap-1.5 bg-[#B2401D] hover:bg-[#8F3316]">
+          <Button size="sm" onClick={() => setCreating(true)} className="gap-1.5 bg-kat-clay hover:bg-kat-clay-deep">
             <Plus className="h-4 w-4" />New Version
           </Button>
         )}
       </div>
 
       {creating && (
-        <div className="kat-card space-y-3 border border-[#B2401D]/30 bg-orange-50/30 dark:bg-orange-950/20">
+        <div className="kat-card space-y-3 border border-kat-clay/30 bg-orange-50/30 dark:bg-orange-950/20">
           <h3 className="font-semibold text-stone-800 dark:text-stone-200">New Curriculum Version</h3>
           <div>
             <label className="mb-1 block text-xs font-medium text-stone-600 dark:text-stone-400">Label *</label>
@@ -107,7 +107,7 @@ export function CurriculumVersionsPanel({ programId, role }: { programId: string
             <Textarea value={changelog} onChange={(e) => setChangelog(e.target.value)} placeholder="What changed in this version…" rows={3} />
           </div>
           <div className="flex gap-2">
-            <Button disabled={busy} onClick={() => void createVersion()} className="bg-[#B2401D] hover:bg-[#8F3316]">
+            <Button disabled={busy} onClick={() => void createVersion()} className="bg-kat-clay hover:bg-kat-clay-deep">
               {busy ? "Creating…" : "Create Version"}
             </Button>
             <Button variant="outline" onClick={() => { setCreating(false); setLabel(""); setChangelog(""); }}>
@@ -157,7 +157,7 @@ export function CurriculumVersionsPanel({ programId, role }: { programId: string
               <div className="flex shrink-0 gap-2">
                 <Link
                   href={`/dashboard/curriculum/${programId}`}
-                  className="rounded-lg border border-stone-200 dark:border-stone-700 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800"
+                  className="rounded-lg border border-stone-200 dark:border-stone-800 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800"
                 >
                   View
                 </Link>

@@ -85,7 +85,7 @@ export function FellowApplyPanel({ cohorts }: { cohorts: Cohort[] }) {
                 Target Cohort <span className="text-stone-400 dark:text-stone-500">(optional)</span>
               </label>
               <Select value={cohortId || undefined} onValueChange={setCohortId}>
-                <SelectTrigger className="h-10 w-full rounded-xl border border-stone-300 bg-stone-50/70 px-3 text-sm dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200">
+                <SelectTrigger className="h-10 w-full rounded-lg border border-stone-300 bg-stone-50/70 px-3 text-sm dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200">
                   <SelectValue placeholder="Any open cohort" />
                 </SelectTrigger>
                 <SelectContent position="popper" side="bottom" align="start" sideOffset={6}>
@@ -104,7 +104,7 @@ export function FellowApplyPanel({ cohorts }: { cohorts: Cohort[] }) {
               Why do you want to be a fellow? <span className="text-rose-500">*</span>
             </label>
             <textarea
-              className="w-full rounded-xl border border-stone-300 bg-stone-50/70 px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-orange-200 min-h-[120px] dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
+              className="w-full rounded-lg border border-stone-300 bg-stone-50/70 px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-orange-200 min-h-[120px] dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
               placeholder="Tell us about your passion for mentoring, what you've learned so far, and why you'd be a great fellow… (min 50 characters)"
               value={motivation}
               onChange={(e) => setMotivation(e.target.value)}
@@ -117,7 +117,7 @@ export function FellowApplyPanel({ cohorts }: { cohorts: Cohort[] }) {
               Relevant experience <span className="text-stone-400 dark:text-stone-500">(optional)</span>
             </label>
             <textarea
-              className="w-full rounded-xl border border-stone-300 bg-stone-50/70 px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-orange-200 min-h-[80px] dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
+              className="w-full rounded-lg border border-stone-300 bg-stone-50/70 px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-orange-200 min-h-[80px] dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
               placeholder="Projects, leadership roles, tutoring experience, etc."
               value={experience}
               onChange={(e) => setExperience(e.target.value)}
@@ -131,13 +131,13 @@ export function FellowApplyPanel({ cohorts }: { cohorts: Cohort[] }) {
       )}
 
       {hasPending && (
-        <div className="kat-card rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/40 dark:text-amber-400">
+        <div className="kat-card rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/40 dark:text-amber-400">
           Your application is under review. You will be notified once a decision is made.
         </div>
       )}
 
       {hasApproved && (
-        <div className="kat-card rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400">
+        <div className="kat-card rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400">
           Congratulations! Your fellowship application was approved. Your role has been updated.
         </div>
       )}
@@ -162,7 +162,7 @@ export function FellowApplyPanel({ cohorts }: { cohorts: Cohort[] }) {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="rounded-xl border border-stone-100 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-800"
+                className="rounded-lg border border-stone-100 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-800"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>

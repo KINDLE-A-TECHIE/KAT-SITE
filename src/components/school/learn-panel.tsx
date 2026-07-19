@@ -56,7 +56,7 @@ export function LearnPanel() {
     };
   }, []);
 
-  if (loading) return <Skeleton className="h-64 w-full rounded-xl" />;
+  if (loading) return <Skeleton className="h-64 w-full rounded-lg" />;
   if (!data) return null;
 
   // Licence gate. The same rule is enforced in the curriculum APIs, so this is a

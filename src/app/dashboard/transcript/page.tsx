@@ -181,7 +181,7 @@ function TranscriptContent() {
             { label: "Passed", value: `${passedCount} / ${gradedSubmissions.length}` },
             { label: "Avg Score", value: avgScore !== null ? `${avgScore}%` : ", " },
           ].map((item) => (
-            <div key={item.label} className="rounded-xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-700 dark:bg-stone-800/60">
+            <div key={item.label} className="rounded-lg border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-800/60">
               <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">{item.label}</p>
               <p className="mt-1 text-lg font-semibold text-stone-900 dark:text-stone-100">{item.value}</p>
             </div>
@@ -214,13 +214,13 @@ function TranscriptContent() {
                     </p>
                   )}
                   <div className="mt-1 flex flex-wrap gap-2">
-                    <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] uppercase tracking-wide text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
+                    <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] uppercase tracking-wide text-stone-600 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-400">
                       {enrollment.status}
                     </span>
-                    <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
+                    <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] text-stone-600 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-400">
                       Enrolled {formatDate(enrollment.enrolledAt)}
                     </span>
-                    <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
+                    <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] text-stone-600 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-400">
                       {submitted}/{assessments.length} submitted
                     </span>
                   </div>
@@ -233,7 +233,7 @@ function TranscriptContent() {
                 <div className="mt-3 overflow-x-auto">
                   <table className="min-w-[640px] w-full text-sm">
                     <thead>
-                      <tr className="border-b border-stone-200 text-left text-xs uppercase tracking-wide text-stone-500 dark:border-stone-700 dark:text-stone-400">
+                      <tr className="border-b border-stone-200 text-left text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                         <th className="pb-2">Assessment</th>
                         <th className="pb-2">Type</th>
                         <th className="pb-2">Score</th>

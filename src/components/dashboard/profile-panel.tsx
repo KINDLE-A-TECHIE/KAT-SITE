@@ -128,16 +128,16 @@ const LOCATION_OPTIONS = [
   "New Zealand",
   "Singapore",
 ] as const;
-const PROFILE_CARD_CLASS = "border border-stone-200/90 dark:border-stone-700/90 bg-white/95 dark:bg-stone-900/90 shadow-[0_16px_38px_-28px_rgba(26, 23, 20,0.55)]";
+const PROFILE_CARD_CLASS = "border border-stone-200/90 dark:border-stone-800/90 bg-white/95 dark:bg-stone-900/90 shadow-[0_16px_38px_-28px_rgba(26, 23, 20,0.55)]";
 const PROFILE_INPUT_CLASS =
-  "h-10 rounded-xl border-stone-300 dark:border-stone-600 bg-stone-50/70 dark:bg-stone-800 px-3 text-stone-800 dark:text-stone-200 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus-visible:ring-2 focus-visible:ring-orange-200 focus-visible:ring-offset-0";
+  "h-9 rounded-lg border-stone-300 dark:border-stone-600 bg-stone-50/70 dark:bg-stone-800 px-3 text-stone-800 dark:text-stone-200 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus-visible:ring-2 focus-visible:ring-orange-200 focus-visible:ring-offset-0";
 const PROFILE_SELECT_CLASS =
-  "h-10 w-full max-w-full min-w-0 rounded-xl border border-stone-300 dark:border-stone-600 bg-stone-50/70 dark:bg-stone-800 px-3 text-sm text-stone-700 dark:text-stone-200 focus-visible:ring-2 focus-visible:ring-orange-200";
+  "h-9 w-full max-w-full min-w-0 rounded-lg border border-stone-300 dark:border-stone-600 bg-stone-50/70 dark:bg-stone-800 px-3 text-sm text-stone-700 dark:text-stone-200 focus-visible:ring-2 focus-visible:ring-orange-200";
 const PROFILE_VISIBILITY_SELECT_CLASS =
-  "h-10 w-full max-w-full min-w-0 rounded-xl border border-stone-300 dark:border-stone-600 bg-stone-50/70 dark:bg-stone-800 px-3 text-sm text-stone-700 dark:text-stone-200 focus-visible:ring-2 focus-visible:ring-orange-200";
-const PROFILE_PANEL_CLASS = "rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-4 shadow-[0_10px_24px_-22px_rgba(26, 23, 20,0.6)]";
+  "h-9 w-full max-w-full min-w-0 rounded-lg border border-stone-300 dark:border-stone-600 bg-stone-50/70 dark:bg-stone-800 px-3 text-sm text-stone-700 dark:text-stone-200 focus-visible:ring-2 focus-visible:ring-orange-200";
+const PROFILE_PANEL_CLASS = "rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-4 shadow-[0_10px_24px_-22px_rgba(26, 23, 20,0.6)]";
 const PROFILE_TEXTAREA_CLASS =
-  "rounded-xl border-stone-300 dark:border-stone-600 bg-stone-50/70 dark:bg-stone-800 text-stone-800 dark:text-stone-200 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus-visible:ring-2 focus-visible:ring-orange-200 focus-visible:ring-offset-0";
+  "rounded-lg border-stone-300 dark:border-stone-600 bg-stone-50/70 dark:bg-stone-800 text-stone-800 dark:text-stone-200 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus-visible:ring-2 focus-visible:ring-orange-200 focus-visible:ring-offset-0";
 const PROFILE_SELECT_CONTENT_CLASS = "max-h-56 overflow-y-auto";
 
 function createClientId() {
@@ -596,8 +596,8 @@ export function ProfilePanel() {
               <Skeleton className="h-4 w-64" />
             </div>
           </div>
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
           <Skeleton className="h-28 w-full" />
         </CardContent>
       </Card>
@@ -612,9 +612,9 @@ export function ProfilePanel() {
     >
       <Card className={`${PROFILE_CARD_CLASS} h-fit overflow-hidden lg:sticky lg:top-24`}>
         <CardContent className="space-y-6 pt-6">
-          <div className="rounded-2xl border border-stone-200/80 dark:border-stone-700/80 bg-gradient-to-b from-stone-50 dark:from-stone-800/60 to-white dark:to-stone-900 p-4">
+          <div className="rounded-lg border border-stone-200/80 dark:border-stone-800/80 bg-gradient-to-b from-stone-50 dark:from-stone-800/60 to-white dark:to-stone-900 p-4">
             <div className="flex flex-col items-center text-center">
-              <Avatar className="size-28 border border-stone-200 dark:border-stone-700 shadow-sm">
+              <Avatar className="size-28 border border-stone-200 dark:border-stone-800 shadow-sm">
                 <AvatarImage src={state.avatarUrl || undefined} alt={`${displayName} profile picture`} />
                 <AvatarFallback className="bg-stone-100 dark:bg-stone-700 text-xl font-semibold text-stone-700 dark:text-stone-300">
                   {getInitials(state.firstName, state.lastName)}
@@ -638,14 +638,14 @@ export function ProfilePanel() {
               }}
             />
             {avatarUploading ? (
-              <div className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/60 px-3 text-sm text-stone-600 dark:text-stone-400">
+              <div className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/60 px-3 text-sm text-stone-600 dark:text-stone-400">
                 <Loader2 className="size-4 animate-spin" />
                 Uploading…
               </div>
             ) : (
               <label
                 htmlFor="profile-avatar-upload"
-                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-stone-300 dark:border-stone-600 bg-stone-50 dark:bg-stone-800/60 px-3 text-sm font-medium text-stone-700 dark:text-stone-300 transition-colors hover:bg-white dark:hover:bg-stone-700/50"
+                className="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-stone-50 dark:bg-stone-800/60 px-3 text-sm font-medium text-stone-700 dark:text-stone-300 transition-colors hover:bg-white dark:hover:bg-stone-700/50"
               >
                 <Upload className="size-4" />
                 Upload Photo
@@ -655,7 +655,7 @@ export function ProfilePanel() {
               type="button"
               variant="ghost"
               size="sm"
-              className="rounded-xl"
+              className="rounded-lg"
               disabled={!state.avatarUrl || avatarUploading}
               onClick={() => void removeAvatar()}
             >
@@ -666,7 +666,7 @@ export function ProfilePanel() {
                 approved projects, with public verification links. */}
             <a
               href="/api/users/cv"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-stone-300 dark:border-stone-600 px-3 text-sm font-medium text-stone-700 dark:text-stone-300 transition-colors hover:bg-stone-50 dark:hover:bg-stone-800/60"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-stone-300 dark:border-stone-600 px-3 text-sm font-medium text-stone-700 dark:text-stone-300 transition-colors hover:bg-stone-50 dark:hover:bg-stone-800/60"
             >
               <FileDown className="size-4" />
               Download CV (PDF)
@@ -987,7 +987,7 @@ export function ProfilePanel() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="gap-2 rounded-xl"
+                className="gap-2 rounded-lg"
                 onClick={() => setState((prev) => ({ ...prev, education: [...prev.education, emptyEducation()] }))}
               >
                 <Plus className="size-4" />
@@ -997,7 +997,7 @@ export function ProfilePanel() {
           </CardHeader>
           <CardContent className="space-y-3">
             {state.education.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-stone-300 dark:border-stone-600 bg-stone-50/80 dark:bg-stone-800/40 p-4 text-sm text-stone-600 dark:text-stone-400">
+              <div className="rounded-lg border border-dashed border-stone-300 dark:border-stone-600 bg-stone-50/80 dark:bg-stone-800/40 p-4 text-sm text-stone-600 dark:text-stone-400">
                 No education entries yet.
               </div>
             ) : (
@@ -1009,7 +1009,7 @@ export function ProfilePanel() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="gap-1 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-700"
+                      className="gap-1 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-700"
                       onClick={() =>
                         setState((prev) => ({
                           ...prev,
@@ -1041,7 +1041,7 @@ export function ProfilePanel() {
                       value={item.fieldOfStudy}
                       onChange={(event) => updateEducation(item.id, { fieldOfStudy: event.target.value })}
                     />
-                    <label className="inline-flex items-center gap-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/60 px-3 text-sm text-stone-700 dark:text-stone-300">
+                    <label className="inline-flex items-center gap-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/60 px-3 text-sm text-stone-700 dark:text-stone-300">
                       <input
                         type="checkbox"
                         checked={item.isCurrent}
@@ -1121,7 +1121,7 @@ export function ProfilePanel() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="gap-2 rounded-xl"
+                className="gap-2 rounded-lg"
                 onClick={() => setState((prev) => ({ ...prev, experience: [...prev.experience, emptyExperience()] }))}
               >
                 <Plus className="size-4" />
@@ -1131,7 +1131,7 @@ export function ProfilePanel() {
           </CardHeader>
           <CardContent className="space-y-3">
             {state.experience.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-stone-300 dark:border-stone-600 bg-stone-50/80 dark:bg-stone-800/40 p-4 text-sm text-stone-600 dark:text-stone-400">
+              <div className="rounded-lg border border-dashed border-stone-300 dark:border-stone-600 bg-stone-50/80 dark:bg-stone-800/40 p-4 text-sm text-stone-600 dark:text-stone-400">
                 No experience entries yet.
               </div>
             ) : (
@@ -1143,7 +1143,7 @@ export function ProfilePanel() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="gap-1 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-700"
+                      className="gap-1 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-700"
                       onClick={() =>
                         setState((prev) => ({
                           ...prev,
@@ -1169,7 +1169,7 @@ export function ProfilePanel() {
                       value={item.title}
                       onChange={(event) => updateExperience(item.id, { title: event.target.value })}
                     />
-                    <label className="inline-flex items-center gap-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/60 px-3 text-sm text-stone-700 dark:text-stone-300">
+                    <label className="inline-flex items-center gap-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/60 px-3 text-sm text-stone-700 dark:text-stone-300">
                       <input
                         type="checkbox"
                         checked={item.isCurrent}
@@ -1210,7 +1210,7 @@ export function ProfilePanel() {
         </Card>
 
         <div className="flex justify-end pt-1">
-          <Button disabled={saving} onClick={() => void save()} className="min-w-44 rounded-xl shadow-sm">
+          <Button disabled={saving} onClick={() => void save()} className="min-w-44 rounded-lg shadow-sm">
             {saving ? "Saving..." : "Save Profile"}
           </Button>
         </div>

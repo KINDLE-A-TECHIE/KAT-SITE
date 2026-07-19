@@ -236,7 +236,7 @@ function TestimonialSection({ title, items, busy, onAction, onRejectOpen, onDele
   if (items.length === 0) return null;
   return (
     <div className="space-y-3">
-      <h3 className="text-xs font-semibold uppercase tracking-widest text-stone-500 dark:text-stone-400">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
         {title}{" "}
         <span className="ml-1 rounded-full bg-stone-100 dark:bg-stone-800 px-2 py-0.5 text-xs">
           {items.length}
@@ -306,8 +306,8 @@ export function ParentTestimonialsPanel() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-32 w-full rounded-2xl" />
-        <Skeleton className="h-20 w-full rounded-2xl" />
+        <Skeleton className="h-32 w-full rounded-lg" />
+        <Skeleton className="h-20 w-full rounded-lg" />
       </div>
     );
   }
@@ -388,7 +388,7 @@ export function ParentTestimonialsPanel() {
               value={childName}
               onChange={(e) => setChildName(e.target.value)}
               placeholder="e.g. Temi"
-              className="w-full rounded-xl border border-[var(--kat-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--kat-primary-blue)]/30 text-stone-800 dark:text-stone-200 placeholder:text-stone-400"
+              className="w-full rounded-lg border border-[var(--kat-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--kat-primary-blue)]/30 text-stone-800 dark:text-stone-200 placeholder:text-stone-400"
             />
           </div>
 
@@ -402,7 +402,7 @@ export function ParentTestimonialsPanel() {
               value={quote}
               onChange={(e) => setQuote(e.target.value)}
               placeholder="What has changed for your child since they started?"
-              className="resize-none rounded-xl border-[var(--kat-border)] text-sm"
+              className="resize-none rounded-lg border-[var(--kat-border)] text-sm"
             />
             <p className="text-right text-xs text-stone-400">{quote.length}/600</p>
           </div>
@@ -508,7 +508,7 @@ export function AdminTestimonialsPanel() {
   if (loading) {
     return (
       <div className="space-y-3">
-        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-2xl" />)}
+        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-lg" />)}
       </div>
     );
   }
@@ -567,7 +567,7 @@ export function AdminTestimonialsPanel() {
               placeholder="Reason (optional)…"
               value={rejectionNote}
               onChange={(e) => setRejectionNote(e.target.value)}
-              className="resize-none rounded-xl text-sm"
+              className="resize-none rounded-lg text-sm"
             />
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setRejectTarget(null)} disabled={rejecting}>

@@ -13,6 +13,7 @@ import {
   NerdcLevel,
   SchoolLicenseStatus,
 } from "@prisma/client";
+import { seedNerdcCourses } from "./seed-nerdc";
 
 const prisma = new PrismaClient();
 
@@ -360,6 +361,12 @@ async function main() {
       status: SchoolLicenseStatus.ACTIVE, pricePerSeat: 2500,
     },
   });
+
+  // NERDC school curriculum. Idempotent by design: re-running reconciles module
+  // and lesson titles in place against src/lib/nerdc-crosswalk.ts, so a wording
+  // fix in the crosswalk (like the em-dash scrub) propagates to existing rows.
+  // Without this call the reconciler is orphaned and stale titles live forever.
+  await seedNerdcCourses(prisma, { organizationId: org.id, createdById: superAdmin.id });
 
   console.log("✅ Seed complete. All accounts use password: Passw0rd!");
   console.log("   superadmin@kindleatechie.com    →  SUPER_ADMIN");

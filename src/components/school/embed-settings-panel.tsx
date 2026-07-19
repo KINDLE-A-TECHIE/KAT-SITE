@@ -243,7 +243,7 @@ function Snippet({
           Copy
         </Button>
       </div>
-      <pre className="overflow-x-auto rounded-xl bg-stone-900 p-3 font-mono text-xs leading-relaxed text-stone-100">
+      <pre className="overflow-x-auto rounded-lg bg-stone-900 p-3 font-mono text-xs leading-relaxed text-stone-100">
         {code}
       </pre>
     </div>

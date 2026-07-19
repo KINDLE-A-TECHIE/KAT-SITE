@@ -181,7 +181,7 @@ export function ChildrenPanel() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="rounded-xl border border-stone-100 dark:border-stone-800 bg-stone-50 dark:bg-stone-800 p-4"
+                className="rounded-lg border border-stone-100 dark:border-stone-800 bg-stone-50 dark:bg-stone-800 p-4"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -192,7 +192,7 @@ export function ChildrenPanel() {
                   </div>
                   <a
                     href={`/dashboard/payments`}
-                    className="rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-1.5 text-xs font-medium text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/30"
+                    className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-1.5 text-xs font-medium text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/30"
                   >
                     Pay for child
                   </a>

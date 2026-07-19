@@ -42,7 +42,7 @@ export default async function SchoolReportsPage() {
       </Link>
 
       {terms.length === 0 ? (
-        <p className="rounded-xl bg-stone-50 p-6 text-sm text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
+        <p className="rounded-lg bg-stone-50 p-6 text-sm text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
           Create a class first. Reports are produced per term.
         </p>
       ) : (

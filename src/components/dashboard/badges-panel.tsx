@@ -54,10 +54,10 @@ export function BadgesPanel() {
     <div className="space-y-6">
       {loading ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-          {[1, 2, 3, 4].map(n => <Skeleton key={n} className="h-28 rounded-2xl" />)}
+          {[1, 2, 3, 4].map(n => <Skeleton key={n} className="h-28 rounded-lg" />)}
         </div>
       ) : badges.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-stone-200 py-16 text-center dark:border-stone-700">
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
           <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
             No badges yet, complete a module to earn your first one.
           </p>
@@ -70,7 +70,7 @@ export function BadgesPanel() {
                 <h3 className="text-sm font-semibold text-stone-800 dark:text-stone-200">
                   {program.name}
                 </h3>
-                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-500 dark:bg-stone-700 dark:text-stone-400">
+                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-stone-500 dark:bg-stone-700 dark:text-stone-400">
                   {groupBadges.length} {groupBadges.length === 1 ? "badge" : "badges"}
                 </span>
               </div>
@@ -78,7 +78,7 @@ export function BadgesPanel() {
                 {groupBadges.map(eb => (
                   <div
                     key={eb.id}
-                    className="group relative flex flex-col items-center gap-2 rounded-2xl border border-stone-200 bg-white p-4 text-center shadow-sm transition hover:shadow-md dark:border-stone-700 dark:bg-stone-900"
+                    className="group relative flex flex-col items-center gap-2 rounded-lg border border-stone-200 bg-white p-4 text-center shadow-sm transition hover:shadow-md dark:border-stone-800 dark:bg-stone-900"
                   >
                     {/* Badge icon circle */}
                     <div
@@ -94,12 +94,12 @@ export function BadgesPanel() {
                     </p>
 
                     {/* Module label */}
-                    <p className="text-[10px] text-stone-400 dark:text-stone-500">
+                    <p className="text-[11px] text-stone-400 dark:text-stone-500">
                       {eb.badge.module.title}
                     </p>
 
                     {/* Earned date, appears on hover */}
-                    <p className="text-[10px] text-stone-400 dark:text-stone-500">
+                    <p className="text-[11px] text-stone-400 dark:text-stone-500">
                       Earned {formatDate(eb.earnedAt)}
                     </p>
                   </div>

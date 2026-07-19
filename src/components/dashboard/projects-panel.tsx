@@ -286,7 +286,7 @@ function FileUploader({ projectId, onUploaded }: { projectId: string; onUploaded
       />
 
       {uploading ? (
-        <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-orange-300 bg-orange-50 px-4 py-5 text-center dark:border-orange-700 dark:bg-orange-900/10">
+        <div className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 px-4 py-5 text-center dark:border-orange-700 dark:bg-orange-900/10">
           <Loader2 className="size-5 animate-spin text-orange-500" />
           <span className="text-sm text-stone-600 dark:text-stone-400">
             {statusMsg} {progress > 0 ? `${progress}%` : ""}
@@ -300,7 +300,7 @@ function FileUploader({ projectId, onUploaded }: { projectId: string; onUploaded
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-stone-300 bg-stone-50 px-3 py-4 text-center transition hover:border-orange-400 hover:bg-orange-50 dark:border-stone-700 dark:bg-stone-800/50 dark:hover:border-orange-500 dark:hover:bg-orange-900/10"
+            className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-stone-300 bg-stone-50 px-3 py-4 text-center transition hover:border-orange-400 hover:bg-orange-50 dark:border-stone-800 dark:bg-stone-800/50 dark:hover:border-orange-500 dark:hover:bg-orange-900/10"
           >
             <Upload className="size-5 text-stone-400 dark:text-stone-500" />
             <span className="text-xs font-medium text-stone-700 dark:text-stone-300">Upload a file</span>
@@ -309,7 +309,7 @@ function FileUploader({ projectId, onUploaded }: { projectId: string; onUploaded
           <button
             type="button"
             onClick={() => folderInputRef.current?.click()}
-            className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-stone-300 bg-stone-50 px-3 py-4 text-center transition hover:border-emerald-400 hover:bg-emerald-50 dark:border-stone-700 dark:bg-stone-800/50 dark:hover:border-emerald-500 dark:hover:bg-emerald-900/10"
+            className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-stone-300 bg-stone-50 px-3 py-4 text-center transition hover:border-emerald-400 hover:bg-emerald-50 dark:border-stone-800 dark:bg-stone-800/50 dark:hover:border-emerald-500 dark:hover:bg-emerald-900/10"
           >
             <FolderOpen className="size-5 text-stone-400 dark:text-stone-500" />
             <span className="text-xs font-medium text-stone-700 dark:text-stone-300">Upload folder</span>
@@ -369,7 +369,7 @@ function AssetUploader({ projectId, onUploaded }: { projectId: string; onUploade
         value={assetDesc}
         onChange={(e) => setAssetDesc(e.target.value)}
         placeholder="Asset description (optional)…"
-        className="text-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+        className="text-sm dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
         maxLength={500}
       />
       <input ref={inputRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { void handleUpload(f); } }} />
@@ -440,7 +440,7 @@ function AssessmentResourceUploader({
         value={desc}
         onChange={(e) => setDesc(e.target.value)}
         placeholder="Resource description (optional)…"
-        className="text-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+        className="text-sm dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
         maxLength={500}
       />
       <input ref={inputRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { void handleUpload(f); } }} />
@@ -690,7 +690,7 @@ function ProjectCard({
   };
 
   return (
-    <div className={`overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-stone-700 dark:bg-stone-900 ${STATUS_ACCENT[p.status]}`}>
+    <div className={`overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-stone-800 dark:bg-stone-900 ${STATUS_ACCENT[p.status]}`}>
 
       {/* Cover image */}
       {p.coverImageUrl && !editing && (
@@ -725,7 +725,7 @@ function ProjectCard({
             <Input
               value={editForm.title}
               onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
-              className="font-semibold dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+              className="font-semibold dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
               maxLength={120}
             />
           ) : (
@@ -819,7 +819,7 @@ function ProjectCard({
                       placeholder="What did you build?"
                       rows={3}
                       maxLength={2000}
-                      className="text-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                      className="text-sm dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
                     />
                   </div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -829,7 +829,7 @@ function ProjectCard({
                         value={editForm.tags}
                         onChange={(e) => setEditForm((f) => ({ ...f, tags: e.target.value }))}
                         placeholder="python, web, game"
-                        className="dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                        className="dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
                       />
                     </div>
                     <div>
@@ -839,7 +839,7 @@ function ProjectCard({
                         value={editForm.deployedUrl}
                         onChange={(e) => setEditForm((f) => ({ ...f, deployedUrl: e.target.value }))}
                         placeholder="https://myproject.vercel.app"
-                        className="dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                        className="dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
                       />
                     </div>
                   </div>
@@ -851,7 +851,7 @@ function ProjectCard({
                       placeholder="Instructions for running or using this project…"
                       rows={2}
                       maxLength={2000}
-                      className="text-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                      className="text-sm dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
                     />
                   </div>
                   <div>
@@ -861,7 +861,7 @@ function ProjectCard({
                     {p.coverImageUrl ? (
                       <div className="flex items-center gap-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={p.coverImageUrl} alt="cover" className="h-14 w-24 rounded-lg object-cover border border-stone-200 dark:border-stone-700" />
+                        <img src={p.coverImageUrl} alt="cover" className="h-14 w-24 rounded-lg object-cover border border-stone-200 dark:border-stone-800" />
                         <Button size="sm" variant="outline" className="text-rose-500 hover:text-rose-600" onClick={() => void handleRemoveCoverImage()} disabled={coverUploading}>
                           Remove
                         </Button>
@@ -944,7 +944,7 @@ function ProjectCard({
                                 download={file.name}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-600 transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-400"
+                                className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-600 transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400"
                                 title="Download file"
                               >
                                 <Upload className="size-3 rotate-180" />
@@ -1009,7 +1009,7 @@ function ProjectCard({
                           <Textarea
                             value={editingFeedbackText}
                             onChange={(e) => setEditingFeedbackText(e.target.value)}
-                            className="mt-1 text-sm dark:border-stone-700 dark:bg-stone-900"
+                            className="mt-1 text-sm dark:border-stone-800 dark:bg-stone-900"
                             rows={3}
                             autoFocus
                           />
@@ -1073,7 +1073,7 @@ function ProjectCard({
                     value={feedbackText}
                     onChange={(e) => setFeedbackText(e.target.value)}
                     placeholder="Leave feedback for the student…"
-                    className="mb-2 text-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                    className="mb-2 text-sm dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
                     rows={3}
                   />
                   <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -1246,7 +1246,7 @@ function NewProjectForm({ programs, onCreated, assignment, onCancelAssignment }:
   // ── Step 2: upload files (optional) ────────────────────────────────────────
   if (created) {
     return (
-      <div className="space-y-4 rounded-xl border border-stone-200 bg-white p-4 sm:p-5 dark:border-stone-700 dark:bg-stone-900">
+      <div className="space-y-4 rounded-lg border border-stone-200 bg-white p-4 sm:p-5 dark:border-stone-800 dark:bg-stone-900">
         <div>
           <h3 className="font-semibold text-stone-900 dark:text-stone-100">Upload Files</h3>
           <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">
@@ -1281,7 +1281,7 @@ function NewProjectForm({ programs, onCreated, assignment, onCancelAssignment }:
 
   // ── Step 1: project details ─────────────────────────────────────────────────
   return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 rounded-xl border border-stone-200 bg-white p-4 sm:p-5 dark:border-stone-700 dark:bg-stone-900">
+    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 rounded-lg border border-stone-200 bg-white p-4 sm:p-5 dark:border-stone-800 dark:bg-stone-900">
       <div className="flex items-start justify-between gap-3">
         <h3 className="font-semibold text-stone-900 dark:text-stone-100">
           {assignment ? "Start Assignment" : "New Project"}
@@ -1327,34 +1327,34 @@ function NewProjectForm({ programs, onCreated, assignment, onCancelAssignment }:
 
       <div>
         <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Title *</label>
-        <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="My awesome project" required maxLength={120} className="dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100" />
+        <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="My awesome project" required maxLength={120} className="dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100" />
       </div>
 
       <div>
         <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Description <span className="text-rose-400">*</span></label>
-        <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="What did you build? What did you learn?" rows={3} maxLength={2000} required className="dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100" />
+        <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="What did you build? What did you learn?" rows={3} maxLength={2000} required className="dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100" />
       </div>
 
       <div>
         <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">How to Use / Run <span className="text-stone-400">(optional)</span></label>
-        <Textarea value={form.howToUse} onChange={(e) => setForm((f) => ({ ...f, howToUse: e.target.value }))} placeholder="How to run or use your project…" rows={2} maxLength={2000} className="dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100" />
+        <Textarea value={form.howToUse} onChange={(e) => setForm((f) => ({ ...f, howToUse: e.target.value }))} placeholder="How to run or use your project…" rows={2} maxLength={2000} className="dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Tags <span className="text-stone-400">(comma separated)</span></label>
-          <Input value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder="python, web, game" className="dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100" />
+          <Input value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder="python, web, game" className="dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100" />
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Live URL <span className="text-stone-400">(optional)</span></label>
-          <Input type="url" value={form.deployedUrl} onChange={(e) => setForm((f) => ({ ...f, deployedUrl: e.target.value }))} placeholder="https://myproject.vercel.app" className="dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100" />
+          <Input type="url" value={form.deployedUrl} onChange={(e) => setForm((f) => ({ ...f, deployedUrl: e.target.value }))} placeholder="https://myproject.vercel.app" className="dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100" />
         </div>
       </div>
 
       {programs.length > 0 && (
         <div>
           <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Link to Program <span className="text-stone-400">(optional)</span></label>
-          <select value={form.programId} onChange={(e) => setForm((f) => ({ ...f, programId: e.target.value }))} className="h-10 w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100">
+          <select value={form.programId} onChange={(e) => setForm((f) => ({ ...f, programId: e.target.value }))} className="h-10 w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100">
             <option value="">Standalone project</option>
             {programs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
@@ -1592,7 +1592,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
 
       {/* Tabs, only for reviewers; students get a single merged view */}
       {tabs.length > 1 && (
-        <div className="flex gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1 dark:border-stone-700 dark:bg-stone-800/50">
+        <div className="flex gap-1 rounded-lg border border-stone-200 bg-stone-50 p-1 dark:border-stone-800 dark:bg-stone-800/50">
           {tabs.map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)} className={`flex-1 rounded-lg px-2 py-2 text-xs font-medium transition touch-manipulation sm:px-3 sm:py-2.5 sm:text-sm ${tab === t.key ? "bg-white text-stone-900 shadow-sm dark:bg-stone-900 dark:text-stone-100" : "text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"}`}>
               {t.label}
@@ -1632,10 +1632,10 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
           )}
           {assignmentsLoading ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-40 w-full rounded-xl" />)}
+              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-40 w-full rounded-lg" />)}
             </div>
           ) : assignments.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-stone-200 py-16 text-center dark:border-stone-700">
+            <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
               <BookMarked className="size-10 text-stone-300 dark:text-stone-600" />
               <p className="font-medium text-stone-600 dark:text-stone-400">No project assignments yet</p>
               <p className="text-sm text-stone-400">
@@ -1678,7 +1678,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                     key={a.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm dark:border-stone-700 dark:bg-stone-900"
+                    className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm dark:border-stone-800 dark:bg-stone-900"
                   >
                     <div className="p-4">
                       <div className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -1735,7 +1735,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                           <FileText className="size-3.5 text-orange-500" />
                           Reference Files
                           {resources.length > 0 && (
-                            <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+                            <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[11px] font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
                               {resources.length}
                             </span>
                           )}
@@ -1819,7 +1819,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                     key={a.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-stone-900 ${accent ?? "border-stone-200 dark:border-stone-700"}`}
+                    className={`overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-stone-900 ${accent ?? "border-stone-200 dark:border-stone-800"}`}
                   >
                     <div className="p-4">
                       <div className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -1957,7 +1957,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                     </div>
                   )}
                   {notStarted.length === 0 && inProgress.length === 0 && completed.length === 0 && (
-                    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-stone-200 py-16 text-center dark:border-stone-700">
+                    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
                       <BookMarked className="size-10 text-stone-300 dark:text-stone-600" />
                       <p className="font-medium text-stone-600 dark:text-stone-400">No assignments yet</p>
                       <p className="text-sm text-stone-400">Your instructor hasn&apos;t assigned any projects yet.</p>
@@ -1981,13 +1981,13 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                 value={reviewSearch}
                 onChange={(e) => setReviewSearch(e.target.value)}
                 placeholder="Search by title, tag, or student name…"
-                className="pl-8 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                className="pl-8 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
               />
             </div>
             <select
               value={reviewStatus}
               onChange={(e) => setReviewStatus(e.target.value)}
-              className="h-10 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 sm:w-44"
+              className="h-10 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-300 sm:w-44"
             >
               <option value="all">All statuses</option>
               <option value="SUBMITTED">Under Review</option>
@@ -1999,9 +1999,9 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
 
           {/* Results */}
           {reviewLoading && reviewProjects.length === 0 ? (
-            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />)
           ) : reviewProjects.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-stone-200 py-12 text-center dark:border-stone-700">
+            <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-12 text-center dark:border-stone-800">
               <CheckCircle2 className="size-10 text-emerald-300 dark:text-emerald-700" />
               <p className="font-medium text-stone-700 dark:text-stone-300">
                 {reviewSearch
@@ -2048,16 +2048,16 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                 value={mySearch}
                 onChange={(e) => setMySearch(e.target.value)}
                 placeholder="Search your projects…"
-                className="h-10 w-full rounded-md border border-stone-200 bg-white pl-8 pr-3 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                className="h-10 w-full rounded-md border border-stone-200 bg-white pl-8 pr-3 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
               />
             </div>
           )}
           {loading || assignmentsLoading ? (
-            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />)
           ) : isParent ? (
             // ── Parent: group by child ──────────────────────────────────────
             projects.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-stone-200 py-12 text-center dark:border-stone-700">
+              <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-12 text-center dark:border-stone-800">
                 <FolderOpen className="size-10 text-stone-300 dark:text-stone-600" />
                 <p className="font-medium text-stone-700 dark:text-stone-300">No projects from your children yet</p>
               </div>
@@ -2122,7 +2122,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                           key={a.id}
                           initial={{ opacity: 0, y: 6 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="overflow-hidden rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm dark:border-amber-800/50 dark:from-amber-950/30 dark:to-orange-950/20"
+                          className="overflow-hidden rounded-lg border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm dark:border-amber-800/50 dark:from-amber-950/30 dark:to-orange-950/20"
                         >
                           <div className="p-4">
                             <div className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -2180,7 +2180,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
 
               {/* Portfolio sections grouped by status */}
               {projects.length === 0 && pendingAssignments.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-stone-200 py-16 text-center dark:border-stone-700">
+                <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
                   <FolderOpen className="size-10 text-stone-300 dark:text-stone-600" />
                   <div>
                     {mySearch ? (

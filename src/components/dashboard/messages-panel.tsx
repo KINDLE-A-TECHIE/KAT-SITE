@@ -800,8 +800,8 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
     const el = messageElRefs.current.get(messageId);
     if (el && scrollContainerRef.current) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      el.classList.add("ring-2", "ring-[#1A1714]/30", "rounded-xl");
-      setTimeout(() => el.classList.remove("ring-2", "ring-[#1A1714]/30", "rounded-xl"), 1800);
+      el.classList.add("ring-2", "ring-[#1A1714]/30", "rounded-lg");
+      setTimeout(() => el.classList.remove("ring-2", "ring-[#1A1714]/30", "rounded-lg"), 1800);
     }
   };
 
@@ -927,9 +927,9 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
         <div className="min-h-0 flex-1 overflow-y-auto pr-1">
           {loading ? (
             <div className="space-y-1.5">
-              <Skeleton className="h-[60px] w-full rounded-xl" />
-              <Skeleton className="h-[60px] w-full rounded-xl" />
-              <Skeleton className="h-[60px] w-full rounded-xl" />
+              <Skeleton className="h-[60px] w-full rounded-lg" />
+              <Skeleton className="h-[60px] w-full rounded-lg" />
+              <Skeleton className="h-[60px] w-full rounded-lg" />
             </div>
           ) : threads.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
@@ -953,20 +953,20 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                       setSelectedRecipientId("");
                       setGroupMemberIds([]);
                     }}
-                    className={`w-full rounded-xl border px-3 py-2.5 text-left transition max-[360px]:px-2.5 max-[360px]:py-2 ${
+                    className={`w-full rounded-lg border px-3 py-2.5 text-left transition max-[360px]:px-2.5 max-[360px]:py-2 ${
                       selectedThreadId === thread.id
                         ? "border-[#1A1714] bg-[#1A1714] text-white"
-                        : "border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 hover:border-stone-300 dark:hover:border-stone-600 hover:bg-stone-50 dark:hover:bg-stone-800"
+                        : "border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 hover:border-stone-300 dark:hover:border-stone-600 hover:bg-stone-50 dark:hover:bg-stone-800"
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <div className="relative shrink-0">
-                        <Avatar className={`size-9 border ${selectedThreadId === thread.id ? "border-white/20" : "border-stone-200 dark:border-stone-700"}`}>
+                        <Avatar className={`size-9 border ${selectedThreadId === thread.id ? "border-white/20" : "border-stone-200 dark:border-stone-800"}`}>
                           <AvatarImage
                             src={!isGroup ? contact?.avatarUrl ?? undefined : undefined}
                             alt={threadLabel}
                           />
-                          <AvatarFallback className={`text-[10px] font-semibold ${selectedThreadId === thread.id ? "bg-white/20 text-white" : "bg-stone-100 dark:bg-stone-700 text-stone-700 dark:text-stone-300"}`}>
+                          <AvatarFallback className={`text-[11px] font-semibold ${selectedThreadId === thread.id ? "bg-white/20 text-white" : "bg-stone-100 dark:bg-stone-700 text-stone-700 dark:text-stone-300"}`}>
                             {isGroup ? <Users className="size-4" /> : partner ? initials(partner.firstName, partner.lastName) : "CV"}
                           </AvatarFallback>
                         </Avatar>
@@ -978,7 +978,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                         <div className="flex items-center justify-between gap-1">
                           <p className={`truncate text-sm font-semibold ${selectedThreadId === thread.id ? "text-white" : "text-stone-900 dark:text-stone-100"}`}>{threadLabel}</p>
                           {thread.lastMessage?.createdAt && (
-                            <span className={`shrink-0 text-[10px] ${selectedThreadId === thread.id ? "text-orange-200" : "text-stone-400 dark:text-stone-500"}`}>
+                            <span className={`shrink-0 text-[11px] ${selectedThreadId === thread.id ? "text-orange-200" : "text-stone-400 dark:text-stone-500"}`}>
                               {relativeTime(thread.lastMessage.createdAt)}
                             </span>
                           )}
@@ -997,7 +997,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
 
         {/* ── Composer, pinned to bottom ── */}
         <div className="mt-3 shrink-0 space-y-2 border-t border-stone-100 dark:border-stone-800 pt-3">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-stone-500">New Message</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">New Message</p>
 
           {/* Skill search (admins / instructors) */}
           {canDiscoverBySkill ? (
@@ -1014,7 +1014,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
 
           {/* Skill results */}
           {canDiscoverBySkill && skillQuery.trim() ? (
-            <div className="max-h-44 overflow-y-auto rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-1.5 shadow-sm">
+            <div className="max-h-44 overflow-y-auto rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-1.5 shadow-sm">
               {filteredContacts.length === 0 ? (
                 <p className="px-2 py-3 text-center text-xs text-stone-500 dark:text-stone-400">No contacts match this skill.</p>
               ) : (
@@ -1046,7 +1046,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
               setGroupMemberIds([]);
             }}
           >
-            <SelectTrigger className="h-9 w-full rounded-xl border border-stone-200 dark:border-stone-600 bg-stone-50 dark:bg-stone-800 px-3 text-sm text-stone-700 dark:text-stone-300 focus-visible:ring-2 focus-visible:ring-orange-200">
+            <SelectTrigger className="h-9 w-full rounded-lg border border-stone-200 dark:border-stone-600 bg-stone-50 dark:bg-stone-800 px-3 text-sm text-stone-700 dark:text-stone-300 focus-visible:ring-2 focus-visible:ring-orange-200">
               <SelectValue placeholder="Send a direct message…" />
             </SelectTrigger>
             <SelectContent className="max-h-56 overflow-y-auto" position="popper" side="top" align="start" sideOffset={6}>
@@ -1064,13 +1064,13 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
               <button
                 type="button"
                 onClick={() => setNewGroupOpen((prev) => !prev)}
-                className="flex w-full items-center justify-between rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-600 dark:text-stone-400 transition hover:bg-stone-50 dark:hover:bg-stone-800"
+                className="flex w-full items-center justify-between rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-600 dark:text-stone-400 transition hover:bg-stone-50 dark:hover:bg-stone-800"
               >
                 <span className="flex items-center gap-2">
                   <Users className="size-4 text-stone-400" />
                   New Group Chat
                   {groupMemberIds.length > 0 && (
-                    <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700">
+                    <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[11px] font-semibold text-orange-700">
                       {groupMemberIds.length}
                     </span>
                   )}
@@ -1079,7 +1079,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
               </button>
 
               {newGroupOpen ? (
-                <div className="max-h-64 overflow-y-auto rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-800 p-3">
+                <div className="max-h-64 overflow-y-auto rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-800 p-3">
                   <div className="space-y-2">
                     <Input
                       className="h-9 text-sm"
@@ -1101,7 +1101,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                         setGroupMemberPickerId("");
                       }}
                     >
-                      <SelectTrigger className="h-9 w-full rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 px-3 text-sm text-stone-700 dark:text-stone-300 focus-visible:ring-2 focus-visible:ring-orange-200">
+                      <SelectTrigger className="h-9 w-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 px-3 text-sm text-stone-700 dark:text-stone-300 focus-visible:ring-2 focus-visible:ring-orange-200">
                         <SelectValue placeholder="Add member…" />
                       </SelectTrigger>
                       <SelectContent className="max-h-56 overflow-y-auto" position="popper" side="top" align="start" sideOffset={6}>
@@ -1125,7 +1125,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                           <button
                             key={member.id}
                             type="button"
-                            className="inline-flex items-center gap-1 rounded-full border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-2 py-1 text-[11px] text-stone-700 dark:text-stone-300 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                            className="inline-flex items-center gap-1 rounded-full border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-2 py-1 text-[11px] text-stone-700 dark:text-stone-300 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 transition-colors"
                             onClick={() => removeDraftGroupMember(member.id)}
                           >
                             {member.firstName} {member.lastName}
@@ -1165,7 +1165,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
             <button
               type="button"
               onClick={() => { setSelectedThreadId(""); setSelectedRecipientId(""); }}
-              className="mr-1 flex size-8 shrink-0 items-center justify-center rounded-lg border border-stone-200 text-stone-500 transition hover:bg-stone-50 dark:border-stone-700 dark:text-stone-400 dark:hover:bg-stone-800 xl:hidden"
+              className="mr-1 flex size-8 shrink-0 items-center justify-center rounded-lg border border-stone-200 text-stone-500 transition hover:bg-stone-50 dark:border-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 xl:hidden"
               aria-label="Back to conversations"
             >
               <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -1182,9 +1182,9 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                     className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
                     onClick={() => setPreviewContact(selectedContact)}
                   >
-                    <Avatar className="size-9 border border-stone-200 dark:border-stone-700">
+                    <Avatar className="size-9 border border-stone-200 dark:border-stone-800">
                       <AvatarImage src={selectedContact.avatarUrl ?? undefined} alt={`${selectedContact.firstName} ${selectedContact.lastName}`} />
-                      <AvatarFallback className="bg-stone-100 dark:bg-stone-700 text-[10px] font-semibold text-stone-700 dark:text-stone-300">
+                      <AvatarFallback className="bg-stone-100 dark:bg-stone-700 text-[11px] font-semibold text-stone-700 dark:text-stone-300">
                         {initials(selectedContact.firstName, selectedContact.lastName)}
                       </AvatarFallback>
                     </Avatar>
@@ -1218,9 +1218,9 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                   className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
                   onClick={() => setPreviewContact(selectedContact)}
                 >
-                  <Avatar className="size-9 border border-stone-200 dark:border-stone-700">
+                  <Avatar className="size-9 border border-stone-200 dark:border-stone-800">
                     <AvatarImage src={selectedContact.avatarUrl ?? undefined} alt={`${selectedContact.firstName} ${selectedContact.lastName}`} />
-                    <AvatarFallback className="bg-stone-100 dark:bg-stone-700 text-[10px] font-semibold text-stone-700 dark:text-stone-300">
+                    <AvatarFallback className="bg-stone-100 dark:bg-stone-700 text-[11px] font-semibold text-stone-700 dark:text-stone-300">
                       {initials(selectedContact.firstName, selectedContact.lastName)}
                     </AvatarFallback>
                   </Avatar>
@@ -1271,14 +1271,14 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
               </DialogHeader>
 
               <div className="space-y-4">
-                <div className="rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 p-3">
+                <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800 p-3">
                   <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{threadDisplayLabel(activeThread)}</p>
                   <p className="text-xs text-stone-600 dark:text-stone-400">{activeThread.participants.length - 1} participant(s)</p>
                   {activeThread.description ? (
                     <p className="mt-1 text-xs text-stone-600 dark:text-stone-400">{activeThread.description}</p>
                   ) : null}
                 </div>
-                <div className="space-y-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 p-3">
+                <div className="space-y-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800 p-3">
                   <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">Group Details</p>
                   <Input
                     value={groupEditTitle}
@@ -1301,11 +1301,11 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                   </Button>
                 </div>
 
-                <div className="space-y-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 p-3">
+                <div className="space-y-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800 p-3">
                   <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">Members</p>
                   {manageAddableContacts.length > 0 ? (
                     <div className="space-y-2">
-                      <div className="max-h-32 overflow-y-auto rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-2">
+                      <div className="max-h-32 overflow-y-auto rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-2">
                         <div className="space-y-1.5">
                           {manageAddableContacts.map((contact) => (
                             <label key={contact.id} className="flex cursor-pointer items-center gap-2 text-xs text-stone-700 dark:text-stone-300">
@@ -1362,7 +1362,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                         .map((participant) => (
                           <span
                             key={participant.id}
-                            className="inline-flex items-center gap-1 rounded-full border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-2 py-1 text-[11px] text-stone-700 dark:text-stone-300"
+                            className="inline-flex items-center gap-1 rounded-full border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-2 py-1 text-[11px] text-stone-700 dark:text-stone-300"
                           >
                             {participant.firstName} {participant.lastName}
                             <button
@@ -1412,7 +1412,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
           </div>
         ) : null}
 
-        <div ref={scrollContainerRef} className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 p-3">
+        <div ref={scrollContainerRef} className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800 p-3">
           {selectedThreadId && hasOlderMessages ? (
             <div className="flex justify-center pb-1">
               <Button
@@ -1502,12 +1502,12 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                     </div>
                   )}
 
-                  <div className={`min-w-0 rounded-xl px-3 py-2 text-sm max-[360px]:px-2.5 max-[360px]:py-1.5 max-[360px]:text-xs ${
+                  <div className={`min-w-0 rounded-lg px-3 py-2 text-sm max-[360px]:px-2.5 max-[360px]:py-1.5 max-[360px]:text-xs ${
                     message.deletedAt
-                      ? "border border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-700 italic text-stone-400 dark:text-stone-500"
+                      ? "border border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-700 italic text-stone-400 dark:text-stone-500"
                       : mine
                       ? "bg-orange-700 text-white"
-                      : "border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
+                      : "border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
                   }`}>
                     {showGroupSenderMeta && !message.deletedAt ? (
                       <div className={`mb-1 flex items-center gap-1.5 ${mine ? "justify-end" : ""}`}>
@@ -1519,10 +1519,10 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                             if (c) setPreviewContact(c);
                           }}
                         >
-                          <Avatar className={`size-5 border ${mine ? "border-orange-300" : "border-stone-200 dark:border-stone-700"}`}>
+                          <Avatar className={`size-5 border ${mine ? "border-orange-300" : "border-stone-200 dark:border-stone-800"}`}>
                             <AvatarImage src={senderAvatarUrl} alt={senderDisplayName} />
                             <AvatarFallback
-                              className={`text-[9px] font-semibold ${mine ? "bg-orange-500 text-orange-100" : "bg-stone-100 dark:bg-stone-700 text-stone-700 dark:text-stone-300"}`}
+                              className={`text-[10px] font-semibold ${mine ? "bg-orange-500 text-orange-100" : "bg-stone-100 dark:bg-stone-700 text-stone-700 dark:text-stone-300"}`}
                             >
                               {initials(message.sender.firstName, message.sender.lastName)}
                             </AvatarFallback>
@@ -1579,7 +1579,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                     )}
 
                     {!message.deletedAt && !isEditing && (
-                      <p className={`mt-1 flex items-center gap-1.5 text-[10px] ${mine ? "justify-end text-orange-100" : "text-stone-400 dark:text-stone-500"}`}>
+                      <p className={`mt-1 flex items-center gap-1.5 text-[11px] ${mine ? "justify-end text-orange-100" : "text-stone-400 dark:text-stone-500"}`}>
                         <span>{relativeTime(message.createdAt)}</span>
                         {message.editedAt && <span className="opacity-70">· edited</span>}
                         {mine && <span className="opacity-80">{message.receipts.length > 1 ? "· Read" : "· Sent"}</span>}
@@ -1592,7 +1592,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
           )}
         </div>
 
-        <div className="mt-3 shrink-0 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-2">
+        <div className="mt-3 shrink-0 rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-2">
           <div className="flex items-center gap-2 max-[360px]:flex-col max-[360px]:items-stretch">
             <Input
               value={draft}
@@ -1657,7 +1657,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
             <>
               <DialogHeader>
                 <div className="flex items-center gap-3">
-                  <Avatar className="size-12 border border-stone-200 dark:border-stone-700">
+                  <Avatar className="size-12 border border-stone-200 dark:border-stone-800">
                     <AvatarImage src={previewContact.avatarUrl ?? undefined} alt={`${previewContact.firstName} ${previewContact.lastName}`} />
                     <AvatarFallback className="bg-stone-100 dark:bg-stone-700 text-sm font-semibold text-stone-700 dark:text-stone-300">
                       {initials(previewContact.firstName, previewContact.lastName)}
@@ -1688,7 +1688,7 @@ export function MessagesPanel({ currentUserId, currentUserRole }: MessagesPanelP
                     <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Skills</p>
                     <div className="flex flex-wrap gap-1.5">
                       {previewContact.profile.skills.map((skill) => (
-                        <span key={skill} className="rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-medium text-orange-900">
+                        <span key={skill} className="rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-medium text-orange-900">
                           {skill}
                         </span>
                       ))}

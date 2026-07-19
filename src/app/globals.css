@@ -172,7 +172,7 @@
   }
 
   .kat-card {
-    @apply rounded-2xl border border-[var(--kat-border)] bg-[var(--kat-raised)] p-4 shadow-sm sm:p-5;
+    @apply rounded-lg border border-[var(--kat-border)] bg-[var(--kat-raised)] p-4 shadow-sm sm:p-5;
   }
 
   .kat-chip {
@@ -342,7 +342,7 @@
 
   .kat-card {
     padding: 0.75rem;
-    border-radius: 0.9rem;
+    border-radius: 0.5rem;
   }
 
   .kat-date-input {

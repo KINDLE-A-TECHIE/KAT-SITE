@@ -51,7 +51,7 @@ export async function EmbedLessons({
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-6 font-body">
-      <header className="border-b border-stone-200 pb-4 dark:border-stone-700">
+      <header className="border-b border-stone-200 pb-4 dark:border-stone-800">
         <p className="text-xs uppercase tracking-wide text-stone-400">{schoolName}</p>
         <h1 className="mt-1 font-display text-xl font-semibold text-stone-900 dark:text-stone-100">
           Hello {firstName}

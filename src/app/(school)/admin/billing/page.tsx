@@ -32,7 +32,7 @@ export default async function SchoolBillingPage() {
       </Link>
 
       {/* BillingPanel reads the ?reference= Paystack sends back, so it needs Suspense. */}
-      <Suspense fallback={<Skeleton className="h-72 w-full rounded-xl" />}>
+      <Suspense fallback={<Skeleton className="h-72 w-full rounded-lg" />}>
         <BillingPanel />
       </Suspense>
     </section>

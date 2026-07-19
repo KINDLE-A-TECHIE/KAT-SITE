@@ -47,7 +47,7 @@ export default async function SchoolLayout({ children }: { children: ReactNode }
               <Image src="/kindle-a-techie.svg" alt="KAT logo" width={34} height={34} className="shrink-0" />
               <span className="text-[0.95rem] font-semibold tracking-tight text-stone-900 dark:text-stone-100">
                 kindle <span className="text-orange-600">a techie</span>
-                <span className="ml-2 border-l border-stone-200 pl-2 text-[0.7rem] font-medium uppercase tracking-[0.14em] text-stone-400 dark:border-stone-700">
+                <span className="ml-2 border-l border-stone-200 pl-2 text-[0.7rem] font-medium uppercase tracking-[0.14em] text-stone-400 dark:border-stone-800">
                   for schools
                 </span>
               </span>

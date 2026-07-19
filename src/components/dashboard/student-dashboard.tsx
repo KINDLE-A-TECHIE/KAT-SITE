@@ -213,7 +213,7 @@ export function StudentDashboard({ firstName }: { firstName: string }) {
                 <p className="text-xs font-semibold leading-tight text-stone-800 dark:text-stone-100">
                   {eb.badge.name}
                 </p>
-                <p className="font-mono text-[10px] text-stone-400 dark:text-stone-500">
+                <p className="font-mono text-[11px] text-stone-400 dark:text-stone-500">
                   {fmt(eb.earnedAt)}
                 </p>
               </div>

@@ -107,7 +107,7 @@ function VideoEmbed({ url, title }: { url: string; title: string }) {
   const ytId = extractYouTubeId(url);
   if (ytId) {
     return (
-      <div className="aspect-video overflow-hidden rounded-xl shadow-md">
+      <div className="aspect-video overflow-hidden rounded-lg shadow-md">
         <iframe
           src={`https://www.youtube-nocookie.com/embed/${ytId}`}
           className="h-full w-full"
@@ -121,7 +121,7 @@ function VideoEmbed({ url, title }: { url: string; title: string }) {
   const vimeoId = extractVimeoId(url);
   if (vimeoId) {
     return (
-      <div className="aspect-video overflow-hidden rounded-xl shadow-md">
+      <div className="aspect-video overflow-hidden rounded-lg shadow-md">
         <iframe
           src={`https://player.vimeo.com/video/${vimeoId}`}
           className="h-full w-full"
@@ -133,7 +133,7 @@ function VideoEmbed({ url, title }: { url: string; title: string }) {
     );
   }
   return (
-    <video controls className="w-full rounded-xl shadow-md" src={url}>
+    <video controls className="w-full rounded-lg shadow-md" src={url}>
       <track kind="captions" />
       Your browser does not support the video tag.
     </video>
@@ -179,14 +179,14 @@ function ContentBlock({
   };
 
   return (
-    <div className={`overflow-hidden rounded-2xl bg-white ring-1 shadow-sm dark:bg-stone-900 ${cfg.ring}`}>
+    <div className={`overflow-hidden rounded-lg bg-white ring-1 shadow-sm dark:bg-stone-900 ${cfg.ring}`}>
       {/* Colored accent bar */}
       <div className={`h-1.5 w-full ${cfg.accent}`} />
 
       {/* Header */}
       <div className="flex items-center justify-between gap-3 px-3 pb-3 pt-4 sm:px-5">
         <div className="flex items-center gap-3">
-          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${cfg.iconBg}`}>
+          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${cfg.iconBg}`}>
             <Icon className={`h-4 w-4 ${cfg.iconColor}`} />
           </div>
           <div>
@@ -196,7 +196,7 @@ function ContentBlock({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {isCreator && (
-            <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${REVIEW_STYLE[content.reviewStatus]}`}>
+            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${REVIEW_STYLE[content.reviewStatus]}`}>
               {content.reviewStatus.replace("_", " ")}
             </span>
           )}
@@ -208,7 +208,7 @@ function ContentBlock({
       <div className="px-3 pb-4 sm:px-5 sm:pb-5">
         {content.type === "RICH_TEXT" && content.body && (
           <div
-            className="prose prose-stone dark:prose-invert max-w-none text-[15px] leading-relaxed"
+            className="prose prose-stone dark:prose-invert max-w-none text-sm leading-relaxed"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.body) }}
           />
         )}
@@ -222,9 +222,9 @@ function ContentBlock({
             href={content.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center gap-3 rounded-xl border border-orange-100 bg-orange-50 p-3 transition hover:border-orange-200 hover:bg-orange-100 dark:border-orange-900/40 dark:bg-orange-950/30 dark:hover:bg-orange-950/50 sm:gap-4 sm:p-4"
+            className="group flex items-center gap-3 rounded-lg border border-orange-100 bg-orange-50 p-3 transition hover:border-orange-200 hover:bg-orange-100 dark:border-orange-900/40 dark:bg-orange-950/30 dark:hover:bg-orange-950/50 sm:gap-4 sm:p-4"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-900/50 sm:h-12 sm:w-12">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/50 sm:h-12 sm:w-12">
               <FileText className="h-5 w-5 text-orange-600 dark:text-orange-400 sm:h-6 sm:w-6" />
             </div>
             <div className="min-w-0 flex-1">
@@ -406,20 +406,20 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
   if (loading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-36 rounded-2xl" />
-        <Skeleton className="h-56 rounded-2xl" />
-        <Skeleton className="h-40 rounded-2xl" />
+        <Skeleton className="h-36 rounded-lg" />
+        <Skeleton className="h-56 rounded-lg" />
+        <Skeleton className="h-40 rounded-lg" />
       </div>
     );
   }
 
   if (!lesson) {
     return (
-      <div className="rounded-2xl border border-dashed border-stone-200 py-16 text-center dark:border-stone-700">
+      <div className="rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
         <BookOpen className="mx-auto mb-3 h-10 w-10 text-stone-300 dark:text-stone-600" />
         <p className="font-medium text-stone-500 dark:text-stone-400">Lesson not found or you don&apos;t have access.</p>
         <Link href={`/dashboard/curriculum/${programId}`}
-          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#B2401D] hover:underline">
+          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-kat-clay hover:underline">
           <ArrowLeft className="h-3.5 w-3.5" /> Back to course
         </Link>
       </div>
@@ -484,7 +484,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
 
       {/* Empty state */}
       {visibleContents.length === 0 && !showAddContent && (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-stone-200 py-16 text-center dark:border-stone-700">
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
           <p className="font-medium text-stone-600 dark:text-stone-400">
             {isCreator ? "No content yet, add your first block below." : "Nothing here yet. Check back soon!"}
           </p>
@@ -524,7 +524,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: visibleContents.length * 0.06 + 0.1 }}
           onAnimationComplete={markComplete}
-          className="overflow-hidden rounded-2xl border border-emerald-100 bg-emerald-50 py-8 text-center dark:border-emerald-900/40 dark:bg-emerald-950/20"
+          className="overflow-hidden rounded-lg border border-emerald-100 bg-emerald-50 py-8 text-center dark:border-emerald-900/40 dark:bg-emerald-950/20"
         >
           <div className="flex flex-col items-center gap-3 px-6">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
@@ -540,7 +540,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
               {prevLesson && (
                 <button
                   onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${prevLesson.id}`)}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Previous
@@ -550,7 +550,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
               {nextLesson ? (
                 <button
                   onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${nextLesson.id}`)}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#B2401D] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#8F3316]"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-kat-clay px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-kat-clay-deep"
                 >
                   <span className="truncate">Next: {nextLesson.title.length > 22 ? nextLesson.title.slice(0, 22) + "…" : nextLesson.title}</span>
                   <ArrowRight className="h-4 w-4 shrink-0" />
@@ -558,7 +558,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
               ) : (
                 <Link
                   href={`/dashboard/curriculum/${program.id}`}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#B2401D] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#8F3316]"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-kat-clay px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-kat-clay-deep"
                 >
                   Back to Course
                   <ArrowRight className="h-4 w-4 shrink-0" />
@@ -579,11 +579,11 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
             transition={{ duration: 0.2 }}
             className="pointer-events-none fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-0 right-0 z-50 flex justify-center px-3"
           >
-            <div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-stone-200 bg-white/95 px-4 py-2.5 shadow-lg backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/95">
+            <div className="pointer-events-auto flex items-center gap-2 rounded-lg border border-stone-200 bg-white/95 px-4 py-2.5 shadow-lg backdrop-blur-sm dark:border-stone-800 dark:bg-stone-900/95">
               {prevLesson && (
                 <button
                   onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${prevLesson.id}`)}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" /> Prev
                 </button>
@@ -594,7 +594,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
               {nextLesson && (
                 <button
                   onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${nextLesson.id}`)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#B2401D] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#8F3316]"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-kat-clay px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-kat-clay-deep"
                 >
                   Next <ArrowRight className="h-3.5 w-3.5" />
                 </button>
@@ -613,7 +613,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden rounded-2xl border border-[#B2401D]/30 bg-orange-50/40 p-5 dark:bg-orange-950/20"
+              className="overflow-hidden rounded-lg border border-kat-clay/30 bg-orange-50/40 p-5 dark:bg-orange-950/20"
             >
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="font-semibold text-stone-800 dark:text-stone-200">Add Content Block</h3>
@@ -633,7 +633,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
             <motion.div key="btn" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <Button
                 variant="outline"
-                className="w-full gap-2 rounded-2xl border-dashed border-[#B2401D]/40 py-6 text-[#B2401D] hover:bg-orange-50 dark:hover:bg-orange-950/20"
+                className="w-full gap-2 rounded-lg border-dashed border-kat-clay/40 py-6 text-kat-clay hover:bg-orange-50 dark:hover:bg-orange-950/20"
                 onClick={() => setShowAddContent(true)}
               >
                 <Plus className="h-4 w-4" />

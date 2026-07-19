@@ -107,7 +107,7 @@ function ProgramForm({
           <select
             value={form.level}
             onChange={set("level")}
-            className="w-full rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-[#B2401D] focus:outline-none focus:ring-1 focus:ring-[#B2401D]"
+            className="w-full rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-kat-clay focus:outline-none focus:ring-1 focus:ring-kat-clay"
           >
             {LEVELS.map((l) => <option key={l} value={l}>{l.charAt(0) + l.slice(1).toLowerCase()}</option>)}
           </select>
@@ -145,7 +145,7 @@ function ProgramForm({
           size="sm"
           disabled={busy}
           onClick={() => void onSave(form)}
-          className="bg-[#B2401D] hover:bg-[#8F3316]"
+          className="bg-kat-clay hover:bg-kat-clay-deep"
         >
           {busy ? "Saving…" : "Save Program"}
         </Button>
@@ -271,7 +271,7 @@ export function CurriculumPanel({ role }: { role: string }) {
           <Skeleton className="h-4 w-72" />
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-40 rounded-lg" />)}
         </div>
       </div>
     );
@@ -298,7 +298,7 @@ export function CurriculumPanel({ role }: { role: string }) {
               </button>
             )}
             {isSA && (
-              <Button size="sm" onClick={openAdd} className="gap-1.5 bg-[#B2401D] hover:bg-[#8F3316]">
+              <Button size="sm" onClick={openAdd} className="gap-1.5 bg-kat-clay hover:bg-kat-clay-deep">
                 <Plus className="h-3.5 w-3.5" /> Add Program
               </Button>
             )}
@@ -380,11 +380,11 @@ export function CurriculumPanel({ role }: { role: string }) {
                       <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-stone-500 dark:text-stone-400">{program.description}</p>
                     )}
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <Link href={`/dashboard/curriculum/${program.id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-[#B2401D] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#8F3316] transition-colors">
+                      <Link href={`/dashboard/curriculum/${program.id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-kat-clay px-3 py-1.5 text-xs font-semibold text-white hover:bg-kat-clay-deep transition-colors">
                         <BookOpen className="h-3.5 w-3.5" />Manage Curriculum
                       </Link>
                       {(isSA || role === "ADMIN") && (
-                        <Link href={`/dashboard/curriculum/${program.id}/versions`} className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 dark:border-stone-700 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                        <Link href={`/dashboard/curriculum/${program.id}/versions`} className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 dark:border-stone-800 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
                           <Settings className="h-3.5 w-3.5" />Versions
                         </Link>
                       )}
@@ -394,8 +394,8 @@ export function CurriculumPanel({ role }: { role: string }) {
                   /* ── Learner card ── */
                   <>
                     <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#B2401D]/10 dark:bg-orange-900/30">
-                        <GraduationCap className="h-5 w-5 text-[#B2401D] dark:text-orange-400" />
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-kat-clay/10 dark:bg-orange-900/30">
+                        <GraduationCap className="h-5 w-5 text-kat-clay dark:text-orange-400" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold text-stone-900 dark:text-stone-100">{program.name}</h3>
@@ -406,7 +406,7 @@ export function CurriculumPanel({ role }: { role: string }) {
                     </div>
                     <Link
                       href={`/dashboard/curriculum/${program.id}`}
-                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#B2401D] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#8F3316]"
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-kat-clay py-2.5 text-sm font-semibold text-white transition-colors hover:bg-kat-clay-deep"
                     >
                       <BookOpen className="h-4 w-4" />
                       Open Course

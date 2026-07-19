@@ -249,13 +249,13 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
         </div>
       </div>
 
-      {loading ? <Skeleton className="h-96 w-full rounded-xl" /> : null}
+      {loading ? <Skeleton className="h-96 w-full rounded-lg" /> : null}
       {!loading && !data ? null : null}
 
       {data ? (
         <article className="space-y-6">
           {/* Report header */}
-          <header className="border-b border-stone-200 pb-4 dark:border-stone-700">
+          <header className="border-b border-stone-200 pb-4 dark:border-stone-800">
             <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100">
               {data.school.name}
             </h1>
@@ -507,7 +507,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
             </section>
           ))}
 
-          <footer className="border-t border-stone-200 pt-4 text-xs text-stone-400 dark:border-stone-700">
+          <footer className="border-t border-stone-200 pt-4 text-xs text-stone-400 dark:border-stone-800">
             &ldquo;Delivered&rdquo; figures are attested by the named class teacher. Where a class
             changed hands during the term, every teacher who held it is listed with the dates. Each
             unit remains attributed to the teacher who actually attested it, and attestations are
@@ -535,7 +535,7 @@ function Figure({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-stone-200 p-3 dark:border-stone-700">
+    <div className="rounded-lg border border-stone-200 p-3 dark:border-stone-800">
       <p className="text-xs font-medium uppercase tracking-wide text-stone-400">{label}</p>
       <p
         className={`mt-1 text-2xl font-bold ${

@@ -179,14 +179,14 @@ function TrendMiniCard<TPoint extends { label: string }>(props: TrendMiniCardPro
   );
 
   return (
-    <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-3 shadow-sm">
+    <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{props.title}</p>
           <p className="text-xs text-stone-500 dark:text-stone-400">{props.subtitle}</p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] uppercase tracking-wide text-stone-500 dark:text-stone-400">Total</p>
+          <p className="text-[11px] uppercase tracking-wide text-stone-500 dark:text-stone-400">Total</p>
           <p className="text-xs font-semibold text-stone-900 dark:text-stone-100">
             {props.formatValue ? props.formatValue(total) : total}
           </p>
@@ -208,7 +208,7 @@ function TrendMiniCard<TPoint extends { label: string }>(props: TrendMiniCardPro
           );
         })}
       </div>
-      <div className="mt-2 flex items-center justify-between text-[10px] text-stone-500 dark:text-stone-400">
+      <div className="mt-2 flex items-center justify-between text-[11px] text-stone-500 dark:text-stone-400">
         <span>{props.points[0]?.label ?? ""}</span>
         <span>{props.points[Math.floor(props.points.length / 2)]?.label ?? ""}</span>
         <span>{props.points[props.points.length - 1]?.label ?? ""}</span>
@@ -956,7 +956,7 @@ export function AnalyticsPanel() {
           <p className="text-xs text-stone-500 dark:text-stone-400">Switch analysis window to compare short-term vs long-term behavior.</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {headlineSignals.map((signal) => (
-              <span key={signal} className="rounded-full border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-2.5 py-1 text-[11px] text-stone-700 dark:text-stone-300">
+              <span key={signal} className="rounded-full border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-2.5 py-1 text-[11px] text-stone-700 dark:text-stone-300">
                 {signal}
               </span>
             ))}
@@ -965,7 +965,7 @@ export function AnalyticsPanel() {
           <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
             <Select value={range} onValueChange={(value) => setRange(value as RangeValue)}
             >
-              <SelectTrigger className="h-10 w-full rounded-xl border border-stone-300 dark:border-stone-600 bg-stone-50/70 dark:bg-stone-800 px-3 text-sm text-stone-700 dark:text-stone-200 focus-visible:ring-2 focus-visible:ring-orange-200 sm:w-40">
+              <SelectTrigger className="h-10 w-full rounded-lg border border-stone-300 dark:border-stone-600 bg-stone-50/70 dark:bg-stone-800 px-3 text-sm text-stone-700 dark:text-stone-200 focus-visible:ring-2 focus-visible:ring-orange-200 sm:w-40">
                 <SelectValue placeholder="Select range" />
               </SelectTrigger>
               <SelectContent className="max-h-56 overflow-y-auto" position="popper" side="bottom" align="start" sideOffset={6}>
@@ -1006,7 +1006,7 @@ export function AnalyticsPanel() {
         <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-3">
           {loading || !analytics
             ? Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-3">
+                <div key={index} className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3">
                   <Skeleton className="h-4 w-36" />
                   <Skeleton className="mt-2 h-3 w-full" />
                   <Skeleton className="mt-1 h-3 w-[90%]" />
@@ -1014,7 +1014,7 @@ export function AnalyticsPanel() {
                 </div>
               ))
             : topRecommendations.map((item) => (
-                <div key={item.title} className={cn("rounded-xl border p-3", recommendationToneClass(item.tone))}>
+                <div key={item.title} className={cn("rounded-lg border p-3", recommendationToneClass(item.tone))}>
                   <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{item.title}</p>
                   <p className="mt-1 text-xs text-stone-700 dark:text-stone-300">{item.detail}</p>
                   <p className="mt-2 text-xs font-medium text-stone-800 dark:text-stone-200">{item.action}</p>
@@ -1093,19 +1093,19 @@ export function AnalyticsPanel() {
           <section className="kat-card">
             <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">Platform Metrics</h3>
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-3">
+              <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3">
                 <p className="text-sm text-stone-600 dark:text-stone-400">Total Enrollments</p>
                 <p className="mt-1 text-2xl font-semibold text-stone-900 dark:text-stone-100">
                   {analytics.platformAnalytics.enrollmentCount}
                 </p>
               </div>
-              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-3">
+              <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3">
                 <p className="text-sm text-stone-600 dark:text-stone-400">Revenue</p>
                 <p className="mt-1 text-2xl font-semibold text-stone-900 dark:text-stone-100">
                   NGN {Number(analytics.platformAnalytics.totalRevenue).toLocaleString()}
                 </p>
               </div>
-              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-3">
+              <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3">
                 <p className="text-sm text-stone-600 dark:text-stone-400">Activity Events (7d)</p>
                 <p className="mt-1 text-2xl font-semibold text-stone-900 dark:text-stone-100">
                   {analytics.platformAnalytics.activityEvents7d}
@@ -1114,7 +1114,7 @@ export function AnalyticsPanel() {
             </div>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {Object.entries(analytics.platformAnalytics.roleBreakdown).map(([role, count]) => (
-                <div key={role} className="rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/60 p-3">
+                <div key={role} className="rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/60 p-3">
                   <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">{role}</p>
                   <p className="mt-1 text-lg font-semibold text-stone-900 dark:text-stone-100">{count}</p>
                 </div>
@@ -1179,7 +1179,7 @@ export function AnalyticsPanel() {
               <div className="mt-3 overflow-x-auto overflow-y-auto pb-1">
                 <table className="min-w-[720px] w-full text-sm max-[360px]:text-xs">
                   <thead>
-                    <tr className="border-b border-stone-200 dark:border-stone-700 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                    <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
                       <th className="pb-2">Program</th>
                       <th className="pb-2">Assessments</th>
                       <th className="pb-2">Submissions</th>
@@ -1260,7 +1260,7 @@ export function AnalyticsPanel() {
               <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
                 <table className="min-w-[900px] w-full text-sm max-[360px]:text-xs">
                   <thead>
-                    <tr className="border-b border-stone-200 dark:border-stone-700 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                    <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
                       <th className="pb-2 max-[360px]:pb-1.5">Name</th>
                       <th className="pb-2 max-[360px]:pb-1.5">Role</th>
                       <th className="pb-2 max-[360px]:pb-1.5">Unread</th>
@@ -1282,7 +1282,7 @@ export function AnalyticsPanel() {
                       analytics.platformAnalytics.riskAlerts.map((alert) => (
                         <tr key={alert.userId}>
                           <td className="py-3 max-[360px]:py-2">{alert.name}</td>
-                          <td className="py-3 text-xs uppercase text-stone-600 dark:text-stone-400 max-[360px]:py-2 max-[360px]:text-[10px]">{alert.role}</td>
+                          <td className="py-3 text-xs uppercase text-stone-600 dark:text-stone-400 max-[360px]:py-2 max-[360px]:text-[11px]">{alert.role}</td>
                           <td className="py-3 max-[360px]:py-2">{alert.unreadMessages}</td>
                           <td className="py-3 max-[360px]:py-2">{formatLastLogin(alert.lastLoginDaysAgo)}</td>
                           <td className="py-3 max-[360px]:py-2">
@@ -1343,7 +1343,7 @@ export function AnalyticsPanel() {
               <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
                 <table className="min-w-[760px] w-full text-sm max-[360px]:text-xs">
                   <thead>
-                    <tr className="border-b border-stone-200 dark:border-stone-700 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                    <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
                       <th className="pb-2 max-[360px]:pb-1.5">Cohort</th>
                       <th className="pb-2 max-[360px]:pb-1.5">Program</th>
                       <th className="pb-2 max-[360px]:pb-1.5">Complete %</th>
@@ -1409,7 +1409,7 @@ export function AnalyticsPanel() {
             <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
               <table className="min-w-[760px] w-full text-sm max-[360px]:text-xs">
                 <thead>
-                  <tr className="border-b border-stone-200 dark:border-stone-700 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                  <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
                     <th className="pb-2 max-[360px]:pb-1.5">Program</th>
                     <th className="pb-2 max-[360px]:pb-1.5">Enrollments</th>
                     <th className="pb-2 max-[360px]:pb-1.5">Completed</th>
@@ -1472,7 +1472,7 @@ export function AnalyticsPanel() {
           <div className="mt-3 overflow-x-auto overflow-y-auto pb-1">
             <table className="min-w-[760px] w-full text-sm max-[360px]:text-xs">
               <thead>
-                <tr className="border-b border-stone-200 dark:border-stone-700 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
                   <th className="pb-2 max-[360px]:pb-1.5">Instructor</th>
                   <th className="pb-2 max-[360px]:pb-1.5">Role</th>
                   <th className="pb-2 max-[360px]:pb-1.5">Created</th>
@@ -1486,7 +1486,7 @@ export function AnalyticsPanel() {
                 {scorecards.map((s) => (
                   <tr key={s.instructorId}>
                     <td className="py-3 font-medium text-stone-900 dark:text-stone-100 max-[360px]:py-2">{s.name}</td>
-                    <td className="py-3 text-xs uppercase text-stone-600 dark:text-stone-400 max-[360px]:py-2 max-[360px]:text-[10px]">{s.role}</td>
+                    <td className="py-3 text-xs uppercase text-stone-600 dark:text-stone-400 max-[360px]:py-2 max-[360px]:text-[11px]">{s.role}</td>
                     <td className="py-3 max-[360px]:py-2">{s.assessmentsCreated}</td>
                     <td className="py-3 max-[360px]:py-2">{s.submissionsGraded}</td>
                     <td className="py-3 max-[360px]:py-2">
@@ -1551,7 +1551,7 @@ export function AnalyticsPanel() {
         <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[34dvh]">
           <table className="min-w-[620px] w-full text-sm max-[360px]:text-xs">
             <thead>
-              <tr className="border-b border-stone-200 dark:border-stone-700 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
+              <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
                 <th className="pb-2 max-[360px]:pb-1.5">Month</th>
                 <th className="pb-2 max-[360px]:pb-1.5">Total</th>
                 <th className="pb-2 max-[360px]:pb-1.5">Successful</th>

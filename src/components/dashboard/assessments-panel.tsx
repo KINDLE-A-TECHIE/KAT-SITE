@@ -108,7 +108,7 @@ type AssessmentsPanelProps = {
 const CREATOR_ROLES: UserRoleValue[] = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR"];
 const LEARNER_ROLES: UserRoleValue[] = ["STUDENT", "FELLOW"];
 const KAT_DROPDOWN_TRIGGER_CLASS =
-  "h-10 w-full rounded-xl border border-stone-300 bg-stone-50/70 px-3 text-sm text-stone-700 focus-visible:ring-2 focus-visible:ring-orange-200";
+  "h-10 w-full rounded-lg border border-stone-300 bg-stone-50/70 px-3 text-sm text-stone-700 focus-visible:ring-2 focus-visible:ring-orange-200";
 const KAT_DROPDOWN_CONTENT_CLASS = "max-h-56 overflow-y-auto";
 
 function createId(prefix: string) {
@@ -735,7 +735,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
             </label>
             </div>
             {type === "PROJECT" && (
-              <div className="rounded-xl border border-orange-100 bg-orange-50 p-3 dark:border-orange-900/30 dark:bg-orange-950/20">
+              <div className="rounded-lg border border-orange-100 bg-orange-50 p-3 dark:border-orange-900/30 dark:bg-orange-950/20">
                 <p className="text-sm font-semibold text-orange-700 dark:text-orange-400">Project Assessment</p>
                 <p className="mt-1 text-xs text-orange-600 dark:text-orange-400">
                   No questions required. Use the description above to specify what students must build.
@@ -744,7 +744,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
               </div>
             )}
             {type !== "PROJECT" && (
-            <div className="space-y-3 rounded-xl border border-stone-200 bg-stone-50/60 p-3 dark:border-stone-700 dark:bg-stone-800">
+            <div className="space-y-3 rounded-lg border border-stone-200 bg-stone-50/60 p-3 dark:border-stone-800 dark:bg-stone-800">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">Question Builder</p>
               <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
@@ -795,14 +795,14 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     className={`rounded-lg border bg-white p-3 transition dark:bg-stone-900 ${
                       dragOverQuestionId === question.id && draggingQuestionId !== question.id
                         ? "border-orange-300 shadow-sm"
-                        : "border-stone-200 dark:border-stone-700"
+                        : "border-stone-200 dark:border-stone-800"
                     } ${draggingQuestionId === question.id ? "opacity-80" : ""}`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          className="inline-flex size-8 cursor-grab items-center justify-center rounded-md border border-stone-200 bg-stone-50 text-stone-500 active:cursor-grabbing dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400"
+                          className="inline-flex size-8 cursor-grab items-center justify-center rounded-md border border-stone-200 bg-stone-50 text-stone-500 active:cursor-grabbing dark:border-stone-800 dark:bg-stone-800 dark:text-stone-400"
                           draggable
                           onDragStart={() => onQuestionDragStart(question.id)}
                           onDragEnd={onQuestionDragEnd}
@@ -872,7 +872,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     </div>
 
                     <textarea
-                      className="mt-3 min-h-[80px] w-full rounded-md border border-stone-200 bg-white p-2 text-sm dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
+                      className="mt-3 min-h-[80px] w-full rounded-md border border-stone-200 bg-white p-2 text-sm dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200"
                       placeholder="Question prompt"
                       value={question.prompt}
                       onChange={(event) =>
@@ -890,7 +890,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                         {question.options.map((option) => (
                           <div
                             key={option.id}
-                            className="grid grid-cols-1 gap-2 rounded-md border border-stone-200 p-2 sm:grid-cols-[auto_1fr_1fr_auto] dark:border-stone-700"
+                            className="grid grid-cols-1 gap-2 rounded-md border border-stone-200 p-2 sm:grid-cols-[auto_1fr_1fr_auto] dark:border-stone-800"
                           >
                             <label className="flex items-center gap-2 text-xs text-stone-600 dark:text-stone-400">
                               <input
@@ -949,7 +949,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                 ))}
               </div>
             ) : (
-              <div className="space-y-3 rounded-lg border border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-900">
+              <div className="space-y-3 rounded-lg border border-stone-200 bg-white p-3 dark:border-stone-800 dark:bg-stone-900">
                 <p className="text-xs text-stone-600 dark:text-stone-400">
                   Preview uses your current draft settings and question order.
                 </p>
@@ -965,7 +965,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     </div>
                     {question.type === "OPEN_ENDED" ? (
                       <textarea
-                        className="mt-2 min-h-[80px] w-full rounded-md border border-stone-200 bg-stone-50 p-2 text-sm dark:border-stone-700 dark:bg-stone-800"
+                        className="mt-2 min-h-[80px] w-full rounded-md border border-stone-200 bg-stone-50 p-2 text-sm dark:border-stone-800 dark:bg-stone-800"
                         placeholder="Student response..."
                         disabled
                       />
@@ -986,7 +986,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
             </div>
             )}
             <textarea
-              className="min-h-[80px] w-full rounded-md border border-stone-200 bg-white p-3 text-sm dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"
+              className="min-h-[80px] w-full rounded-md border border-stone-200 bg-white p-3 text-sm dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200"
               placeholder="Description (optional)"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
@@ -1008,7 +1008,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
             </div>
           ) : assessments.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-              <div className="flex size-12 items-center justify-center rounded-xl bg-stone-100 dark:bg-stone-800">
+              <div className="flex size-12 items-center justify-center rounded-lg bg-stone-100 dark:bg-stone-800">
                 <ClipboardList className="size-6 text-stone-400 dark:text-stone-500" />
               </div>
               <div>
@@ -1026,7 +1026,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.03 }}
-                  className="rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900"
+                  className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"
                 >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
@@ -1110,7 +1110,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                           <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{question.prompt}</p>
                           {question.type === "OPEN_ENDED" ? (
                             <textarea
-                              className="mt-2 min-h-[80px] w-full rounded-md border border-stone-200 p-2 text-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200"
+                              className="mt-2 min-h-[80px] w-full rounded-md border border-stone-200 p-2 text-sm dark:border-stone-800 dark:bg-stone-800 dark:text-stone-200"
                               onChange={(event) =>
                                 updateAnswerDraft(assessment.id, question.id, { responseText: event.target.value })
                               }
@@ -1176,12 +1176,12 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
           <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1">
             <div className="space-y-3">
               {verificationQueue.length === 0 ? (
-                <div className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-400">
+                <div className="rounded-lg border border-stone-200 bg-white p-4 text-sm text-stone-600 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400">
                   No pending verification tasks.
                 </div>
               ) : (
                 verificationQueue.map((assessment) => (
-                  <div key={assessment.id} className="rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900">
+                  <div key={assessment.id} className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="font-medium text-stone-900 dark:text-stone-100">{assessment.title}</p>
@@ -1281,12 +1281,12 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
 
               <div className="mt-2 space-y-3">
                 {previewAssessment.questions.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-stone-200 py-6 text-center text-sm text-stone-400 dark:border-stone-700">
+                  <p className="rounded-lg border border-dashed border-stone-200 py-6 text-center text-sm text-stone-400 dark:border-stone-800">
                     No questions added yet.
                   </p>
                 ) : (
                   previewAssessment.questions.map((q, i) => (
-                    <div key={q.id} className="rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-800">
+                    <div key={q.id} className="rounded-lg border border-stone-200 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-800">
                       <div className="flex items-start justify-between gap-3">
                         <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
                           {i + 1}. {q.prompt}
@@ -1301,7 +1301,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                           <textarea
                             disabled
                             placeholder="Student writes their answer here…"
-                            className="w-full resize-none rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-400 dark:border-stone-700 dark:bg-stone-900"
+                            className="w-full resize-none rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-400 dark:border-stone-800 dark:bg-stone-900"
                             rows={3}
                           />
                           {q.answerKey && (
@@ -1318,7 +1318,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                               className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm ${
                                 opt.isCorrect
                                   ? "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-900/30"
-                                  : "border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900"
+                                  : "border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900"
                               }`}
                             >
                               <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
@@ -1352,7 +1352,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
           <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1">
             <div className="space-y-3">
               {pendingManual.map((submission) => (
-                <div key={submission.id} className="rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900">
+                <div key={submission.id} className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
                 <p className="font-medium text-stone-900 dark:text-stone-100">
                   {submission.assessment.title}
                   {submission.student ? ` - ${submission.student.firstName} ${submission.student.lastName}` : ""}

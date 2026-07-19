@@ -277,10 +277,10 @@ function AppearanceTab() {
               key={value}
               type="button"
               onClick={() => setTheme(value)}
-              className={`flex flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 text-sm font-medium transition-all ${
+              className={`flex flex-col items-center gap-2 rounded-lg border-2 px-4 py-4 text-sm font-medium transition-all ${
                 active
                   ? "border-[#1A1714] bg-[#1A1714]/5 text-[#1A1714] dark:border-orange-400 dark:bg-orange-900/20 dark:text-orange-300"
-                  : "border-stone-200 text-stone-500 hover:border-stone-300 hover:bg-stone-50 dark:border-stone-700 dark:text-stone-400 dark:hover:border-stone-600 dark:hover:bg-stone-800"
+                  : "border-stone-200 text-stone-500 hover:border-stone-300 hover:bg-stone-50 dark:border-stone-800 dark:text-stone-400 dark:hover:border-stone-600 dark:hover:bg-stone-800"
               }`}
             >
               <Icon className="size-5" />
@@ -382,14 +382,14 @@ function SecurityTab() {
             {sessions.map((s, i) => (
               <div
                 key={s.id}
-                className="flex items-center gap-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 dark:border-stone-700 dark:bg-stone-800"
+                className="flex items-center gap-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5 dark:border-stone-800 dark:bg-stone-800"
               >
                 <Shield className="size-4 shrink-0 text-stone-400" />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-stone-700 dark:text-stone-300">
                     Session {i + 1}
                     {s.sessionToken === currentToken && (
-                      <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">current</span>
+                      <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">current</span>
                     )}
                   </p>
                   <p className="text-[11px] text-stone-400 dark:text-stone-500">
@@ -406,7 +406,7 @@ function SecurityTab() {
       <Separator />
 
       {/* Danger zone */}
-      <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
+      <div className="rounded-lg border border-rose-200 bg-rose-50 p-4">
         <div className="flex items-start gap-3">
           <Trash2 className="mt-0.5 size-4 shrink-0 text-rose-500" />
           <div className="min-w-0 flex-1 space-y-3">
@@ -453,7 +453,7 @@ export function SettingsPanel({ role }: { role: UserRoleValue }) {
         </TabsTrigger>
       </TabsList>
 
-      <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-700 dark:bg-stone-900">
+      <div className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900">
         <TabsContent value="account" className="mt-0">
           <PasswordTab />
         </TabsContent>

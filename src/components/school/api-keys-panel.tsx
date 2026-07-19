@@ -163,7 +163,7 @@ export function ApiKeysPanel() {
             {SCOPES.map((s) => (
               <label
                 key={s.value}
-                className="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 p-3 transition hover:border-orange-400 dark:border-stone-700"
+                className="flex cursor-pointer items-start gap-3 rounded-lg border border-stone-200 p-3 transition hover:border-orange-400 dark:border-stone-800"
               >
                 <input
                   type="checkbox"
@@ -228,7 +228,7 @@ export function ApiKeysPanel() {
                     </p>
                     <p className="mt-1 flex flex-wrap gap-1">
                       {k.scopes.map((s) => (
-                        <Badge key={s} variant="secondary" className="text-[10px]">
+                        <Badge key={s} variant="secondary" className="text-[11px]">
                           {SCOPES.find((x) => x.value === s)?.label ?? s}
                         </Badge>
                       ))}

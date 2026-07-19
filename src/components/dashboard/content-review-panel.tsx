@@ -111,7 +111,7 @@ function ReviewCard({
   };
 
   return (
-    <div className={`overflow-hidden rounded-xl border ${content.reviewStatus === "REJECTED" ? "border-rose-200 dark:border-rose-800" : content.reviewStatus === "PUBLISHED" ? "border-emerald-200 dark:border-emerald-800" : "border-stone-200 dark:border-stone-700"}`}>
+    <div className={`overflow-hidden rounded-lg border ${content.reviewStatus === "REJECTED" ? "border-rose-200 dark:border-rose-800" : content.reviewStatus === "PUBLISHED" ? "border-emerald-200 dark:border-emerald-800" : "border-stone-200 dark:border-stone-800"}`}>
       {/* Header */}
       <div
         className="flex cursor-pointer items-start justify-between gap-3 bg-stone-50 px-4 py-3 hover:bg-stone-100 dark:bg-stone-800 dark:hover:bg-stone-700"
@@ -164,7 +164,7 @@ function ReviewCard({
                     />
                   </div>
                 ) : (
-                  <a href={content.url} target="_blank" rel="noopener noreferrer" className="text-sm text-[#B2401D] hover:underline">
+                  <a href={content.url} target="_blank" rel="noopener noreferrer" className="text-sm text-kat-clay hover:underline">
                     {content.url}
                   </a>
                 );
@@ -180,7 +180,7 @@ function ReviewCard({
                   href={content.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 rounded-xl border border-stone-200 p-4 hover:bg-stone-50 dark:border-stone-700 dark:hover:bg-stone-800"
+                  className="flex items-center gap-3 rounded-lg border border-stone-200 p-4 hover:bg-stone-50 dark:border-stone-800 dark:hover:bg-stone-800"
                 >
                   <FileText className="h-8 w-8 shrink-0 text-orange-400" />
                   <div className="min-w-0">
@@ -191,8 +191,8 @@ function ReviewCard({
                 </a>
               )}
               {content.type === "CODE_PLAYGROUND" && content.body && (
-                <div className="overflow-hidden rounded-lg border border-stone-200 dark:border-stone-700">
-                  <div className="flex items-center gap-2 border-b border-stone-200 bg-[#1e1e1e] px-3 py-2 dark:border-stone-700">
+                <div className="overflow-hidden rounded-lg border border-stone-200 dark:border-stone-800">
+                  <div className="flex items-center gap-2 border-b border-stone-200 bg-[#1e1e1e] px-3 py-2 dark:border-stone-800">
                     <Terminal className="h-3.5 w-3.5 text-stone-400" />
                     <span className="text-xs font-medium text-stone-300">{content.language ?? "code"}</span>
                   </div>
@@ -316,7 +316,7 @@ export function ContentReviewPanel() {
             onClick={() => { setStatusFilter(opt.value); setPage(1); }}
             className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               statusFilter === opt.value
-                ? "bg-[#B2401D] text-white"
+                ? "bg-kat-clay text-white"
                 : "text-stone-600 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-700"
             }`}
           >
@@ -327,7 +327,7 @@ export function ContentReviewPanel() {
 
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
         </div>
       ) : contents.length === 0 ? (
         <div className="kat-card py-16 text-center">

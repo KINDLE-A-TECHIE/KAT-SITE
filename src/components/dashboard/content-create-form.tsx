@@ -187,14 +187,14 @@ export function ContentCreateForm({
   return (
     <div className="space-y-4">
       {/* Type tabs */}
-      <div className="flex gap-1 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 p-1">
+      <div className="flex gap-1 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800 p-1">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
               tab === t.id
-                ? "bg-white dark:bg-stone-900 text-[#B2401D] shadow-sm"
+                ? "bg-white dark:bg-stone-900 text-kat-clay shadow-sm"
                 : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300"
             }`}
           >
@@ -282,7 +282,7 @@ export function ContentCreateForm({
               id="code-language"
               value={language}
               onChange={(e) => handleLanguageChange(e.target.value)}
-              className="w-full rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-[#B2401D] focus:outline-none focus:ring-1 focus:ring-[#B2401D]"
+              className="w-full rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-kat-clay focus:outline-none focus:ring-1 focus:ring-kat-clay"
             >
               {SUPPORTED_LANGUAGES.map((l) => (
                 <option key={l.value} value={l.value}>{l.label}</option>
@@ -315,7 +315,7 @@ export function ContentCreateForm({
             id="lab-level"
             value={labLevel}
             onChange={(e) => setLabLevel(e.target.value)}
-            className="w-full rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-[#B2401D] focus:outline-none focus:ring-1 focus:ring-[#B2401D]"
+            className="w-full rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-kat-clay focus:outline-none focus:ring-1 focus:ring-kat-clay"
           >
             {LAB_LEVELS.map((l) => (
               <option key={l.key} value={l.key}>{l.key} · {l.unit}</option>
@@ -344,7 +344,7 @@ export function ContentCreateForm({
 
       {/* Queued blocks */}
       {queue.length > 0 && (
-        <div className="space-y-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/60 p-3">
+        <div className="space-y-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/60 p-3">
           <p className="text-xs font-medium text-stone-500 dark:text-stone-400">
             {queue.length} block{queue.length > 1 ? "s" : ""} ready to submit
           </p>
@@ -352,7 +352,7 @@ export function ContentCreateForm({
             {queue.map((block, i) => (
               <div
                 key={block.localId}
-                className="flex items-center gap-2.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2"
+                className="flex items-center gap-2.5 rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2"
               >
                 <span className="flex size-5 shrink-0 items-center justify-center text-stone-400 dark:text-stone-500">
                   {TAB_ICON[block.type]}
@@ -377,7 +377,7 @@ export function ContentCreateForm({
             <Button
               onClick={() => void submitAll()}
               disabled={busy}
-              className="gap-1.5 bg-[#B2401D] text-sm hover:bg-[#8F3316]"
+              className="gap-1.5 bg-kat-clay text-sm hover:bg-kat-clay-deep"
             >
               <Send className="h-3.5 w-3.5" />
               {busy ? "Submitting…" : `Submit ${queue.length} Block${queue.length > 1 ? "s" : ""} for Review`}
