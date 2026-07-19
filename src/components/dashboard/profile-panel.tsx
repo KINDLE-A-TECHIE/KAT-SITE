@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Briefcase, GraduationCap, Loader2, Plus, Trash2, Upload } from "lucide-react";
+import { Briefcase, FileDown, GraduationCap, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -661,6 +661,16 @@ export function ProfilePanel() {
             >
               Remove Photo
             </Button>
+            {/* Plain anchor: the route sets Content-Disposition, the browser downloads.
+                Assembled server-side from this profile plus certificates, badges, and
+                approved projects, with public verification links. */}
+            <a
+              href="/api/users/cv"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-stone-300 dark:border-stone-600 px-3 text-sm font-medium text-stone-700 dark:text-stone-300 transition-colors hover:bg-stone-50 dark:hover:bg-stone-800/60"
+            >
+              <FileDown className="size-4" />
+              Download CV (PDF)
+            </a>
           </div>
 
           <div>

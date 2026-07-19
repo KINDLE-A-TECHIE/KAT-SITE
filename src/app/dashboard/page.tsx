@@ -9,32 +9,32 @@ const ROLE_META: Record<
   SUPER_ADMIN: {
     label: "Super Admin",
     greeting: "Platform Overview",
-    sub: "Monitor health, revenue, and access across the entire KAT Learning platform.",
+    sub: "Revenue, activity, and access controls.",
   },
   ADMIN: {
     label: "Admin",
     greeting: "Operations Hub",
-    sub: "Track cohorts, review payments, and stay connected with your team.",
+    sub: "Cohort progress, payment review, and your messages.",
   },
   INSTRUCTOR: {
     label: "Instructor",
     greeting: "Teaching Hub",
-    sub: "Grade submissions, run live sessions, and mentor your learners.",
+    sub: "Grade submissions and run your live sessions.",
   },
   FELLOW: {
     label: "Fellow",
     greeting: "Fellow Hub",
-    sub: "Here's everything you need to mentor and support your students.",
+    sub: "Your mentees, upcoming sessions, and cohort.",
   },
   STUDENT: {
     label: "Student",
     greeting: "My Workspace",
-    sub: "Track your assessments, join classes, and manage your learning journey.",
+    sub: "Your assessments, classes, and progress.",
   },
   PARENT: {
     label: "Parent",
     greeting: "Parent Portal",
-    sub: "Keep tabs on your child's progress, payments, and learning activity.",
+    sub: "Your child's progress, grades, and payments.",
   },
 };
 

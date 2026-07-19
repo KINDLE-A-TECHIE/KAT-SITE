@@ -367,7 +367,7 @@ export function ParentTestimonialsPanel() {
               {existing?.status === "REJECTED" ? "Submit a revised testimonial" : "Share your experience"}
             </h3>
             <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-              Tell us about your child&apos;s journey with KAT. Approved testimonials may appear on our website.
+              A few honest sentences help other parents decide.
             </p>
           </div>
 
@@ -401,7 +401,7 @@ export function ParentTestimonialsPanel() {
               maxLength={600}
               value={quote}
               onChange={(e) => setQuote(e.target.value)}
-              placeholder="Share how KAT has impacted your child's learning journey…"
+              placeholder="What has changed for your child since they started?"
               className="resize-none rounded-xl border-[var(--kat-border)] text-sm"
             />
             <p className="text-right text-xs text-stone-400">{quote.length}/600</p>

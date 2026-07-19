@@ -1449,7 +1449,7 @@ export function PaymentsPanel({ role }: { role: string }) {
           {canVerify && (
             <div className="kat-card">
               <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Verify Financial Records</h3>
-              <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">Confirm transactions and maintain receipt transparency.</p>
+              <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">Confirm transactions and issue receipts.</p>
               <div className="space-y-3">
                 <Input placeholder="Reference (e.g. KAT-ABC-123)" value={referenceToVerify} onChange={(e) => setReferenceToVerify(e.target.value)} />
                 <Button disabled={busy} variant="outline" className="w-full" onClick={() => void verifyPayment()}>

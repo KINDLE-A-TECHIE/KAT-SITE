@@ -285,13 +285,8 @@ export function CurriculumPanel({ role }: { role: string }) {
         <div className="kat-card flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-stone-900 dark:text-stone-100">
-              {isCreator ? "All Programs" : "Your Enrolled Programs"}
+              {isCreator ? "All programmes" : "Your programmes"}
             </h2>
-            <p className="text-sm text-stone-500 dark:text-stone-400">
-              {isCreator
-                ? "Manage curriculum, lessons, and learning content."
-                : "Browse your program curriculum and learning materials."}
-            </p>
           </div>
           <div className="flex items-center gap-2">
             {isSA && (

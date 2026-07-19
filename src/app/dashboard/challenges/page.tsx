@@ -18,8 +18,8 @@ export default async function ChallengesPage() {
         title={isLearner ? "Weekly Challenges 🔥" : "Challenge Centre"}
         subtitle={
           isLearner
-            ? "Complete this week's challenge, earn points, and climb the leaderboard!"
-            : "Create and manage weekly challenges for each program module."
+            ? "Take on this week's challenge and see where you rank."
+            : "Create weekly challenges and score what students submit."
         }
       />
       <ChallengesPanel role={role} />

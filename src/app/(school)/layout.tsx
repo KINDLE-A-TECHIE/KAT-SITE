@@ -31,12 +31,19 @@ export default async function SchoolLayout({ children }: { children: ReactNode }
     ...(isSchoolAdmin ? [{ href: "/admin", label: "Overview" }] : []), ...(isTeacher ? [{ href: "/teach", label: "Teaching" }] : []), ...(!isSchoolAdmin && !isTeacher ? [{ href: "/learn", label: "Learning" }] : []),
   ];
 
+  // The logo goes straight to the caller's own shell, never to `/`. On this host `/`
+  // rewrites to /home, which immediately redirects a signed-in user right back; that
+  // server redirect during a client-side navigation trips a Next dev Router bug
+  // ("Rendered more hooks than during the previous render") and is a pointless bounce
+  // anyway. Same resolution order as the nav above.
+  const homeHref = isSchoolAdmin ? "/admin" : isTeacher ? "/teach" : "/learn";
+
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
       <header className="border-b border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
         <div className="kat-page flex h-16 items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2.5">
+            <Link href={homeHref} className="flex items-center gap-2.5">
               <Image src="/kindle-a-techie.svg" alt="KAT logo" width={34} height={34} className="shrink-0" />
               <span className="text-[0.95rem] font-semibold tracking-tight text-stone-900 dark:text-stone-100">
                 kindle <span className="text-orange-600">a techie</span>

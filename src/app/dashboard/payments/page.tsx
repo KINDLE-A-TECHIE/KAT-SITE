@@ -27,9 +27,9 @@ export default async function PaymentsPage() {
         title={isAdmin ? "Billing & Payments" : isParent ? "My Children's Payments" : "Payment History"}
         subtitle={
           isAdmin
-            ? "Verify transactions, chase unpaid invoices, and manage the academy's full payment records."
+            ? "Verify transactions and follow up unpaid invoices."
             : isParent
-              ? "Pay enrolment fees, view receipts, and manage billing for each of your children in one place."
+              ? "Enrolment fees, receipts, and billing for each of your children."
               : "Your past transactions, receipts, and any outstanding invoices."
         }
       />

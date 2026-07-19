@@ -15,7 +15,7 @@ export default async function SuperAdminInvitesPage() {
       <PageHeader
         badge="Admin Access"
         title="Staff & Access Control"
-        subtitle="Generate invite links, onboard team members, and manage admin and instructor accounts across the platform."
+        subtitle="Invite admins and instructors, and manage their accounts."
       />
       <SuperAdminInvitesPanel />
       <AdminAccessPanel />

@@ -192,26 +192,22 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
 
   return (
     <div className="space-y-5">
-      {/* Header row */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-stone-500 dark:text-stone-400">
-          {canIssue
-            ? isSuperAdmin
-              ? "Issue and manage certificates for your learners."
-              : "Request certificates for your learners, they require super admin approval."
-            : "Your earned certificates, view, download, or share them."}
-        </p>
-        {canIssue && (
+      {/* Header row. The page header explains the surface; only the approval rule is added here. */}
+      {canIssue && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
+            {isSuperAdmin ? "" : "Requests need super admin approval before they are issued."}
+          </p>
           <Button
             size="sm"
-            className="gap-1.5 bg-[#1A1714] hover:bg-[#162d5e]"
+            className="ml-auto gap-1.5 bg-kat-ink hover:bg-stone-800"
             onClick={() => void openIssue()}
           >
             <Plus className="size-3.5" />
             {isSuperAdmin ? "Issue Certificate" : "Request Certificate"}
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Status filter tabs, issuers only */}
       {canIssue && (

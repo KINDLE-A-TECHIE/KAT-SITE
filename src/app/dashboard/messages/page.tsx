@@ -12,7 +12,7 @@ export default async function MessagesPage() {
       <PageHeader
         badge="Messages"
         title="Your Inbox"
-        subtitle="Direct chats, group threads, and class channels, all in one place."
+        subtitle="Direct chats, group threads, and class channels."
       />
       <MessagesPanel currentUserId={session.user.id} currentUserRole={session.user.role} />
     </section>

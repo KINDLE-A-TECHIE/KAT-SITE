@@ -52,10 +52,6 @@ export function BadgesPanel() {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-stone-500 dark:text-stone-400">
-        Badges are awarded automatically when you pass all assessments in a module.
-      </p>
-
       {loading ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {[1, 2, 3, 4].map(n => <Skeleton key={n} className="h-28 rounded-2xl" />)}
