@@ -13,6 +13,13 @@ export const loginSchema = z.object({
   password: z.string().min(8),
 });
 
+/** School pupil sign-in by class code + PIN (Option B). pupilRef is the pupil's opaque enrollment id. */
+export const studentPinLoginSchema = z.object({
+  classCode: z.string().trim().min(4).max(16),
+  pupilRef: z.string().trim().min(1).max(64),
+  pin: z.string().regex(/^\d{4,8}$/),
+});
+
 /**
  * Public partner / school-pilot enquiry intake (POST /api/partners). A school pilot lead is a
  * PartnerInquiry with type = SCHOOL (see SCHOOL-BUILD-NOTES.md), not a separate model. `state`

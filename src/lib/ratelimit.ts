@@ -66,6 +66,14 @@ export const embedRedeemLimiter = makeLimiter(20, "1 m", "kat:embed:redeem");
  *  itself, and a stolen key must not be usable from a botnet to multiply its own quota. */
 export const apiV1Limiter = makeLimiter(600, "1 m", "kat:api:v1");
 
+/** Pupil PIN attempts, keyed on (class code, pupil). A coarse ceiling on top of the per-pupil DB
+ *  lockout, so a 6-digit PIN cannot be walked in a burst. */
+export const studentPinLimiter = makeLimiter(10, "5 m", "kat:auth:student-pin");
+
+/** Reading a class roster behind a join code (the pre-login "pick your name" step). Bounds how fast
+ *  a guessed code can be probed for the names it unlocks. */
+export const studentRosterLimiter = makeLimiter(30, "5 m", "kat:auth:student-roster");
+
 export function getClientIp(request: Request): string {
   return (
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??

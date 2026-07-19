@@ -350,6 +350,7 @@ model Enrollment {
   periods            EnrollmentPeriod[]
   moduleGateStatuses ModuleGateStatus[]
   payments           Payment[]
+  studentCredential  SchoolStudentCredential?
 
   @@unique([userId, programId])
   @@unique([schoolId, externalRef])
@@ -1243,6 +1244,25 @@ model EmbedTokenUse {
   @@index([expiresAt])
 }
 
+/**
+ * A school pupil's PIN, for class-code + PIN sign-in (Option B).
+ *
+ * Keyed on the Enrollment (the pupil-in-a-school grain), NOT the User, so all PIN state lives inside
+ * the school domain and never touches the shared B2C account. The PIN is stored HASHED; the plaintext
+ * exists only on the printed card. failedAttempts + lockedUntil throttle brute force at the pupil
+ * grain (a 6-digit PIN is low entropy, so this row IS the lockout).
+ */
+model SchoolStudentCredential {
+  id             String     @id @default(cuid())
+  enrollmentId   String     @unique
+  pinHash        String
+  failedAttempts Int        @default(0)
+  lockedUntil    DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  enrollment     Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+}
+
 model School {
   id                  String                @id @default(cuid())
   name                String
@@ -1297,6 +1317,8 @@ model SchoolClass {
   nerdcLevel         NerdcLevel
   term               String
   teacherId          String?
+  // Short class code a pupil types to sign in (Option B). Generated on demand; rotatable.
+  joinCode           String?              @unique
   createdAt          DateTime             @default(now())
   updatedAt          DateTime @updatedAt
   programId          String?
