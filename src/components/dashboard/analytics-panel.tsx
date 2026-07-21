@@ -27,6 +27,13 @@ type PlatformTrendPoint = {
   messagesSent: number;
 };
 
+type SchoolTrendPoint = {
+  date: string;
+  label: string;
+  paidRevenue: number;
+  newPupils: number;
+};
+
 type AnalyticsResponse = {
   scope: "user" | "platform";
   range: RangeValue;
@@ -91,6 +98,33 @@ type AnalyticsResponse = {
         pendingGrading: number;
       }[];
     };
+  };
+  schoolAnalytics?: {
+    schoolCount: number;
+    activeSchoolCount: number;
+    activeLicenseCount: number;
+    seatLimit: number;
+    seatsUsed: number;
+    seatUtilization: number | null;
+    paidRevenue: number;
+    pendingInvoiceCount: number;
+    pendingInvoiceAmount: number;
+    classCount: number;
+    pupilCount: number;
+    trends: {
+      rangeDays: number;
+      points: SchoolTrendPoint[];
+    };
+    schools: {
+      schoolId: string;
+      name: string;
+      activeLicenses: number;
+      seatLimit: number;
+      seatsUsed: number;
+      paidRevenue: number;
+      classCount: number;
+      pupilCount: number;
+    }[];
   };
 };
 
@@ -357,6 +391,10 @@ export function AnalyticsPanel() {
     () => analytics?.platformAnalytics?.trends.points ?? [],
     [analytics],
   );
+  const schoolTrendPoints = useMemo(
+    () => analytics?.schoolAnalytics?.trends.points ?? [],
+    [analytics],
+  );
   const primaryActivityLabel = analytics?.userAnalytics.activityLabel ?? "Assessments Submitted";
 
   const headlineSignals = useMemo(() => {
@@ -470,6 +508,25 @@ export function AnalyticsPanel() {
     ];
 
     downloadCsv(`analytics-programs-${range}.csv`, rows);
+  };
+
+  const exportSchoolCsv = () => {
+    if (!analytics?.schoolAnalytics) {
+      return;
+    }
+    const rows: Array<Array<string | number>> = [
+      ["School", "Active Licences", "Seats Used", "Seat Limit", "Classes", "Pupils", "Paid Revenue"],
+      ...analytics.schoolAnalytics.schools.map((school) => [
+        school.name,
+        school.activeLicenses,
+        school.seatsUsed,
+        school.seatLimit,
+        school.classCount,
+        school.pupilCount,
+        school.paidRevenue,
+      ]),
+    ];
+    downloadCsv(`analytics-schools-${range}.csv`, rows);
   };
 
   const exportRevenueCsv = () => {
@@ -652,6 +709,41 @@ export function AnalyticsPanel() {
           ),
         );
       }
+    }
+
+    if (analytics.schoolAnalytics) {
+      const school = analytics.schoolAnalytics;
+      sections.push(
+        renderTable(
+          "Schools (B2B) Overview",
+          ["Metric", "Value"],
+          [
+            ["Paid Licence Revenue", `NGN ${Math.round(school.paidRevenue).toLocaleString()}`],
+            ["Pending Invoices", `${school.pendingInvoiceCount} (NGN ${Math.round(school.pendingInvoiceAmount).toLocaleString()})`],
+            ["Schools", `${school.schoolCount} (${school.activeSchoolCount} active)`],
+            ["Active Licences", school.activeLicenseCount],
+            ["Seats", `${school.seatsUsed} / ${school.seatLimit}${school.seatUtilization !== null ? ` (${school.seatUtilization}%)` : ""}`],
+            ["Classes", school.classCount],
+            ["Pupils", school.pupilCount],
+          ],
+          "No school data available.",
+        ),
+      );
+      sections.push(
+        renderTable(
+          "Per-School Breakdown",
+          ["School", "Active Licences", "Seats", "Classes", "Pupils", "Paid Revenue"],
+          school.schools.map((row) => [
+            row.name,
+            row.activeLicenses,
+            `${row.seatsUsed} / ${row.seatLimit}`,
+            row.classCount,
+            row.pupilCount,
+            `NGN ${Math.round(row.paidRevenue).toLocaleString()}`,
+          ]),
+          "No partner schools yet.",
+        ),
+      );
     }
 
     if (scorecards.length > 0) {
@@ -1439,6 +1531,139 @@ export function AnalyticsPanel() {
                           </div>
                         </td>
                         <td className="py-3 max-[360px]:py-2">NGN {program.revenue.toLocaleString()}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      ) : null}
+
+      {analytics?.schoolAnalytics ? (
+        <>
+          <section className="kat-card">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100 max-[360px]:text-base">Schools (B2B)</h3>
+                <p className="mt-1 text-sm text-stone-600 dark:text-stone-400 max-[360px]:text-xs">
+                  Licence revenue and seat usage across partner schools. Aggregate only, no pupil records.
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="w-full justify-center gap-2 print:hidden sm:w-auto"
+                onClick={exportSchoolCsv}
+                disabled={analytics.schoolAnalytics.schools.length === 0}
+              >
+                <Download className="size-4" />
+                Export
+              </Button>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3">
+                <p className="text-sm text-stone-600 dark:text-stone-400">Paid Revenue</p>
+                <p className="mt-1 text-2xl font-semibold text-stone-900 dark:text-stone-100">
+                  NGN {Math.round(analytics.schoolAnalytics.paidRevenue).toLocaleString()}
+                </p>
+                {analytics.schoolAnalytics.pendingInvoiceCount > 0 && (
+                  <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                    NGN {Math.round(analytics.schoolAnalytics.pendingInvoiceAmount).toLocaleString()} across{" "}
+                    {analytics.schoolAnalytics.pendingInvoiceCount} pending invoice{analytics.schoolAnalytics.pendingInvoiceCount === 1 ? "" : "s"}
+                  </p>
+                )}
+              </div>
+              <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3">
+                <p className="text-sm text-stone-600 dark:text-stone-400">Schools</p>
+                <p className="mt-1 text-2xl font-semibold text-stone-900 dark:text-stone-100">
+                  {analytics.schoolAnalytics.schoolCount}
+                </p>
+                <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                  {analytics.schoolAnalytics.activeSchoolCount} with an active licence
+                </p>
+              </div>
+              <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3">
+                <p className="text-sm text-stone-600 dark:text-stone-400">Seats Used</p>
+                <p className="mt-1 text-2xl font-semibold text-stone-900 dark:text-stone-100">
+                  {analytics.schoolAnalytics.seatsUsed}
+                  <span className="text-base font-normal text-stone-500 dark:text-stone-400"> / {analytics.schoolAnalytics.seatLimit}</span>
+                </p>
+                {analytics.schoolAnalytics.seatUtilization !== null && (
+                  <div className="mt-2">
+                    <PercentageBar
+                      value={analytics.schoolAnalytics.seatUtilization}
+                      colorClass={analytics.schoolAnalytics.seatUtilization >= 90 ? "bg-rose-500" : analytics.schoolAnalytics.seatUtilization >= 70 ? "bg-amber-500" : "bg-emerald-500"}
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3">
+                <p className="text-sm text-stone-600 dark:text-stone-400">Classes / Pupils</p>
+                <p className="mt-1 text-2xl font-semibold text-stone-900 dark:text-stone-100">
+                  {analytics.schoolAnalytics.classCount}
+                  <span className="text-base font-normal text-stone-500 dark:text-stone-400"> / {analytics.schoolAnalytics.pupilCount}</span>
+                </p>
+                <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                  {analytics.schoolAnalytics.activeLicenseCount} active licence{analytics.schoolAnalytics.activeLicenseCount === 1 ? "" : "s"}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <TrendMiniCard
+                title="Licence Revenue"
+                subtitle={`${range.toUpperCase()} paid invoices`}
+                points={schoolTrendPoints}
+                colorClass="bg-emerald-500"
+                getValue={(point) => point.paidRevenue}
+                formatValue={(value) => `NGN ${Math.round(value).toLocaleString()}`}
+              />
+              <TrendMiniCard
+                title="New Pupils"
+                subtitle="Rostered in range"
+                points={schoolTrendPoints}
+                colorClass="bg-orange-500"
+                getValue={(point) => point.newPupils}
+              />
+            </div>
+          </section>
+
+          <section className="kat-card">
+            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100 max-[360px]:text-base">Per-School Breakdown</h3>
+            <p className="mt-1 text-sm text-stone-600 dark:text-stone-400 max-[360px]:text-xs">Top schools by paid licence revenue.</p>
+            <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
+              <table className="min-w-[720px] w-full text-sm max-[360px]:text-xs">
+                <thead>
+                  <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                    <th className="pb-2 max-[360px]:pb-1.5">School</th>
+                    <th className="pb-2 max-[360px]:pb-1.5">Active Licences</th>
+                    <th className="pb-2 max-[360px]:pb-1.5">Seats</th>
+                    <th className="pb-2 max-[360px]:pb-1.5">Classes</th>
+                    <th className="pb-2 max-[360px]:pb-1.5">Pupils</th>
+                    <th className="pb-2 max-[360px]:pb-1.5">Paid Revenue</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
+                  {analytics.schoolAnalytics.schools.length === 0 ? (
+                    <tr>
+                      <td className="py-3 text-stone-600 dark:text-stone-400 max-[360px]:py-2" colSpan={6}>
+                        No partner schools yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    analytics.schoolAnalytics.schools.map((school) => (
+                      <tr key={school.schoolId}>
+                        <td className="py-3 font-medium text-stone-900 dark:text-stone-100 max-[360px]:py-2">{school.name}</td>
+                        <td className="py-3 max-[360px]:py-2">{school.activeLicenses}</td>
+                        <td className="py-3 max-[360px]:py-2">
+                          {school.seatsUsed}
+                          <span className="text-stone-400 dark:text-stone-500"> / {school.seatLimit}</span>
+                        </td>
+                        <td className="py-3 max-[360px]:py-2">{school.classCount}</td>
+                        <td className="py-3 max-[360px]:py-2">{school.pupilCount}</td>
+                        <td className="py-3 max-[360px]:py-2">NGN {Math.round(school.paidRevenue).toLocaleString()}</td>
                       </tr>
                     ))
                   )}

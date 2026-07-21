@@ -23,6 +23,9 @@ const mockPrisma = vi.hoisted(() => ({
   parentStudent: {
     findUnique: vi.fn(),
   },
+  program: {
+    findFirst: vi.fn(),
+  },
   $transaction: vi.fn(),
 }));
 
@@ -70,6 +73,9 @@ describe("POST /api/enrollments", () => {
     mockPrisma.$transaction.mockImplementation(async (fn: (tx: typeof mockPrisma) => Promise<unknown>) =>
       fn(mockPrisma),
     );
+    // Default: the programme is available (published + active) so the first-time availability gate
+    // passes. Tests exercising the gate override this with a null resolve.
+    mockPrisma.program.findFirst.mockResolvedValue({ id: PROG_ID });
   });
 
   it("returns 401 when unauthenticated", async () => {
