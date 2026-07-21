@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { ClassResultsPanel } from "@/components/school/class-results-panel";
 import { UnitDeliveryPanel } from "@/components/school/unit-delivery-panel";
 import { StartClassPanel } from "@/components/school/start-class-panel";
+import { TeacherPreviewPanel } from "@/components/school/teacher-preview-panel";
 import type { SchoolMembershipClaim } from "@/lib/rbac";
 
 /**
@@ -35,14 +36,14 @@ export default async function TeachClassPage({
 
   const owns = await prisma.schoolClass.findFirst({
     where: { id: classId, schoolId: membership.schoolId, teacherId: session!.user.id },
-    select: { id: true, term: true },
+    select: { id: true, sessionLabel: true, programId: true, nerdcLevel: true },
   });
   if (!owns) redirect("/teach");
 
-  // LICENCE GATE, a teacher cannot open a class whose term is not licensed, even by
+  // LICENCE GATE, a teacher cannot open a class whose session is not licensed, even by
   // typing the URL. The API enforces this too; this only avoids rendering a shell
   // whose data request would 403.
-  const gate = await checkClassLicense(membership.schoolId, owns.term);
+  const gate = await checkClassLicense(membership.schoolId, owns.sessionLabel);
   if (!gate.allowed) redirect("/teach");
 
   return (
@@ -62,6 +63,14 @@ export default async function TeachClassPage({
       <StartClassPanel classId={classId} />
 
       <UnitDeliveryPanel classId={classId} />
+
+      <TeacherPreviewPanel
+        classId={classId}
+        schoolId={membership.schoolId}
+        sessionLabel={owns.sessionLabel}
+        programId={owns.programId}
+        nerdcLevel={owns.nerdcLevel}
+      />
 
       <ClassResultsPanel classId={classId} />
     </section>

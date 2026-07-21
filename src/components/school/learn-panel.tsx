@@ -21,6 +21,8 @@ type LearnModule = {
   title: string;
   description: string | null;
   strand: "CODING" | "DIGLIT";
+  termNumber: number;
+  licensed: boolean;
   gates: Gates;
   lessons: Array<{ id: string; title: string; completed: boolean }>;
 };
@@ -28,7 +30,7 @@ type LearnModule = {
 type LearnResponse = {
   licensed: boolean;
   reason?: string;
-  class: { id: string; name: string; term: string } | null;
+  class: { id: string; name: string; sessionLabel: string } | null;
   program?: { id: string; name: string } | null;
   modules: LearnModule[];
 };
@@ -72,8 +74,11 @@ export function LearnPanel() {
     );
   }
 
-  const totalLessons = data.modules.reduce((n, m) => n + m.lessons.length, 0);
-  const doneLessons = data.modules.reduce(
+  // Progress is measured over the lessons a pupil can actually reach (licensed terms), so 100% means
+  // "everything currently open is done", not "impossible until the school buys the next term".
+  const openModules = data.modules.filter((m) => m.licensed);
+  const totalLessons = openModules.reduce((n, m) => n + m.lessons.length, 0);
+  const doneLessons = openModules.reduce(
     (n, m) => n + m.lessons.filter((l) => l.completed).length,
     0,
   );
@@ -88,7 +93,7 @@ export function LearnPanel() {
         </h1>
         {data.class ? (
           <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-            {data.class.name} · Term {data.class.term}
+            {data.class.name} · {data.class.sessionLabel}
           </p>
         ) : null}
       </header>
@@ -116,6 +121,31 @@ export function LearnPanel() {
       ) : (
         data.modules.map((m) => {
           const isCoding = m.strand === "CODING";
+
+          // Locked term (#6): the school has not licensed this module's term. Show it (so pupils and
+          // their teacher can see what the full course holds) but without lesson links.
+          if (!m.licensed) {
+            return (
+              <Card key={m.id} className="opacity-70">
+                <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base text-stone-500 dark:text-stone-400">
+                      <Lock className="size-4 shrink-0" />
+                      {m.title}
+                    </CardTitle>
+                    <CardDescription>
+                      Term {m.termNumber} isn&apos;t licensed for your school yet. It unlocks once your
+                      school activates this term.
+                    </CardDescription>
+                  </div>
+                  <Badge className="gap-1.5 bg-stone-100 text-stone-500 hover:bg-stone-100 dark:bg-stone-800 dark:text-stone-400">
+                    Term {m.termNumber}
+                  </Badge>
+                </CardHeader>
+              </Card>
+            );
+          }
+
           return (
             <Card key={m.id}>
               <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">

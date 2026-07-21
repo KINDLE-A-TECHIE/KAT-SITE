@@ -237,6 +237,17 @@ async function seedCourse(
       }
     }
 
+    // Sample lessons: the first lesson of each module is a free taster a school's staff can preview on
+    // an unlicensed term. Reconciled both ways so re-seeding keeps exactly one sample per module.
+    await prisma.lesson.updateMany({
+      where: { moduleId: { in: moduleIds }, sortOrder: 0 },
+      data: { isSample: true },
+    });
+    await prisma.lesson.updateMany({
+      where: { moduleId: { in: moduleIds }, sortOrder: { not: 0 } },
+      data: { isSample: false },
+    });
+
     // ── Playgrounds for CODING topics: one read, one bulk create ──────────────
     const codingLessonIds: string[] = [];
     const desiredContent = new Map<string, { title: string; body: string; language: string }>();

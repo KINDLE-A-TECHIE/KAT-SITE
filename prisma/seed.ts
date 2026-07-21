@@ -316,7 +316,10 @@ async function main() {
   // and an ACTIVE licence. School authority is the SchoolMembership, NOT User.role: the staff
   // users are UserRole.SCHOOL_STAFF (which grants nothing on B2C), scoped into the school by
   // their membership. See CLAUDE.md "A role is a CAPABILITY, never a tenant".
-  const SCHOOL_TERM = "2025/2026 Term 1";
+  const SCHOOL_SESSION = "2025/2026";
+  const SCHOOL_TERM_NUMBER = 1;
+  // A recent start so the term is inside its 15-week window when seeded (keeps the licence usable).
+  const SCHOOL_TERM_STARTS_AT = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000);
 
   const school = await prisma.school.upsert({
     where: { slug: "demo-academy" },
@@ -346,19 +349,19 @@ async function main() {
 
   await prisma.schoolClass.upsert({
     where: { id: "seed-demo-jss-class" },
-    update: { name: "JSS 1 Blue", nerdcLevel: NerdcLevel.JSS, term: SCHOOL_TERM, teacherId: schoolTeacher.id },
+    update: { name: "JSS 1 Blue", nerdcLevel: NerdcLevel.JSS, sessionLabel: SCHOOL_SESSION, teacherId: schoolTeacher.id },
     create: {
       id: "seed-demo-jss-class", schoolId: school.id, name: "JSS 1 Blue",
-      nerdcLevel: NerdcLevel.JSS, term: SCHOOL_TERM, teacherId: schoolTeacher.id,
+      nerdcLevel: NerdcLevel.JSS, sessionLabel: SCHOOL_SESSION, teacherId: schoolTeacher.id,
     },
   });
 
   await prisma.schoolLicense.upsert({
-    where: { schoolId_term: { schoolId: school.id, term: SCHOOL_TERM } },
-    update: { status: SchoolLicenseStatus.ACTIVE, seatLimit: 50, pricePerSeat: 2500 },
+    where: { schoolId_sessionLabel_termNumber: { schoolId: school.id, sessionLabel: SCHOOL_SESSION, termNumber: SCHOOL_TERM_NUMBER } },
+    update: { status: SchoolLicenseStatus.ACTIVE, seatLimit: 50, pricePerSeat: 2500, startsAt: SCHOOL_TERM_STARTS_AT },
     create: {
-      schoolId: school.id, term: SCHOOL_TERM, seatLimit: 50, seatsUsed: 0,
-      status: SchoolLicenseStatus.ACTIVE, pricePerSeat: 2500,
+      schoolId: school.id, sessionLabel: SCHOOL_SESSION, termNumber: SCHOOL_TERM_NUMBER, startsAt: SCHOOL_TERM_STARTS_AT,
+      seatLimit: 50, seatsUsed: 0, status: SchoolLicenseStatus.ACTIVE, pricePerSeat: 2500,
     },
   });
 

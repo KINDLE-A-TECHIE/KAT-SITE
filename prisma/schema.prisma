@@ -883,6 +883,9 @@ model Lesson {
   title       String
   description String?
   sortOrder   Int              @default(0)
+  // A free taster: school STAFF may preview this lesson even when its term is not licensed, so a
+  // school can evaluate a term before buying it. Pupils are never shown samples of unlicensed terms.
+  isSample    Boolean          @default(false)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   module      Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
@@ -1318,7 +1321,9 @@ model SchoolClass {
   schoolId           String
   name               String
   nerdcLevel         NerdcLevel
-  term               String
+  // A class is a cohort for a SESSION (academic year), spanning that session's three term-modules.
+  // NOT a single term: term-level access is decided per module against the session's term licences.
+  sessionLabel       String
   teacherId          String?
   // Short class code a pupil types to sign in (Option B). Generated on demand; rotatable.
   joinCode           String?              @unique
@@ -1378,16 +1383,20 @@ model SchoolClassUnit {
 }
 
 model SchoolInvoice {
-  id          String              @id @default(cuid())
-  schoolId    String
-  term        String
-  seatCount   Int
-  amount      Decimal             @db.Decimal(10, 2)
-  status      SchoolInvoiceStatus @default(PENDING)
-  paystackRef String              @unique
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime @updatedAt
-  school      School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  id           String              @id @default(cuid())
+  schoolId     String
+  sessionLabel String
+  termNumber   Int
+  // Admin-entered term start; the licence's window is [startsAt, startsAt + 15 weeks). Nullable until
+  // the billing UI captures it (A4); the gate treats a null window as no time limit.
+  startsAt     DateTime?
+  seatCount    Int
+  amount       Decimal             @db.Decimal(10, 2)
+  status       SchoolInvoiceStatus @default(PENDING)
+  paystackRef  String              @unique
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime @updatedAt
+  school       School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@index([schoolId])
   @@index([status])
@@ -1396,7 +1405,9 @@ model SchoolInvoice {
 model SchoolLicense {
   id           String              @id @default(cuid())
   schoolId     String
-  term         String
+  sessionLabel String
+  termNumber   Int
+  startsAt     DateTime?
   seatLimit    Int
   seatsUsed    Int                 @default(0)
   status       SchoolLicenseStatus @default(PENDING)
@@ -1405,7 +1416,7 @@ model SchoolLicense {
   updatedAt    DateTime @updatedAt
   school       School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
-  @@unique([schoolId, term])
+  @@unique([schoolId, sessionLabel, termNumber])
   @@index([status])
 }
 

@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { getServerAuthSession } from "@/lib/auth";
 import { ensureSchoolStudent } from "@/lib/school";
 import { prisma } from "@/lib/prisma";
+import { checkModuleLicenseForEnrollment } from "@/lib/school-license";
 import { LessonViewer } from "@/components/dashboard/lesson-viewer";
 
 /**
@@ -38,7 +39,10 @@ export default async function SchoolLessonPage({
     where: { id: lessonId },
     select: {
       module: {
-        select: { version: { select: { curriculum: { select: { programId: true } } } } },
+        select: {
+          sortOrder: true,
+          version: { select: { curriculum: { select: { programId: true } } } },
+        },
       },
     },
   });
@@ -48,9 +52,14 @@ export default async function SchoolLessonPage({
 
   const enrolled = await prisma.enrollment.findFirst({
     where: { userId: session!.user.id, schoolId, programId },
-    select: { id: true },
+    select: { id: true, schoolId: true, schoolClassId: true },
   });
   if (!enrolled) redirect("/learn");
+
+  // PER-MODULE licence (#6): don't render the viewer for a locked term, its API calls would 403.
+  // The lesson API enforces the same rule, this only avoids a dead-end shell.
+  const moduleGate = await checkModuleLicenseForEnrollment(enrolled, lesson.module.sortOrder);
+  if (!moduleGate.allowed) redirect("/learn");
 
   return (
     <section className="space-y-4">

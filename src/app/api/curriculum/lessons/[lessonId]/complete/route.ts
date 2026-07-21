@@ -2,10 +2,13 @@ import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkModuleLicenseForEnrollment } from "@/lib/school-license";
 
 interface Params { params: Promise<{ lessonId: string }> }
 
-const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW];
+// SCHOOL_STUDENT tracks progress like any learner (without this, a school pupil's in-app completion
+// was a silent no-op). Their completion is additionally gated by the per-module school licence below.
+const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW, UserRole.SCHOOL_STUDENT];
 
 export async function POST(_req: Request, { params }: Params) {
   const session = await getServerAuthSession();
@@ -25,6 +28,7 @@ export async function POST(_req: Request, { params }: Params) {
       module: {
         select: {
           id: true,
+          sortOrder: true,
           badge: { select: { id: true, name: true, icon: true, color: true } },
           lessons: { select: { id: true }, orderBy: { sortOrder: "asc" } },
           version: {
@@ -41,9 +45,14 @@ export async function POST(_req: Request, { params }: Params) {
   const programId = lesson.module.version.curriculum.programId;
   const enrollment = await prisma.enrollment.findUnique({
     where: { userId_programId: { userId: session.user.id, programId } },
-    select: { id: true },
+    select: { id: true, schoolId: true, schoolClassId: true },
   });
   if (!enrollment) return fail("Not enrolled in this program.", 403);
+
+  // PER-MODULE school licence (#6): a school pupil cannot complete a lesson in an unlicensed term.
+  // No-op for B2C.
+  const moduleGate = await checkModuleLicenseForEnrollment(enrollment, lesson.module.sortOrder);
+  if (!moduleGate.allowed) return fail(moduleGate.reason, 403);
 
   // Upsert progress (idempotent, safe to call multiple times)
   await prisma.lessonProgress.upsert({

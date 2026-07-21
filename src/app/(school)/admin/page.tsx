@@ -4,6 +4,7 @@ import { Users, ReceiptText, FileBarChart } from "lucide-react";
 import { SchoolRole, SchoolLicenseStatus } from "@prisma/client";
 import { requireActiveSchool } from "@/lib/school";
 import { prisma } from "@/lib/prisma";
+import { formatTerm } from "@/lib/school-term";
 import type { SchoolMembershipClaim } from "@/lib/rbac";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatLedger, StatusDot } from "@/components/stat-ledger";
@@ -41,12 +42,11 @@ export default async function SchoolAdminPage() {
     prisma.schoolLicense.findMany({
       where: { schoolId },
       orderBy: { createdAt: "desc" },
-      select: { term: true, status: true, seatLimit: true, seatsUsed: true, pricePerSeat: true },
+      select: { sessionLabel: true, termNumber: true, status: true, seatLimit: true, seatsUsed: true, pricePerSeat: true },
     }),
   ]);
 
   // "Current term" = the ACTIVE licence if there is one, else the most recent.
-  // (There is no term calendar in the schema yet; this is the agreed resolution.)
   const licence = licences.find((l) => l.status === SchoolLicenseStatus.ACTIVE) ?? licences[0] ?? null;
   const seatPct =
     licence && licence.seatLimit > 0
@@ -115,7 +115,7 @@ export default async function SchoolAdminPage() {
             </CardTitle>
             <CardDescription className="font-mono text-xs tabular-nums">
               {licence
-                ? `Term ${licence.term} · ₦${Number(licence.pricePerSeat).toLocaleString("en-NG")} per seat`
+                ? `${formatTerm(licence.sessionLabel, licence.termNumber)} · ₦${Number(licence.pricePerSeat).toLocaleString("en-NG")} per seat`
                 : "Seats unlock once a term licence is paid and active."}
             </CardDescription>
           </div>

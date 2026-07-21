@@ -25,7 +25,9 @@ export async function markInvoicePaidAndActivate(paystackRef: string): Promise<b
     select: {
       id: true,
       schoolId: true,
-      term: true,
+      sessionLabel: true,
+      termNumber: true,
+      startsAt: true,
       seatCount: true,
       status: true,
       school: { select: { pricePerSeat: true } },
@@ -42,19 +44,29 @@ export async function markInvoicePaidAndActivate(paystackRef: string): Promise<b
       data: { status: SchoolInvoiceStatus.PAID },
     });
 
-    // @@unique([schoolId, term]), one licence per term, so this upsert is the
-    // "renew or create" path. seatsUsed is NOT touched on update: a renewal or a
-    // seat top-up must not wipe the students already occupying seats this term.
+    // @@unique([schoolId, sessionLabel, termNumber]), one licence per term, so this upsert is the
+    // "renew or create" path. seatsUsed is NOT touched on update: a renewal or a seat top-up must
+    // not wipe the students already occupying seats this term. startsAt carries the admin-entered
+    // start so the term's 15-week window is anchored (null until the billing UI captures it).
     await tx.schoolLicense.upsert({
-      where: { schoolId_term: { schoolId: invoice.schoolId, term: invoice.term } },
+      where: {
+        schoolId_sessionLabel_termNumber: {
+          schoolId: invoice.schoolId,
+          sessionLabel: invoice.sessionLabel,
+          termNumber: invoice.termNumber,
+        },
+      },
       update: {
         seatLimit: invoice.seatCount,
         pricePerSeat: invoice.school.pricePerSeat,
         status: SchoolLicenseStatus.ACTIVE,
+        ...(invoice.startsAt ? { startsAt: invoice.startsAt } : {}),
       },
       create: {
         schoolId: invoice.schoolId,
-        term: invoice.term,
+        sessionLabel: invoice.sessionLabel,
+        termNumber: invoice.termNumber,
+        startsAt: invoice.startsAt,
         seatLimit: invoice.seatCount,
         seatsUsed: 0,
         pricePerSeat: invoice.school.pricePerSeat,

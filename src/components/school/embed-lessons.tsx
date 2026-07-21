@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { BookOpen, Code2, FileText } from "lucide-react";
+import { BookOpen, Code2, FileText, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { prisma } from "@/lib/prisma";
+import { termNumberForModule } from "@/lib/school-term";
 
 /**
  * The framed learner view: this pupil's units and lessons.
@@ -17,10 +18,13 @@ export async function EmbedLessons({
   programId,
   firstName,
   schoolName,
+  licensedTerms,
 }: {
   programId: string;
   firstName: string;
   schoolName: string;
+  /** Term numbers the school has unlocked. Modules of other terms render locked. */
+  licensedTerms: number[];
 }) {
   const curriculum = await prisma.curriculum.findUnique({
     where: { programId },
@@ -36,6 +40,7 @@ export async function EmbedLessons({
               id: true,
               title: true,
               strand: true,
+              sortOrder: true,
               lessons: {
                 orderBy: { sortOrder: "asc" },
                 select: { id: true, title: true },
@@ -48,6 +53,7 @@ export async function EmbedLessons({
   });
 
   const modules = curriculum?.versions[0]?.modules ?? [];
+  const licensed = new Set(licensedTerms);
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-6 font-body">
@@ -64,38 +70,49 @@ export async function EmbedLessons({
         </p>
       ) : (
         <div className="mt-6 space-y-6">
-          {modules.map((m, i) => (
-            <section key={m.id}>
-              <div className="flex items-center gap-2">
-                <h2 className="font-display text-base font-semibold text-stone-900 dark:text-stone-100">
-                  {i + 1}. {m.title}
-                </h2>
-                <Badge variant="secondary" className="gap-1">
-                  {m.strand === "DIGLIT" ? (
-                    <FileText className="size-3" />
-                  ) : (
-                    <Code2 className="size-3" />
-                  )}
-                  {m.strand === "DIGLIT" ? "Digital literacy" : "Coding"}
-                </Badge>
-              </div>
+          {modules.map((m, i) => {
+            const termNumber = termNumberForModule(m.sortOrder);
+            const isLocked = !licensed.has(termNumber);
+            return (
+              <section key={m.id} className={isLocked ? "opacity-70" : undefined}>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-display text-base font-semibold text-stone-900 dark:text-stone-100">
+                    {i + 1}. {m.title}
+                  </h2>
+                  <Badge variant="secondary" className="gap-1">
+                    {m.strand === "DIGLIT" ? (
+                      <FileText className="size-3" />
+                    ) : (
+                      <Code2 className="size-3" />
+                    )}
+                    {m.strand === "DIGLIT" ? "Digital literacy" : "Coding"}
+                  </Badge>
+                </div>
 
-              <ul className="mt-2 divide-y divide-stone-100 dark:divide-stone-800">
-                {m.lessons.map((l) => (
-                  <li key={l.id}>
-                    <Link
-                      href={`/learn/lessons/${l.id}`}
-                      target="_top"
-                      className="flex items-center gap-2 py-2.5 text-sm text-stone-700 transition hover:text-orange-600 dark:text-stone-300"
-                    >
-                      <BookOpen className="size-3.5 shrink-0 text-stone-400" />
-                      {l.title}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+                {isLocked ? (
+                  <p className="mt-2 flex items-center gap-2 py-2.5 text-sm text-stone-500 dark:text-stone-400">
+                    <Lock className="size-3.5 shrink-0" />
+                    Term {termNumber} isn&apos;t licensed yet.
+                  </p>
+                ) : (
+                  <ul className="mt-2 divide-y divide-stone-100 dark:divide-stone-800">
+                    {m.lessons.map((l) => (
+                      <li key={l.id}>
+                        <Link
+                          href={`/learn/lessons/${l.id}`}
+                          target="_top"
+                          className="flex items-center gap-2 py-2.5 text-sm text-stone-700 transition hover:text-orange-600 dark:text-stone-300"
+                        >
+                          <BookOpen className="size-3.5 shrink-0 text-stone-400" />
+                          {l.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
     </main>

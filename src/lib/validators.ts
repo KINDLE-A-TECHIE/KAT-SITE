@@ -364,6 +364,8 @@ export const updateLessonSchema = z.object({
   title: z.string().trim().min(2).max(200).optional(),
   description: z.string().trim().max(4000).optional(),
   sortOrder: z.number().int().min(0).optional(),
+  /** Free taster: school staff may preview this lesson on an unlicensed term. */
+  isSample: z.boolean().optional(),
 });
 
 export const createLessonContentSchema = z.object({
@@ -444,7 +446,8 @@ const NERDC_LEVELS = ["PRIMARY_1_3", "PRIMARY_4_6", "JSS", "SSS"] as const;
 export const schoolClassCreateSchema = z.object({
   name: z.string().trim().min(1).max(120),
   nerdcLevel: z.enum(NERDC_LEVELS),
-  term: z.string().trim().min(1).max(40),
+  // A class is a cohort for a SESSION (academic year), e.g. "2025/2026". Not a single term.
+  sessionLabel: z.string().trim().min(1).max(40),
   teacherId: z.string().trim().min(1).max(64).nullable().optional(),
 });
 
@@ -452,7 +455,7 @@ export const schoolClassUpdateSchema = z.object({
   id: z.string().trim().min(1).max(64),
   name: z.string().trim().min(1).max(120).optional(),
   nerdcLevel: z.enum(NERDC_LEVELS).optional(),
-  term: z.string().trim().min(1).max(40).optional(),
+  sessionLabel: z.string().trim().min(1).max(40).optional(),
   teacherId: z.string().trim().min(1).max(64).nullable().optional(),
   /** null unassigns the course. Locked once students are enrolled. */
   programId: z.string().trim().min(1).max(64).nullable().optional(),

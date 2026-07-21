@@ -28,7 +28,7 @@ type UnitCoverage = {
 
 type Section = {
   summary: {
-    class: { id: string; name: string; term: string };
+    class: { id: string; name: string; sessionLabel: string };
     course: { id: string; name: string } | null;
     studentCount: number;
     totalLessons: number;
@@ -62,7 +62,7 @@ type Section = {
 
 type Report = {
   school: { name: string };
-  term: string | null;
+  session: string | null;
   scope: "class" | "school";
   licence: { term: string; status: string; seatLimit: number; seatsUsed: number } | null;
   generatedAt: string;
@@ -89,16 +89,16 @@ function formatTeacherHistory(
     .join(", ");
 }
 
-export function ReportPanel({ terms, classes }: { terms: string[]; classes: Array<{ id: string; name: string; term: string }> }) {
-  const [term, setTerm] = useState(terms[0] ?? "");
+export function ReportPanel({ sessions, classes }: { sessions: string[]; classes: Array<{ id: string; name: string; sessionLabel: string }> }) {
+  const [session, setSession] = useState(sessions[0] ?? "");
   const [classId, setClassId] = useState("ALL");
   const [data, setData] = useState<Report | null>(null);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
-    if (!term) return;
+    if (!session) return;
     setLoading(true);
-    const q = new URLSearchParams({ term });
+    const q = new URLSearchParams({ session });
     if (classId !== "ALL") q.set("classId", classId);
     const res = await fetch(`/api/school/reports?${q.toString()}`);
     const payload = await res.json().catch(() => ({}));
@@ -108,7 +108,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
       return;
     }
     setData(payload as Report);
-  }, [term, classId]);
+  }, [session, classId]);
 
   useEffect(() => {
     void load();
@@ -132,7 +132,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
         ]);
       }
     }
-    downloadCsv(`kat-students-${data.term ?? "term"}.csv`, rows);
+    downloadCsv(`kat-students-${data.session ?? "session"}.csv`, rows);
   };
 
   const exportCoverage = () => {
@@ -172,7 +172,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
         ]);
       }
     }
-    downloadCsv(`kat-nerdc-coverage-${data.term ?? "term"}.csv`, rows);
+    downloadCsv(`kat-nerdc-coverage-${data.session ?? "session"}.csv`, rows);
   };
 
   return (
@@ -180,15 +180,15 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
       {/* Controls, hidden when printing */}
       <div className="flex flex-wrap items-end gap-3 print:hidden">
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-stone-500">Term</label>
-          <Select value={term} onValueChange={setTerm}>
+          <label className="text-xs font-medium text-stone-500">Session</label>
+          <Select value={session} onValueChange={setSession}>
             <SelectTrigger className="h-9 w-48">
-              <SelectValue placeholder="Choose a term" />
+              <SelectValue placeholder="Choose a session" />
             </SelectTrigger>
             <SelectContent>
-              {terms.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t}
+              {sessions.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -204,7 +204,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
             <SelectContent>
               <SelectItem value="ALL">Whole school</SelectItem>
               {classes
-                .filter((c) => !term || c.term === term)
+                .filter((c) => !session || c.sessionLabel === session)
                 .map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
@@ -227,11 +227,11 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
             <Printer className="size-4" />
             Print
           </Button>
-          {term ? (
+          {session ? (
             <Button asChild className="gap-1.5 bg-orange-700 text-white hover:bg-orange-800">
               <a
                 href={`/api/school/reports/pdf?${new URLSearchParams(
-                  classId !== "ALL" ? { term, classId } : { term },
+                  classId !== "ALL" ? { session, classId } : { session },
                 ).toString()}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -260,7 +260,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
               {data.school.name}
             </h1>
             <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-              Progress &amp; NERDC coverage report · {data.term} ·{" "}
+              Progress &amp; NERDC coverage report · {data.session} ·{" "}
               {data.scope === "school" ? "whole school" : "single class"} · generated{" "}
               {new Date(data.generatedAt).toLocaleDateString("en-GB", {
                 day: "numeric",
@@ -319,7 +319,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
           {data.classes.length === 0 ? (
             <Card className="kat-card">
               <CardContent className="py-8 text-center text-sm text-stone-500 dark:text-stone-400">
-                No classes for this term.
+                No classes for this session.
               </CardContent>
             </Card>
           ) : null}

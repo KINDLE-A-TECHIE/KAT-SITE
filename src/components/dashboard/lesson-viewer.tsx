@@ -18,7 +18,7 @@ import { ContentCreateForm } from "@/components/dashboard/content-create-form";
 import { CodePlaygroundBlock } from "@/components/dashboard/code-playground-block";
 import { NetworkLabBlock } from "@/components/network-lab/network-lab-block";
 
-type ContentItem = {
+export type ContentItem = {
   id: string;
   type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB";
   title: string;
@@ -37,6 +37,7 @@ type LessonData = {
   id: string;
   title: string;
   description: string | null;
+  isSample: boolean;
   contents: ContentItem[];
   module: {
     id: string;
@@ -142,10 +143,10 @@ function VideoEmbed({ url, title }: { url: string; title: string }) {
 
 /**
  * Renders the body of one content block. Shared by the learner player (one
- * step at a time) and the creator outline (stacked), so the two views can
- * never drift in what they can display.
+ * step at a time), the creator outline (stacked), and the school teacher preview,
+ * so the views can never drift in what they can display.
  */
-function ContentBody({
+export function ContentBody({
   content,
   isCreator,
   userId,
@@ -324,6 +325,8 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
   const [isCompleted, setIsCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showAddContent, setShowAddContent] = useState(false);
+  const [isSample, setIsSample] = useState(false);
+  const [sampleBusy, setSampleBusy] = useState(false);
   const completionFired = useRef(false);
 
   // The learner's position. step === contents.length is the completion step.
@@ -346,6 +349,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
         setPrevLesson(data.prevLesson);
         setNextLesson(data.nextLesson);
         setIsCompleted(data.isCompleted);
+        setIsSample(data.lesson.isSample);
         completionFired.current = data.isCompleted; // don't re-fire if already done
       }
     } catch { /* ignore */ }
@@ -375,6 +379,30 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
         }
       }
     } catch { /* ignore */ }
+  };
+
+  // Sample toggle (creators only). A sample lesson is previewable by a school's staff on a term they
+  // have not licensed yet, so they can evaluate it before buying. Pupils never see samples.
+  const toggleSample = async () => {
+    const next = !isSample;
+    setSampleBusy(true);
+    setIsSample(next); // optimistic
+    try {
+      const res = await fetch(`/api/curriculum/lessons/${lessonId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isSample: next }),
+      });
+      if (!res.ok) {
+        setIsSample(!next); // revert
+        toast.error("Could not update the sample setting.");
+      }
+    } catch {
+      setIsSample(!next);
+      toast.error("Could not update the sample setting.");
+    } finally {
+      setSampleBusy(false);
+    }
   };
 
   const reviewContent = async (contentId: string, action: "PUBLISH" | "REJECT", note?: string) => {
@@ -442,6 +470,25 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
           )}
           <p className="mt-2 text-xs text-stone-400 dark:text-stone-500">
             {visibleContents.length} block{visibleContents.length !== 1 ? "s" : ""} · learners see published blocks one step at a time
+          </p>
+
+          {/* Sample toggle: schools may preview a sample lesson on a term they have not licensed. */}
+          <button
+            type="button"
+            onClick={toggleSample}
+            disabled={sampleBusy}
+            aria-pressed={isSample}
+            className={`mt-3 inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition disabled:opacity-60 ${
+              isSample
+                ? "border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-400"
+                : "border-stone-200 text-stone-500 hover:bg-stone-50 dark:border-stone-800 dark:text-stone-400 dark:hover:bg-stone-800/40"
+            }`}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            {isSample ? "Sample lesson" : "Mark as sample"}
+          </button>
+          <p className="mt-1 text-[11px] text-stone-400 dark:text-stone-500">
+            A sample is previewable by a school&apos;s staff before they license its term. Pupils never see samples.
           </p>
         </header>
 

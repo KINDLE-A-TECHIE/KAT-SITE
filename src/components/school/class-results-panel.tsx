@@ -40,7 +40,7 @@ type StudentSummary = {
 };
 
 type Summary = {
-  class: { id: string; name: string; term: string };
+  class: { id: string; name: string; sessionLabel: string };
   course: { id: string; name: string } | null;
   studentCount: number;
   totalLessons: number;
@@ -88,7 +88,7 @@ export function ClassResultsPanel({ classId }: { classId: string }) {
           {data.class.name}
         </h1>
         <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-          Term {data.class.term} · {data.course?.name ?? "No course assigned"} ·{" "}
+          {data.class.sessionLabel} · {data.course?.name ?? "No course assigned"} ·{" "}
           {data.studentCount} student{data.studentCount === 1 ? "" : "s"}
         </p>
       </header>

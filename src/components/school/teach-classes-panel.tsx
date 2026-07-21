@@ -21,7 +21,7 @@ type TeachClass = {
   id: string;
   name: string;
   nerdcLevel: string;
-  term: string;
+  sessionLabel: string;
   programId: string | null;
   program: Course | null;
   _count: { enrollments: number };
@@ -100,7 +100,7 @@ export function TeachClassesPanel() {
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{c.name}</p>
                 <p className="mt-0.5 font-mono text-xs tabular-nums text-stone-500 dark:text-stone-400">
-                  {NERDC_LABELS[c.nerdcLevel] ?? c.nerdcLevel} · Term {c.term} ·{" "}
+                  {NERDC_LABELS[c.nerdcLevel] ?? c.nerdcLevel} · {c.sessionLabel} ·{" "}
                   {c._count.enrollments} student{c._count.enrollments === 1 ? "" : "s"}
                 </p>
               </div>

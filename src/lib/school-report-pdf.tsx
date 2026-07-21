@@ -54,7 +54,7 @@ function ClassSection({ section }: { section: SchoolReportSection }) {
     <View style={s.classBlock} wrap={false}>
       <Text style={s.className}>{summary.class.name}</Text>
       <Text style={s.classMeta}>
-        {summary.class.nerdcLevel.replace(/_/g, " ")} {"·"} {summary.class.term} {"·"} {summary.studentCount} students
+        {summary.class.nerdcLevel.replace(/_/g, " ")} {"·"} {summary.class.sessionLabel} {"·"} {summary.studentCount} students
         {summary.course ? ` · ${summary.course.name}` : ""}
       </Text>
 
@@ -116,7 +116,7 @@ function ReportDocument({ report }: { report: SchoolReport }) {
         <Text style={s.title}>Progress &amp; NERDC Coverage</Text>
         <Text style={s.meta}>
           {report.school.name}
-          {report.term ? ` · ${report.term}` : ""}
+          {report.session ? ` · ${report.session}` : ""}
           {"  ·  "}
           {report.scope === "class" ? "Single class" : "Whole school"}
           {"  ·  Generated "}{generated}

@@ -64,7 +64,7 @@ export async function GET() {
         id: true,
         name: true,
         nerdcLevel: true,
-        term: true,
+        sessionLabel: true,
         teacherId: true,
         teacher: { select: { id: true, firstName: true, lastName: true } },
         _count: { select: { enrollments: true } },
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return fail("Invalid class payload.", 400, parsed.error.flatten());
   }
-  const { name, nerdcLevel, term, teacherId } = parsed.data;
+  const { name, nerdcLevel, sessionLabel, teacherId } = parsed.data;
 
   try {
     const teacher = teacherId ? await getAssignableTeacher(schoolId, teacherId) : null;
@@ -111,8 +111,8 @@ export async function POST(request: Request) {
     // can never disagree, not even for the width of a failed request.
     const created = await prisma.$transaction(async (tx) => {
       const schoolClass = await tx.schoolClass.create({
-        data: { schoolId, name, nerdcLevel, term, teacherId: teacherId ?? null },
-        select: { id: true, name: true, nerdcLevel: true, term: true, teacherId: true },
+        data: { schoolId, name, nerdcLevel, sessionLabel, teacherId: teacherId ?? null },
+        select: { id: true, name: true, nerdcLevel: true, sessionLabel: true, teacherId: true },
       });
       if (teacherId) {
         await recordTeacherChange(tx, {
@@ -154,7 +154,7 @@ export async function PATCH(request: Request) {
   if (!parsed.success) {
     return fail("Invalid class payload.", 400, parsed.error.flatten());
   }
-  const { id, name, nerdcLevel, term, teacherId, programId, confirmHandover } = parsed.data;
+  const { id, name, nerdcLevel, sessionLabel, teacherId, programId, confirmHandover } = parsed.data;
 
   try {
     // TENANT ISOLATION: read the class through schoolId. A foreign id matches zero rows and
@@ -225,7 +225,7 @@ export async function PATCH(request: Request) {
       await tx.schoolClass.updateMany({
         where: { id, schoolId },
         data: {
-          ...(name !== undefined ? { name } : {}), ...(nerdcLevel !== undefined ? { nerdcLevel } : {}), ...(term !== undefined ? { term } : {}), ...(teacherId !== undefined ? { teacherId } : {}), // null clears the assignment
+          ...(name !== undefined ? { name } : {}), ...(nerdcLevel !== undefined ? { nerdcLevel } : {}), ...(sessionLabel !== undefined ? { sessionLabel } : {}), ...(teacherId !== undefined ? { teacherId } : {}), // null clears the assignment
           ...(programId !== undefined ? { programId } : {}),
         },
       });
@@ -244,7 +244,7 @@ export async function PATCH(request: Request) {
 
       return tx.schoolClass.findFirst({
         where: { id, schoolId },
-        select: { id: true, name: true, nerdcLevel: true, term: true, teacherId: true },
+        select: { id: true, name: true, nerdcLevel: true, sessionLabel: true, teacherId: true },
       });
     });
 

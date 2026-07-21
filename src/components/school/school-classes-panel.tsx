@@ -45,15 +45,15 @@ type SchoolClass = {
   id: string;
   name: string;
   nerdcLevel: string;
-  term: string;
+  sessionLabel: string;
   teacherId: string | null;
   teacher: { id: string; firstName: string; lastName: string } | null;
   _count: { enrollments: number };
 };
 
-type Draft = { name: string; nerdcLevel: string; term: string; teacherId: string };
+type Draft = { name: string; nerdcLevel: string; sessionLabel: string; teacherId: string };
 
-const EMPTY_DRAFT: Draft = { name: "", nerdcLevel: "PRIMARY_4_6", term: "", teacherId: UNASSIGNED };
+const EMPTY_DRAFT: Draft = { name: "", nerdcLevel: "PRIMARY_4_6", sessionLabel: "", teacherId: UNASSIGNED };
 
 export function SchoolClassesPanel() {
   const [classes, setClasses] = useState<SchoolClass[]>([]);
@@ -124,7 +124,7 @@ export function SchoolClassesPanel() {
     setDraft({
       name: c.name,
       nerdcLevel: c.nerdcLevel,
-      term: c.term,
+      sessionLabel: c.sessionLabel,
       teacherId: c.teacherId ?? UNASSIGNED,
     });
     setEditing({ id: c.id });
@@ -145,7 +145,7 @@ export function SchoolClassesPanel() {
         ...(isEdit ? { id: editing.id } : {}),
         name: draft.name,
         nerdcLevel: draft.nerdcLevel,
-        term: draft.term,
+        sessionLabel: draft.sessionLabel,
         teacherId, ...(confirmHandover ? { confirmHandover: true } : {}),
       }),
     });
@@ -211,7 +211,7 @@ export function SchoolClassesPanel() {
                 <div className="min-w-0">
                   <p className="font-medium text-stone-900 dark:text-stone-100">{c.name}</p>
                   <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
-                    {NERDC_LABELS[c.nerdcLevel] ?? c.nerdcLevel} · Term {c.term} ·{" "}
+                    {NERDC_LABELS[c.nerdcLevel] ?? c.nerdcLevel} · {c.sessionLabel} ·{" "}
                     {c.teacher ? (
                       `${c.teacher.firstName} ${c.teacher.lastName}`
                     ) : (
@@ -292,12 +292,12 @@ export function SchoolClassesPanel() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="term">Term</Label>
+              <Label htmlFor="sessionLabel">Session</Label>
               <Input
-                id="term"
-                placeholder="e.g. 2025/2026 T1"
-                value={draft.term}
-                onChange={(e) => setDraft((d) => ({ ...d, term: e.target.value }))}
+                id="sessionLabel"
+                placeholder="e.g. 2025/2026"
+                value={draft.sessionLabel}
+                onChange={(e) => setDraft((d) => ({ ...d, sessionLabel: e.target.value }))}
               />
             </div>
 
@@ -333,7 +333,7 @@ export function SchoolClassesPanel() {
             </Button>
             <Button
               onClick={() => save()}
-              disabled={busy || !draft.name.trim() || !draft.term.trim()}
+              disabled={busy || !draft.name.trim() || !draft.sessionLabel.trim()}
               className="bg-orange-700 text-white hover:bg-orange-800"
             >
               {busy ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : null}

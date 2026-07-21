@@ -109,7 +109,7 @@ export async function syncRoster(params: {
 
   const schoolClass = await prisma.schoolClass.findFirst({
     where: { id: schoolClassId, schoolId },
-    select: { id: true, nerdcLevel: true, programId: true, term: true },
+    select: { id: true, nerdcLevel: true, programId: true, sessionLabel: true },
   });
   if (!schoolClass) return { error: "Class not found.", status: 404 };
 
@@ -177,9 +177,10 @@ export async function syncRoster(params: {
     }
   }
 
-  // Seats are bought PER TERM, so the licence that pays for these pupils is the one for THIS
-  // CLASS's term, not "whichever licence happens to be active".
-  const gate = await checkClassLicense(schoolId, schoolClass.term);
+  // Seats are bought PER TERM within a session; the gate resolves this class's session to its
+  // current term-licence, the one that pays for these pupils, not "whichever licence happens to be
+  // active".
+  const gate = await checkClassLicense(schoolId, schoolClass.sessionLabel);
   if (!gate.allowed) return { error: gate.reason, status: 422 };
   const licence = gate.license;
 
@@ -189,7 +190,7 @@ export async function syncRoster(params: {
   const seatsNeeded = toCreate.length + toReactivate.length;
   if (licence.seatsUsed + seatsNeeded > licence.seatLimit) {
     return {
-      error: `Not enough seats for ${schoolClass.term}: ${licence.seatsUsed} of ${licence.seatLimit} in use, and this needs ${seatsNeeded} more. Nothing was changed.`,
+      error: `Not enough seats for ${schoolClass.sessionLabel}: ${licence.seatsUsed} of ${licence.seatLimit} in use, and this needs ${seatsNeeded} more. Nothing was changed.`,
       status: 422,
     };
   }
@@ -340,7 +341,7 @@ export async function syncRoster(params: {
   // Deactivation frees the seat. reserveSeats only ever INCREMENTS (it is the atomic race guard), so
   // without this reconciliation licence.seatsUsed drifts upward forever and a school eventually
   // cannot enrol into seats it is paying for and not using.
-  const seatsUsed = await reconcileSeats(schoolId, schoolClass.term);
+  const seatsUsed = await reconcileSeats(schoolId, schoolClass.sessionLabel);
 
   return {
     created: toCreate.length,

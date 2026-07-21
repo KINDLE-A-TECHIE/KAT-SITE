@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         id: true,
         name: true,
         nerdcLevel: true,
-        term: true,
+        sessionLabel: true,
         programId: true,
         teacher: { select: { firstName: true, lastName: true } },
         _count: { select: { enrollments: true } },
@@ -42,7 +42,8 @@ export async function GET(request: Request) {
         id: c.id,
         name: c.name,
         nerdc_level: c.nerdcLevel,
-        term: c.term,
+        // A class is a session cohort; `session` is the academic year it runs in ("2025/2026").
+        session: c.sessionLabel,
         course_id: c.programId,
         // A teacher's name, not a child's. The school employs them; this is their own staff list.
         teacher: c.teacher ? `${c.teacher.firstName} ${c.teacher.lastName}`.trim() : null,

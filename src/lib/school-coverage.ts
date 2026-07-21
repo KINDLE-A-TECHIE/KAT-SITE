@@ -61,7 +61,7 @@ export type UnitCoverage = {
 export type ClassCoverage = {
   classId: string;
   className: string;
-  term: string;
+  sessionLabel: string;
   course: { id: string; name: string; slug: string } | null;
   /** False when the class's course is not one of the NERDC crosswalk courses. */
   matchedCrosswalk: boolean;
@@ -106,7 +106,7 @@ export async function getClassCoverage(
     select: {
       id: true,
       name: true,
-      term: true,
+      sessionLabel: true,
       programId: true,
       program: { select: { id: true, name: true, slug: true } },
     },
@@ -118,7 +118,7 @@ export async function getClassCoverage(
   const empty: ClassCoverage = {
     classId: schoolClass.id,
     className: schoolClass.name,
-    term: schoolClass.term,
+    sessionLabel: schoolClass.sessionLabel,
     course: schoolClass.program,
     matchedCrosswalk: false,
     studentCount: 0,
@@ -254,7 +254,7 @@ export async function getClassCoverage(
   return {
     classId: schoolClass.id,
     className: schoolClass.name,
-    term: schoolClass.term,
+    sessionLabel: schoolClass.sessionLabel,
     course: schoolClass.program,
     matchedCrosswalk: Boolean(crosswalk),
     studentCount: userIds.length,

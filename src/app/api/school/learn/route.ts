@@ -3,7 +3,8 @@ import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ensureSchoolStudent } from "@/lib/school";
-import { checkClassLicense } from "@/lib/school-license";
+import { checkClassLicense, getLicensedTermNumbers } from "@/lib/school-license";
+import { termNumberForModule } from "@/lib/school-term";
 import { getModuleGatesForUser } from "@/lib/mastery";
 import { captureError } from "@/lib/sentry";
 
@@ -30,19 +31,19 @@ export async function GET() {
   const session = await getServerAuthSession();
 
   try {
-    // The enrollment is read first, because the licence gate is keyed on the TERM of
-    // the class this student is in, seats are bought per term.
+    // The enrollment is read first, because the licence gate is keyed on the SESSION of
+    // the class this student is in; seats are bought per term within that session.
     const enrollment = await prisma.enrollment.findFirst({
       where: { userId: session!.user.id, schoolId },
       select: {
         programId: true,
         program: { select: { id: true, name: true, strand: true } },
-        schoolClass: { select: { id: true, name: true, term: true, nerdcLevel: true } },
+        schoolClass: { select: { id: true, name: true, sessionLabel: true, nerdcLevel: true } },
       },
     });
     if (!enrollment) return fail("You are not enrolled in a class.", 404);
 
-    const access = await checkClassLicense(schoolId, enrollment.schoolClass?.term ?? null);
+    const access = await checkClassLicense(schoolId, enrollment.schoolClass?.sessionLabel ?? null);
     if (!access.allowed) {
       return ok({
         licensed: false,
@@ -67,6 +68,7 @@ export async function GET() {
                 title: true,
                 description: true,
                 strand: true,
+                sortOrder: true,
                 lessons: {
                   orderBy: { sortOrder: "asc" },
                   select: { id: true, title: true },
@@ -81,7 +83,7 @@ export async function GET() {
     const rawModules = curriculum?.versions[0]?.modules ?? [];
     const lessonIds = rawModules.flatMap((m) => m.lessons.map((l) => l.id));
 
-    const [completed, gates] = await Promise.all([
+    const [completed, gates, licensedTerms] = await Promise.all([
       lessonIds.length > 0
         ? prisma.lessonProgress.findMany({
             where: { userId: session!.user.id, lessonId: { in: lessonIds } },
@@ -92,6 +94,8 @@ export async function GET() {
         session!.user.id,
         rawModules.map((m) => m.id),
       ),
+      // Which terms the school has UNLOCKED. Module N is licensed iff its term number is in here.
+      getLicensedTermNumbers(schoolId, enrollment.schoolClass!.sessionLabel),
     ]);
 
     const completedIds = new Set(completed.map((c) => c.lessonId));
@@ -110,11 +114,17 @@ export async function GET() {
     const modules = rawModules.map((m) => {
       // A module's strand falls back to the course's strand when not set on the unit.
       const strand = m.strand ?? enrollment.program.strand ?? Strand.CODING;
+      // Per-module licence (#6): the module's term must be one the school has unlocked. The learn
+      // shell renders locked modules; the content APIs enforce the same rule (see
+      // checkModuleLicenseForEnrollment), so this flag is UX, not the lock.
+      const termNumber = termNumberForModule(m.sortOrder);
       return {
         id: m.id,
         title: m.title,
         description: m.description,
         strand,
+        termNumber,
+        licensed: licensedTerms.has(termNumber),
         // Gates only apply to CODING units. DIGLIT units are slides/worksheets:
         // read and mark complete, no assessment/project/instructor gate.
         gates: strand === Strand.CODING ? (gates[m.id] ?? NO_GATES_YET) : null,

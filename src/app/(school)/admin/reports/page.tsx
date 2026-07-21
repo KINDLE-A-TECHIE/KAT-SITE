@@ -22,14 +22,14 @@ export default async function SchoolReportsPage() {
     redirect("/home");
   }
 
-  // TENANT ISOLATION: the term and class options come from this school only.
+  // TENANT ISOLATION: the session and class options come from this school only.
   const classes = await prisma.schoolClass.findMany({
     where: { schoolId: membership.schoolId },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, term: true },
+    select: { id: true, name: true, sessionLabel: true },
   });
 
-  const terms = [...new Set(classes.map((c) => c.term))].sort();
+  const sessions = [...new Set(classes.map((c) => c.sessionLabel))].sort();
 
   return (
     <section className="space-y-6">
@@ -41,12 +41,12 @@ export default async function SchoolReportsPage() {
         Back to overview
       </Link>
 
-      {terms.length === 0 ? (
+      {sessions.length === 0 ? (
         <p className="rounded-lg bg-stone-50 p-6 text-sm text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
-          Create a class first. Reports are produced per term.
+          Create a class first. Reports are produced per session.
         </p>
       ) : (
-        <ReportPanel terms={terms} classes={classes} />
+        <ReportPanel sessions={sessions} classes={classes} />
       )}
     </section>
   );
