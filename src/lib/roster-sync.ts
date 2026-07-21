@@ -3,6 +3,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { CourseAudience, UserRole } from "@prisma/client";
 import { prisma } from "./prisma";
+import { PROGRAM_AVAILABLE } from "./program";
 import { splitName, syntheticStudentEmail } from "./roster";
 import { checkClassLicense } from "./school-license";
 import { reconcileSeats, reserveSeats } from "./school-seats";
@@ -60,11 +61,13 @@ export async function resolveClassProgram(schoolClass: {
   }
 
   // A NERDC level now has one course PER CLASS YEAR (Primary 4/5/6 all sit under PRIMARY_4_6).
-  // Picking "the first" would silently enrol a Primary 4 class into the Primary 6 course.
+  // Picking "the first" would silently enrol a Primary 4 class into the Primary 6 course. Only
+  // AVAILABLE (published, live) courses are auto-pickable, so a draft can never be silently chosen.
   const candidates = await prisma.program.findMany({
     where: {
       audience: CourseAudience.SCHOOL,
       nerdcLevel: schoolClass.nerdcLevel as never,
+      ...PROGRAM_AVAILABLE,
     },
     select: { id: true },
     take: 2,

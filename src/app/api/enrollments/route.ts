@@ -5,6 +5,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { trackEvent } from "@/lib/analytics";
 import { orgScope } from "@/lib/tenant";
+import { PROGRAM_AVAILABLE } from "@/lib/program";
 import { readPageOffset, pageMeta } from "@/lib/pagination";
 
 const createEnrollmentSchema = z.object({
@@ -110,6 +111,19 @@ export async function POST(request: Request) {
 
     const isReactivation = !!existing && existing.status !== EnrollmentStatus.ACTIVE;
     const isFirstTime = !existing;
+
+    // AVAILABILITY GATE. A programme must be published + live to accept a NEW enrolment. Reactivating
+    // someone who was already on it is allowed (their progress predates any unpublish), so this only
+    // blocks first-time entry, exactly what Draft/Unpublished is meant to prevent.
+    if (isFirstTime) {
+      const program = await prisma.program.findFirst({
+        where: { id: parsed.data.programId, ...orgScope(session.user.organizationId), ...PROGRAM_AVAILABLE },
+        select: { id: true },
+      });
+      if (!program) {
+        return fail("This programme isn't available to enrol in yet.", 422);
+      }
+    }
 
     const startReason: EnrollmentPeriodReason = isFirstTime
       ? EnrollmentPeriodReason.INITIAL

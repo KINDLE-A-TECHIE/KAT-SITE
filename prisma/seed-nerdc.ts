@@ -108,6 +108,8 @@ async function seedCourse(
       monthlyFee: 0,
       durationWeeks: 36,
       isActive: true,
+      // Seeded crosswalk courses are canonical and live, not drafts.
+      isPublished: true,
     };
 
     const program = await prisma.program.upsert({

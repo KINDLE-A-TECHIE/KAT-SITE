@@ -64,10 +64,13 @@ export async function DELETE(_request: Request, { params }: Params) {
   });
   if (!program) return fail("Program not found.", 404);
 
-  // Toggle archive, archived programs are hidden from learners but data is preserved
+  // Toggle archive. Archiving hides the programme from learners (data preserved). RESTORING returns
+  // it to DRAFT (isPublished false), never straight back to live, so re-exposing a programme is
+  // always a deliberate publish, not a side effect of un-archiving.
+  const restoring = !program.isActive;
   const updated = await prisma.program.update({
     where: { id: programId },
-    data: { isActive: !program.isActive },
+    data: { isActive: !program.isActive, ...(restoring ? { isPublished: false } : {}) },
   });
 
   return ok({ program: updated });

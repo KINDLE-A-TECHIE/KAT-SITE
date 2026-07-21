@@ -285,7 +285,10 @@ model Program {
   level           ProgramLevel
   durationWeeks   Int            @default(0)
   monthlyFee      Decimal        @db.Decimal(10, 2)
+  // Lifecycle: Draft (isPublished false) -> Published (true) -> Archived (isActive false).
+  // Availability to learners/schools requires isActive AND isPublished. New programmes start Draft.
   isActive        Boolean        @default(true)
+  isPublished     Boolean        @default(false)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   discountPercent Decimal?       @db.Decimal(5, 2)

@@ -91,8 +91,8 @@ async function main() {
   // ── Programme → Cohort → Enrolment ─────────────────────────────────────────
   const program = await prisma.program.upsert({
     where: { slug: "full-stack-innovators" },
-    update: { name: "Full Stack Innovators", monthlyFee: 120000, durationWeeks: 16, level: ProgramLevel.ADVANCED, organizationId: org.id },
-    create: { name: "Full Stack Innovators", slug: "full-stack-innovators", description: "Advanced track focused on full-stack application development.", level: ProgramLevel.ADVANCED, durationWeeks: 16, monthlyFee: 120000, organizationId: org.id },
+    update: { name: "Full Stack Innovators", monthlyFee: 120000, durationWeeks: 16, level: ProgramLevel.ADVANCED, organizationId: org.id, isPublished: true },
+    create: { name: "Full Stack Innovators", slug: "full-stack-innovators", description: "Advanced track focused on full-stack application development.", level: ProgramLevel.ADVANCED, durationWeeks: 16, monthlyFee: 120000, organizationId: org.id, isPublished: true },
   });
 
   const cohortData = { name: "Innovators 2026 Cohort", startsAt: new Date("2026-01-10T08:00:00Z"), endsAt: new Date("2026-05-31T18:00:00Z"), programId: program.id, organizationId: org.id, applicationOpen: true, externalApplicationFee: 5000 };
