@@ -1,9 +1,9 @@
 import { randomUUID } from "crypto";
-import sharp from "sharp";
 import { NextResponse } from "next/server";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ALLOWED_IMAGE_TYPES, compressImageToWebp } from "@/lib/image";
 import { deleteR2Object, r2KeyFromUrl, r2PublicUrl, uploadToR2 } from "@/lib/r2";
 
 export const dynamic = "force-dynamic";
@@ -13,34 +13,7 @@ export const maxDuration = 30; // allow time for compression on slow hosts
 // Allow up to 20 MB raw input (sharp will compress it down)
 export const config = { api: { bodyParser: { sizeLimit: "20mb" } } };
 
-/**
- * Compress an image to WebP using sharp.
- * - Strips EXIF metadata
- * - Caps longest dimension at MAX_DIMENSION
- * - Tries lossless first; if output exceeds TARGET_SIZE, steps down quality
- *   in increments until it fits (minimum quality 60)
- */
-async function compressImage(input: Buffer): Promise<Buffer> {
-  const pipeline = sharp(input, { failOn: "truncated" })
-    .rotate()                      // auto-orient from EXIF before stripping
-    .resize(MAX_DIMENSION, MAX_DIMENSION, { fit: "inside", withoutEnlargement: true })
-    .withMetadata({ exif: {} });   // strip all EXIF except orientation
-
-  // Try lossless WebP first (best quality, larger file)
-  const lossless = await pipeline.clone().webp({ lossless: true }).toBuffer();
-  if (lossless.byteLength <= TARGET_SIZE) return lossless;
-
-  // Step down quality until it fits, 85 → 75 → 65 → 60
-  for (const quality of [85, 75, 65, 60]) {
-    const attempt = await pipeline.clone().webp({ quality, effort: 6 }).toBuffer();
-    if (attempt.byteLength <= TARGET_SIZE) return attempt;
-  }
-
-  // Last resort, quality 60 regardless of size (still well under 5 MB for any sane photo)
-  return pipeline.clone().webp({ quality: 60, effort: 6 }).toBuffer();
-}
-
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const ALLOWED_TYPES = ALLOWED_IMAGE_TYPES;
 const MAX_INPUT_SIZE = 20 * 1024 * 1024; // 20 MB raw input limit
 const TARGET_SIZE = 4.5 * 1024 * 1024;  // target <4.5 MB output
 const MAX_DIMENSION = 1920;              // cap longest side at 1920px
@@ -88,7 +61,7 @@ export async function POST(request: Request) {
     if (raw.byteLength === 0) return fail("Empty file received.", 400);
 
     // Compress with sharp, strip EXIF, resize if needed, encode as WebP
-    const compressed = await compressImage(raw);
+    const compressed = await compressImageToWebp(raw, { maxDimension: MAX_DIMENSION, targetBytes: TARGET_SIZE });
 
     const key = `avatars/${session.user.id}/${randomUUID()}.webp`;
 

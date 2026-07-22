@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { Users, ReceiptText, FileBarChart } from "lucide-react";
+import { ReceiptText } from "lucide-react";
 import { SchoolRole, SchoolLicenseStatus } from "@prisma/client";
 import { requireActiveSchool } from "@/lib/school";
 import { prisma } from "@/lib/prisma";
@@ -55,39 +54,13 @@ export default async function SchoolAdminPage() {
 
   return (
     <section className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="font-mono text-xs font-medium uppercase tracking-[0.28em] text-orange-700 dark:text-orange-500">
-            School admin
-          </p>
-          <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl dark:text-stone-100">
-            {school?.name ?? "Your school"}
-          </h1>
-        </div>
-        {/* Always reachable, even with a lapsed licence, this is how the school pays. */}
-        <div className="flex gap-2">
-        <Link
-          href="/admin/teachers"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-800 dark:text-stone-200"
-        >
-          <Users className="size-4" />
-          Teachers
-        </Link>
-        <Link
-          href="/admin/reports"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-stone-800 dark:text-stone-200"
-        >
-          <FileBarChart className="size-4" />
-          Reports
-        </Link>
-        <Link
-          href="/admin/billing"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-orange-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-orange-800"
-        >
-          <ReceiptText className="size-4" />
-          Billing &amp; seats
-        </Link>
-        </div>
+      <header>
+        <p className="font-mono text-xs font-medium uppercase tracking-[0.28em] text-orange-700 dark:text-orange-500">
+          School admin
+        </p>
+        <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl dark:text-stone-100">
+          {school?.name ?? "Your school"}
+        </h1>
       </header>
 
       {/* Stat ledger: one flat container, mono numerals, hairline dividers. */}
