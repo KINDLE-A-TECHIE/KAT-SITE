@@ -15,6 +15,7 @@ type UnitCoverage = {
   order: number;
   label: string;
   strand: "CODING" | "DIGLIT";
+  licensed: boolean;
   topicsInScheme: number | null;
   topicsOnPlatform: number;
   schemeCoveragePct: number | null;
@@ -151,6 +152,7 @@ export function ReportPanel({ sessions, classes }: { sessions: string[]; classes
         "Attested by",
         "Taught by (if second-hand)",
         "Student engagement %",
+        "Term licensed",
       ],
     ];
     for (const s of data.classes) {
@@ -169,6 +171,7 @@ export function ReportPanel({ sessions, classes }: { sessions: string[]; classes
           u.deliveredBy ?? "",
           u.taughtByName ?? "",
           u.engagementPct,
+          u.licensed ? "Yes" : "No",
         ]);
       }
     }
@@ -393,6 +396,11 @@ export function ReportPanel({ sessions, classes }: { sessions: string[]; classes
                           <tr key={u.moduleId}>
                             <td className="py-2 pr-3 text-stone-800 dark:text-stone-200">
                               {u.order}. {u.label}
+                              {u.licensed ? null : (
+                                <span className="ml-2 whitespace-nowrap rounded bg-stone-100 px-1.5 py-0.5 text-[11px] font-medium text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+                                  Term not licensed
+                                </span>
+                              )}
                             </td>
                             <td className="py-2 text-center">
                               <Badge

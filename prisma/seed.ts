@@ -138,10 +138,15 @@ async function main() {
 
   const existingVersion = await prisma.curriculumVersion.findFirst({
     where: { curriculumId: curriculum.id },
-    select: { id: true },
+    select: { id: true, publishedAt: true },
   });
   const curriculumVersion = existingVersion
-    ? await prisma.curriculumVersion.findUniqueOrThrow({ where: { id: existingVersion.id } })
+    // The publish lifecycle requires an ACTIVE, PUBLISHED version. A version created before publishedAt
+    // was seeded is active-but-unpublished, which blocks re-publishing the programme, so backfill it.
+    ? await prisma.curriculumVersion.update({
+        where: { id: existingVersion.id },
+        data: { isActive: true, ...(existingVersion.publishedAt ? {} : { publishedAt: new Date() }) },
+      })
     : await prisma.curriculumVersion.create({
       data: {
         curriculumId: curriculum.id,
@@ -150,6 +155,7 @@ async function main() {
         changelog: "Initial curriculum version.",
         createdById: superAdmin.id,
         isActive: true,
+        publishedAt: new Date(),
       },
     });
 

@@ -3,6 +3,8 @@ import { Strand, type AttestationBasis } from "@prisma/client";
 import { prisma } from "./prisma";
 import { NERDC_COURSES, type NerdcCourse } from "./nerdc-crosswalk";
 import { getTeacherHistory, type TeacherTerm } from "./school-teacher-history";
+import { getLicensedTermNumbers } from "./school-license";
+import { termNumberForModule } from "./school-term";
 
 /**
  * NERDC coverage for a school class, measured against the crosswalk.
@@ -35,6 +37,9 @@ export type UnitCoverage = {
   order: number;
   label: string;
   strand: Strand;
+  /** Whether the school has licensed this unit's term. A term the school has not paid for is on the
+   *  scheme and may be delivered, but its content is locked to pupils, an inspector should see that. */
+  licensed: boolean;
   /** Topics the NERDC scheme lists for this unit. Null when the course isn't a crosswalk course. */
   topicsInScheme: number | null;
   /** Lessons the platform actually carries for this unit. */
@@ -140,7 +145,7 @@ export async function getClassCoverage(
 
   const crosswalk = crosswalkFor(schoolClass.program?.slug);
 
-  const [curriculum, enrollments, deliveries] = await Promise.all([
+  const [curriculum, enrollments, deliveries, licensedTerms] = await Promise.all([
     prisma.curriculum.findUnique({
       where: { programId: schoolClass.programId },
       select: {
@@ -177,6 +182,7 @@ export async function getClassCoverage(
         markedBy: { select: { firstName: true, lastName: true } },
       },
     }),
+    getLicensedTermNumbers(schoolId, schoolClass.sessionLabel),
   ]);
 
   const modules = curriculum?.versions[0]?.modules ?? [];
@@ -217,6 +223,7 @@ export async function getClassCoverage(
       order: m.sortOrder + 1,
       label: m.title,
       strand: m.strand ?? Strand.CODING,
+      licensed: licensedTerms.has(termNumberForModule(m.sortOrder)),
       topicsInScheme,
       topicsOnPlatform,
       schemeCoveragePct:

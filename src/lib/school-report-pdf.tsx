@@ -50,6 +50,7 @@ const pct = (v: number | null) => (v == null ? "n/a" : `${Math.round(v)}%`);
 function ClassSection({ section }: { section: SchoolReportSection }) {
   const { summary, coverage } = section;
   const t = coverage.totals;
+  const licensedUnits = coverage.units.filter((u) => u.licensed).length;
   return (
     <View style={s.classBlock} wrap={false}>
       <Text style={s.className}>{summary.class.name}</Text>
@@ -75,6 +76,10 @@ function ClassSection({ section }: { section: SchoolReportSection }) {
         <View style={s.stat}>
           <Text style={s.statLabel}>First-hand</Text>
           <Text style={s.statValue}>{t.unitsFirstHand}</Text>
+        </View>
+        <View style={s.stat}>
+          <Text style={s.statLabel}>Terms licensed</Text>
+          <Text style={s.statValue}>{licensedUnits} / {coverage.units.length}</Text>
         </View>
       </View>
       {!coverage.matchedCrosswalk ? (
