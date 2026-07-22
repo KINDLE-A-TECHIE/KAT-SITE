@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { AlertTriangle, ArrowRight, IdCard, Loader2, Pencil, Plus } from "lucide-react";
+import { AlertTriangle, ArrowRight, GraduationCap, IdCard, Loader2, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,6 +67,13 @@ export function SchoolClassesPanel() {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [cardsBusy, setCardsBusy] = useState<string | null>(null);
 
+  // Session rollover: promote a class's pupils into a new next-session class.
+  const [courses, setCourses] = useState<Array<{ id: string; name: string; nerdcLevel: string }>>([]);
+  const [rollover, setRollover] = useState<
+    { source: SchoolClass; name: string; sessionLabel: string; programId: string; teacherId: string } | null
+  >(null);
+  const [rollBusy, setRollBusy] = useState(false);
+
   // Generates fresh PINs for a class and downloads printable sign-in cards. The server renders the
   // PDF (PINs never leave that response) and returns it directly; we just save the blob. Regenerating
   // invalidates any earlier cards, which is the intent when one is lost.
@@ -99,15 +106,18 @@ export function SchoolClassesPanel() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [cRes, tRes] = await Promise.all([
+    const [cRes, tRes, pRes] = await Promise.all([
       fetch("/api/school/classes"),
       fetch("/api/school/teachers"),
+      fetch("/api/programs?audience=SCHOOL"),
     ]);
     const cPayload = await cRes.json().catch(() => ({}));
     const tPayload = await tRes.json().catch(() => ({}));
+    const pPayload = await pRes.json().catch(() => ({}));
     if (!cRes.ok) toast.error(cPayload?.error ?? "Could not load classes.");
     setClasses(cPayload.classes ?? []);
     setTeachers(tPayload.teachers ?? []);
+    setCourses(pPayload.programs ?? []);
     setLoading(false);
   }, []);
 
@@ -128,6 +138,44 @@ export function SchoolClassesPanel() {
       teacherId: c.teacherId ?? UNASSIGNED,
     });
     setEditing({ id: c.id });
+  };
+
+  const openRollover = (c: SchoolClass) => {
+    // Carry the teacher over by default; the admin picks the next session, name, and course.
+    setRollover({ source: c, name: "", sessionLabel: "", programId: "", teacherId: c.teacherId ?? UNASSIGNED });
+  };
+
+  const submitRollover = async () => {
+    if (!rollover) return;
+    const course = courses.find((p) => p.id === rollover.programId);
+    if (!course) {
+      toast.error("Choose the course pupils are moving up to.");
+      return;
+    }
+    setRollBusy(true);
+    const res = await fetch("/api/school/rollover", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sourceClassId: rollover.source.id,
+        name: rollover.name,
+        sessionLabel: rollover.sessionLabel,
+        programId: rollover.programId,
+        nerdcLevel: course.nerdcLevel,
+        teacherId: rollover.teacherId === UNASSIGNED ? null : rollover.teacherId,
+      }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    setRollBusy(false);
+    if (!res.ok) {
+      toast.error(payload?.error ?? "Could not roll over the class.");
+      return;
+    }
+    toast.success(
+      `Promoted ${payload.promoted} pupil${payload.promoted === 1 ? "" : "s"} into ${payload.targetClass?.name ?? "the new class"}.`,
+    );
+    setRollover(null);
+    await load();
   };
 
   const save = async (confirmHandover = false) => {
@@ -239,6 +287,17 @@ export function SchoolClassesPanel() {
                   >
                     {cardsBusy === c.id ? <Loader2 className="size-3.5 animate-spin" /> : <IdCard className="size-3.5" />}
                     Sign-in cards
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    disabled={c._count.enrollments === 0}
+                    onClick={() => openRollover(c)}
+                    title={c._count.enrollments === 0 ? "No pupils to promote" : "Promote pupils to next session"}
+                  >
+                    <GraduationCap className="size-3.5" />
+                    Roll over
                   </Button>
                   <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openEdit(c)}>
                     <Pencil className="size-3.5" />
@@ -390,6 +449,95 @@ export function SchoolClassesPanel() {
             <Button variant="destructive" onClick={() => save(true)} disabled={busy}>
               {busy ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : null}
               Hand over anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Session rollover: promote a class's pupils into a new next-session class. */}
+      <Dialog open={rollover !== null} onOpenChange={(o) => !o && setRollover(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Roll over to next session</DialogTitle>
+            <DialogDescription>
+              Promote {rollover?.source.name}&apos;s pupils into a new class for next session. They move
+              onto the next course; their current class is marked complete. The new session&apos;s term
+              must be licensed. Repeating the same course is not supported yet.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="ro-name">New class name</Label>
+              <Input
+                id="ro-name"
+                placeholder="e.g. JSS 2 Blue"
+                value={rollover?.name ?? ""}
+                onChange={(e) => setRollover((r) => (r ? { ...r, name: e.target.value } : r))}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="ro-session">New session</Label>
+              <Input
+                id="ro-session"
+                placeholder="e.g. 2026/2027"
+                value={rollover?.sessionLabel ?? ""}
+                onChange={(e) => setRollover((r) => (r ? { ...r, sessionLabel: e.target.value } : r))}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Next course</Label>
+              <Select
+                value={rollover?.programId ?? ""}
+                onValueChange={(v) => setRollover((r) => (r ? { ...r, programId: v } : r))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose the course pupils move up to" />
+                </SelectTrigger>
+                <SelectContent>
+                  {courses.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Teacher</Label>
+              <Select
+                value={rollover?.teacherId ?? UNASSIGNED}
+                onValueChange={(v) => setRollover((r) => (r ? { ...r, teacherId: v } : r))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
+                  {teachers.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.firstName} {t.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRollover(null)} disabled={rollBusy}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void submitRollover()}
+              disabled={rollBusy || !rollover?.name.trim() || !rollover?.sessionLabel.trim() || !rollover?.programId}
+              className="gap-1.5 bg-orange-700 text-white hover:bg-orange-800"
+            >
+              {rollBusy ? <Loader2 className="size-4 animate-spin" /> : <GraduationCap className="size-4" />}
+              Roll over
             </Button>
           </DialogFooter>
         </DialogContent>

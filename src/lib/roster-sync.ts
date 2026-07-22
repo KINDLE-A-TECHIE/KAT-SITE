@@ -33,6 +33,13 @@ export type RosterCandidate = {
   name: string;
   externalRef?: string;
   guardianEmail?: string;
+  /**
+   * The pupil's EXISTING account email, when the caller already holds the exact user (e.g. a session
+   * rollover moving pupils to next year's class). Overrides the name-derived synthetic email, so an
+   * existing child is matched EXACTLY rather than re-derived, a "Last, First" name would otherwise
+   * round-trip to a different synthetic email and create a duplicate child.
+   */
+  email?: string;
 };
 
 export type SyncError = { ref: string | number; reason: string };
@@ -122,7 +129,9 @@ export async function syncRoster(params: {
   const seen = new Map<string, string | number>();
   const usable: Array<RosterCandidate & { email: string }> = [];
   for (const c of candidates) {
-    const email = syntheticStudentEmail(schoolId, c.name);
+    // A caller that already holds the exact pupil passes their account email; otherwise derive it
+    // deterministically from the name. Either way `usable` carries a stable email key.
+    const email = c.email ?? syntheticStudentEmail(schoolId, c.name);
     const first = seen.get(email);
     if (first !== undefined) {
       errors.push({ ref: c.ref, reason: `Duplicate of ${first} in this request.` });

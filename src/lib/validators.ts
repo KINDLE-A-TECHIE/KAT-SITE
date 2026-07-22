@@ -474,6 +474,19 @@ export const schoolClassCourseSchema = z.object({
 });
 
 /**
+ * Rolling a class's pupils into a NEW next-session class (promotion). The target course must be the
+ * next year's programme, not the same one; the schoolId comes from the session, never the body.
+ */
+export const schoolRolloverSchema = z.object({
+  sourceClassId: z.string().trim().min(1).max(64),
+  name: z.string().trim().min(1).max(120),
+  sessionLabel: z.string().trim().min(1).max(40),
+  programId: z.string().trim().min(1).max(64),
+  nerdcLevel: z.enum(NERDC_LEVELS),
+  teacherId: z.string().trim().min(1).max(64).nullable().optional(),
+});
+
+/**
  * A school admin confirming seats for a term.
  *
  * NOTE the deliberate absence of `amount` and `pricePerSeat`: the amount is computed server-side as
