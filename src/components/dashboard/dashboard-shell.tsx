@@ -33,6 +33,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { UserRoleValue } from "@/lib/enums";
+import { SCHOOL_ROLES } from "@/lib/roles";
 import { NotificationsPopover } from "@/components/dashboard/notifications-popover";
 
 type DashboardShellProps = {
@@ -61,6 +62,12 @@ const LEARNING_NAV = [
 ];
 
 function getNavItems(role: UserRoleValue, isEnrolled = true) {
+  // Backstop: school-provisioned accounts are redirected off this shell by the dashboard layout, so
+  // they should never reach here. If one ever does, it must NOT be handed a Messages tab or any B2C
+  // nav (messaging never crosses the school boundary). Return nothing rather than fall through to
+  // the default CORE_NAV, which includes Messages.
+  if (SCHOOL_ROLES.includes(role)) return [];
+
   if (role === "STUDENT" && !isEnrolled) {
     return [
       { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
