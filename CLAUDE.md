@@ -194,6 +194,7 @@ over. See SCHOOL-BUILD-NOTES §2b.
 | `JITSI_DOMAIN/APP_ID/APP_SECRET` | Jitsi JWT auth |
 | `JIBRI_WEBHOOK_SECRET` | Recording webhook |
 | `JUDGE0_API_URL/API_KEY` | Code execution |
+| `NEXT_PUBLIC_PYODIDE_INDEX_URL` | In-browser Python (Pyodide) core URL; unset = public CDN, set = R2 mirror (scripts/mirror-pyodide-to-r2.mjs) |
 | `UPSTASH_REDIS_REST_URL/TOKEN` | Rate limiting |
 | `REDIS_URL` | Pub/sub for multi-instance messaging (optional) |
 | `CRON_SECRET` | Bearer token for cron endpoints |
@@ -360,3 +361,6 @@ when you add a route, do not create a second harness.
 
 ## Network lab
   Network Lab (in-browser network/cybersecurity practical) lives in lib/network-lab/, see its own CLAUDE.md for engine details.
+
+Read docs/audits/pyodide-audit-prompt.md and carry out the audit it describes.
+Write your findings to docs/audits/pyodide-findings.md.
