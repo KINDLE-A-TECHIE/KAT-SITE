@@ -11,6 +11,8 @@ import {
 import { zipSync } from "fflate";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { captureError } from "@/lib/sentry";
+import { pythonErrorHint } from "@/lib/python-errors";
 
 // Monaco is large, load only on client, never on server
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -72,8 +74,7 @@ const TURTLE_SHIM = `
 import sys as _sys, types as _types, math as _math
 
 try:
-    from js import document as _doc
-    _el  = _doc.getElementById('kat-turtle-canvas')
+    from js import katCanvas as _el
     _ctx = _el.getContext('2d')
     _W   = int(_el.width)
     _H   = int(_el.height)
@@ -365,15 +366,19 @@ const PYGAME_SHIM = `
 import sys as _sys, types as _types, math as _math
 
 try:
-    from js import document as _doc
-    _canvas = _doc.getElementById('kat-turtle-canvas')
+    from js import katCanvas as _canvas, OffscreenCanvas as _OffscreenCanvas
     _ctx    = _canvas.getContext('2d')
     _W      = int(_canvas.width)
     _H      = int(_canvas.height)
     _OK     = True
+    try:
+        from js import katPostFrame as _katpf
+    except Exception:
+        _katpf = None
 except Exception:
     _OK = False
     _W, _H  = 480, 360
+    _katpf = None
 
 _frame   = 0
 _MAX_FRM = 500   # ~8 s at 60 fps, enough to see the result
@@ -443,8 +448,7 @@ class Surface:
     def __init__(self,size,flags=0,depth=0,masks=None):
         self._w=max(1,int(size[0])); self._h=max(1,int(size[1]))
         if _OK:
-            self._el=_doc.createElement('canvas')
-            self._el.width=self._w; self._el.height=self._h
+            self._el=_OffscreenCanvas.new(self._w,self._h)
             self._c=self._el.getContext('2d')
         self._alpha=255
     def fill(self,color,rect=None):
@@ -529,7 +533,9 @@ class _DisplayModule:
     def set_caption(self,t,i=None): pass
     def get_caption(self): return ('',)
     def flip(self):
-        if _OK and self._screen: _ctx.drawImage(self._screen._el,0,0)
+        if _OK and self._screen:
+            _ctx.drawImage(self._screen._el,0,0)
+            if _katpf: _katpf()
     def update(self,rect=None): self.flip()
     def get_surface(self): return self._screen
     def get_init(self): return True
@@ -750,8 +756,7 @@ if not _pg:
 
 _W = _pg.display._DisplayModule and 480
 try:
-    from js import document as _doc
-    _cv = _doc.getElementById('kat-turtle-canvas')
+    from js import katCanvas as _cv
     _W  = int(_cv.width); _H = int(_cv.height)
 except Exception:
     _W = 480; _H = 360
@@ -858,6 +863,132 @@ _sys.modules['pgzrun']=_m
 _sys.modules['pgzero']=_m
 _sys.modules['pgzero.runner']=_m
 `;
+
+// ── Pyodide Web Worker ───────────────────────────────────────────────────────
+// Python runs in a Worker so a runaway loop (`while True:`) can be killed with
+// worker.terminate() instead of freezing the tab. The worker also caps stdout, runs
+// each program in a fresh namespace (no state leak between runs), wires the stdin box
+// into `input()` via setStdin, and draws turtle/pygame on an OffscreenCanvas.
+//
+// The runtime core loads from NEXT_PUBLIC_PYODIDE_INDEX_URL when set (self-hosted on
+// R2, see scripts/mirror-pyodide-to-r2.mjs), else from the public CDN. On-demand
+// packages resolve from the CDN either way (the mirrored lockfile keeps absolute CDN
+// URLs), so the mirror is just the always-loaded executable core, not hundreds of MB
+// of wheels. R2 must allow GET CORS from the app's origins (it already does, for the
+// browser upload flow); leave this unset until that is verified for a new origin.
+const PYODIDE_INDEX_URL =
+  process.env.NEXT_PUBLIC_PYODIDE_INDEX_URL || "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
+const PYODIDE_RUN_TIMEOUT_MS = 10_000;
+const PYODIDE_LOAD_TIMEOUT_MS = 30_000;
+const PYODIDE_STDOUT_CAP = 100_000;
+
+// After a matplotlib program runs (Agg backend), grab the current figure as a base64 PNG so the
+// worker can hand it to the main thread to draw on the canvas. Empty string when there's no figure.
+const MPL_CAPTURE_PY = `
+def _kat_mpl():
+    try:
+        import matplotlib.pyplot as _p
+    except Exception:
+        return ''
+    import io, base64
+    if not _p.get_fignums():
+        return ''
+    _b = io.BytesIO()
+    _p.savefig(_b, format='png', bbox_inches='tight', dpi=96)
+    _p.close('all')
+    return base64.b64encode(_b.getvalue()).decode()
+_kat_mpl()
+`;
+
+function buildPyodideWorkerSource(): string {
+  return `
+self.importScripts(${JSON.stringify(PYODIDE_INDEX_URL + "pyodide.js")});
+const TURTLE_SHIM = ${JSON.stringify(TURTLE_SHIM)};
+const PYGAME_SHIM = ${JSON.stringify(PYGAME_SHIM)};
+const PGZERO_SHIM = ${JSON.stringify(PGZERO_SHIM)};
+const MPL_CAPTURE = ${JSON.stringify(MPL_CAPTURE_PY)};
+
+let py = null;
+let canvas = null;   // internal OffscreenCanvas the turtle/pygame shims draw to
+let runId = 0;
+const ready = (async () => { py = await self.loadPyodide({ indexURL: ${JSON.stringify(PYODIDE_INDEX_URL)} }); })();
+ready.then(() => self.postMessage({ type: "ready" })).catch((e) => self.postMessage({ type: "loadFailed", message: String(e) }));
+
+// The shims import katCanvas (draw target) and call katPostFrame on each flip; each
+// frame is transferred to the main thread as an ImageBitmap and blitted to the visible
+// canvas. transferToImageBitmap leaves the offscreen blank, the next flip fully repaints.
+self.katPostFrame = () => {
+  if (!canvas) return;
+  const bmp = canvas.transferToImageBitmap();
+  self.postMessage({ type: "frame", id: runId, bitmap: bmp }, [bmp]);
+};
+
+self.onmessage = async (e) => {
+  const msg = e.data;
+  try { await ready; } catch (_) { self.postMessage({ type: "error", id: msg.id, message: "Python failed to load." }); return; }
+
+  if (msg.type === "run") {
+    runId = msg.id;
+    const c = msg.canvas || {};
+    const usesCanvas = c.turtle || c.pygame || c.pgzrun;
+    try {
+      // stdin box feeds input(): hand the whole buffer once, then EOF (matches a real pipe).
+      let sent = false;
+      py.setStdin({ stdin: () => { if (sent) return ""; sent = true; return msg.stdin || ""; }, autoEOF: false });
+
+      // matplotlib: force the non-interactive Agg backend (no DOM in a worker). The figure is
+      // captured to a PNG after the run and drawn on the canvas by the main thread.
+      if (c.matplotlib) py.runPython("import os; os.environ['MPLBACKEND'] = 'AGG'");
+
+      if (usesCanvas) {
+        if (!canvas) canvas = new OffscreenCanvas(480, 360);
+        self.katCanvas = canvas;
+        const cx = canvas.getContext("2d");
+        cx.clearRect(0, 0, 480, 360); cx.fillStyle = "#fff"; cx.fillRect(0, 0, 480, 360);
+        if (c.turtle) await py.runPythonAsync(TURTLE_SHIM);
+        if (c.pygame || c.pgzrun) { await py.runPythonAsync(PYGAME_SHIM); if (c.pgzrun) await py.runPythonAsync(PGZERO_SHIM); }
+      } else {
+        try { await py.loadPackagesFromImports(msg.code); } catch (_) {}
+      }
+
+      py.runPython("import sys; from io import StringIO; sys.stdout = StringIO(); sys.stderr = StringIO()");
+      // Fresh namespace per run so a previous run's variables never leak in.
+      const ns = py.runPython("dict(__builtins__=__builtins__)");
+      let err = null;
+      try { await py.runPythonAsync(msg.code, { globals: ns }); } catch (ex) { err = String(ex); }
+      ns.destroy();
+
+      // Turtle draws incrementally with no flip; post its final frame once.
+      if (c.turtle && !c.pygame && !c.pgzrun && canvas) {
+        const bmp = canvas.transferToImageBitmap();
+        self.postMessage({ type: "frame", id: msg.id, bitmap: bmp }, [bmp]);
+      }
+
+      // matplotlib: hand the captured figure PNG to the main thread to draw.
+      if (c.matplotlib) {
+        const png = String(py.runPython(MPL_CAPTURE) || "");
+        if (png) self.postMessage({ type: "image", id: msg.id, png });
+      }
+
+      const out = String(py.runPython("sys.stdout.getvalue()") || "").slice(0, ${PYODIDE_STDOUT_CAP});
+      const errOut = String(py.runPython("sys.stderr.getvalue()") || "");
+      self.postMessage({ type: "result", id: msg.id, stdout: out, stderr: err ? (errOut + err).trim() : errOut });
+    } catch (ex) {
+      self.postMessage({ type: "error", id: msg.id, message: String(ex) });
+    }
+  } else if (msg.type === "install") {
+    try {
+      await py.loadPackage("micropip");
+      const micropip = py.pyimport("micropip");
+      await micropip.install(msg.pkg);
+      self.postMessage({ type: "installed", id: msg.id });
+    } catch (ex) {
+      self.postMessage({ type: "installError", id: msg.id, message: String(ex) });
+    }
+  }
+};
+`;
+}
 
 // Language value → file extension
 const LANG_EXT: Record<string, string> = {
@@ -982,15 +1113,6 @@ type PlaygroundInvite = {
   content: { title: string };
 };
 
-// Minimal Pyodide surface we use
-type PyodideInstance = {
-  runPython:              (code: string) => unknown;
-  runPythonAsync:         (code: string) => Promise<unknown>;
-  loadPackagesFromImports:(code: string) => Promise<void>;
-  loadPackage:            (pkg: string | string[]) => Promise<void>;
-  pyimport:               (name: string) => { install: (pkg: string) => Promise<void> };
-};
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function CodePlaygroundBlock({
@@ -1095,9 +1217,12 @@ export function CodePlaygroundBlock({
   const savedIndicatorTimeout  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewDebounce        = useRef<ReturnType<typeof setTimeout> | null>(null);
   const iframeRef              = useRef<HTMLIFrameElement>(null);
-  const pyodideRef             = useRef<PyodideInstance | null>(null);
   const turtleCanvasRef        = useRef<HTMLCanvasElement>(null);
-  const turtleShimInjected     = useRef(false);
+  // Worker that runs Python, so a runaway loop can be terminated.
+  const pyodideWorkerRef       = useRef<Worker | null>(null);
+  const workerReadyRef         = useRef<Promise<Worker> | null>(null);
+  const runSeqRef              = useRef(0);
+  const stopRunRef             = useRef<(() => void) | null>(null);
 
   // Keep refs in sync with state
   useEffect(() => { peerSessionIdRef.current = peerSessionId; }, [peerSessionId]);
@@ -1237,6 +1362,7 @@ ${code}
       if (saveDebounce.current)          clearTimeout(saveDebounce.current);
       if (savedIndicatorTimeout.current) clearTimeout(savedIndicatorTimeout.current);
       if (previewDebounce.current)       clearTimeout(previewDebounce.current);
+      if (pyodideWorkerRef.current)      { try { pyodideWorkerRef.current.terminate(); } catch { /* ignore */ } }
     };
   }, []);
 
@@ -1350,117 +1476,186 @@ ${code}
     try { localStorage.removeItem(KEY_PROJECT); } catch { /* ignore */ }
   };
 
-  // ── Pyodide helpers ────────────────────────────────────────────────────────
+  // ── Pyodide worker ─────────────────────────────────────────────────────────
 
-  const initPyodide = async (): Promise<PyodideInstance> => {
-    if (pyodideRef.current) return pyodideRef.current;
+  const ensureWorker = (): Promise<Worker> => {
+    if (workerReadyRef.current) return workerReadyRef.current;
     setPyodideLoading(true);
-    try {
-      if (!document.getElementById("kat-pyodide-script")) {
-        await new Promise<void>((resolve, reject) => {
-          const script = document.createElement("script");
-          script.id    = "kat-pyodide-script";
-          script.src   = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js";
-          script.onload  = () => resolve();
-          script.onerror = () => reject(new Error("Failed to fetch Pyodide"));
-          document.head.appendChild(script);
-        });
-      }
-      const instance = await (
-        window as unknown as {
-          loadPyodide: (opts: { indexURL: string }) => Promise<PyodideInstance>;
+    const worker = new Worker(
+      URL.createObjectURL(new Blob([buildPyodideWorkerSource()], { type: "application/javascript" })),
+    );
+    pyodideWorkerRef.current = worker;
+    workerReadyRef.current = new Promise<Worker>((resolve, reject) => {
+      let loadTimer: ReturnType<typeof setTimeout> | null = null;
+      const cleanup = () => { if (loadTimer) clearTimeout(loadTimer); worker.removeEventListener("message", onReady); };
+      // A load failure or timeout is an infra problem (CDN/network), not a student's code error.
+      // Report it, discard the worker, and fall back to server execution so the next Run still works.
+      const failLoad = (message: string) => {
+        cleanup();
+        setPyodideLoading(false);
+        workerReadyRef.current = null;
+        pyodideWorkerRef.current = null;
+        try { worker.terminate(); } catch { /* ignore */ }
+        captureError(new Error(message), { where: "pyodide-worker-load", language });
+        setPyodideMode(false);
+        toast.error("Browser Python could not load. Switched to Server mode, press Run again.");
+        reject(new Error("PYODIDE_LOAD_FAILED"));
+      };
+      const onReady = (e: MessageEvent) => {
+        const d = e.data;
+        if (d?.type === "ready") {
+          cleanup();
+          setPyodideReady(true);
+          setPyodideLoading(false);
+          resolve(worker);
+        } else if (d?.type === "loadFailed") {
+          failLoad(d.message || "Pyodide failed to load");
         }
-      ).loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/" });
+      };
+      loadTimer = setTimeout(() => failLoad("Pyodide load timed out"), PYODIDE_LOAD_TIMEOUT_MS);
+      worker.addEventListener("message", onReady);
+    });
+    return workerReadyRef.current;
+  };
 
-      pyodideRef.current = instance;
-      turtleShimInjected.current = false; // fresh instance, shim must be re-injected
-      setPyodideReady(true);
-      return instance;
-    } catch {
-      toast.error("Failed to load Pyodide, check your connection.");
-      setPyodideMode(false);
-      throw new Error("Pyodide load failed");
-    } finally {
-      setPyodideLoading(false);
+  // Discards the worker so the next run rebuilds it fresh. Called on timeout / Stop.
+  const killWorker = (worker: Worker) => {
+    try { worker.terminate(); } catch { /* ignore */ }
+    if (pyodideWorkerRef.current === worker) {
+      pyodideWorkerRef.current = null;
+      workerReadyRef.current = null;
+      setPyodideReady(false);
     }
   };
+
+  // Draws a frame posted by the worker onto the visible canvas, then frees the bitmap.
+  const blitFrame = (bitmap: ImageBitmap) => {
+    const cv = turtleCanvasRef.current;
+    const ctx = cv?.getContext("2d");
+    if (ctx) ctx.drawImage(bitmap, 0, 0);
+    if (typeof bitmap.close === "function") bitmap.close();
+  };
+
+  // Draws a base64 PNG (a matplotlib figure) onto the visible canvas, scaled to fit and centered.
+  const drawPng = (b64: string) => {
+    const cv = turtleCanvasRef.current;
+    if (!cv) return;
+    const img = new Image();
+    img.onload = () => {
+      const ctx = cv.getContext("2d");
+      if (!ctx) return;
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, cv.width, cv.height);
+      const scale = Math.min(cv.width / img.width, cv.height / img.height, 1);
+      const w = img.width * scale, h = img.height * scale;
+      ctx.drawImage(img, (cv.width - w) / 2, (cv.height - h) / 2, w, h);
+    };
+    img.src = "data:image/png;base64," + b64;
+  };
+
+  const runInWorker = (
+    code: string,
+    stdinValue: string,
+    canvasFlags: { turtle: boolean; pygame: boolean; pgzrun: boolean; matplotlib: boolean },
+  ): Promise<{ stdout: string; stderr: string }> =>
+    new Promise((resolve, reject) => {
+      ensureWorker()
+        .then((worker) => {
+          const id = ++runSeqRef.current;
+          let timer: ReturnType<typeof setTimeout> | null = null;
+          const onMessage = (e: MessageEvent) => {
+            const d = e.data;
+            if (!d || d.id !== id) return;
+            if (d.type === "frame") { blitFrame(d.bitmap); return; }
+            if (d.type === "image") { drawPng(d.png); return; }
+            if (d.type === "result") { finish(); resolve({ stdout: d.stdout, stderr: d.stderr }); }
+            else if (d.type === "error") { finish(); reject(new Error(d.message)); }
+          };
+          function finish() {
+            if (timer) clearTimeout(timer);
+            worker.removeEventListener("message", onMessage);
+            stopRunRef.current = null;
+          }
+          timer = setTimeout(() => {
+            finish();
+            killWorker(worker);
+            reject(new Error(
+              "Your program ran too long and was stopped. Check for a loop that never ends (for example `while True:` with no way out).",
+            ));
+          }, PYODIDE_RUN_TIMEOUT_MS);
+          // The Stop button calls this.
+          stopRunRef.current = () => { finish(); killWorker(worker); reject(new Error("Stopped.")); };
+          worker.addEventListener("message", onMessage);
+          worker.postMessage({ type: "run", id, code, stdin: stdinValue, canvas: canvasFlags });
+        })
+        .catch(reject);
+    });
 
   const installPackage = async () => {
     const pkg = packageInput.trim();
     if (!pkg) return;
     setInstallingPkg(true);
     try {
-      const py = await initPyodide();
-      await py.loadPackage("micropip");
-      const micropip = py.pyimport("micropip");
-      await micropip.install(pkg);
+      const worker = await ensureWorker();
+      await new Promise<void>((resolve, reject) => {
+        const id = ++runSeqRef.current;
+        const onMsg = (e: MessageEvent) => {
+          const d = e.data;
+          if (!d || d.id !== id) return;
+          worker.removeEventListener("message", onMsg);
+          if (d.type === "installed") resolve();
+          else if (d.type === "installError") reject(new Error(d.message));
+        };
+        worker.addEventListener("message", onMsg);
+        worker.postMessage({ type: "install", id, pkg });
+      });
       setInstalledPkgs((prev) => [...prev, pkg]);
       setPackageInput("");
       toast.success(`${pkg} installed.`);
-    } catch {
-      toast.error(`Failed to install ${pkg}. It may not be available in Pyodide.`);
+    } catch (e) {
+      // The load fallback already toasted; don't stack a second error on top of it.
+      if (!(e instanceof Error && e.message === "PYODIDE_LOAD_FAILED")) {
+        toast.error(`Failed to install ${pkg}. It may not be available in Pyodide.`);
+      }
     } finally {
       setInstallingPkg(false);
     }
   };
 
+  // All browser-Python runs in the worker (killable). Canvas programs draw to the
+  // worker's OffscreenCanvas and stream frames back to the visible canvas.
   const runPyodide = async () => {
-    setRunning(true);
-    setResult(null);
-    setError(null);
-
     const usesTurtle = /\bimport\s+turtle\b|from\s+turtle\s+import/.test(code);
     const usesPygame  = /\bimport\s+pygame\b|from\s+pygame\s+import/.test(code);
     const usesPgzrun  = /\bimport\s+pgzrun\b|from\s+pgzrun\s+import/.test(code);
-    const usesCanvas  = usesTurtle || usesPygame || usesPgzrun;
+    const usesMpl     = /\bimport\s+matplotlib\b|from\s+matplotlib\s+import|\bimport\s+pylab\b|from\s+pylab\s+import/.test(code);
+    const usesVisual  = usesTurtle || usesPygame || usesPgzrun || usesMpl;
 
-    // Switch to the correct output tab before running
-    setOutputTab(usesCanvas ? "turtle" : "output");
+    setRunning(true);
+    setResult(null);
+    setError(null);
+    setOutputTab(usesVisual ? "turtle" : "output");
+
+    // Clear the visible canvas so a previous drawing does not linger under this run.
+    if (usesVisual) {
+      const cv = turtleCanvasRef.current;
+      const ctx = cv?.getContext("2d");
+      if (ctx && cv) { ctx.clearRect(0, 0, cv.width, cv.height); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height); }
+    }
 
     try {
-      const py = await initPyodide();
-
-      // Always clear the canvas and re-inject shims so state is fresh each run
-      if (usesCanvas) {
-        const canvas = turtleCanvasRef.current;
-        if (canvas) {
-          const ctx = canvas.getContext("2d");
-          if (ctx) { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
-        }
-      }
-      if (usesTurtle) await py.runPythonAsync(TURTLE_SHIM);
-      if (usesPygame || usesPgzrun) {
-        await py.runPythonAsync(PYGAME_SHIM);
-        if (usesPgzrun) await py.runPythonAsync(PGZERO_SHIM);
-      }
-
-      // Auto-load packages detected from imports (skip canvas libs, handled by shims)
-      try { await py.loadPackagesFromImports(code); } catch { /* best effort */ }
-
-      // Redirect stdout/stderr
-      py.runPython(
-        "import sys\nfrom io import StringIO\nsys.stdout = StringIO()\nsys.stderr = StringIO()",
-      );
-      let pyError: string | null = null;
-      try {
-        await py.runPythonAsync(code);
-      } catch (e) {
-        pyError = String(e);
-      }
-      const stdout = String(py.runPython("sys.stdout.getvalue()") ?? "");
-      const stderr = String(py.runPython("sys.stderr.getvalue()") ?? "");
-      setResult({
-        stdout,
-        stderr: pyError ? `${stderr}${pyError}`.trim() : stderr,
-        exitCode: pyError ? 1 : 0,
-        compileOutput: null,
-        time: null,
-        memory: null,
+      const { stdout, stderr } = await runInWorker(code, stdin, {
+        turtle: usesTurtle, pygame: usesPygame, pgzrun: usesPgzrun, matplotlib: usesMpl,
       });
+      setResult({ stdout, stderr, exitCode: stderr ? 1 : 0, compileOutput: null, time: null, memory: null });
     } catch (e) {
-      setError(String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      // The load fallback already toasted and switched to Server mode; don't also show a red banner.
+      if (msg !== "PYODIDE_LOAD_FAILED") setError(msg);
     } finally {
       setRunning(false);
+      stopRunRef.current = null;
     }
   };
 
@@ -1845,6 +2040,8 @@ ${code}
   // ── Derived UI state ───────────────────────────────────────────────────────
 
   const success = result && result.exitCode === 0 && !result.stderr;
+  // Beginner-friendly one-line hint for a Python traceback (null for languages/errors we don't map).
+  const errorHint = pythonErrorHint(result?.stderr ?? "");
   const linkedProject = typeof assignmentMatch === "object" && assignmentMatch !== null
     ? assignmentMatch.linkedProject
     : null;
@@ -2077,6 +2274,17 @@ ${code}
             )}
           </div>
 
+          {running && pyodideMode && isPython && !isWebMode && (
+            <Button
+              size="sm"
+              onClick={() => stopRunRef.current?.()}
+              title="Stop the running program"
+              className="h-8 gap-1.5 bg-rose-600 px-3 text-xs hover:bg-rose-700 sm:h-7"
+            >
+              <X className="h-3 w-3" />
+              Stop
+            </Button>
+          )}
           <Button
             size="sm"
             onClick={() => void run()}
@@ -2336,7 +2544,9 @@ ${code}
                       ? "Pygame Zero"
                       : /\bimport\s+pygame\b|from\s+pygame\s+import/.test(code)
                         ? "Pygame"
-                        : "Turtle"}
+                        : /\bmatplotlib\b|\bpylab\b/.test(code)
+                          ? "Plot"
+                          : "Turtle"}
                   </button>
                   {outputTab === "turtle" && (
                     <button
@@ -2431,6 +2641,12 @@ ${code}
                     )}
                     {result?.stderr && (
                       <div>
+                        {errorHint && (
+                          <div className="mb-2 flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
+                            <span>{errorHint}</span>
+                          </div>
+                        )}
                         <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">stderr</p>
                         <pre className="whitespace-pre-wrap font-mono text-xs text-rose-400">{result.stderr}</pre>
                       </div>

@@ -3,6 +3,7 @@ import { Redis } from "@upstash/redis";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { captureError } from "@/lib/sentry";
 
 // 20 executions per user per minute, using a sliding window
 const ratelimit =
@@ -176,7 +177,7 @@ export async function POST(request: Request, { params }: Params) {
       if (!createRes.ok) {
         let d = "";
         try { d = await createRes.text(); } catch { /* ignore */ }
-        console.error(`[run] Judge0 create ${createRes.status}: ${d}`);
+        captureError(new Error(`Judge0 create failed (${createRes.status})`), { where: "run.judge0.create", status: createRes.status, detail: d.slice(0, 500), language: content.language });
         return fail(`Code execution service error (${createRes.status}).`, 502);
       }
 
@@ -202,7 +203,7 @@ export async function POST(request: Request, { params }: Params) {
     } else {
       let detail = "";
       try { detail = await waitRes.text(); } catch { /* ignore */ }
-      console.error(`[run] Judge0 ${waitRes.status}: ${detail}`);
+      captureError(new Error(`Judge0 error (${waitRes.status})`), { where: "run.judge0.submit", status: waitRes.status, detail: detail.slice(0, 500), language: content.language });
       return fail(`Code execution service error (${waitRes.status}).`, 502);
     }
 
@@ -222,6 +223,7 @@ export async function POST(request: Request, { params }: Params) {
     if (err instanceof Error && err.name === "TimeoutError") {
       return fail("Execution timed out.", 504);
     }
+    captureError(err, { where: "run.judge0.fetch", language: content.language });
     return fail("Failed to reach code execution service.", 502);
   }
 }
