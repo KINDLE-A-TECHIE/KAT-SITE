@@ -1,11 +1,35 @@
+import sharp from "sharp";
 import { SchoolRole } from "@prisma/client";
 import { fail } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { requireActiveSchool } from "@/lib/school";
 import { ensureJoinCode, generatePin, hashPin } from "@/lib/student-pin";
 import { renderLoginCardsPdf } from "@/lib/login-cards-pdf";
+import { r2PublicUrl } from "@/lib/r2";
 import { schoolLaunchOrigin } from "@/lib/request-host";
 import { captureError } from "@/lib/sentry";
+
+/**
+ * Loads a school's logo as a small square PNG data URI for the cards. The logo is stored as WebP,
+ * which @react-pdf/renderer cannot embed, so fetch it (it is served publicly) and transcode it, padded
+ * to a transparent square so it never distorts at the card's fixed size. A logo problem must never
+ * fail card printing, so any error returns null (the cards then show the school name alone).
+ */
+async function loadSchoolLogoPng(logoKey: string | null): Promise<string | null> {
+  if (!logoKey) return null;
+  try {
+    const res = await fetch(r2PublicUrl(logoKey));
+    if (!res.ok) return null;
+    const png = await sharp(Buffer.from(await res.arrayBuffer()))
+      .resize(120, 120, { fit: "contain", background: { r: 255, g: 255, b: 255, alpha: 0 } })
+      .png()
+      .toBuffer();
+    return `data:image/png;base64,${png.toString("base64")}`;
+  } catch (error) {
+    captureError(error);
+    return null;
+  }
+}
 
 /**
  * POST /api/school/classes/[classId]/login-cards, mint printable sign-in cards for a class.
@@ -38,7 +62,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
   try {
     const schoolClass = await prisma.schoolClass.findFirst({
       where: { id: classId, schoolId },
-      select: { id: true, name: true },
+      select: { id: true, name: true, school: { select: { name: true, logoKey: true } } },
     });
     if (!schoolClass) return fail("Class not found.", 404);
 
@@ -67,6 +91,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
     // Render the PDF FIRST, from the in-hand plaintext, THEN commit the rotation. If rendering fails,
     // nothing is rotated, so a render error can never leave pupils with a dead card and no new one.
     const pdf = await renderLoginCardsPdf({
+      schoolName: schoolClass.school.name,
+      schoolLogo: await loadSchoolLogoPng(schoolClass.school.logoKey),
       className: schoolClass.name,
       joinCode,
       pupils: rows.map((r) => ({ name: r.name, pin: r.pin })),

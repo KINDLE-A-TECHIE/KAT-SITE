@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { UserRole } from "@prisma/client";
 import { prisma } from "./prisma";
 import { checkEnrollmentLicense } from "./school-license";
+import { schoolCodePrefix } from "./join-code";
 import { studentPinLimiter } from "./ratelimit";
 import { studentPinLoginSchema } from "./validators";
 
@@ -47,23 +48,61 @@ export function hashPin(pin: string): Promise<string> {
 }
 
 /**
- * Returns the class's join code, generating one if absent. Retries on the unique-constraint race so
- * two admins printing cards at once cannot both claim the same code.
+ * Returns the class's join code, generating one if absent.
+ *
+ * A new code carries the SCHOOL NAME and a per-school class NUMBER, e.g. Demo Academy's first class
+ * gets DEMO01, its next DEMO02, so a code is recognisable to a teacher and child rather than a random
+ * string. It is stored normalized (no hyphen) so a pupil's typed code still matches; `formatJoinCode`
+ * adds the display hyphen (DEMO-01) on the printed card.
+ *
+ * Retries on the unique-constraint race (two admins printing cards at once), and on a cross-school
+ * code collision (another school shares the prefix and took this number first) it advances to the
+ * next number. Falls back to a random code only if the numbered space is somehow exhausted, so card
+ * printing never hard-fails.
  */
 export async function ensureJoinCode(classId: string): Promise<string> {
-  const existing = await prisma.schoolClass.findUnique({
+  const cls = await prisma.schoolClass.findUnique({
     where: { id: classId },
+    select: { joinCode: true, schoolId: true, school: { select: { name: true } } },
+  });
+  if (!cls) throw new Error("Class not found.");
+  if (cls.joinCode) return cls.joinCode;
+
+  const prefix = schoolCodePrefix(cls.school.name);
+
+  // Start numbering after the highest one this school already uses for this prefix, so the sequence
+  // reads per-school (DEMO01, DEMO02, ...) rather than restarting or skipping.
+  const siblings = await prisma.schoolClass.findMany({
+    where: { schoolId: cls.schoolId, joinCode: { startsWith: prefix } },
     select: { joinCode: true },
   });
-  if (existing?.joinCode) return existing.joinCode;
+  const numberRe = new RegExp(`^${prefix}(\\d+)$`);
+  let seq = 1;
+  for (const s of siblings) {
+    const m = s.joinCode ? numberRe.exec(s.joinCode) : null;
+    if (m) seq = Math.max(seq, Number(m[1]) + 1);
+  }
 
+  // Claim the first free number. A failure here is a cross-school collision on the global-unique
+  // code, so step to the next number and retry.
+  for (let attempt = 0; attempt < 25; attempt++, seq++) {
+    const code = `${prefix}${String(seq).padStart(2, "0")}`;
+    try {
+      await prisma.schoolClass.update({ where: { id: classId }, data: { joinCode: code } });
+      return code;
+    } catch {
+      const now = await prisma.schoolClass.findUnique({ where: { id: classId }, select: { joinCode: true } });
+      if (now?.joinCode) return now.joinCode; // a concurrent writer set this class's code
+    }
+  }
+
+  // Fallback: a random code (the old scheme) if the numbered space could not be allocated.
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generateJoinCode();
     try {
       await prisma.schoolClass.update({ where: { id: classId }, data: { joinCode: code } });
       return code;
     } catch {
-      // Unique collision (or a concurrent writer won). Re-read; if someone set one, use it.
       const now = await prisma.schoolClass.findUnique({ where: { id: classId }, select: { joinCode: true } });
       if (now?.joinCode) return now.joinCode;
     }

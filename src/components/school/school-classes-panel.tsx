@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatJoinCode } from "@/lib/join-code";
 import {
   Dialog,
   DialogContent,
@@ -96,7 +97,7 @@ export function SchoolClassesPanel() {
       a.remove();
       URL.revokeObjectURL(url);
       const joinCode = res.headers.get("X-Join-Code");
-      toast.success(joinCode ? `New PINs generated. Class code ${joinCode}.` : "New PINs generated.");
+      toast.success(joinCode ? `New PINs generated. Class code ${formatJoinCode(joinCode)}.` : "New PINs generated.");
     } catch {
       toast.error("Could not generate sign-in cards.");
     } finally {
