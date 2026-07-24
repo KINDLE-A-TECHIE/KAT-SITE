@@ -317,7 +317,25 @@ function ReviewBlock({
   );
 }
 
-export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: string; programId: string; role: string; userId?: string }) {
+export function LessonViewer({
+  lessonId,
+  programId,
+  role,
+  userId,
+  // Where "back to course" and prev/next lessons point. Defaults to the B2C curriculum routes.
+  // The school learner surface passes its own (/learn, /learn/lessons) so a pupil never leaves the
+  // school shell into a B2C page. Must be plain strings: this is a client component rendered by a
+  // server component, which cannot pass functions.
+  backHref = `/dashboard/curriculum/${programId}`,
+  lessonBasePath = `/dashboard/curriculum/${programId}/lessons`,
+}: {
+  lessonId: string;
+  programId: string;
+  role: string;
+  userId?: string;
+  backHref?: string;
+  lessonBasePath?: string;
+}) {
   const router = useRouter();
   const [lesson, setLesson] = useState<LessonData | null>(null);
   const [prevLesson, setPrevLesson] = useState<LessonNav>(null);
@@ -434,7 +452,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
       <div className="rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
         <BookOpen className="mx-auto mb-3 h-10 w-10 text-stone-300 dark:text-stone-600" />
         <p className="font-medium text-stone-500 dark:text-stone-400">Lesson not found or you don&apos;t have access.</p>
-        <Link href={`/dashboard/curriculum/${programId}`}
+        <Link href={backHref}
           className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-kat-clay hover:underline">
           <ArrowLeft className="h-3.5 w-3.5" /> Back to course
         </Link>
@@ -453,7 +471,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
       <div className="mx-auto max-w-3xl space-y-4">
         <header className="border-b border-stone-200 pb-4 dark:border-stone-800">
           <Link
-            href={`/dashboard/curriculum/${program.id}`}
+            href={backHref}
             className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 transition hover:text-kat-clay dark:text-stone-400"
           >
             <ArrowLeft className="h-3 w-3" />
@@ -568,7 +586,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
     return (
       <div className="mx-auto max-w-3xl">
         <Link
-          href={`/dashboard/curriculum/${program.id}`}
+          href={backHref}
           className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 transition hover:text-kat-clay dark:text-stone-400"
         >
           <ArrowLeft className="h-3 w-3" /> {program.name}
@@ -586,7 +604,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
       <header className="sticky top-0 z-30 -mx-2 flex items-center justify-between gap-3 border-b border-stone-200 bg-stone-50/95 px-2 py-3 backdrop-blur-sm dark:border-stone-800 dark:bg-stone-950/95">
         <div className="flex min-w-0 items-center gap-3">
           <Link
-            href={`/dashboard/curriculum/${program.id}`}
+            href={backHref}
             aria-label={`Back to ${program.name}`}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-stone-200 text-stone-500 transition hover:bg-white hover:text-kat-clay dark:border-stone-800 dark:text-stone-400 dark:hover:bg-stone-900"
           >
@@ -672,7 +690,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
             <div className="mt-6 flex flex-col items-stretch justify-center gap-2 sm:flex-row sm:items-center sm:gap-3">
               {prevLesson && (
                 <button
-                  onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${prevLesson.id}`)}
+                  onClick={() => router.push(`${lessonBasePath}/${prevLesson.id}`)}
                   className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/25 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
                 >
                   <ArrowLeft className="h-4 w-4" /> Previous lesson
@@ -680,7 +698,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
               )}
               {nextLesson ? (
                 <button
-                  onClick={() => router.push(`/dashboard/curriculum/${programId}/lessons/${nextLesson.id}`)}
+                  onClick={() => router.push(`${lessonBasePath}/${nextLesson.id}`)}
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[var(--kat-pine)] transition hover:bg-white/90"
                 >
                   <span className="truncate">Next: {nextLesson.title.length > 22 ? nextLesson.title.slice(0, 22) + "…" : nextLesson.title}</span>
@@ -688,7 +706,7 @@ export function LessonViewer({ lessonId, programId, role, userId }: { lessonId: 
                 </button>
               ) : (
                 <Link
-                  href={`/dashboard/curriculum/${program.id}`}
+                  href={backHref}
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[var(--kat-pine)] transition hover:bg-white/90"
                 >
                   Back to Course

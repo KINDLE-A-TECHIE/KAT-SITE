@@ -1,6 +1,4 @@
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { getServerAuthSession } from "@/lib/auth";
 import { ensureSchoolStudent } from "@/lib/school";
 import { prisma } from "@/lib/prisma";
@@ -63,20 +61,18 @@ export default async function SchoolLessonPage({
 
   return (
     <section className="space-y-4">
-      <Link
-        href="/learn"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 hover:text-orange-600 dark:text-stone-400"
-      >
-        <ArrowLeft className="size-3.5" />
-        Back to my course
-      </Link>
-
-      {/* The shared learner engine, not a school-specific copy of it. */}
+      {/* The shared learner engine, not a school-specific copy of it. It renders its OWN back arrow;
+          we do not add a second one here. backHref/lessonBasePath keep the pupil inside the school
+          shell: its "back" and prev/next links must point at /learn, not the B2C /dashboard/curriculum
+          routes the viewer defaults to (a pupil has no B2C surface, and following one lands them on a
+          page the dashboard guard bounces back). */}
       <LessonViewer
         lessonId={lessonId}
         programId={programId}
         role="STUDENT"
         userId={session!.user.id}
+        backHref="/learn"
+        lessonBasePath="/learn/lessons"
       />
     </section>
   );
