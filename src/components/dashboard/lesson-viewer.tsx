@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ContentCreateForm } from "@/components/dashboard/content-create-form";
 import { CodePlaygroundBlock } from "@/components/dashboard/code-playground-block";
 import { NetworkLabBlock } from "@/components/network-lab/network-lab-block";
+import { LessonSlides } from "@/components/dashboard/lesson-slides";
 
 export type ContentItem = {
   id: string;
@@ -164,10 +165,15 @@ export function ContentBody({
   return (
     <>
       {content.type === "RICH_TEXT" && content.body && (
-        <div
-          className="prose prose-stone dark:prose-invert mx-auto max-w-3xl text-sm leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.body) }}
-        />
+        isCreator ? (
+          // Creators editing/reviewing see the plain note; learners get the animated slide deck.
+          <div
+            className="prose prose-stone dark:prose-invert mx-auto max-w-3xl text-sm leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.body) }}
+          />
+        ) : (
+          <LessonSlides html={sanitizeHtml(content.body)} />
+        )
       )}
 
       {(content.type === "YOUTUBE_EMBED" || content.type === "EXTERNAL_VIDEO") && content.url && (
