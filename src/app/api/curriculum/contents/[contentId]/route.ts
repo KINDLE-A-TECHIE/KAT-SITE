@@ -3,6 +3,7 @@ import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { updateLessonContentSchema } from "@/lib/validators";
+import { deleteRemovedNoteImages } from "@/lib/note-images";
 
 interface Params { params: Promise<{ contentId: string }> }
 
@@ -19,7 +20,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const existing = await prisma.lessonContent.findUnique({
     where: { id: contentId },
-    select: { id: true, createdById: true },
+    select: { id: true, createdById: true, body: true },
   });
   if (!existing) return fail("Content not found.", 404);
 
@@ -51,6 +52,11 @@ export async function PATCH(request: Request, { params }: Params) {
     },
   });
 
+  // Reap any note image the edit removed or replaced (best-effort, never blocks the response).
+  if (parsed.data.body !== undefined) {
+    await deleteRemovedNoteImages(existing.body, parsed.data.body);
+  }
+
   return ok({ content });
 }
 
@@ -65,7 +71,7 @@ export async function DELETE(_req: Request, { params }: Params) {
 
   const existing = await prisma.lessonContent.findUnique({
     where: { id: contentId },
-    select: { id: true, createdById: true },
+    select: { id: true, createdById: true, body: true },
   });
   if (!existing) return fail("Content not found.", 404);
 
@@ -74,5 +80,9 @@ export async function DELETE(_req: Request, { params }: Params) {
   }
 
   await prisma.lessonContent.delete({ where: { id: contentId } });
+
+  // Reap every note image this block owned (best-effort, never blocks the response).
+  await deleteRemovedNoteImages(existing.body, null);
+
   return ok({ deleted: true });
 }
