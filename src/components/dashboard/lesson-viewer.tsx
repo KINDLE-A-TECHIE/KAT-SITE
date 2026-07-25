@@ -153,14 +153,14 @@ export function ContentBody({
   userId,
   programId,
   moduleId,
-  onLabComplete,
+  onBlockComplete,
 }: {
   content: ContentItem;
   isCreator: boolean;
   userId?: string;
   programId?: string;
   moduleId?: string;
-  onLabComplete?: () => void;
+  onBlockComplete?: () => void;
 }) {
   return (
     <>
@@ -207,11 +207,12 @@ export function ContentBody({
           userId={userId}
           programId={programId}
           moduleId={moduleId}
+          onComplete={onBlockComplete}
         />
       )}
 
       {content.type === "NETWORK_LAB" && content.body && (
-        <NetworkLabBlock levelKey={content.body} onComplete={onLabComplete} />
+        <NetworkLabBlock levelKey={content.body} contentId={content.id} onComplete={onBlockComplete} />
       )}
     </>
   );
@@ -674,7 +675,7 @@ export function LessonViewer({
                 userId={userId}
                 programId={programId}
                 moduleId={lesson.module.id}
-                onLabComplete={markComplete}
+                onBlockComplete={markComplete}
               />
             </section>
           );

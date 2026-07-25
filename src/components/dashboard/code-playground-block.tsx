@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { captureError } from "@/lib/sentry";
 import { pythonErrorHint } from "@/lib/python-errors";
+import { getDraft, putDraft, deleteDraft } from "@/lib/lesson-block-draft";
 
 // Monaco is large, load only on client, never on server
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -1070,6 +1071,15 @@ type RunResult = {
   memory: number | null;
 };
 
+// A learner's saved playground draft (single-file `code`, or a multi-file project). Stored per user in
+// the shared LessonBlockDraft store; the shape is opaque JSON to the store.
+type PlaygroundDraft = {
+  code?: string;
+  files?: Record<string, string>;
+  entryFile?: string | null;
+  activeFile?: string | null;
+};
+
 type PeerParticipant = {
   userId: string;
   user: { id: string; firstName: string; lastName: string };
@@ -1123,6 +1133,7 @@ export function CodePlaygroundBlock({
   userId,
   programId,
   moduleId,
+  onComplete,
 }: {
   contentId: string;
   starterCode: string;
@@ -1131,8 +1142,9 @@ export function CodePlaygroundBlock({
   userId?: string;
   programId?: string;
   moduleId?: string;
+  onComplete?: () => void;
 }) {
-  // ── Storage keys ──────────────────────────────────────────────────────────
+  // ── Legacy localStorage keys (read once to migrate an existing draft to the server store) ─────
   const KEY_CODE    = `kat:pg:${contentId}:code`;
   const KEY_PROJECT = `kat:pg:${contentId}:project`;
 
@@ -1177,6 +1189,15 @@ export function CodePlaygroundBlock({
 
   // ── Auto-save indicator ────────────────────────────────────────────────────
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+
+  // Fires the lesson's completion once, the first time the learner actually runs their code, so a
+  // CODE_PLAYGROUND lesson is "finished by doing it" the same way winning the network lab completes it.
+  const completeFired = useRef(false);
+  const markBlockComplete = () => {
+    if (completeFired.current) return;
+    completeFired.current = true;
+    onComplete?.();
+  };
 
   // ── Submit state (students only) ───────────────────────────────────────────
   const [showSubmitForm, setShowSubmitForm]   = useState(false);
@@ -1308,26 +1329,49 @@ ${code}
     return () => { if (previewDebounce.current) clearTimeout(previewDebounce.current); };
   }, [code, projectFiles, isWebMode, buildWebDoc]);
 
-  // ── Restore from localStorage on mount ────────────────────────────────────
-  useEffect(() => {
+  // ── Restore the draft on mount: server store first, then a one-time migration of any older
+  //    localStorage draft up to the server so it follows the learner to their next device ──────────
+  const applyDraft = (d: PlaygroundDraft | null): boolean => {
+    if (!d) return false;
+    if (d.files && Object.keys(d.files).length > 0) {
+      setProjectFiles(d.files);
+      setEntryFile(d.entryFile ?? null);
+      setActiveProjectFile(d.activeFile ?? null);
+      return true;
+    }
+    if (typeof d.code === "string") { setCode(d.code); return true; }
+    return false;
+  };
+
+  const readLegacyLocalDraft = (): PlaygroundDraft | null => {
     try {
       const savedProject = localStorage.getItem(KEY_PROJECT);
       if (savedProject) {
-        const parsed = JSON.parse(savedProject) as {
-          files: Record<string, string>;
-          entryFile: string | null;
-          activeFile: string | null;
-        };
+        const parsed = JSON.parse(savedProject) as { files: Record<string, string>; entryFile: string | null; activeFile: string | null };
         if (Object.keys(parsed.files).length > 0) {
-          setProjectFiles(parsed.files);
-          setEntryFile(parsed.entryFile);
-          setActiveProjectFile(parsed.activeFile);
-          return;
+          return { files: parsed.files, entryFile: parsed.entryFile, activeFile: parsed.activeFile };
         }
       }
       const savedCode = localStorage.getItem(KEY_CODE);
-      if (savedCode !== null) setCode(savedCode);
+      if (savedCode !== null) return { code: savedCode };
     } catch { /* localStorage unavailable */ }
+    return null;
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const serverDraft = await getDraft<PlaygroundDraft>(contentId);
+      if (cancelled) return;
+      if (applyDraft(serverDraft)) return; // server wins
+      // No server draft: migrate a legacy localStorage draft up, then clear the old keys.
+      const legacy = readLegacyLocalDraft();
+      if (legacy && applyDraft(legacy)) {
+        void putDraft(contentId, legacy);
+        try { localStorage.removeItem(KEY_CODE); localStorage.removeItem(KEY_PROJECT); } catch { /* ignore */ }
+      }
+    })();
+    return () => { cancelled = true; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Auto-save project mode (1 s debounce) ─────────────────────────────────
@@ -1336,15 +1380,13 @@ ${code}
     if (saveDebounce.current) clearTimeout(saveDebounce.current);
     setSaveState("saving");
     saveDebounce.current = setTimeout(() => {
-      try {
-        localStorage.setItem(
-          KEY_PROJECT,
-          JSON.stringify({ files: projectFiles, entryFile, activeFile: activeProjectFile }),
-        );
+      void (async () => {
+        const ok = await putDraft(contentId, { files: projectFiles, entryFile, activeFile: activeProjectFile } as PlaygroundDraft);
+        if (!ok) { setSaveState("idle"); return; }
         setSaveState("saved");
         if (savedIndicatorTimeout.current) clearTimeout(savedIndicatorTimeout.current);
         savedIndicatorTimeout.current = setTimeout(() => setSaveState("idle"), 2000);
-      } catch { setSaveState("idle"); }
+      })();
     }, 1000);
   }, [projectFiles, entryFile, activeProjectFile, isProjectMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1473,7 +1515,7 @@ ${code}
     setProjectFiles({});
     setActiveProjectFile(null);
     setEntryFile(null);
-    try { localStorage.removeItem(KEY_PROJECT); } catch { /* ignore */ }
+    void deleteDraft(contentId);
   };
 
   // ── Pyodide worker ─────────────────────────────────────────────────────────
@@ -1649,6 +1691,7 @@ ${code}
         turtle: usesTurtle, pygame: usesPygame, pgzrun: usesPgzrun, matplotlib: usesMpl,
       });
       setResult({ stdout, stderr, exitCode: stderr ? 1 : 0, compileOutput: null, time: null, memory: null });
+      markBlockComplete();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       // The load fallback already toasted and switched to Server mode; don't also show a red banner.
@@ -1776,7 +1819,7 @@ ${code}
       });
       const data = await res.json() as RunResult & { error?: string };
       if (!res.ok) setError(data.error ?? "Execution failed.");
-      else setResult(data);
+      else { setResult(data); markBlockComplete(); }
     } catch {
       setError("Network error, could not reach execution service.");
     } finally {
@@ -1791,7 +1834,7 @@ ${code}
       closeProject();
     } else {
       setCode(starterCode);
-      try { localStorage.removeItem(KEY_CODE); } catch { /* ignore */ }
+      void deleteDraft(contentId);
     }
     setResult(null);
     setError(null);
@@ -1830,12 +1873,13 @@ ${code}
     setSaveState("saving");
     if (saveDebounce.current) clearTimeout(saveDebounce.current);
     saveDebounce.current = setTimeout(() => {
-      try {
-        localStorage.setItem(KEY_CODE, newCode);
+      void (async () => {
+        const ok = await putDraft(contentId, { code: newCode } as PlaygroundDraft);
+        if (!ok) { setSaveState("idle"); return; }
         setSaveState("saved");
         if (savedIndicatorTimeout.current) clearTimeout(savedIndicatorTimeout.current);
         savedIndicatorTimeout.current = setTimeout(() => setSaveState("idle"), 2000);
-      } catch { setSaveState("idle"); }
+      })();
     }, 1000);
 
     // Peer session sync (student only)

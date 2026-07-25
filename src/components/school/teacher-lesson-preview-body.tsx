@@ -38,8 +38,8 @@ export function TeacherLessonPreviewBody({
           <h2 className="mb-2 font-display text-sm font-semibold text-stone-900 dark:text-stone-100">
             {content.title}
           </h2>
-          {/* isCreator=false gives the runnable learner playground / interactive lab. No onLabComplete,
-              so finishing the lab fires no gate side-effects. */}
+          {/* isCreator=false gives the runnable learner playground / interactive lab. No onBlockComplete,
+              so a teacher running the block fires no completion gate side-effects. */}
           <ContentBody content={content} isCreator={false} userId={userId} programId={programId} moduleId={moduleId} />
         </section>
       ))}

@@ -5,7 +5,7 @@ import { FastForward, Pause, Play, RotateCcw, Trophy } from "lucide-react";
 import { LabSimulation, type LabSnapshot } from "@/lib/network-lab/engine";
 import type { Level, Packet, PlayerPacket } from "@/lib/network-lab/types";
 import { LabCanvas } from "./lab-canvas";
-import { PacketEditor } from "./packet-editor";
+import { PacketEditor, type PacketDraft } from "./packet-editor";
 
 /**
  * The playable Network Lab, a thin React shell over the headless engine (LabSimulation). A
@@ -40,7 +40,17 @@ function initialSnapshot(level: Level): LabSnapshot {
   };
 }
 
-export function NetworkLabGame({ level, onWin }: { level: Level; onWin?: () => void }) {
+export function NetworkLabGame({
+  level,
+  onWin,
+  initialDraft,
+  onDraftChange,
+}: {
+  level: Level;
+  onWin?: () => void;
+  initialDraft?: PacketDraft | null;
+  onDraftChange?: (draft: PacketDraft) => void;
+}) {
   const simRef = useRef<LabSimulation | null>(null);
   if (simRef.current === null) simRef.current = new LabSimulation(level);
 
@@ -218,7 +228,13 @@ export function NetworkLabGame({ level, onWin }: { level: Level; onWin?: () => v
       <div className="space-y-4 md:w-72 md:shrink-0">
         <section className="rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
           <h3 className="mb-3 font-semibold text-stone-800 dark:text-stone-100">Build a packet</h3>
-          <PacketEditor level={level} disabled={snap.won} onLaunch={onLaunch} />
+          <PacketEditor
+            level={level}
+            disabled={snap.won}
+            onLaunch={onLaunch}
+            initialDraft={initialDraft}
+            onDraftChange={onDraftChange}
+          />
         </section>
 
         <section className="rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
