@@ -13,6 +13,8 @@ type Props = {
   issuedAt: string;
   credentialId: string;
   initialTheme?: string;
+  /** School term certificates feature a few "catchy" completed lesson titles; B2C certs omit this. */
+  highlights?: string[];
 };
 
 /**
@@ -271,6 +273,7 @@ export function CertificatePrint({
   issuedAt,
   credentialId,
   initialTheme,
+  highlights,
 }: Props) {
   const date = new Date(issuedAt).toLocaleDateString("en-GB", {
     day: "numeric",
@@ -521,6 +524,21 @@ export function CertificatePrint({
               >
                 {programLevel}
               </span>
+
+              {highlights && highlights.length > 0 ? (
+                <p
+                  className="mt-3 max-w-[82%] text-[10px] leading-relaxed"
+                  style={{ color: t.metaText }}
+                >
+                  <span
+                    className="uppercase tracking-[0.16em]"
+                    style={{ color: t.metaLabel }}
+                  >
+                    Highlights&nbsp;&nbsp;
+                  </span>
+                  {highlights.join("  ·  ")}
+                </p>
+              ) : null}
             </div>
 
             {/* Bottom row: date / seal / issuer */}

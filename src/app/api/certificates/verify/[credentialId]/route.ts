@@ -18,18 +18,41 @@ export async function GET(
     },
   });
 
-  if (!certificate || certificate.status !== "APPROVED") {
-    return fail("Certificate not found or not yet approved.", 404);
+  if (certificate && certificate.status === "APPROVED") {
+    return ok({
+      certificate: {
+        kind: "b2c",
+        credentialId: certificate.credentialId,
+        recipientName: `${certificate.user.firstName} ${certificate.user.lastName}`,
+        program: certificate.program,
+        issuedAt: certificate.issuedAt,
+        approvedAt: certificate.approvedAt,
+        issuedBy: `${certificate.issuedBy.firstName} ${certificate.issuedBy.lastName}`,
+      },
+    });
   }
 
-  return ok({
-    certificate: {
-      credentialId: certificate.credentialId,
-      recipientName: `${certificate.user.firstName} ${certificate.user.lastName}`,
-      program: certificate.program,
-      issuedAt: certificate.issuedAt,
-      approvedAt: certificate.approvedAt,
-      issuedBy: `${certificate.issuedBy.firstName} ${certificate.issuedBy.lastName}`,
-    },
+  // A school term certificate. The pupil's name is only returned with recorded parental consent;
+  // otherwise the credential still verifies as authentic without naming the child.
+  const school = await prisma.schoolCertificate.findUnique({
+    where: { credentialId },
+    include: { school: { select: { name: true } } },
   });
+  if (school && school.status === "ISSUED") {
+    return ok({
+      certificate: {
+        kind: "school",
+        credentialId: school.credentialId,
+        recipientName: school.nameConsent ? school.pupilName : null,
+        school: school.school.name,
+        program: school.programTitle,
+        term: school.termNumber,
+        session: school.sessionLabel,
+        highlights: school.highlightLessons,
+        issuedAt: school.issuedAt,
+      },
+    });
+  }
+
+  return fail("Certificate not found or not yet approved.", 404);
 }
