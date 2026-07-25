@@ -193,7 +193,14 @@ export function NetworkLabGame({
         </div>
 
         {/* Objectives + flood meters */}
-        <div className="mt-3 space-y-2">
+        <div className="mt-3 space-y-2" role="group" aria-label="Objectives">
+          {/* Announced to screen readers as goals complete and on win (the dots/strike-through are
+              visual only). Polite so it does not interrupt, and it changes text each time so it fires. */}
+          <p className="sr-only" role="status" aria-live="polite">
+            {snap.won
+              ? "Level complete. Every objective met."
+              : `${done} of ${snap.triggers.length} objectives complete.`}
+          </p>
           {snap.triggers.map((t, i) => (
             <div key={i} className="flex items-center gap-2 text-sm">
               <span
@@ -207,6 +214,7 @@ export function NetworkLabGame({
                 className={t.completed ? "text-stone-500 line-through" : "text-stone-700 dark:text-stone-300"}
               >
                 {t.type === "flood" ? "Overwhelm" : "Deliver to"} {t.device}
+                <span className="sr-only">{t.completed ? ", completed" : ", not yet completed"}</span>
               </span>
             </div>
           ))}
