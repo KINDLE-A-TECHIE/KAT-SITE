@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { requireActiveSchool } from "@/lib/school";
 import { generateCredentialId } from "@/lib/certificate";
 import { isModuleComplete, buildCertificateSnapshot } from "@/lib/school-certificate";
+import { getLicensedTermNumbers } from "@/lib/school-license";
+import { termNumberForModule } from "@/lib/school-term";
 
 const issueSchema = z.object({
   userId: z.string().min(1),
@@ -70,7 +72,7 @@ export async function POST(request: Request) {
   // The certificate is for finishing THIS term, so resolve the module's program to check enrolment.
   const mod = await prisma.module.findUnique({
     where: { id: moduleId },
-    select: { version: { select: { curriculum: { select: { programId: true } } } } },
+    select: { sortOrder: true, version: { select: { curriculum: { select: { programId: true } } } } },
   });
   if (!mod) return fail("Module not found.", 404);
   const programId = mod.version.curriculum.programId;
@@ -87,6 +89,13 @@ export async function POST(request: Request) {
   });
   if (!enrollment?.schoolClassId || !enrollment.schoolClass) {
     return fail("This pupil is not enrolled in this school for that term.", 422);
+  }
+
+  // A school may only certify a term it actually LICENSED. Gate on an ACTIVE, in-window licence for
+  // this module's term in the class's session, the same term gate the learn path enforces.
+  const licensedTerms = await getLicensedTermNumbers(schoolId, enrollment.schoolClass.sessionLabel);
+  if (!licensedTerms.has(termNumberForModule(mod.sortOrder))) {
+    return fail("Your school does not hold an active licence for this term, so its certificate cannot be issued.", 403);
   }
 
   if (!(await isModuleComplete(userId, moduleId))) {
