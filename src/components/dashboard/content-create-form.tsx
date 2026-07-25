@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Code2, FileText, Link as LinkIcon, Network, Video, Youtube, Plus, X, Send } from "lucide-react";
+import { Code2, FileText, Link as LinkIcon, Network, Video, Youtube, Plus, X, Send, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -113,6 +113,60 @@ export function ContentCreateForm({
   const [labLevel, setLabLevel] = useState<string>(LAB_LEVELS[0]?.key ?? "");
   const [queue, setQueue] = useState<QueuedBlock[]>([]);
   const [busy, setBusy] = useState(false);
+  const [imgBusy, setImgBusy] = useState(false);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  // Insert text into the body at the cursor (or append if the field is not focused), then restore
+  // the caret just after what we inserted so the author can keep typing.
+  const insertIntoBody = (snippet: string) => {
+    const ta = bodyRef.current;
+    if (!ta) { setBody((b) => b + snippet); return; }
+    const start = ta.selectionStart ?? body.length;
+    const end = ta.selectionEnd ?? body.length;
+    const next = body.slice(0, start) + snippet + body.slice(end);
+    setBody(next);
+    requestAnimationFrame(() => {
+      ta.focus();
+      const caret = start + snippet.length;
+      ta.setSelectionRange(caret, caret);
+    });
+  };
+
+  const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+  const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // raw ceiling; the server compresses down to WebP
+
+  // Send the raw file to the server, which compresses it to WebP (the same sharp path avatars/logos
+  // use) and stores it on R2, then drop an <img> at the cursor. We store the image ourselves so a note
+  // never depends on an outside host, and a big photo is shrunk rather than rejected.
+  const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // let the same file be re-picked later
+    if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) { toast.error("Use a PNG, JPEG, GIF, or WebP image."); return; }
+    if (file.size > MAX_IMAGE_SIZE) { toast.error("Image too large (max 20 MB)."); return; }
+
+    setImgBusy(true);
+    try {
+      const res = await fetch(`/api/curriculum/lessons/${lessonId}/note-image`, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        toast.error(data.error ?? "Could not upload the image.");
+        return;
+      }
+      const { url } = await res.json() as { url: string };
+      insertIntoBody(`\n<img src="${url}" alt="">\n`);
+      toast.success("Image inserted and compressed. Add alt text describing it for accessibility.");
+    } catch {
+      toast.error("Network error while uploading the image.");
+    } finally {
+      setImgBusy(false);
+    }
+  };
 
   const resetForm = () => {
     setTitle("");
@@ -219,16 +273,41 @@ export function ContentCreateForm({
       {/* Body / URL / Code fields */}
       {tab === "RICH_TEXT" && (
         <div className="space-y-1.5">
-          <Label htmlFor="content-body" className="text-sm">Content (HTML or plain text)</Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="content-body" className="text-sm">Content (HTML or plain text)</Label>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/gif,image/webp"
+              className="hidden"
+              onChange={(e) => void onPickImage(e)}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={imgBusy}
+              className="h-7 gap-1.5 text-xs"
+            >
+              <ImagePlus className="h-3.5 w-3.5" />
+              {imgBusy ? "Uploading…" : "Insert image"}
+            </Button>
+          </div>
           <Textarea
             id="content-body"
+            ref={bodyRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder="Enter lesson content here. You can use HTML tags like <b>, <ul>, <li>, <p>, <h3>, etc."
             rows={8}
             className="font-mono text-sm"
           />
-          <p className="text-xs text-stone-400 dark:text-stone-500">Basic HTML is supported. Script tags will be stripped.</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500">
+            Basic HTML is supported. Inserted images are compressed and stored on KAT, and pupils can tap
+            one to zoom. Write math with TeX between dollar signs, e.g.{" "}
+            <code className="font-mono">$a^2 + b^2 = c^2$</code>. Script tags are stripped.
+          </p>
         </div>
       )}
 

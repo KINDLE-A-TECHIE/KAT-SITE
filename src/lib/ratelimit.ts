@@ -34,6 +34,9 @@ export const projectCreateLimiter = makeLimiter(10, "1 h", "kat:projects:create"
 /** File upload presigned URL: 30 per hour per user */
 export const projectUploadLimiter = makeLimiter(30, "1 h", "kat:projects:upload");
 
+/** Lesson note image upload presigned URL: 40 per hour per author */
+export const contentUploadLimiter = makeLimiter(40, "1 h", "kat:content:upload");
+
 /** Feedback submission: 60 per hour per user */
 export const projectFeedbackLimiter = makeLimiter(60, "1 h", "kat:projects:feedback");
 
