@@ -32,3 +32,14 @@ export async function deleteRemovedNoteImages(
   const removed = extractNoteImageKeys(before).filter((key) => !kept.has(key));
   await Promise.all(removed.map((key) => deleteR2Object(key).catch(() => undefined)));
 }
+
+/**
+ * Delete every note image referenced across a set of note bodies. Used when a lesson or module is
+ * deleted: its content rows are about to cascade away (which does not run the per-content DELETE), so
+ * the caller gathers the bodies first, then calls this. Best-effort, deduped across bodies.
+ */
+export async function deleteNoteImagesInBodies(bodies: (string | null | undefined)[]): Promise<void> {
+  const keys = new Set<string>();
+  for (const body of bodies) for (const key of extractNoteImageKeys(body)) keys.add(key);
+  await Promise.all([...keys].map((key) => deleteR2Object(key).catch(() => undefined)));
+}

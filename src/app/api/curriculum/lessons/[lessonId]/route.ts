@@ -3,6 +3,7 @@ import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkModuleLicenseForEnrollment } from "@/lib/school-license";
+import { deleteNoteImagesInBodies } from "@/lib/note-images";
 import { updateLessonSchema } from "@/lib/validators";
 
 interface Params { params: Promise<{ lessonId: string }> }
@@ -144,7 +145,12 @@ export async function DELETE(_req: Request, { params }: Params) {
   }
 
   const { lessonId } = await params;
+
+  // Gather the note-image keys before the delete cascades the content rows away, then reap them so a
+  // deleted lesson does not leave orphaned images on R2 (the per-content DELETE never runs on cascade).
+  const contents = await prisma.lessonContent.findMany({ where: { lessonId }, select: { body: true } });
   await prisma.lesson.delete({ where: { id: lessonId } });
+  await deleteNoteImagesInBodies(contents.map((c) => c.body));
 
   return ok({ deleted: true });
 }

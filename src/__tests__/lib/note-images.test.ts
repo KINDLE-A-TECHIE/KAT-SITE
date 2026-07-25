@@ -9,7 +9,7 @@ vi.mock("@/lib/r2", () => ({
   deleteR2Object,
 }));
 
-import { extractNoteImageKeys, deleteRemovedNoteImages } from "@/lib/note-images";
+import { extractNoteImageKeys, deleteRemovedNoteImages, deleteNoteImagesInBodies } from "@/lib/note-images";
 
 const noteImg = (id: string) => `https://cdn.example/lessons/L1/note-images/${id}.webp`;
 
@@ -70,5 +70,26 @@ describe("deleteRemovedNoteImages", () => {
   it("never throws when a delete fails", async () => {
     deleteR2Object.mockRejectedValueOnce(new Error("R2 down"));
     await expect(deleteRemovedNoteImages(`<img src="${noteImg("a")}">`, null)).resolves.toBeUndefined();
+  });
+});
+
+describe("deleteNoteImagesInBodies", () => {
+  it("deletes every note image across bodies, deduped", async () => {
+    await deleteNoteImagesInBodies([
+      `<img src="${noteImg("a")}">`,
+      `<img src="${noteImg("b")}"><img src="${noteImg("a")}">`, // a repeats across bodies
+      null,
+      `<p>no image</p>`,
+    ]);
+    expect(deleteR2Object).toHaveBeenCalledTimes(2);
+    expect(deleteR2Object.mock.calls.map((c) => c[0]).sort()).toEqual([
+      "lessons/L1/note-images/a.webp",
+      "lessons/L1/note-images/b.webp",
+    ]);
+  });
+
+  it("does nothing for an empty set", async () => {
+    await deleteNoteImagesInBodies([]);
+    expect(deleteR2Object).not.toHaveBeenCalled();
   });
 });
