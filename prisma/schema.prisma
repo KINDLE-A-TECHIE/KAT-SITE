@@ -78,6 +78,7 @@ model User {
   lessonContentsCreated                                    LessonContent[]          @relation("LessonContentCreator")
   lessonContentsReviewed                                   LessonContent[]          @relation("LessonContentReviewer")
   lessonProgress                                           LessonProgress[]
+  lessonBlockDrafts                                        LessonBlockDraft[]
   manualGrades                                             ManualGrade[]
   hostedMeetings                                           Meeting[]                @relation("MeetingHost")
   meetingParticipations                                    MeetingParticipant[]
@@ -958,9 +959,27 @@ model LessonContent {
   reviewedBy        User?               @relation("LessonContentReviewer", fields: [reviewedById], references: [id])
   peerSessions      PeerSession[]
   playgroundInvites PlaygroundInvite[]
+  blockDrafts       LessonBlockDraft[]
 
   @@index([lessonId, sortOrder])
   @@index([reviewStatus, createdAt])
+}
+
+// Per-learner working state for an interactive lesson block (code-playground code, network-lab
+// launcher setup, etc.). One row per (user, content), so a draft survives a device switch instead of
+// living in that browser's localStorage. `state` is opaque JSON owned by the block that wrote it.
+model LessonBlockDraft {
+  id        String        @id @default(cuid())
+  userId    String
+  contentId String
+  state     Json
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   LessonContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contentId])
+  @@index([userId])
 }
 
 model PeerSession {
