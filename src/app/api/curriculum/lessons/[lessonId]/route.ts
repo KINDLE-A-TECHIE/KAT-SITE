@@ -130,6 +130,7 @@ export async function PATCH(request: Request, { params }: Params) {
       ...(parsed.data.description !== undefined && { description: parsed.data.description }),
       ...(parsed.data.sortOrder !== undefined && { sortOrder: parsed.data.sortOrder }),
       ...(parsed.data.isSample !== undefined && { isSample: parsed.data.isSample }),
+      ...(parsed.data.certHighlight !== undefined && { certHighlight: parsed.data.certHighlight }),
     },
   });
 

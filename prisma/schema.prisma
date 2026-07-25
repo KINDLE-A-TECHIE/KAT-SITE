@@ -66,6 +66,8 @@ model User {
   certificatesApproved                                     Certificate[]            @relation("CertificateApprover")
   certificatesIssued                                       Certificate[]            @relation("CertificateIssuer")
   certificatesEarned                                       Certificate[]            @relation("CertificateRecipient")
+  schoolCertificatesIssued                                 SchoolCertificate[]      @relation("SchoolCertIssuer")
+  schoolCertificatesEarned                                 SchoolCertificate[]      @relation("SchoolCertRecipient")
   createdChallenges                                        Challenge[]              @relation("ChallengeCreator")
   gradedChallengeSubmissions                               ChallengeSubmission[]    @relation("ChallengeGrader")
   challengeSubmissions                                     ChallengeSubmission[]    @relation("ChallengeSubmitter")
@@ -849,6 +851,7 @@ model Module {
   version         CurriculumVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
   gateStatuses    ModuleGateStatus[]
   SchoolClassUnit SchoolClassUnit[]
+  schoolCertificates SchoolCertificate[]
 
   @@index([versionId, sortOrder])
 }
@@ -887,6 +890,9 @@ model Lesson {
   // A free taster: school STAFF may preview this lesson even when its term is not licensed, so a
   // school can evaluate a term before buying it. Pupils are never shown samples of unlicensed terms.
   isSample    Boolean          @default(false)
+  // A marquee lesson an author flags to feature on a school completion certificate. The cert snapshots
+  // the titles of up to a few completed highlight lessons ("This term Ada built: a Maze Game, ...").
+  certHighlight Boolean        @default(false)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   module      Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
@@ -1308,6 +1314,7 @@ model School {
   licenses       SchoolLicense[]
   memberships    SchoolMembership[]
   webhooks       SchoolWebhook[]
+  certificates   SchoolCertificate[]
 }
 
 model SchoolAllowedOrigin {
@@ -1358,6 +1365,7 @@ model SchoolClass {
   teacher               User?                @relation(fields: [teacherId], references: [id])
   teacherTerms SchoolClassTeacher[]
   units    SchoolClassUnit[]
+  certificates SchoolCertificate[]
 
   @@index([programId])
   @@index([schoolId])
@@ -1454,6 +1462,46 @@ model SchoolMembership {
 
   @@unique([schoolId, userId])
   @@index([userId])
+}
+
+// A school completion certificate for one pupil finishing one MODULE (a term). Term-scoped, not
+// program-scoped, because schools license term-by-term and a program-only credential would strand a
+// pupil whose school never bought the final term. Everything a certificate shows is SNAPSHOTTED here at
+// issue time so it stays an accurate historical record even after the curriculum is edited. Separate
+// from the B2C `Certificate` model on purpose (its @@unique([userId, programId]) is load-bearing).
+model SchoolCertificate {
+  id            String   @id @default(cuid())
+  credentialId  String   @unique // crypto-random public verification id (generateCredentialId)
+  schoolId      String
+  userId        String // the pupil (a global STUDENT whose enrolment carries this schoolId)
+  schoolClassId String
+  moduleId      String // the term/module certified
+
+  // Immutable snapshot taken at issue.
+  pupilName        String
+  programTitle     String
+  moduleTitle      String
+  sessionLabel     String
+  termNumber       Int
+  highlightLessons Json // string[]: titles of the completed highlight lessons, in learning order
+
+  // Parental consent to show the pupil's NAME on the public verification page. Lesson titles are
+  // curriculum (not PII) and always show; without consent the page verifies but hides the child's name.
+  nameConsent Boolean                 @default(false)
+  status      SchoolCertificateStatus @default(ISSUED)
+  issuedById  String
+  issuedAt    DateTime                @default(now())
+  revokedAt   DateTime?
+
+  school      School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user        User        @relation("SchoolCertRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  schoolClass SchoolClass @relation(fields: [schoolClassId], references: [id], onDelete: Cascade)
+  module      Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  issuedBy    User        @relation("SchoolCertIssuer", fields: [issuedById], references: [id])
+
+  @@unique([userId, moduleId])
+  @@index([schoolId])
+  @@index([schoolClassId])
 }
 
 model SchoolWebhook {
@@ -1668,6 +1716,11 @@ enum CertificateStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum SchoolCertificateStatus {
+  ISSUED
+  REVOKED
 }
 
 enum TestimonialStatus {

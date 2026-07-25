@@ -366,6 +366,8 @@ export const updateLessonSchema = z.object({
   sortOrder: z.number().int().min(0).optional(),
   /** Free taster: school staff may preview this lesson on an unlicensed term. */
   isSample: z.boolean().optional(),
+  /** Author flag: feature this lesson's title on a school completion certificate. */
+  certHighlight: z.boolean().optional(),
 });
 
 export const createLessonContentSchema = z.object({
