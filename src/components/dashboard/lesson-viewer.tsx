@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ExternalLink,
+  ArrowLeft, ArrowRight, Award, BookOpen, CheckCircle2, ExternalLink,
   FileText, Link as LinkIcon, Network, Plus, Sparkles,
   Terminal, Video, Youtube, XCircle,
 } from "lucide-react";
@@ -39,6 +39,7 @@ type LessonData = {
   title: string;
   description: string | null;
   isSample: boolean;
+  certHighlight: boolean;
   contents: ContentItem[];
   module: {
     id: string;
@@ -352,6 +353,8 @@ export function LessonViewer({
   const [showAddContent, setShowAddContent] = useState(false);
   const [isSample, setIsSample] = useState(false);
   const [sampleBusy, setSampleBusy] = useState(false);
+  const [certHighlight, setCertHighlight] = useState(false);
+  const [certBusy, setCertBusy] = useState(false);
   const completionFired = useRef(false);
 
   // The learner's position. step === contents.length is the completion step.
@@ -375,6 +378,7 @@ export function LessonViewer({
         setNextLesson(data.nextLesson);
         setIsCompleted(data.isCompleted);
         setIsSample(data.lesson.isSample);
+        setCertHighlight(data.lesson.certHighlight);
         completionFired.current = data.isCompleted; // don't re-fire if already done
       }
     } catch { /* ignore */ }
@@ -427,6 +431,30 @@ export function LessonViewer({
       toast.error("Could not update the sample setting.");
     } finally {
       setSampleBusy(false);
+    }
+  };
+
+  // Certificate-highlight toggle (creators only). Flags this lesson as one of the "catchy" ones to
+  // feature on a school completion certificate.
+  const toggleCertHighlight = async () => {
+    const next = !certHighlight;
+    setCertBusy(true);
+    setCertHighlight(next); // optimistic
+    try {
+      const res = await fetch(`/api/curriculum/lessons/${lessonId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ certHighlight: next }),
+      });
+      if (!res.ok) {
+        setCertHighlight(!next);
+        toast.error("Could not update the certificate setting.");
+      }
+    } catch {
+      setCertHighlight(!next);
+      toast.error("Could not update the certificate setting.");
+    } finally {
+      setCertBusy(false);
     }
   };
 
@@ -514,6 +542,25 @@ export function LessonViewer({
           </button>
           <p className="mt-1 text-[11px] text-stone-400 dark:text-stone-500">
             A sample is previewable by a school&apos;s staff before they license its term. Pupils never see samples.
+          </p>
+
+          {/* Certificate highlight: feature this lesson's title on a school completion certificate. */}
+          <button
+            type="button"
+            onClick={toggleCertHighlight}
+            disabled={certBusy}
+            aria-pressed={certHighlight}
+            className={`mt-3 inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition disabled:opacity-60 ${
+              certHighlight
+                ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400"
+                : "border-stone-200 text-stone-500 hover:bg-stone-50 dark:border-stone-800 dark:text-stone-400 dark:hover:bg-stone-800/40"
+            }`}
+          >
+            <Award className="h-3.5 w-3.5" />
+            {certHighlight ? "Certificate highlight" : "Feature on certificate"}
+          </button>
+          <p className="mt-1 text-[11px] text-stone-400 dark:text-stone-500">
+            A few flagged lessons appear as highlights on a school completion certificate. Pick the catchy ones.
           </p>
         </header>
 

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
+  Award,
   Building2,
   BookOpen,
   Code2,
@@ -27,6 +28,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/teachers", label: "Teachers", icon: Users },
   { href: "/admin/reports", label: "Reports", icon: FileBarChart },
+  { href: "/admin/certificates", label: "Certificates", icon: Award },
   { href: "/admin/billing", label: "Billing & seats", icon: ReceiptText },
   { href: "/admin/api", label: "API keys", icon: KeyRound },
   { href: "/admin/embed", label: "Embed", icon: Code2 },

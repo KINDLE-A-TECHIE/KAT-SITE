@@ -298,8 +298,9 @@ model Program {
   audience        CourseAudience @default(B2C)
   nerdcLevel      NerdcLevel?
   strand          Strand?
-  assessments     Assessment[]
-  certificates    Certificate[]
+  assessments        Assessment[]
+  certificates       Certificate[]
+  schoolCertificates SchoolCertificate[]
   challenges      Challenge[]
   cohorts         Cohort[]
   curriculum      Curriculum?
@@ -1470,20 +1471,26 @@ model SchoolMembership {
 // issue time so it stays an accurate historical record even after the curriculum is edited. Separate
 // from the B2C `Certificate` model on purpose (its @@unique([userId, programId]) is load-bearing).
 model SchoolCertificate {
-  id            String   @id @default(cuid())
-  credentialId  String   @unique // crypto-random public verification id (generateCredentialId)
+  id            String                @id @default(cuid())
+  credentialId  String                @unique // crypto-random public verification id (generateCredentialId)
+  kind          SchoolCertificateKind @default(TERM)
   schoolId      String
   userId        String // the pupil (a global STUDENT whose enrolment carries this schoolId)
   schoolClassId String
-  moduleId      String // the term/module certified
+  // The term/module certified. NULL for a SESSION (year) capstone, which spans the whole programme.
+  moduleId      String?
+  // The programme a SESSION capstone certifies. NULL for a TERM certificate (it is per-module instead).
+  programId     String?
 
   // Immutable snapshot taken at issue.
   pupilName        String
   programTitle     String
-  moduleTitle      String
+  // The module (term) title. NULL for a SESSION capstone.
+  moduleTitle      String?
   sessionLabel     String
-  termNumber       Int
-  highlightLessons Json // string[]: titles of the completed highlight lessons, in learning order
+  // The term number. NULL for a SESSION capstone (it is the whole year).
+  termNumber       Int?
+  highlightLessons Json // string[]: highlight lesson titles (TERM) or term titles (SESSION), in order
 
   // Parental consent to show the pupil's NAME on the public verification page. Lesson titles are
   // curriculum (not PII) and always show; without consent the page verifies but hides the child's name.
@@ -1496,10 +1503,14 @@ model SchoolCertificate {
   school      School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   user        User        @relation("SchoolCertRecipient", fields: [userId], references: [id], onDelete: Cascade)
   schoolClass SchoolClass @relation(fields: [schoolClassId], references: [id], onDelete: Cascade)
-  module      Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  module      Module?     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  program     Program?    @relation(fields: [programId], references: [id], onDelete: Cascade)
   issuedBy    User        @relation("SchoolCertIssuer", fields: [issuedById], references: [id])
 
+  // Postgres treats NULLs as distinct, so each key dedups its own kind: TERM by (user, module) with a
+  // set moduleId, SESSION by (user, programme) with a set programId; the other column is NULL and free.
   @@unique([userId, moduleId])
+  @@unique([userId, programId])
   @@index([schoolId])
   @@index([schoolClassId])
 }
@@ -1721,6 +1732,11 @@ enum CertificateStatus {
 enum SchoolCertificateStatus {
   ISSUED
   REVOKED
+}
+
+enum SchoolCertificateKind {
+  TERM // one completed module (a term)
+  SESSION // the year capstone: all of a programme's terms completed
 }
 
 enum TestimonialStatus {

@@ -79,3 +79,61 @@ export async function buildCertificateSnapshot(
     highlightLessons: pickHighlightTitles(mod.lessons, completedIds),
   };
 }
+
+export type CapstoneSnapshot = {
+  programTitle: string;
+  termTitles: string[];
+};
+
+/**
+ * Whether a pupil has earned the YEAR capstone for a programme: they hold an ISSUED term certificate
+ * for every module in it. Built on the term certificates (each of which was already licence- and
+ * completion-gated at issue), so the capstone inherits that discipline rather than re-checking it.
+ * Returns the module count and how many the pupil holds, so the caller can show progress.
+ */
+export async function getCapstoneProgress(
+  userId: string,
+  programId: string,
+): Promise<{ moduleCount: number; earned: number; eligible: boolean }> {
+  const moduleCount = await prisma.module.count({
+    where: { version: { curriculum: { programId } } },
+  });
+  if (moduleCount === 0) return { moduleCount: 0, earned: 0, eligible: false };
+
+  const earned = await prisma.schoolCertificate.count({
+    where: {
+      userId,
+      kind: "TERM",
+      status: "ISSUED",
+      module: { version: { curriculum: { programId } } },
+    },
+  });
+
+  return { moduleCount, earned, eligible: earned >= moduleCount };
+}
+
+/**
+ * Snapshot for a year capstone, sourced from the pupil's own term certificates (the accurate record of
+ * what they were certified for): the programme title and the term titles in order, which become the
+ * capstone's "highlights", the arc of the year rather than individual lessons.
+ */
+export async function buildCapstoneSnapshot(
+  userId: string,
+  programId: string,
+): Promise<CapstoneSnapshot | null> {
+  const termCerts = await prisma.schoolCertificate.findMany({
+    where: {
+      userId,
+      kind: "TERM",
+      status: "ISSUED",
+      module: { version: { curriculum: { programId } } },
+    },
+    orderBy: { termNumber: "asc" },
+    select: { programTitle: true, moduleTitle: true },
+  });
+  if (termCerts.length === 0) return null;
+  return {
+    programTitle: termCerts[0].programTitle,
+    termTitles: termCerts.map((c) => c.moduleTitle ?? "").filter(Boolean),
+  };
+}

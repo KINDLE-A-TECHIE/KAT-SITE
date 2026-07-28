@@ -24,6 +24,7 @@ function guardFail(error: unknown) {
 const LIST_SELECT = {
   id: true,
   credentialId: true,
+  kind: true,
   moduleId: true,
   moduleTitle: true,
   programTitle: true,

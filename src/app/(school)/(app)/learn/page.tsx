@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { ensureSchoolStudent } from "@/lib/school";
 import { LearnPanel } from "@/components/school/learn-panel";
+import { MyCertificates } from "@/components/school/my-certificates";
 
 /**
  * Student-inside-a-school shell.
@@ -21,6 +22,7 @@ export default async function SchoolLearnPage() {
 
   return (
     <section className="space-y-6">
+      <MyCertificates />
       <LearnPanel />
     </section>
   );

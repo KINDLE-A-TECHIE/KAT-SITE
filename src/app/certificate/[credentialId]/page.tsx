@@ -62,10 +62,14 @@ async function resolveCertificate(credentialId: string): Promise<ResolvedCertifi
     const highlights = Array.isArray(school.highlightLessons)
       ? (school.highlightLessons as unknown[]).filter((x): x is string => typeof x === "string")
       : [];
+    const chip =
+      school.kind === "SESSION" || school.termNumber === null
+        ? `Full year · ${school.sessionLabel}`
+        : `Term ${school.termNumber} · ${school.sessionLabel}`;
     return {
       recipientName: named ? school.pupilName : `A pupil at ${school.school.name}`,
       programName: school.programTitle,
-      programLevel: `Term ${school.termNumber} · ${school.sessionLabel}`,
+      programLevel: chip,
       issuedBy: school.school.name,
       issuedAt: school.issuedAt.toISOString(),
       credentialId: school.credentialId,
