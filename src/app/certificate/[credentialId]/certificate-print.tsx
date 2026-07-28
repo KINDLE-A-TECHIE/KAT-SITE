@@ -88,7 +88,7 @@ const THEMES: Record<string, Theme> = {
     chipText: CLAY,
     footerBg: "#fafaf9",
     footerText: "#78716c",
-    logoWell: PAPER,
+    logoWell: "transparent",
   },
   midnight: {
     id: "midnight",
@@ -161,7 +161,7 @@ const THEMES: Record<string, Theme> = {
     footerBg: `${INK}0a`,
     footerText: "#8c8378",
     topBand: SUN,
-    logoWell: "#ffffff",
+    logoWell: "transparent",
   },
   forest: {
     id: "forest",
@@ -209,7 +209,7 @@ const THEMES: Record<string, Theme> = {
     chipText: "#8a6a2f",
     footerBg: `${INK}0a`,
     footerText: "#8c8378",
-    logoWell: "#ffffff",
+    logoWell: "transparent",
   },
   mono: {
     id: "mono",
@@ -233,7 +233,7 @@ const THEMES: Record<string, Theme> = {
     chipText: INK,
     footerBg: "#fafaf9",
     footerText: "#78716c",
-    logoWell: "#fafaf9",
+    logoWell: "transparent",
   },
   flame: {
     id: "flame",
@@ -258,7 +258,7 @@ const THEMES: Record<string, Theme> = {
     footerBg: "#fafaf9",
     footerText: "#78716c",
     sideBand: CLAY,
-    logoWell: PAPER,
+    logoWell: "transparent",
   },
 };
 
