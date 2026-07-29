@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { r2PublicUrl } from "@/lib/r2";
 import { CertificatePrint } from "./certificate-print";
 
 type Props = {
@@ -25,6 +26,9 @@ type ResolvedCertificate = {
   issuedAt: string;
   credentialId: string;
   highlights?: string[];
+  schoolLogoUrl?: string | null;
+  brandName?: string;
+  verifiedByKat?: boolean;
   // For metadata: a school pupil's name is only shown with recorded parental consent.
   metaName: string | null;
 };
@@ -52,7 +56,7 @@ async function resolveCertificate(credentialId: string): Promise<ResolvedCertifi
 
   const school = await prisma.schoolCertificate.findUnique({
     where: { credentialId },
-    include: { school: { select: { name: true } } },
+    include: { school: { select: { name: true, logoKey: true } } },
   });
   if (school && school.status === "ISSUED") {
     // Minors' data: the pupil's name only appears with recorded parental consent. Without it the
@@ -62,10 +66,20 @@ async function resolveCertificate(credentialId: string): Promise<ResolvedCertifi
     const highlights = Array.isArray(school.highlightLessons)
       ? (school.highlightLessons as unknown[]).filter((x): x is string => typeof x === "string")
       : [];
-    const chip =
-      school.kind === "SESSION" || school.termNumber === null
-        ? `Full year · ${school.sessionLabel}`
-        : `Term ${school.termNumber} · ${school.sessionLabel}`;
+    const isCapstone = school.kind === "SESSION" || school.termNumber === null;
+    const chip = isCapstone
+      ? `Full year · ${school.sessionLabel}`
+      : `Term ${school.termNumber} · ${school.sessionLabel}`;
+    // A TERM certificate is the school's own recognition: its logo and name carry the certificate, with
+    // KAT named only as the verifier. The YEAR capstone is the platform-endorsed milestone, so it keeps
+    // the KAT mark (schoolLogoUrl/brandName left unset) with the school still named as the authoriser.
+    const schoolBrand = isCapstone
+      ? {}
+      : {
+          schoolLogoUrl: school.school.logoKey ? r2PublicUrl(school.school.logoKey) : null,
+          brandName: school.school.name,
+          verifiedByKat: true,
+        };
     return {
       recipientName: named ? school.pupilName : `A pupil at ${school.school.name}`,
       programName: school.programTitle,
@@ -74,6 +88,7 @@ async function resolveCertificate(credentialId: string): Promise<ResolvedCertifi
       issuedAt: school.issuedAt.toISOString(),
       credentialId: school.credentialId,
       highlights,
+      ...schoolBrand,
       metaName: named ? school.pupilName : null,
     };
   }
@@ -108,6 +123,9 @@ export default async function CertificatePage({ params, searchParams }: Props) {
       issuedAt={cert.issuedAt}
       credentialId={cert.credentialId}
       highlights={cert.highlights}
+      schoolLogoUrl={cert.schoolLogoUrl}
+      brandName={cert.brandName}
+      verifiedByKat={cert.verifiedByKat}
       initialTheme={theme}
     />
   );

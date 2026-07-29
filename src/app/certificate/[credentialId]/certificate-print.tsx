@@ -15,6 +15,12 @@ type Props = {
   initialTheme?: string;
   /** School term certificates feature a few "catchy" completed lesson titles; B2C certs omit this. */
   highlights?: string[];
+  /** School term certificates carry the SCHOOL's brand: its logo (if any) and name in place of the KAT
+   *  mark, with KAT named only as the verifier in the footer. B2C certs and the year capstone leave both
+   *  unset and keep the KAT mark. */
+  schoolLogoUrl?: string | null;
+  brandName?: string;
+  verifiedByKat?: boolean;
 };
 
 /**
@@ -274,6 +280,9 @@ export function CertificatePrint({
   credentialId,
   initialTheme,
   highlights,
+  schoolLogoUrl,
+  brandName,
+  verifiedByKat,
 }: Props) {
   const date = new Date(issuedAt).toLocaleDateString("en-GB", {
     day: "numeric",
@@ -456,14 +465,35 @@ export function CertificatePrint({
 
           {/* Content */}
           <div className="absolute inset-0 flex flex-col items-center justify-between px-14 py-10 text-center">
-            {/* Header: logo + wordmark */}
+            {/* Header: emblem + eyebrow. A school term certificate shows the SCHOOL's logo (and, when it
+                has none, just its name) in place of the KAT mark; B2C certs and the year capstone keep the
+                KAT mark. The logo sits in the theme's well (transparent on light themes, so no white box). */}
             <div className="flex flex-col items-center gap-2">
-              <div
-                className="flex items-center justify-center rounded-lg p-1.5"
-                style={{ backgroundColor: t.logoWell }}
-              >
-                <Image src="/kindle-a-techie.svg" alt="KAT Learning" width={34} height={34} />
-              </div>
+              {schoolLogoUrl ? (
+                <div
+                  className="flex items-center justify-center rounded-lg p-1.5"
+                  style={{ backgroundColor: t.logoWell }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- remote R2 logo, print-reliable */}
+                  <img
+                    src={schoolLogoUrl}
+                    alt={brandName ? `${brandName} logo` : "School logo"}
+                    className="h-[34px] w-[34px] object-contain"
+                  />
+                </div>
+              ) : brandName ? null : (
+                <div
+                  className="flex items-center justify-center rounded-lg p-1.5"
+                  style={{ backgroundColor: t.logoWell }}
+                >
+                  <Image src="/kindle-a-techie.svg" alt="KAT Learning" width={34} height={34} />
+                </div>
+              )}
+              {brandName ? (
+                <p className="font-semibold" style={{ color: t.programText, fontSize: "0.95rem" }}>
+                  {brandName}
+                </p>
+              ) : null}
               <p
                 className="font-mono text-[9px] font-medium uppercase tracking-[0.32em]"
                 style={{ color: t.eyebrow }}
@@ -577,11 +607,20 @@ export function CertificatePrint({
                 </div>
               </div>
 
-              {/* Credential footer: the trust line */}
+              {/* Credential footer: the trust line. When the KAT mark is not on the certificate face (a
+                  school term certificate), KAT is named here as the verifier so the trust anchor is explicit. */}
               <div
                 className="mx-auto mt-4 inline-flex max-w-full items-center gap-1.5 rounded-full px-4 py-1"
                 style={{ backgroundColor: t.footerBg }}
               >
+                {verifiedByKat ? (
+                  <>
+                    <p className="text-[8px] font-medium uppercase tracking-[0.12em]" style={{ color: t.footerText }}>
+                      Verified by KAT Learning
+                    </p>
+                    <span style={{ color: t.footerText }}>·</span>
+                  </>
+                ) : null}
                 <p className="font-mono text-[8.5px]" style={{ color: t.footerText }}>
                   {credentialId}
                 </p>
