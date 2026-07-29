@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Printer, Sparkles } from "lucide-react";
 import { ContentReviewStatus, SchoolRole } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { requireActiveSchool } from "@/lib/school";
@@ -119,6 +119,13 @@ export default async function TeacherLessonPreviewPage({
           {lesson.title}
         </h1>
         <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{lesson.module.title}</p>
+        <Link
+          href={`/teach/${classId}/lessons/${lessonId}/worksheet`}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 dark:border-stone-800 dark:text-stone-300 dark:hover:bg-stone-800/40"
+        >
+          <Printer className="size-3.5" />
+          Printable worksheet
+        </Link>
       </div>
 
       <TeacherLessonPreviewBody
