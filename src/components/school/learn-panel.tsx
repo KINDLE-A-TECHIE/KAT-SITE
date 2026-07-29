@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { SaveOfflineButton } from "@/components/school/save-offline-button";
 
 type Gates = {
   assessmentGate: string;
@@ -185,32 +186,39 @@ export function LearnPanel() {
                 {m.lessons.length === 0 ? (
                   <p className="text-sm text-stone-400">No lessons in this unit yet.</p>
                 ) : (
-                  <ul className="divide-y divide-stone-100 dark:divide-stone-800">
-                    {m.lessons.map((l) => (
-                      <li key={l.id}>
-                        <Link
-                          href={`/learn/lessons/${l.id}`}
-                          className="flex items-center gap-3 py-2.5 text-sm transition hover:text-orange-700 dark:hover:text-orange-400"
-                        >
-                          {l.completed ? (
-                            <Check className="size-4 shrink-0 text-emerald-600" />
-                          ) : (
-                            <Circle className="size-4 shrink-0 text-stone-300 dark:text-stone-600" />
-                          )}
-                          <span
-                            className={
-                              l.completed
-                                ? "text-stone-500 line-through dark:text-stone-400"
-                                : "text-stone-800 dark:text-stone-200"
-                            }
+                  <>
+                    <ul className="divide-y divide-stone-100 dark:divide-stone-800">
+                      {m.lessons.map((l) => (
+                        <li key={l.id}>
+                          <Link
+                            href={`/learn/lessons/${l.id}`}
+                            className="flex items-center gap-3 py-2.5 text-sm transition hover:text-orange-700 dark:hover:text-orange-400"
                           >
-                            {l.title}
-                          </span>
-                          <BookOpen className="ml-auto size-3.5 shrink-0 text-stone-300 dark:text-stone-600" />
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
+                            {l.completed ? (
+                              <Check className="size-4 shrink-0 text-emerald-600" />
+                            ) : (
+                              <Circle className="size-4 shrink-0 text-stone-300 dark:text-stone-600" />
+                            )}
+                            <span
+                              className={
+                                l.completed
+                                  ? "text-stone-500 line-through dark:text-stone-400"
+                                  : "text-stone-800 dark:text-stone-200"
+                              }
+                            >
+                              {l.title}
+                            </span>
+                            <BookOpen className="ml-auto size-3.5 shrink-0 text-stone-300 dark:text-stone-600" />
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                    {/* Save the whole unit for reading during a power or network outage (Nigeria context). */}
+                    <div className="flex items-center justify-between gap-3 border-t border-stone-100 pt-3 dark:border-stone-800">
+                      <p className="text-xs text-stone-400">Keep this unit readable when the power or internet is out.</p>
+                      <SaveOfflineButton moduleId={m.id} lessonIds={m.lessons.map((l) => l.id)} />
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>

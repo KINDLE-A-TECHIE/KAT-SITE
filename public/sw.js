@@ -49,8 +49,32 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Pull image URLs out of a cached lesson-content API response so a saved unit shows its pictures
+// offline. The lesson GET returns { lesson: { contents: [{ type, body }] } }; RICH_TEXT bodies hold
+// the <img> tags. Only http(s) URLs (R2/absolute) are collected; data: URIs are already inline.
+async function imageUrlsFromLessonResponse(res) {
+  try {
+    const data = await res.clone().json();
+    const urls = new Set();
+    for (const c of data?.lesson?.contents || []) {
+      if (c.type === "RICH_TEXT" && typeof c.body === "string") {
+        const re = /<img[^>]+src=["']([^"']+)["']/gi;
+        let m;
+        while ((m = re.exec(c.body))) {
+          if (/^https?:\/\//i.test(m[1])) urls.add(m[1]);
+        }
+      }
+    }
+    return [...urls];
+  } catch {
+    return [];
+  }
+}
+
 // The app can ask the SW to pre-download content for a unit so it reads offline later. The page posts
-// { type: "PRECACHE", unitId, apiUrls: [...], imageUrls: [...] }; we warm the API and image caches.
+// { type: "PRECACHE", unitId, apiUrls: [...] }; the SW fetches each lesson API (warming the API cache),
+// discovers the images inside those lessons, and warms the image cache too. Doing the work here, not
+// in the page, keeps a single code path and means a slow/cold route never strands the page mid-loop.
 self.addEventListener("message", (event) => {
   const data = event.data;
   if (!data || data.type !== "PRECACHE") return;
@@ -58,21 +82,32 @@ self.addEventListener("message", (event) => {
     (async () => {
       const apiCache = await caches.open(API_CACHE);
       const imgCache = await caches.open(IMAGE_CACHE);
-      await Promise.all([
-        ...(data.apiUrls || []).map((u) =>
-          fetch(u, { credentials: "include" })
-            .then((res) => (res.ok ? apiCache.put(u, res.clone()) : null))
-            .catch(() => null),
-        ),
-        ...(data.imageUrls || []).map((u) =>
+
+      // Fetch + cache each lesson API, collecting the images referenced inside.
+      const imageUrls = new Set();
+      await Promise.all(
+        (data.apiUrls || []).map(async (u) => {
+          try {
+            const res = await fetch(u, { credentials: "include" });
+            if (!res.ok) return;
+            await apiCache.put(u, res.clone());
+            for (const img of await imageUrlsFromLessonResponse(res)) imageUrls.add(img);
+          } catch { /* one lesson failing must not fail the whole save */ }
+        }),
+      );
+
+      // Warm the image cache (cross-origin R2 images come back opaque under no-cors, still cacheable).
+      await Promise.all(
+        [...imageUrls].map((u) =>
           fetch(u, { mode: "no-cors" })
             .then((res) => (res.ok || res.type === "opaque" ? imgCache.put(u, res.clone()) : null))
             .catch(() => null),
         ),
-      ]);
+      );
+
       await trimCache(API_CACHE, API_CACHE_LIMIT);
       await trimCache(IMAGE_CACHE, IMAGE_CACHE_LIMIT);
-      // Tell the requesting client we are done, so it can flip its "downloaded" state.
+      // Tell the requesting client we are done, so it can flip its "saved" state.
       if (event.source) event.source.postMessage({ type: "PRECACHE_DONE", unitId: data.unitId });
     })(),
   );

@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SignOutButton } from "@/components/sign-out-button";
+import { ConnectivityBanner } from "@/components/pwa/connectivity-banner";
 
 type NavItem = { href: string; label: string; icon: typeof LayoutDashboard };
 
@@ -206,6 +207,9 @@ export function SchoolShell({
           {children}
         </div>
       </div>
+
+      {/* Offline indicator + completion re-sync, for the unstable-power/connectivity setting. */}
+      <ConnectivityBanner />
     </div>
   );
 }

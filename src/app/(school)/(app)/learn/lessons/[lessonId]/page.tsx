@@ -73,6 +73,9 @@ export default async function SchoolLessonPage({
         userId={session!.user.id}
         backHref="/learn"
         lessonBasePath="/learn/lessons"
+        // Faint per-pupil name overlay: deterrence against sharing/leaking the content. Shown only to
+        // the pupil on their own screen, never sent anywhere.
+        watermark={`${session!.user.firstName} ${session!.user.lastName}`.trim()}
       />
     </section>
   );

@@ -18,6 +18,9 @@ import { ContentCreateForm } from "@/components/dashboard/content-create-form";
 import { CodePlaygroundBlock } from "@/components/dashboard/code-playground-block";
 import { NetworkLabBlock } from "@/components/network-lab/network-lab-block";
 import { LessonSlides } from "@/components/dashboard/lesson-slides";
+import { LessonWatermark } from "@/components/dashboard/lesson-watermark";
+import { queueCompletion, flushCompletions } from "@/lib/offline-completions";
+import { flushDrafts } from "@/lib/lesson-block-draft";
 
 export type ContentItem = {
   id: string;
@@ -336,6 +339,9 @@ export function LessonViewer({
   // server component, which cannot pass functions.
   backHref = `/dashboard/curriculum/${programId}`,
   lessonBasePath = `/dashboard/curriculum/${programId}/lessons`,
+  // When set (a school pupil), a faint tiled name overlay is drawn across the lesson content so a
+  // leaked screenshot or photo traces back to the pupil. Creators/teachers never get one.
+  watermark,
 }: {
   lessonId: string;
   programId: string;
@@ -343,6 +349,7 @@ export function LessonViewer({
   userId?: string;
   backHref?: string;
   lessonBasePath?: string;
+  watermark?: string;
 }) {
   const router = useRouter();
   const [lesson, setLesson] = useState<LessonData | null>(null);
@@ -407,8 +414,26 @@ export function LessonViewer({
           });
         }
       }
-    } catch { /* ignore */ }
+    } catch {
+      // Offline (or the network dropped mid-request): a power/connectivity outage must not lose the
+      // completion. Record it, show the lesson done now, and replay it when the connection returns.
+      queueCompletion(lessonId);
+      setIsCompleted(true);
+      toast.success("Saved offline. This will sync when you're back online.", { duration: 4000 });
+    }
   };
+
+  // Replay anything queued during an earlier outage: completions AND interactive-block drafts (code
+  // playground / network lab render inside this viewer). Once on open, and whenever the browser reports
+  // the connection is back. This is what gives B2C a live reconnect sync (it has no school banner). Both
+  // are idempotent server-side and no-op when nothing is queued.
+  useEffect(() => {
+    void flushCompletions();
+    void flushDrafts();
+    const onOnline = () => { void flushCompletions(); void flushDrafts(); };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, []);
 
   // Sample toggle (creators only). A sample lesson is previewable by a school's staff on a term they
   // have not licensed yet, so they can evaluate it before buying. Pupils never see samples.
@@ -653,7 +678,8 @@ export function LessonViewer({
   }
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-5xl flex-col">
+    <div className="relative mx-auto flex min-h-[calc(100vh-8rem)] max-w-5xl flex-col">
+      {watermark ? <LessonWatermark label={watermark} /> : null}
       {/* Slim sticky header: where am I, how far along am I */}
       <header className="sticky top-0 z-30 -mx-2 flex items-center justify-between gap-3 border-b border-stone-200 bg-stone-50/95 px-2 py-3 backdrop-blur-sm dark:border-stone-800 dark:bg-stone-950/95">
         <div className="flex min-w-0 items-center gap-3">
