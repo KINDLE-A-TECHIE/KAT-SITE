@@ -235,7 +235,7 @@ export const messageDeleteSchema = z.object({
 export const assessmentQuestionSchema = z.object({
   prompt: z.string().trim().min(5).max(4000),
   type: z.enum(QUESTION_TYPES),
-  points: z.number().int().min(1).max(100),
+  points: z.number().int().min(1).max(1000),
   options: z
     .array(
       z.object({
@@ -246,6 +246,32 @@ export const assessmentQuestionSchema = z.object({
     )
     .optional(),
   answerKey: z.string().trim().max(200).optional(),
+  // CODE questions: the runtime + starter shown to the pupil, and hidden input/expected test cases.
+  codeLanguage: z.string().trim().max(40).optional(),
+  starterCode: z.string().max(20_000).optional(),
+  testCases: z
+    .array(
+      z.object({
+        name: z.string().trim().max(120).optional(),
+        stdin: z.string().max(20_000).optional(),
+        expectedStdout: z.string().max(20_000),
+        points: z.number().int().min(1).max(100),
+        hidden: z.boolean().optional(),
+      }),
+    )
+    .max(50)
+    .optional(),
+  // RUBRIC questions: teacher-scored criteria.
+  criteria: z
+    .array(
+      z.object({
+        label: z.string().trim().min(1).max(200),
+        description: z.string().trim().max(500).optional(),
+        maxPoints: z.number().int().min(1).max(100),
+      }),
+    )
+    .max(30)
+    .optional(),
 });
 
 export const createAssessmentSchema = z.object({
@@ -526,6 +552,76 @@ export const schoolUnitDeliverySchema = z.object({
    * predecessor being credited is derived from the class's teacher history, never sent here.
    */
   basis: z.enum(["FIRST_HAND", "SUCCESSOR"]).optional(),
+});
+
+/**
+ * A teacher records that their class finished a DIGLIT (digital-literacy) lesson delivered from the
+ * front of the room, so it counts as complete for the pupils even though they did not each click
+ * through it on a device. Only classId + lessonId travel here; the pupils are the class's own roster,
+ * resolved server-side, never named in the request.
+ */
+export const schoolLessonClassCompleteSchema = z.object({
+  classId: z.string().trim().min(1).max(64),
+  lessonId: z.string().trim().min(1).max(64),
+});
+
+/**
+ * A teacher schedules a KAT-authored assessment (test/exam) to their class, optionally with an
+ * open/close window. `scheduled: false` un-schedules it. KAT authors the assessment; the teacher only
+ * chooses WHEN the class sits it, so nothing about the assessment's content travels here.
+ */
+export const schoolScheduleAssessmentSchema = z.object({
+  classId: z.string().trim().min(1).max(64),
+  assessmentId: z.string().trim().min(1).max(64),
+  scheduled: z.boolean(),
+  opensAt: z.string().datetime().nullish(),
+  closesAt: z.string().datetime().nullish(),
+});
+
+/**
+ * A teacher marks the human-graded answers of one school submission: OPEN_ENDED (theory text) and
+ * RUBRIC (observed practical). Each grade is a score for one answer; the server clamps it to that
+ * question's marks and finalizes the submission.
+ */
+export const schoolGradeSubmissionSchema = z.object({
+  submissionId: z.string().trim().min(1).max(64),
+  grades: z
+    .array(
+      z.object({
+        answerId: z.string().trim().min(1).max(64),
+        score: z.number().min(0).max(1000),
+        feedback: z.string().max(5000).nullish(),
+      }),
+    )
+    .max(200),
+});
+
+/**
+ * A school pupil submits an assessment. For a CODE question the client sends the code it ran plus the
+ * OUTPUT its run produced per test case (`codeRuns`); the server compares those to the hidden expected
+ * outputs, so nothing secret is sent to the browser. Objective answers are the selected option id.
+ */
+export const schoolSubmitAssessmentSchema = z.object({
+  assessmentId: z.string().trim().min(1).max(64),
+  answers: z
+    .array(
+      z.object({
+        questionId: z.string().trim().min(1).max(64),
+        selectedOptionId: z.string().trim().max(64).nullish(),
+        responseText: z.string().max(50_000).nullish(),
+        codeRuns: z
+          .array(
+            z.object({
+              testCaseId: z.string().trim().max(64),
+              stdout: z.string().max(100_000),
+              errored: z.boolean().optional(),
+            }),
+          )
+          .max(50)
+          .optional(),
+      }),
+    )
+    .max(200),
 });
 
 /** Max roster rows per import: bounds the transaction and the request body. */

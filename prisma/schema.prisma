@@ -423,6 +423,7 @@ model Assessment {
   submissions        AssessmentSubmission[]
   projects           Project[]
   retakeGrants       RetakeGrant[]
+  schoolSchedules    SchoolClassAssessment[]
 
   @@index([programId, moduleId, published, verificationStatus])
   @@index([verificationStatus, verifiedAt])
@@ -454,11 +455,47 @@ model AssessmentQuestion {
   sortOrder    Int                @default(0)
   answerKey    String?
   createdAt    DateTime           @default(now())
+  // CODE questions only: the runtime/language the practical runs in (default "python" = Pyodide) and
+  // the starter code shown to the pupil.
+  codeLanguage String?
+  starterCode  String?
   answers      AssessmentAnswer[]
   options      AssessmentOption[]
+  testCases    AssessmentTestCase[]
+  rubricCriteria RubricCriterion[]
   assessment   Assessment         @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 
   @@index([assessmentId, sortOrder])
+}
+
+// A hidden input/expected-output pair for a CODE question. The pupil's program is run with `stdin`
+// and its output compared to `expectedStdout`; each passed case is worth `points`. Authored by KAT.
+model AssessmentTestCase {
+  id             String             @id @default(cuid())
+  questionId     String
+  name           String?
+  stdin          String             @default("")
+  expectedStdout String
+  points         Int                @default(1)
+  hidden         Boolean            @default(true)
+  sortOrder      Int                @default(0)
+  question       AssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+// One row of a rubric for a RUBRIC (teacher-graded practical) question. The teacher awards up to
+// `maxPoints` per criterion while observing the pupil or their build. Authored by KAT.
+model RubricCriterion {
+  id          String             @id @default(cuid())
+  questionId  String
+  label       String
+  description String?
+  maxPoints   Int
+  sortOrder   Int                @default(0)
+  question    AssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
 }
 
 model AssessmentOption {
@@ -1367,10 +1404,32 @@ model SchoolClass {
   teacherTerms SchoolClassTeacher[]
   units    SchoolClassUnit[]
   certificates SchoolCertificate[]
+  scheduledAssessments SchoolClassAssessment[]
 
   @@index([programId])
   @@index([schoolId])
   @@index([teacherId])
+}
+
+// A KAT-authored assessment (test/exam) that a teacher has scheduled to their class, with an optional
+// open/close window. KAT authors the assessment; the teacher only decides WHEN their class sits it.
+// `assignedBy*` is a snapshot of who scheduled it (display only, not a compliance claim).
+model SchoolClassAssessment {
+  id             String      @id @default(cuid())
+  schoolClassId  String
+  assessmentId   String
+  opensAt        DateTime?
+  closesAt       DateTime?
+  assignedById   String?
+  assignedByName String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  schoolClass    SchoolClass @relation(fields: [schoolClassId], references: [id], onDelete: Cascade)
+  assessment     Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolClassId, assessmentId])
+  @@index([schoolClassId])
+  @@index([assessmentId])
 }
 
 model SchoolClassTeacher {
@@ -1584,6 +1643,11 @@ enum QuestionType {
   MULTIPLE_CHOICE
   TRUE_FALSE
   OPEN_ENDED
+  // A coding practical, auto-graded by running the pupil's code against hidden test cases in the
+  // platform's own runtime (Pyodide by default, Judge0 when configured).
+  CODE
+  // A teacher-graded practical (robotics, a creative build, an observed skill) scored against a rubric.
+  RUBRIC
 }
 
 enum AttemptStatus {

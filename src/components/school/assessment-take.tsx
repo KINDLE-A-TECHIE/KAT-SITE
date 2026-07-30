@@ -1,0 +1,287 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import dynamic from "next/dynamic";
+import { toast } from "sonner";
+import { ArrowLeft, CheckCircle2, ClipboardCheck, Loader2, Play } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { runCode } from "@/lib/pyodide-grader";
+import { matchOutput } from "@/lib/practical-grading";
+
+// The same Monaco editor the lessons use, so a coding exam feels like the lessons. Client-only.
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
+  ssr: false,
+  loading: () => <div className="h-72 w-full animate-pulse rounded-lg bg-stone-900" />,
+});
+
+type Option = { id: string; label: string; value: string };
+type TestCase = { id: string; stdin: string; hidden: boolean; expectedStdout: string | null };
+type Criterion = { label: string; description: string | null; maxPoints: number };
+type Question = {
+  id: string;
+  prompt: string;
+  type: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "OPEN_ENDED" | "CODE" | "RUBRIC";
+  points: number;
+  options?: Option[];
+  codeLanguage?: string;
+  starterCode?: string;
+  testCases?: TestCase[];
+  rubric?: Criterion[];
+};
+type Answer = { selectedOptionId?: string; responseText?: string; code?: string };
+type Result = { status: string; autoScore: number; totalScore: number };
+
+/**
+ * A school pupil sits one test/exam. Renders each question by type and submits. For a CODE question the
+ * pupil's code is run in-browser against the test inputs (via runCode) and only the OUTPUTS are sent; the
+ * server compares them to the hidden expected outputs, so no answer key is ever in the page.
+ */
+export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
+  const [phase, setPhase] = useState<"loading" | "error" | "taking" | "submitting" | "done">("loading");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [title, setTitle] = useState("");
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [answers, setAnswers] = useState<Record<string, Answer>>({});
+  const [sampleResult, setSampleResult] = useState<Record<string, string>>({});
+  const [result, setResult] = useState<Result | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      const res = await fetch(`/api/school/learn/assessments?assessmentId=${assessmentId}`, { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrorMsg(data?.error ?? "This assessment is not available.");
+        setPhase("error");
+        return;
+      }
+      setTitle(data.title);
+      setQuestions(data.questions ?? []);
+      const init: Record<string, Answer> = {};
+      for (const q of data.questions ?? []) if (q.type === "CODE") init[q.id] = { code: q.starterCode ?? "" };
+      setAnswers(init);
+      setPhase("taking");
+    })();
+  }, [assessmentId]);
+
+  const setAnswer = (qid: string, patch: Answer) =>
+    setAnswers((prev) => ({ ...prev, [qid]: { ...prev[qid], ...patch } }));
+
+  // Let the pupil check their code against the VISIBLE sample cases before submitting (feedback only).
+  const checkSamples = async (q: Question) => {
+    const samples = (q.testCases ?? []).filter((t) => !t.hidden && t.expectedStdout != null);
+    if (samples.length === 0) return;
+    setSampleResult((p) => ({ ...p, [q.id]: "running" }));
+    const runs = await runCode(answers[q.id]?.code ?? "", samples.map((t) => ({ id: t.id, stdin: t.stdin })));
+    const byId = new Map(runs.map((r) => [r.id, r]));
+    const passed = samples.filter((t) => {
+      const r = byId.get(t.id);
+      return r && !r.errored && matchOutput(r.stdout, t.expectedStdout ?? "");
+    }).length;
+    setSampleResult((p) => ({ ...p, [q.id]: `${passed}/${samples.length} sample tests passed` }));
+  };
+
+  const submit = async () => {
+    setPhase("submitting");
+    try {
+      const payload = [];
+      for (const q of questions) {
+        const a = answers[q.id] ?? {};
+        if (q.type === "MULTIPLE_CHOICE" || q.type === "TRUE_FALSE") {
+          payload.push({ questionId: q.id, selectedOptionId: a.selectedOptionId ?? null });
+        } else if (q.type === "CODE") {
+          const code = a.code ?? "";
+          const runs = await runCode(code, (q.testCases ?? []).map((t) => ({ id: t.id, stdin: t.stdin })));
+          payload.push({
+            questionId: q.id,
+            responseText: code,
+            codeRuns: runs.map((r) => ({ testCaseId: r.id ?? "", stdout: r.stdout, errored: r.errored })),
+          });
+        } else {
+          payload.push({ questionId: q.id, responseText: a.responseText ?? "" });
+        }
+      }
+      const res = await fetch("/api/school/learn/assessments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assessmentId, answers: payload }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data?.error ?? "Could not submit your work.");
+        setPhase("taking");
+        return;
+      }
+      setResult(data);
+      setPhase("done");
+    } catch {
+      toast.error("Something went wrong submitting your work.");
+      setPhase("taking");
+    }
+  };
+
+  if (phase === "loading") return <Skeleton className="h-72 w-full rounded-lg" />;
+
+  if (phase === "error") {
+    return (
+      <div className="rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
+        <ClipboardCheck className="mx-auto mb-3 size-10 text-stone-300 dark:text-stone-600" />
+        <p className="font-medium text-stone-600 dark:text-stone-300">{errorMsg}</p>
+        <Link href="/learn/assessments" className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-kat-clay hover:underline">
+          <ArrowLeft className="size-3.5" /> Back to tests
+        </Link>
+      </div>
+    );
+  }
+
+  if (phase === "done") {
+    const graded = result?.status === "GRADED";
+    return (
+      <div className="mx-auto max-w-2xl rounded-2xl bg-[var(--kat-pine)] px-6 py-12 text-center text-white">
+        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-white/15">
+          <CheckCircle2 className="size-7 text-[var(--kat-sun)]" />
+        </div>
+        <p className="mt-4 font-display text-2xl font-bold">Submitted!</p>
+        <p className="mt-2 text-sm text-white/80">
+          {graded
+            ? `You scored ${result?.autoScore} on the auto-marked questions.`
+            : "Your teacher will mark the written and practical parts, then your result is ready."}
+        </p>
+        <Link href="/learn/assessments" className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[var(--kat-pine)] transition hover:bg-white/90">
+          Back to tests
+        </Link>
+      </div>
+    );
+  }
+
+  const submitting = phase === "submitting";
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-5">
+      <div>
+        <Link href="/learn/assessments" className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 transition hover:text-kat-clay dark:text-stone-400">
+          <ArrowLeft className="size-3.5" /> Tests
+        </Link>
+        <h1 className="mt-1 font-display text-2xl font-bold text-stone-900 dark:text-stone-100">{title}</h1>
+        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+          Answer every question, then submit. You can only submit once.
+        </p>
+      </div>
+
+      {questions.map((q, i) => (
+        <div key={q.id} className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-medium text-stone-900 dark:text-stone-100">
+              <span className="mr-1.5 font-bold">{i + 1}.</span>
+              {q.prompt}
+            </p>
+            <span className="shrink-0 text-xs text-stone-400">{q.points} marks</span>
+          </div>
+
+          <div className="mt-3">
+            {(q.type === "MULTIPLE_CHOICE" || q.type === "TRUE_FALSE") && (
+              <div className="space-y-2">
+                {(q.options ?? []).map((o) => (
+                  <label key={o.id} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-stone-200 px-3 py-2 text-sm transition hover:bg-stone-50 dark:border-stone-800 dark:hover:bg-stone-800/40">
+                    <input
+                      type="radio"
+                      name={q.id}
+                      checked={answers[q.id]?.selectedOptionId === o.id}
+                      onChange={() => setAnswer(q.id, { selectedOptionId: o.id })}
+                      className="accent-orange-600"
+                    />
+                    <span className="text-stone-800 dark:text-stone-200">{o.label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {q.type === "OPEN_ENDED" && (
+              <textarea
+                value={answers[q.id]?.responseText ?? ""}
+                onChange={(e) => setAnswer(q.id, { responseText: e.target.value })}
+                rows={5}
+                placeholder="Write your answer here…"
+                className="w-full rounded-lg border border-stone-200 bg-white p-3 text-sm dark:border-stone-800 dark:bg-stone-950"
+              />
+            )}
+
+            {q.type === "CODE" && (
+              <div className="space-y-2">
+                {(q.testCases ?? []).some((t) => !t.hidden && t.expectedStdout != null) && (
+                  <div className="rounded-lg bg-stone-50 p-2.5 text-xs text-stone-600 dark:bg-stone-800/40 dark:text-stone-300">
+                    <p className="mb-1 font-semibold">Example:</p>
+                    {(q.testCases ?? []).filter((t) => !t.hidden && t.expectedStdout != null).map((t) => (
+                      <p key={t.id} className="font-mono">
+                        input <span className="text-stone-500">{JSON.stringify(t.stdin)}</span> → output{" "}
+                        <span className="text-stone-500">{JSON.stringify(t.expectedStdout)}</span>
+                      </p>
+                    ))}
+                  </div>
+                )}
+                <div className="overflow-hidden rounded-lg border border-stone-800">
+                  <MonacoEditor
+                    height="18rem"
+                    language={q.codeLanguage || "python"}
+                    theme="vs-dark"
+                    value={answers[q.id]?.code ?? ""}
+                    onChange={(v) => setAnswer(q.id, { code: v ?? "" })}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 14,
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                      tabSize: 4,
+                      // Beginner-friendly and paste-safe: no surprise auto-inserted brackets/quotes.
+                      autoClosingBrackets: "never",
+                      autoClosingQuotes: "never",
+                    }}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void checkSamples(q)}
+                    disabled={submitting}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:opacity-60 dark:border-stone-800 dark:text-stone-300"
+                  >
+                    {sampleResult[q.id] === "running" ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
+                    Check against examples
+                  </button>
+                  {sampleResult[q.id] && sampleResult[q.id] !== "running" ? (
+                    <span className="text-xs text-stone-500 dark:text-stone-400">{sampleResult[q.id]}</span>
+                  ) : null}
+                </div>
+              </div>
+            )}
+
+            {q.type === "RUBRIC" && (
+              <div className="space-y-2">
+                <p className="text-xs text-stone-500 dark:text-stone-400">
+                  Your teacher marks this practical while you build or present it. What they look for:
+                </p>
+                <ul className="list-disc space-y-0.5 pl-5 text-sm text-stone-700 dark:text-stone-300">
+                  {(q.rubric ?? []).map((c, k) => (
+                    <li key={k}>
+                      {c.label} <span className="text-stone-400">({c.maxPoints} marks)</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={() => void submit()}
+        disabled={submitting}
+        className="inline-flex items-center gap-2 rounded-lg bg-kat-clay px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-kat-clay-deep disabled:opacity-70"
+      >
+        {submitting ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+        {submitting ? "Marking your work…" : "Submit"}
+      </button>
+    </div>
+  );
+}

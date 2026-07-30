@@ -1,13 +1,15 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Printer, Sparkles } from "lucide-react";
-import { ContentReviewStatus, SchoolRole } from "@prisma/client";
+import { ContentReviewStatus, EnrollmentStatus, SchoolRole, Strand } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { requireActiveSchool } from "@/lib/school";
 import { prisma } from "@/lib/prisma";
 import { checkClassLicense, checkLessonPreviewLicense } from "@/lib/school-license";
 import { resolveClassProgram } from "@/lib/roster-sync";
 import { TeacherLessonPreviewBody } from "@/components/school/teacher-lesson-preview-body";
+import { LessonPresent } from "@/components/school/lesson-present";
+import { DiglitClassComplete } from "@/components/school/diglit-class-complete";
 import type { ContentItem } from "@/components/dashboard/lesson-viewer";
 import type { SchoolMembershipClaim } from "@/lib/rbac";
 
@@ -55,7 +57,7 @@ export default async function TeacherLessonPreviewPage({
       id: true,
       title: true,
       isSample: true,
-      module: { select: { id: true, sortOrder: true, title: true } },
+      module: { select: { id: true, sortOrder: true, title: true, strand: true } },
       contents: {
         // PUBLISHED only: staff preview the delivered content, not drafts.
         where: { reviewStatus: ContentReviewStatus.PUBLISHED },
@@ -85,6 +87,16 @@ export default async function TeacherLessonPreviewPage({
     lesson.isSample,
   );
   if (!preview.allowed) redirect(`/teach/${classId}`);
+
+  // For a digital-literacy lesson, the teacher can record that the class finished it together (it is
+  // delivered from the front of the room, so pupils do not each click through). We need the class's
+  // active roster size to show and confirm that action. Coding keeps its per-pupil path.
+  const isDiglit = lesson.module.strand === Strand.DIGLIT;
+  const pupilCount = isDiglit
+    ? await prisma.enrollment.count({
+        where: { schoolClassId: cls.id, schoolId: membership.schoolId, status: EnrollmentStatus.ACTIVE },
+      })
+    : 0;
 
   // Prisma types the enum columns as their enum; the shared ContentBody uses string-literal unions
   // (the shape the learner API serialises to). Same values, so coerce at this boundary.
@@ -119,13 +131,19 @@ export default async function TeacherLessonPreviewPage({
           {lesson.title}
         </h1>
         <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{lesson.module.title}</p>
-        <Link
-          href={`/teach/${classId}/lessons/${lessonId}/worksheet`}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 dark:border-stone-800 dark:text-stone-300 dark:hover:bg-stone-800/40"
-        >
-          <Printer className="size-3.5" />
-          Printable worksheet
-        </Link>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Link
+            href={`/teach/${classId}/lessons/${lessonId}/worksheet`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 dark:border-stone-800 dark:text-stone-300 dark:hover:bg-stone-800/40"
+          >
+            <Printer className="size-3.5" />
+            Printable worksheet
+          </Link>
+          <LessonPresent lessonTitle={lesson.title} contents={contents} />
+          {isDiglit ? (
+            <DiglitClassComplete classId={cls.id} lessonId={lesson.id} pupilCount={pupilCount} />
+          ) : null}
+        </div>
       </div>
 
       <TeacherLessonPreviewBody

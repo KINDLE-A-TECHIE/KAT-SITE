@@ -7,6 +7,8 @@ import { requireActiveSchool } from "@/lib/school";
 import { checkClassLicense } from "@/lib/school-license";
 import { prisma } from "@/lib/prisma";
 import { ClassResultsPanel } from "@/components/school/class-results-panel";
+import { ClassAssessmentsPanel } from "@/components/school/class-assessments-panel";
+import { TermResultsPanel } from "@/components/school/term-results-panel";
 import { UnitDeliveryPanel } from "@/components/school/unit-delivery-panel";
 import { StartClassPanel } from "@/components/school/start-class-panel";
 import { TeacherPreviewPanel } from "@/components/school/teacher-preview-panel";
@@ -71,6 +73,12 @@ export default async function TeachClassPage({
         programId={owns.programId}
         nerdcLevel={owns.nerdcLevel}
       />
+
+      {/* KAT-authored tests and exams; the teacher schedules when the class sits them. */}
+      <ClassAssessmentsPanel classId={classId} />
+
+      {/* Weighted CA + Exam term results per pupil, with a link to each printable report card. */}
+      <TermResultsPanel classId={classId} />
 
       <ClassResultsPanel classId={classId} />
     </section>

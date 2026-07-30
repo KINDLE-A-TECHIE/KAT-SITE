@@ -9,6 +9,7 @@ import {
   Award,
   Building2,
   BookOpen,
+  ClipboardCheck,
   Code2,
   FileBarChart,
   GraduationCap,
@@ -37,7 +38,10 @@ const ADMIN_NAV: NavItem[] = [
 ];
 
 const TEACHER_NAV: NavItem[] = [{ href: "/teach", label: "Teaching", icon: GraduationCap }];
-const PUPIL_NAV: NavItem[] = [{ href: "/learn", label: "Learning", icon: BookOpen }];
+const PUPIL_NAV: NavItem[] = [
+  { href: "/learn", label: "Learning", icon: BookOpen },
+  { href: "/learn/assessments", label: "Tests", icon: ClipboardCheck },
+];
 
 function getNav(isSchoolAdmin: boolean, isTeacher: boolean): NavItem[] {
   // A user can be both (an admin who also teaches a class); show both, admin first.

@@ -93,12 +93,32 @@ type QuestionDraftOption = {
   isCorrect: boolean;
 };
 
+type TestCaseDraft = {
+  id: string;
+  stdin: string;
+  expectedStdout: string;
+  points: string;
+  hidden: boolean;
+};
+
+type CriterionDraft = {
+  id: string;
+  label: string;
+  maxPoints: string;
+};
+
 type QuestionDraft = {
   id: string;
   prompt: string;
   type: QuestionTypeValue;
   points: string;
   options: QuestionDraftOption[];
+  // CODE questions
+  codeLanguage?: string;
+  starterCode?: string;
+  testCases?: TestCaseDraft[];
+  // RUBRIC questions
+  criteria?: CriterionDraft[];
 };
 
 type AssessmentsPanelProps = {
@@ -129,6 +149,14 @@ function createTrueFalseOptions(): QuestionDraftOption[] {
   ];
 }
 
+function createTestCase(): TestCaseDraft {
+  return { id: createId("tc"), stdin: "", expectedStdout: "", points: "1", hidden: true };
+}
+
+function createCriterion(): CriterionDraft {
+  return { id: createId("crit"), label: "", maxPoints: "3" };
+}
+
 function createQuestionDraft(type: QuestionTypeValue): QuestionDraft {
   return {
     id: createId("q"),
@@ -141,6 +169,10 @@ function createQuestionDraft(type: QuestionTypeValue): QuestionDraft {
         : type === "TRUE_FALSE"
           ? createTrueFalseOptions()
           : [],
+    codeLanguage: type === "CODE" ? "python" : undefined,
+    starterCode: type === "CODE" ? "" : undefined,
+    testCases: type === "CODE" ? [createTestCase()] : undefined,
+    criteria: type === "RUBRIC" ? [createCriterion()] : undefined,
   };
 }
 
@@ -338,19 +370,45 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
         if (question.id !== questionId) {
           return question;
         }
-        if (nextType === "OPEN_ENDED") {
-          return { ...question, type: nextType, options: [] };
-        }
-        if (nextType === "TRUE_FALSE") {
-          return { ...question, type: nextType, options: createTrueFalseOptions() };
-        }
-        if (question.type === "MULTIPLE_CHOICE") {
-          return question;
-        }
-        return { ...question, type: nextType, options: createMultipleChoiceOptions() };
+        // Reset per-type fields on switch so a question only carries what its type needs.
+        const cleared = { options: [] as QuestionDraftOption[], codeLanguage: undefined, starterCode: undefined, testCases: undefined, criteria: undefined };
+        if (nextType === "MULTIPLE_CHOICE") return { ...question, ...cleared, type: nextType, options: createMultipleChoiceOptions() };
+        if (nextType === "TRUE_FALSE") return { ...question, ...cleared, type: nextType, options: createTrueFalseOptions() };
+        if (nextType === "CODE") return { ...question, ...cleared, type: nextType, codeLanguage: "python", starterCode: "", testCases: [createTestCase()] };
+        if (nextType === "RUBRIC") return { ...question, ...cleared, type: nextType, criteria: [createCriterion()] };
+        return { ...question, ...cleared, type: nextType }; // OPEN_ENDED
       }),
     );
   };
+
+  const patchQuestion = (questionId: string, update: Partial<QuestionDraft>) =>
+    setQuestionDrafts((prev) => prev.map((q) => (q.id === questionId ? { ...q, ...update } : q)));
+
+  const addTestCase = (questionId: string) =>
+    setQuestionDrafts((prev) => prev.map((q) => (q.id === questionId ? { ...q, testCases: [...(q.testCases ?? []), createTestCase()] } : q)));
+
+  const removeTestCase = (questionId: string, tcId: string) =>
+    setQuestionDrafts((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, testCases: (q.testCases ?? []).filter((t) => t.id !== tcId) } : q)),
+    );
+
+  const updateTestCase = (questionId: string, tcId: string, update: Partial<TestCaseDraft>) =>
+    setQuestionDrafts((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, testCases: (q.testCases ?? []).map((t) => (t.id === tcId ? { ...t, ...update } : t)) } : q)),
+    );
+
+  const addCriterion = (questionId: string) =>
+    setQuestionDrafts((prev) => prev.map((q) => (q.id === questionId ? { ...q, criteria: [...(q.criteria ?? []), createCriterion()] } : q)));
+
+  const removeCriterion = (questionId: string, critId: string) =>
+    setQuestionDrafts((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, criteria: (q.criteria ?? []).filter((c) => c.id !== critId) } : q)),
+    );
+
+  const updateCriterion = (questionId: string, critId: string, update: Partial<CriterionDraft>) =>
+    setQuestionDrafts((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, criteria: (q.criteria ?? []).map((c) => (c.id === critId ? { ...c, ...update } : c)) } : q)),
+    );
 
   const addOption = (questionId: string) => {
     setQuestionDrafts((prev) =>
@@ -445,6 +503,10 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
       points: number;
       options?: Array<{ label: string; value: string; isCorrect: boolean }>;
       answerKey?: string;
+      codeLanguage?: string;
+      starterCode?: string;
+      testCases?: Array<{ stdin: string; expectedStdout: string; points: number; hidden: boolean }>;
+      criteria?: Array<{ label: string; maxPoints: number }>;
     }> = [];
     for (let index = 0; index < questionDrafts.length; index += 1) {
       const question = questionDrafts[index];
@@ -465,6 +527,61 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
           prompt,
           type: question.type,
           points,
+        });
+        continue;
+      }
+
+      if (question.type === "CODE") {
+        const testCases = (question.testCases ?? []).map((tc) => ({
+          stdin: tc.stdin,
+          expectedStdout: tc.expectedStdout,
+          points: Number(tc.points),
+          hidden: tc.hidden,
+        }));
+        if (testCases.length === 0) {
+          toast.error(`Question ${index + 1} needs at least one test case.`);
+          return;
+        }
+        if (testCases.some((tc) => tc.expectedStdout.trim().length === 0)) {
+          toast.error(`Question ${index + 1} has a test case with no expected output.`);
+          return;
+        }
+        if (testCases.some((tc) => !Number.isInteger(tc.points) || tc.points < 1)) {
+          toast.error(`Question ${index + 1} has a test case with invalid points.`);
+          return;
+        }
+        // A CODE question's marks are the sum of its test-case points (what a pupil can actually earn).
+        questions.push({
+          prompt,
+          type: question.type,
+          points: testCases.reduce((sum, tc) => sum + tc.points, 0),
+          codeLanguage: (question.codeLanguage || "python").trim(),
+          starterCode: question.starterCode ?? "",
+          testCases,
+        });
+        continue;
+      }
+
+      if (question.type === "RUBRIC") {
+        const criteria = (question.criteria ?? []).map((c) => ({ label: c.label.trim(), maxPoints: Number(c.maxPoints) }));
+        if (criteria.length === 0) {
+          toast.error(`Question ${index + 1} needs at least one rubric criterion.`);
+          return;
+        }
+        if (criteria.some((c) => c.label.length === 0)) {
+          toast.error(`Question ${index + 1} has a rubric criterion with no label.`);
+          return;
+        }
+        if (criteria.some((c) => !Number.isInteger(c.maxPoints) || c.maxPoints < 1)) {
+          toast.error(`Question ${index + 1} has a rubric criterion with invalid marks.`);
+          return;
+        }
+        // A RUBRIC question's marks are the sum of its criteria.
+        questions.push({
+          prompt,
+          type: question.type,
+          points: criteria.reduce((sum, c) => sum + c.maxPoints, 0),
+          criteria,
         });
         continue;
       }
@@ -858,17 +975,29 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                           <SelectItem value="MULTIPLE_CHOICE">MULTIPLE_CHOICE</SelectItem>
                           <SelectItem value="TRUE_FALSE">TRUE_FALSE</SelectItem>
                           <SelectItem value="OPEN_ENDED">OPEN_ENDED</SelectItem>
+                          <SelectItem value="CODE">CODE (auto-graded)</SelectItem>
+                          <SelectItem value="RUBRIC">RUBRIC (practical)</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Input
-                        type="number"
-                        min={1}
-                        placeholder="Points"
-                        value={question.points}
-                        onChange={(event) =>
-                          updateQuestion(question.id, { points: event.target.value })
-                        }
-                      />
+                      {question.type === "CODE" || question.type === "RUBRIC" ? (
+                        <div className="flex h-10 items-center rounded-lg border border-stone-200 bg-stone-50 px-3 text-xs text-stone-500 dark:border-stone-800 dark:bg-stone-900">
+                          Marks:{" "}
+                          {question.type === "CODE"
+                            ? (question.testCases ?? []).reduce((s, t) => s + (Number(t.points) || 0), 0)
+                            : (question.criteria ?? []).reduce((s, c) => s + (Number(c.maxPoints) || 0), 0)}{" "}
+                          (from {question.type === "CODE" ? "test cases" : "criteria"})
+                        </div>
+                      ) : (
+                        <Input
+                          type="number"
+                          min={1}
+                          placeholder="Points"
+                          value={question.points}
+                          onChange={(event) =>
+                            updateQuestion(question.id, { points: event.target.value })
+                          }
+                        />
+                      )}
                     </div>
 
                     <textarea
@@ -882,8 +1011,65 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
 
                     {question.type === "OPEN_ENDED" ? (
                       <p className="mt-2 text-xs text-stone-600 dark:text-stone-400">
-                        Open-ended questions are graded manually.
+                        Open-ended questions are graded manually by the teacher.
                       </p>
+                    ) : question.type === "CODE" ? (
+                      <div className="mt-3 space-y-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[10rem_1fr]">
+                          <Input
+                            placeholder="Language (e.g. python)"
+                            value={question.codeLanguage ?? "python"}
+                            onChange={(event) => patchQuestion(question.id, { codeLanguage: event.target.value })}
+                          />
+                          <p className="flex items-center text-xs text-stone-500 dark:text-stone-400">
+                            Auto-graded: the pupil&apos;s program is run against each hidden test case.
+                          </p>
+                        </div>
+                        <textarea
+                          className="w-full rounded-md border border-stone-200 bg-stone-950 p-2 font-mono text-xs text-stone-100"
+                          rows={4}
+                          spellCheck={false}
+                          placeholder="Starter code shown to the pupil (optional)"
+                          value={question.starterCode ?? ""}
+                          onChange={(event) => patchQuestion(question.id, { starterCode: event.target.value })}
+                        />
+                        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Test cases</p>
+                        {(question.testCases ?? []).map((tc) => (
+                          <div key={tc.id} className="grid grid-cols-1 gap-2 rounded-md border border-stone-200 p-2 sm:grid-cols-[1fr_1fr_5rem_auto_auto] dark:border-stone-800">
+                            <Input placeholder="Input (stdin)" value={tc.stdin} onChange={(e) => updateTestCase(question.id, tc.id, { stdin: e.target.value })} />
+                            <Input placeholder="Expected output" value={tc.expectedStdout} onChange={(e) => updateTestCase(question.id, tc.id, { expectedStdout: e.target.value })} />
+                            <Input type="number" min={1} placeholder="Marks" value={tc.points} onChange={(e) => updateTestCase(question.id, tc.id, { points: e.target.value })} />
+                            <label className="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400">
+                              <input type="checkbox" checked={tc.hidden} onChange={(e) => updateTestCase(question.id, tc.id, { hidden: e.target.checked })} />
+                              Hidden
+                            </label>
+                            <Button type="button" variant="outline" size="sm" disabled={(question.testCases ?? []).length <= 1} onClick={() => removeTestCase(question.id, tc.id)}>
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button type="button" variant="outline" size="sm" onClick={() => addTestCase(question.id)}>
+                          <PlusCircle className="size-4" /> Add test case
+                        </Button>
+                        <p className="text-[11px] text-stone-400">A hidden test case is not shown to the pupil; a visible one is shown as a worked example.</p>
+                      </div>
+                    ) : question.type === "RUBRIC" ? (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Rubric criteria</p>
+                        <p className="text-[11px] text-stone-400">The teacher scores each criterion while observing the pupil or their build (robotics, a creative project).</p>
+                        {(question.criteria ?? []).map((c) => (
+                          <div key={c.id} className="grid grid-cols-1 gap-2 rounded-md border border-stone-200 p-2 sm:grid-cols-[1fr_5rem_auto] dark:border-stone-800">
+                            <Input placeholder="Criterion (e.g. Robot follows the line)" value={c.label} onChange={(e) => updateCriterion(question.id, c.id, { label: e.target.value })} />
+                            <Input type="number" min={1} placeholder="Marks" value={c.maxPoints} onChange={(e) => updateCriterion(question.id, c.id, { maxPoints: e.target.value })} />
+                            <Button type="button" variant="outline" size="sm" disabled={(question.criteria ?? []).length <= 1} onClick={() => removeCriterion(question.id, c.id)}>
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button type="button" variant="outline" size="sm" onClick={() => addCriterion(question.id)}>
+                          <PlusCircle className="size-4" /> Add criterion
+                        </Button>
+                      </div>
                     ) : (
                       <div className="mt-3 space-y-2">
                         <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Options</p>
