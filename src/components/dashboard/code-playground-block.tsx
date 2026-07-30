@@ -877,10 +877,13 @@ _sys.modules['pgzero.runner']=_m
 // URLs), so the mirror is just the always-loaded executable core, not hundreds of MB
 // of wheels. R2 must allow GET CORS from the app's origins (it already does, for the
 // browser upload flow); leave this unset until that is verified for a new origin.
-const PYODIDE_INDEX_URL =
-  process.env.NEXT_PUBLIC_PYODIDE_INDEX_URL || "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
+const PYODIDE_CDN_URL = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
+const PYODIDE_INDEX_URL = process.env.NEXT_PUBLIC_PYODIDE_INDEX_URL || PYODIDE_CDN_URL;
 const PYODIDE_RUN_TIMEOUT_MS = 10_000;
 const PYODIDE_LOAD_TIMEOUT_MS = 30_000;
+// A configured mirror gets a shorter window before we fall back to the CDN: a blocked (CORS) fetch can
+// hang rather than reject, and we must not wait the full timeout to recover (e.g. on the school host).
+const PYODIDE_PRIMARY_TIMEOUT_MS = 15_000;
 const PYODIDE_STDOUT_CAP = 100_000;
 
 // After a matplotlib program runs (Agg backend), grab the current figure as a base64 PNG so the
@@ -901,9 +904,10 @@ def _kat_mpl():
 _kat_mpl()
 `;
 
-function buildPyodideWorkerSource(): string {
+function buildPyodideWorkerSource(indexURL: string): string {
   return `
-self.importScripts(${JSON.stringify(PYODIDE_INDEX_URL + "pyodide.js")});
+const INDEX = ${JSON.stringify(indexURL)};
+self.importScripts(INDEX + "pyodide.js");
 const TURTLE_SHIM = ${JSON.stringify(TURTLE_SHIM)};
 const PYGAME_SHIM = ${JSON.stringify(PYGAME_SHIM)};
 const PGZERO_SHIM = ${JSON.stringify(PGZERO_SHIM)};
@@ -912,7 +916,7 @@ const MPL_CAPTURE = ${JSON.stringify(MPL_CAPTURE_PY)};
 let py = null;
 let canvas = null;   // internal OffscreenCanvas the turtle/pygame shims draw to
 let runId = 0;
-const ready = (async () => { py = await self.loadPyodide({ indexURL: ${JSON.stringify(PYODIDE_INDEX_URL)} }); })();
+const ready = (async () => { py = await self.loadPyodide({ indexURL: INDEX }); })();
 ready.then(() => self.postMessage({ type: "ready" })).catch((e) => self.postMessage({ type: "loadFailed", message: String(e) }));
 
 // The shims import katCanvas (draw target) and call katPostFrame on each flip; each
@@ -1520,44 +1524,70 @@ ${code}
 
   // ── Pyodide worker ─────────────────────────────────────────────────────────
 
+  // Spin up ONE worker from a given Pyodide source and resolve when it is ready (reject on load
+  // failure/timeout). The current attempt's worker is tracked so unmount/kill can terminate it.
+  const spawnWorker = (indexURL: string, timeoutMs: number): Promise<Worker> => {
+    const worker = new Worker(
+      URL.createObjectURL(new Blob([buildPyodideWorkerSource(indexURL)], { type: "application/javascript" })),
+    );
+    pyodideWorkerRef.current = worker;
+    return new Promise<Worker>((resolve, reject) => {
+      let loadTimer: ReturnType<typeof setTimeout> | null = null;
+      const cleanup = () => { if (loadTimer) clearTimeout(loadTimer); worker.removeEventListener("message", onReady); };
+      const fail = (message: string) => { cleanup(); try { worker.terminate(); } catch { /* ignore */ } reject(new Error(message)); };
+      const onReady = (e: MessageEvent) => {
+        const d = e.data;
+        if (d?.type === "ready") { cleanup(); resolve(worker); }
+        else if (d?.type === "loadFailed") { fail(d.message || "Pyodide failed to load"); }
+      };
+      loadTimer = setTimeout(() => fail("Pyodide load timed out"), timeoutMs);
+      worker.addEventListener("message", onReady);
+    });
+  };
+
   const ensureWorker = (): Promise<Worker> => {
     if (workerReadyRef.current) return workerReadyRef.current;
     setPyodideLoading(true);
-    const worker = new Worker(
-      URL.createObjectURL(new Blob([buildPyodideWorkerSource()], { type: "application/javascript" })),
-    );
-    pyodideWorkerRef.current = worker;
-    workerReadyRef.current = new Promise<Worker>((resolve, reject) => {
-      let loadTimer: ReturnType<typeof setTimeout> | null = null;
-      const cleanup = () => { if (loadTimer) clearTimeout(loadTimer); worker.removeEventListener("message", onReady); };
-      // A load failure or timeout is an infra problem (CDN/network), not a student's code error.
-      // Report it, discard the worker, and fall back to server execution so the next Run still works.
-      const failLoad = (message: string) => {
-        cleanup();
-        setPyodideLoading(false);
-        workerReadyRef.current = null;
-        pyodideWorkerRef.current = null;
-        try { worker.terminate(); } catch { /* ignore */ }
-        captureError(new Error(message), { where: "pyodide-worker-load", language });
-        setPyodideMode(false);
-        toast.error("Browser Python could not load. Switched to Server mode, press Run again.");
-        reject(new Error("PYODIDE_LOAD_FAILED"));
-      };
-      const onReady = (e: MessageEvent) => {
-        const d = e.data;
-        if (d?.type === "ready") {
-          cleanup();
-          setPyodideReady(true);
-          setPyodideLoading(false);
-          resolve(worker);
-        } else if (d?.type === "loadFailed") {
-          failLoad(d.message || "Pyodide failed to load");
+    workerReadyRef.current = (async () => {
+      let worker: Worker;
+      try {
+        // Configured mirror first (shorter window), else the CDN gets the full window.
+        worker =
+          PYODIDE_INDEX_URL === PYODIDE_CDN_URL
+            ? await spawnWorker(PYODIDE_CDN_URL, PYODIDE_LOAD_TIMEOUT_MS)
+            : await spawnWorker(PYODIDE_INDEX_URL, PYODIDE_PRIMARY_TIMEOUT_MS);
+      } catch (primaryErr) {
+        // If a mirror was configured and failed (e.g. R2 CORS on the school host), fall back to the CDN
+        // before giving up to Server mode, so browser Python keeps working everywhere.
+        if (PYODIDE_INDEX_URL !== PYODIDE_CDN_URL) {
+          try {
+            worker = await spawnWorker(PYODIDE_CDN_URL, PYODIDE_LOAD_TIMEOUT_MS);
+          } catch (cdnErr) {
+            failLoad(cdnErr instanceof Error ? cdnErr.message : String(cdnErr));
+            throw new Error("PYODIDE_LOAD_FAILED");
+          }
+        } else {
+          failLoad(primaryErr instanceof Error ? primaryErr.message : String(primaryErr));
+          throw new Error("PYODIDE_LOAD_FAILED");
         }
-      };
-      loadTimer = setTimeout(() => failLoad("Pyodide load timed out"), PYODIDE_LOAD_TIMEOUT_MS);
-      worker.addEventListener("message", onReady);
-    });
+      }
+      pyodideWorkerRef.current = worker;
+      setPyodideReady(true);
+      setPyodideLoading(false);
+      return worker;
+    })();
     return workerReadyRef.current;
+  };
+
+  // A load failure that survives the CDN fallback is an infra problem (network), not a student's code
+  // error. Report it, discard the worker, and fall back to server execution so the next Run still works.
+  const failLoad = (message: string) => {
+    setPyodideLoading(false);
+    workerReadyRef.current = null;
+    pyodideWorkerRef.current = null;
+    captureError(new Error(message), { where: "pyodide-worker-load", language });
+    setPyodideMode(false);
+    toast.error("Browser Python could not load. Switched to Server mode, press Run again.");
   };
 
   // Discards the worker so the next run rebuilds it fresh. Called on timeout / Stop.
