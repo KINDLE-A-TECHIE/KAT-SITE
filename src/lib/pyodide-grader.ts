@@ -121,6 +121,59 @@ function runOnce(worker: Worker, code: string, stdin: string): Promise<RunOutcom
   });
 }
 
+/** stdout + stderr from a single play-button run, for a code/Blockly "try it" block (not grading). */
+export type PythonOutput = { stdout: string; stderr: string; errored: boolean; timedOut: boolean };
+
+/**
+ * Run `code` once and return everything it printed, stdout AND stderr, for an interactive "Run" button
+ * (the Blockly block generates Python and runs it this way). Unlike `runCode` (grading, stdout only) this
+ * surfaces stderr so a learner sees the actual error, and reports a friendly message when the runtime
+ * cannot load or the program runs away. Reuses the same CDN-fallback worker as grading. Browser-only.
+ */
+export async function runPythonForOutput(code: string): Promise<PythonOutput> {
+  let worker: Worker;
+  try {
+    worker = await openWorker();
+  } catch {
+    return {
+      stdout: "",
+      stderr: "The Python runtime could not load. Check your connection and try again.",
+      errored: true,
+      timedOut: false,
+    };
+  }
+  try {
+    return await new Promise<PythonOutput>((resolve) => {
+      const id = Math.random().toString(36).slice(2);
+      const timer = setTimeout(() => {
+        worker.terminate();
+        resolve({
+          stdout: "",
+          stderr: "Your program took too long and was stopped. Check for a loop that never ends.",
+          errored: true,
+          timedOut: true,
+        });
+      }, RUN_TIMEOUT_MS);
+      const onMessage = (e: MessageEvent) => {
+        if (e.data?.type === "result" && e.data.id === id) {
+          clearTimeout(timer);
+          worker.removeEventListener("message", onMessage);
+          resolve({
+            stdout: e.data.stdout || "",
+            stderr: e.data.stderr || "",
+            errored: Boolean(e.data.errored),
+            timedOut: false,
+          });
+        }
+      };
+      worker.addEventListener("message", onMessage);
+      worker.postMessage({ id, code, stdin: "" });
+    });
+  } finally {
+    worker.terminate();
+  }
+}
+
 export type CodeGradeResult = Awaited<ReturnType<typeof scoreCodeAnswer>> & { runs: CodeTestRun[] };
 
 export type CodeRun = { id?: string; stdout: string; errored: boolean };

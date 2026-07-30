@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, ClipboardCheck, Loader2, Play } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BlocklyWorkspace } from "@/components/dashboard/blockly-workspace";
 import { runCode } from "@/lib/pyodide-grader";
 import { matchOutput } from "@/lib/practical-grading";
 
@@ -26,9 +27,22 @@ type Question = {
   options?: Option[];
   codeLanguage?: string;
   starterCode?: string;
+  /** When set, this CODE question is answered with Blockly (blocks that generate the graded Python). */
+  blocklyConfig?: string | null;
   testCases?: TestCase[];
   rubric?: Criterion[];
 };
+
+/** A Blockly question's config JSON (toolbox/startBlocks/allowCode); a bad value falls back to defaults. */
+function parseBlockly(raw: string | null | undefined): { toolbox?: unknown; startBlocks?: unknown; allowCode?: boolean } {
+  if (!raw || !raw.trim()) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
 type Answer = { selectedOptionId?: string; responseText?: string; code?: string };
 type Result = { status: string; autoScore: number; totalScore: number };
 
@@ -219,25 +233,36 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
                     ))}
                   </div>
                 )}
-                <div className="overflow-hidden rounded-lg border border-stone-800">
-                  <MonacoEditor
-                    height="18rem"
-                    language={q.codeLanguage || "python"}
-                    theme="vs-dark"
-                    value={answers[q.id]?.code ?? ""}
-                    onChange={(v) => setAnswer(q.id, { code: v ?? "" })}
-                    options={{
-                      minimap: { enabled: false },
-                      fontSize: 14,
-                      scrollBeyondLastLine: false,
-                      automaticLayout: true,
-                      tabSize: 4,
-                      // Beginner-friendly and paste-safe: no surprise auto-inserted brackets/quotes.
-                      autoClosingBrackets: "never",
-                      autoClosingQuotes: "never",
-                    }}
+                {q.blocklyConfig != null ? (
+                  // Block-answered: the workspace keeps the answer's `code` in sync with the generated
+                  // Python, so check-samples, submit and server grading run exactly as for a typed answer.
+                  <BlocklyWorkspace
+                    toolbox={parseBlockly(q.blocklyConfig).toolbox}
+                    startBlocks={parseBlockly(q.blocklyConfig).startBlocks}
+                    allowCode={parseBlockly(q.blocklyConfig).allowCode !== false}
+                    onCodeChange={(c) => setAnswer(q.id, { code: c })}
                   />
-                </div>
+                ) : (
+                  <div className="overflow-hidden rounded-lg border border-stone-800">
+                    <MonacoEditor
+                      height="18rem"
+                      language={q.codeLanguage || "python"}
+                      theme="vs-dark"
+                      value={answers[q.id]?.code ?? ""}
+                      onChange={(v) => setAnswer(q.id, { code: v ?? "" })}
+                      options={{
+                        minimap: { enabled: false },
+                        fontSize: 14,
+                        scrollBeyondLastLine: false,
+                        automaticLayout: true,
+                        tabSize: 4,
+                        // Beginner-friendly and paste-safe: no surprise auto-inserted brackets/quotes.
+                        autoClosingBrackets: "never",
+                        autoClosingQuotes: "never",
+                      }}
+                    />
+                  </div>
+                )}
                 <div className="flex items-center gap-3">
                   <button
                     type="button"

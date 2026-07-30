@@ -249,6 +249,8 @@ export const assessmentQuestionSchema = z.object({
   // CODE questions: the runtime + starter shown to the pupil, and hidden input/expected test cases.
   codeLanguage: z.string().trim().max(40).optional(),
   starterCode: z.string().max(20_000).optional(),
+  // CODE questions answered with blocks: optional Blockly config JSON (toolbox/startBlocks/allowCode).
+  blocklyConfig: z.string().max(40_000).optional(),
   testCases: z
     .array(
       z.object({

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  CheckCircle2, ChevronDown, ExternalLink, FileText,
+  Blocks, CheckCircle2, ChevronDown, ExternalLink, FileText,
   Link as LinkIcon, Network, RefreshCw, Terminal, Video, XCircle, Youtube,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { PaginationControls } from "@/components/pagination-controls";
 
 type ContentItem = {
   id: string;
-  type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB";
+  type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB" | "BLOCKLY";
   title: string;
   body: string | null;
   url: string | null;
@@ -56,6 +56,7 @@ const TYPE_ICONS = {
   DOCUMENT_LINK:   <LinkIcon className="h-4 w-4 text-orange-500" />,
   CODE_PLAYGROUND: <Terminal className="h-4 w-4 text-emerald-500" />,
   NETWORK_LAB:     <Network className="h-4 w-4 text-amber-500" />,
+  BLOCKLY:         <Blocks className="h-4 w-4 text-orange-500" />,
 };
 
 function extractYouTubeId(url: string): string | null {
@@ -206,6 +207,14 @@ function ReviewCard({
                   <Network className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
                   <span className="text-stone-700 dark:text-stone-300">
                     Network Lab level: <span className="font-mono">{content.body}</span>
+                  </span>
+                </div>
+              )}
+              {content.type === "BLOCKLY" && (
+                <div className="flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm dark:border-orange-900/40 dark:bg-orange-950/30">
+                  <Blocks className="h-4 w-4 shrink-0 text-orange-600 dark:text-orange-400" />
+                  <span className="text-stone-700 dark:text-stone-300">
+                    Blocks activity{content.body ? " (custom config)" : " (default toolbox)"}
                   </span>
                 </div>
               )}

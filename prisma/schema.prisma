@@ -459,6 +459,10 @@ model AssessmentQuestion {
   // the starter code shown to the pupil.
   codeLanguage String?
   starterCode  String?
+  // CODE questions only: when set, the pupil answers with BLOCKLY (blocks that generate the Python that
+  // is graded), not a text editor. Optional JSON { toolbox?, startBlocks?, allowCode? }; "{}" = defaults.
+  // Grading is unchanged: the generated Python runs against the same hidden test cases.
+  blocklyConfig String?
   answers      AssessmentAnswer[]
   options      AssessmentOption[]
   testCases    AssessmentTestCase[]
@@ -1768,6 +1772,7 @@ enum LessonContentType {
   DOCUMENT_LINK
   CODE_PLAYGROUND
   NETWORK_LAB
+  BLOCKLY
 }
 
 enum ContentReviewStatus {

@@ -60,6 +60,7 @@ async function resolveContext(userId: string, schoolId: string, assessmentId: st
           points: true,
           codeLanguage: true,
           starterCode: true,
+          blocklyConfig: true,
           options: { select: { id: true, label: true, value: true, isCorrect: true } },
           testCases: {
             orderBy: { sortOrder: "asc" },
@@ -129,6 +130,8 @@ export async function GET(request: Request) {
             ...base,
             codeLanguage: q.codeLanguage ?? "python",
             starterCode: q.starterCode ?? "",
+            // When set, the pupil answers with blocks. This is the toolbox/starter, not an answer key.
+            blocklyConfig: q.blocklyConfig,
             // stdin is needed to run; expected output is sent ONLY for visible sample cases.
             testCases: q.testCases.map((tc) => ({
               id: tc.id,

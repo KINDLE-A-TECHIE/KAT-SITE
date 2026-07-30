@@ -117,6 +117,9 @@ type QuestionDraft = {
   codeLanguage?: string;
   starterCode?: string;
   testCases?: TestCaseDraft[];
+  // CODE questions answered with blocks: the pupil builds Blockly that generates the graded Python.
+  useBlocks?: boolean;
+  blocklyConfig?: string;
   // RUBRIC questions
   criteria?: CriterionDraft[];
 };
@@ -371,7 +374,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
           return question;
         }
         // Reset per-type fields on switch so a question only carries what its type needs.
-        const cleared = { options: [] as QuestionDraftOption[], codeLanguage: undefined, starterCode: undefined, testCases: undefined, criteria: undefined };
+        const cleared = { options: [] as QuestionDraftOption[], codeLanguage: undefined, starterCode: undefined, testCases: undefined, criteria: undefined, useBlocks: undefined, blocklyConfig: undefined };
         if (nextType === "MULTIPLE_CHOICE") return { ...question, ...cleared, type: nextType, options: createMultipleChoiceOptions() };
         if (nextType === "TRUE_FALSE") return { ...question, ...cleared, type: nextType, options: createTrueFalseOptions() };
         if (nextType === "CODE") return { ...question, ...cleared, type: nextType, codeLanguage: "python", starterCode: "", testCases: [createTestCase()] };
@@ -505,6 +508,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
       answerKey?: string;
       codeLanguage?: string;
       starterCode?: string;
+      blocklyConfig?: string;
       testCases?: Array<{ stdin: string; expectedStdout: string; points: number; hidden: boolean }>;
       criteria?: Array<{ label: string; maxPoints: number }>;
     }> = [];
@@ -557,6 +561,8 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
           points: testCases.reduce((sum, tc) => sum + tc.points, 0),
           codeLanguage: (question.codeLanguage || "python").trim(),
           starterCode: question.starterCode ?? "",
+          // Block-answered: send the config so the take UI shows Blockly. "{}" = default toolbox.
+          blocklyConfig: question.useBlocks ? (question.blocklyConfig?.trim() || "{}") : undefined,
           testCases,
         });
         continue;
@@ -1025,14 +1031,34 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                             Auto-graded: the pupil&apos;s program is run against each hidden test case.
                           </p>
                         </div>
-                        <textarea
-                          className="w-full rounded-md border border-stone-200 bg-stone-950 p-2 font-mono text-xs text-stone-100"
-                          rows={4}
-                          spellCheck={false}
-                          placeholder="Starter code shown to the pupil (optional)"
-                          value={question.starterCode ?? ""}
-                          onChange={(event) => patchQuestion(question.id, { starterCode: event.target.value })}
-                        />
+                        <label className="flex items-center gap-2 text-xs text-stone-600 dark:text-stone-300">
+                          <input
+                            type="checkbox"
+                            checked={question.useBlocks ?? false}
+                            onChange={(e) => patchQuestion(question.id, { useBlocks: e.target.checked })}
+                          />
+                          Answer with blocks (Blockly). The pupil builds blocks that generate the Python graded
+                          below; they can still switch to text.
+                        </label>
+                        {question.useBlocks ? (
+                          <textarea
+                            className="w-full rounded-md border border-stone-200 bg-stone-950 p-2 font-mono text-xs text-stone-100"
+                            rows={3}
+                            spellCheck={false}
+                            placeholder={'Blockly config (JSON, optional): {"toolbox":{...},"startBlocks":{...},"allowCode":true}. Blank = default toolbox.'}
+                            value={question.blocklyConfig ?? ""}
+                            onChange={(event) => patchQuestion(question.id, { blocklyConfig: event.target.value })}
+                          />
+                        ) : (
+                          <textarea
+                            className="w-full rounded-md border border-stone-200 bg-stone-950 p-2 font-mono text-xs text-stone-100"
+                            rows={4}
+                            spellCheck={false}
+                            placeholder="Starter code shown to the pupil (optional)"
+                            value={question.starterCode ?? ""}
+                            onChange={(event) => patchQuestion(question.id, { starterCode: event.target.value })}
+                          />
+                        )}
                         <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Test cases</p>
                         {(question.testCases ?? []).map((tc) => (
                           <div key={tc.id} className="grid grid-cols-1 gap-2 rounded-md border border-stone-200 p-2 sm:grid-cols-[1fr_1fr_5rem_auto_auto] dark:border-stone-800">

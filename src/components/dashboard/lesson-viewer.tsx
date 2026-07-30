@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowLeft, ArrowRight, Award, BookOpen, CheckCircle2, ExternalLink,
+  ArrowLeft, ArrowRight, Award, Blocks, BookOpen, CheckCircle2, ExternalLink,
   FileText, Link as LinkIcon, Network, Plus, Sparkles,
   Terminal, Video, Youtube, XCircle,
 } from "lucide-react";
@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ContentCreateForm } from "@/components/dashboard/content-create-form";
 import { CodePlaygroundBlock } from "@/components/dashboard/code-playground-block";
+import { BlocklyBlock } from "@/components/dashboard/blockly-block";
 import { NetworkLabBlock } from "@/components/network-lab/network-lab-block";
 import { LessonSlides } from "@/components/dashboard/lesson-slides";
 import { LessonWatermark } from "@/components/dashboard/lesson-watermark";
@@ -24,7 +25,7 @@ import { flushDrafts } from "@/lib/lesson-block-draft";
 
 export type ContentItem = {
   id: string;
-  type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB";
+  type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB" | "BLOCKLY";
   title: string;
   body: string | null;
   url: string | null;
@@ -65,6 +66,7 @@ const TYPE_CONFIG = {
   DOCUMENT_LINK:   { label: "Resource",    Icon: LinkIcon },
   CODE_PLAYGROUND: { label: "Try it",      Icon: Terminal },
   NETWORK_LAB:     { label: "Network Lab", Icon: Network },
+  BLOCKLY:         { label: "Blocks",      Icon: Blocks },
 } as const;
 
 const REVIEW_STYLE = {
@@ -217,6 +219,10 @@ export function ContentBody({
 
       {content.type === "NETWORK_LAB" && content.body && (
         <NetworkLabBlock levelKey={content.body} contentId={content.id} onComplete={onBlockComplete} />
+      )}
+
+      {content.type === "BLOCKLY" && (
+        <BlocklyBlock contentId={content.id} body={content.body} onComplete={onBlockComplete} />
       )}
     </>
   );

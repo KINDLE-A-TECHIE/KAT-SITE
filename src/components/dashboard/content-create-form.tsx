@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Code2, FileText, Link as LinkIcon, Network, Video, Youtube, Plus, X, Send, ImagePlus } from "lucide-react";
+import { Blocks, Code2, FileText, Link as LinkIcon, Network, Video, Youtube, Plus, X, Send, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SUPPORTED_LANGUAGES } from "@/components/dashboard/code-playground-block";
 import { LEVELS } from "@/lib/network-lab/levels";
 
-type Tab = "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB";
+type Tab = "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB" | "BLOCKLY";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "RICH_TEXT",       label: "Rich Text", icon: <FileText className="h-3.5 w-3.5" /> },
@@ -19,6 +19,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "DOCUMENT_LINK",   label: "Document",  icon: <LinkIcon className="h-3.5 w-3.5" /> },
   { id: "CODE_PLAYGROUND", label: "Code",      icon: <Code2 className="h-3.5 w-3.5" /> },
   { id: "NETWORK_LAB",     label: "Network Lab", icon: <Network className="h-3.5 w-3.5" /> },
+  { id: "BLOCKLY",         label: "Blocks",    icon: <Blocks className="h-3.5 w-3.5" /> },
 ];
 
 const TAB_ICON: Record<Tab, React.ReactNode> = {
@@ -28,6 +29,7 @@ const TAB_ICON: Record<Tab, React.ReactNode> = {
   DOCUMENT_LINK:   <LinkIcon className="h-3.5 w-3.5" />,
   CODE_PLAYGROUND: <Code2 className="h-3.5 w-3.5" />,
   NETWORK_LAB:     <Network className="h-3.5 w-3.5" />,
+  BLOCKLY:         <Blocks className="h-3.5 w-3.5" />,
 };
 
 const TAB_LABEL: Record<Tab, string> = {
@@ -37,6 +39,7 @@ const TAB_LABEL: Record<Tab, string> = {
   DOCUMENT_LINK:   "Document",
   CODE_PLAYGROUND: "Code",
   NETWORK_LAB:     "Network Lab",
+  BLOCKLY:         "Blocks",
 };
 
 const LAB_LEVELS = Object.entries(LEVELS).map(([key, level]) => ({ key, unit: level.unit }));
@@ -214,6 +217,8 @@ export function ContentCreateForm({
         if (block.type === "RICH_TEXT")         payload.body = block.body;
         else if (block.type === "CODE_PLAYGROUND") { payload.body = block.starterCode; payload.language = block.language; }
         else if (block.type === "NETWORK_LAB")  payload.body = block.body;
+        // BLOCKLY config is optional: send body only when the author provided one (blank = default toolbox).
+        else if (block.type === "BLOCKLY")      { if (block.body.trim()) payload.body = block.body; }
         else                                    payload.url = block.url;
 
         const res = await fetch(`/api/curriculum/lessons/${lessonId}/contents`, {
@@ -403,6 +408,30 @@ export function ContentCreateForm({
           <p className="text-xs text-stone-400 dark:text-stone-500">
             Learners build and launch packets to complete this network level. Add a Rich Text block
             for the instructions.
+          </p>
+        </div>
+      )}
+
+      {tab === "BLOCKLY" && (
+        <div className="space-y-1.5">
+          <Label htmlFor="blockly-config" className="text-sm">
+            Advanced config <span className="font-normal text-stone-400 dark:text-stone-500">(JSON, optional)</span>
+          </Label>
+          <Textarea
+            id="blockly-config"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={6}
+            placeholder={'Leave blank for the default block set. Optional: {"prompt":"Make the robot say hello 3 times","toolbox":{...},"startBlocks":{...},"allowCode":true}'}
+            className="font-mono text-sm"
+            spellCheck={false}
+          />
+          <p className="text-xs text-stone-400 dark:text-stone-500">
+            Learners drag Python blocks and run them, and can switch to a Python editor seeded from their
+            blocks. Blank uses the default toolbox, an empty canvas, and the Python switch on. Optional
+            keys: <code>prompt</code> (an instruction line), <code>toolbox</code> (a Blockly toolbox),
+            <code>startBlocks</code> (a saved workspace), <code>allowCode</code> (set <code>false</code> to
+            keep it blocks-only). Add a Rich Text block for full instructions.
           </p>
         </div>
       )}
