@@ -45,6 +45,88 @@ async function checkAndSealGates(userId: string, moduleId: string) {
 }
 
 /**
+ * Recomputes allGatesPassed from the three gate columns and returns the resulting value.
+ *
+ * Unlike checkAndSealGates (seal-only, used by the B2C flow where a passed gate is never
+ * revoked) this also UN-seals: a school gate can be withdrawn, a project approval reversed
+ * or a sign-off retracted, and combined mastery must drop back to false rather than leave a
+ * stale pass on the report card. Idempotent; no-ops when nothing changes.
+ */
+export async function recomputeModuleMastery(userId: string, moduleId: string): Promise<boolean> {
+  const record = await prisma.moduleGateStatus.findUnique({
+    where: { userId_moduleId: { userId, moduleId } },
+    select: {
+      id: true,
+      assessmentGate: true,
+      projectGate: true,
+      instructorGate: true,
+      allGatesPassed: true,
+    },
+  });
+  if (!record) return false;
+
+  const allPassed =
+    record.assessmentGate === GateStatus.PASSED &&
+    record.projectGate === GateStatus.PASSED &&
+    record.instructorGate === GateStatus.PASSED;
+
+  if (allPassed === record.allGatesPassed) return allPassed;
+
+  await prisma.moduleGateStatus.update({
+    where: { id: record.id },
+    data: { allGatesPassed: allPassed, allGatesPassedAt: allPassed ? new Date() : null },
+  });
+  return allPassed;
+}
+
+/**
+ * A school TEACHER signs off (passed = true) or retracts (false) the instructor gate for one
+ * pupil on one module. Report-only, like the other school gates: it records the teacher's
+ * judgement and recomputes combined mastery, it never blocks advancement and sends no
+ * notification (the B2C bell is not used in the school product). Never throws; returns the
+ * resulting combined mastery, or null if the module/enrolment cannot be resolved.
+ *
+ * AUTHORISATION is the caller's job: the route verifies the teacher owns the class and the
+ * pupil is enrolled in it before calling this.
+ */
+export async function setSchoolInstructorGate(
+  signerId: string,
+  studentId: string,
+  moduleId: string,
+  passed: boolean,
+): Promise<{ allGatesPassed: boolean } | null> {
+  try {
+    const moduleRecord = await prisma.module.findUnique({
+      where: { id: moduleId },
+      select: { version: { select: { curriculum: { select: { programId: true } } } } },
+    });
+    const programId = moduleRecord?.version?.curriculum?.programId;
+    if (!programId) return null;
+
+    const enrollment = await prisma.enrollment.findFirst({
+      where: { userId: studentId, programId },
+      select: { id: true },
+    });
+    if (!enrollment) return null;
+
+    const instructorGate = passed ? GateStatus.PASSED : GateStatus.NOT_STARTED;
+    const instructorPassedAt = passed ? new Date() : null;
+    const signedOffById = passed ? signerId : null;
+
+    await prisma.moduleGateStatus.upsert({
+      where: { userId_moduleId: { userId: studentId, moduleId } },
+      create: { userId: studentId, moduleId, enrollmentId: enrollment.id, instructorGate, instructorPassedAt, signedOffById },
+      update: { instructorGate, instructorPassedAt, signedOffById },
+    });
+
+    const allGatesPassed = await recomputeModuleMastery(studentId, moduleId);
+    return { allGatesPassed };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Called after an assessment submission is graded.
  * Checks if the student passed and the assessment belongs to a module.
  * If so, marks Gate 1 (Knowledge Assessment) as PASSED for that module.

@@ -1,5 +1,6 @@
 import { AssessmentType, AttemptStatus, AssessmentVerificationStatus, CourseAudience, GateStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { recomputeModuleMastery } from "@/lib/mastery";
 import { DEFAULT_PASS_MARK, gradeFor, weightedPercent } from "@/lib/practical-grading";
 import { termNumberForModule } from "@/lib/school-term";
 
@@ -211,6 +212,8 @@ export async function trySchoolAssessmentGate(userId: string, moduleId: string):
       },
       update: { assessmentGate: GateStatus.PASSED, assessmentPassedAt: new Date() },
     });
+    // Seal combined mastery if the assessment gate was the last of the three to pass.
+    await recomputeModuleMastery(userId, moduleId);
   } catch {
     /* a gate is a signal, never crash the grading request over it */
   }

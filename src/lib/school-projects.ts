@@ -1,5 +1,6 @@
 import { GateStatus, ProjectTeamStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { recomputeModuleMastery } from "@/lib/mastery";
 
 /**
  * Apply a project team's review to its members' module project gate. APPROVED passes the gate for every
@@ -34,6 +35,9 @@ export async function applyProjectGate(team: {
         create: { userId: member.userId, moduleId: team.moduleId, enrollmentId: enrollment.id, projectGate: gate, projectPassedAt },
         update: { projectGate: gate, projectPassedAt },
       });
+      // Combined mastery must reflect the new project gate, sealing it if all three now pass,
+      // or clearing a stale pass if this withdrew the project gate.
+      await recomputeModuleMastery(member.userId, team.moduleId);
     }
   } catch {
     /* a gate is a signal, never crash the review request over it */

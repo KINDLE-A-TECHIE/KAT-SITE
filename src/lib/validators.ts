@@ -597,6 +597,17 @@ export const schoolProjectTeamSchema = z.object({
 });
 
 /**
+ * A teacher signs off (or retracts) the instructor gate for one pupil on one CODING module of
+ * their class. The pupil is addressed by an opaque userId in the body, never in the URL.
+ */
+export const schoolModuleSignoffSchema = z.object({
+  classId: z.string().trim().min(1).max(64),
+  moduleId: z.string().trim().min(1).max(64),
+  userId: z.string().trim().min(1).max(64),
+  passed: z.boolean(),
+});
+
+/**
  * A teacher marks the human-graded answers of one school submission: OPEN_ENDED (theory text) and
  * RUBRIC (observed practical). Each grade is a score for one answer; the server clamps it to that
  * question's marks and finalizes the submission.

@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { ClassResultsPanel } from "@/components/school/class-results-panel";
 import { ClassAssessmentsPanel } from "@/components/school/class-assessments-panel";
 import { ProjectTeamsPanel } from "@/components/school/project-teams-panel";
+import { MasterySignoffPanel } from "@/components/school/mastery-signoff-panel";
 import { TermResultsPanel } from "@/components/school/term-results-panel";
 import { termNumberForModule } from "@/lib/school-term";
 import { Strand } from "@prisma/client";
@@ -103,6 +104,9 @@ export default async function TeachClassPage({
 
       {/* Team projects for CODING units; approving a team records its members' project gate. */}
       {codingModules.length > 0 ? <ProjectTeamsPanel classId={classId} modules={codingModules} /> : null}
+
+      {/* Combined 3-gate mastery + the teacher sign-off (instructor gate) per CODING unit. */}
+      {codingModules.length > 0 ? <MasterySignoffPanel classId={classId} modules={codingModules} /> : null}
 
       {/* Weighted CA + Exam term results per pupil, with a link to each printable report card. */}
       <TermResultsPanel classId={classId} />
