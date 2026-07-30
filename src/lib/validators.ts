@@ -579,6 +579,24 @@ export const schoolScheduleAssessmentSchema = z.object({
 });
 
 /**
+ * A teacher manages a module's project teams: forms teams, moves pupils in and out, and reviews the
+ * team's build. On "review" with status APPROVED the module's project gate passes for every member.
+ * A single action-tagged shape; the route enforces which fields each action needs.
+ */
+export const schoolProjectTeamSchema = z.object({
+  action: z.enum(["create", "addMember", "removeMember", "review", "delete"]),
+  classId: z.string().trim().max(64).optional(),
+  moduleId: z.string().trim().max(64).optional(),
+  teamId: z.string().trim().max(64).optional(),
+  name: z.string().trim().min(1).max(120).optional(),
+  userId: z.string().trim().max(64).optional(),
+  status: z.enum(["APPROVED", "NEEDS_WORK"]).optional(),
+  reviewNote: z.string().trim().max(2000).nullish(),
+  submissionNote: z.string().trim().max(2000).nullish(),
+  submissionUrl: z.string().trim().max(500).nullish(),
+});
+
+/**
  * A teacher marks the human-graded answers of one school submission: OPEN_ENDED (theory text) and
  * RUBRIC (observed practical). Each grade is a score for one answer; the server clamps it to that
  * question's marks and finalizes the submission.

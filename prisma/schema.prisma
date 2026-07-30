@@ -890,6 +890,7 @@ model Module {
   gateStatuses    ModuleGateStatus[]
   SchoolClassUnit SchoolClassUnit[]
   schoolCertificates SchoolCertificate[]
+  projectTeams    SchoolProjectTeam[]
 
   @@index([versionId, sortOrder])
 }
@@ -1405,10 +1406,52 @@ model SchoolClass {
   units    SchoolClassUnit[]
   certificates SchoolCertificate[]
   scheduledAssessments SchoolClassAssessment[]
+  projectTeams SchoolProjectTeam[]
 
   @@index([programId])
   @@index([schoolId])
   @@index([teacherId])
+}
+
+// A team of pupils working together on a module's project (a coding build or a robotics practical).
+// Teacher-driven, matching the observed-practical model: the teacher forms teams and reviews them; on
+// approval, the module's project gate passes for every member (report-only, never blocks advancement).
+model SchoolProjectTeam {
+  id             String                    @id @default(cuid())
+  schoolClassId  String
+  moduleId       String
+  name           String
+  status         ProjectTeamStatus         @default(FORMING)
+  submissionNote String?
+  submissionUrl  String?
+  reviewNote     String?
+  reviewedById   String?
+  reviewedByName String?
+  approvedAt     DateTime?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  schoolClass    SchoolClass               @relation(fields: [schoolClassId], references: [id], onDelete: Cascade)
+  module         Module                    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  members        SchoolProjectTeamMember[]
+
+  @@index([schoolClassId, moduleId])
+  @@index([moduleId])
+}
+
+model SchoolProjectTeamMember {
+  id     String            @id @default(cuid())
+  teamId String
+  userId String
+  team   SchoolProjectTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+enum ProjectTeamStatus {
+  FORMING
+  APPROVED
+  NEEDS_WORK
 }
 
 // A KAT-authored assessment (test/exam) that a teacher has scheduled to their class, with an optional

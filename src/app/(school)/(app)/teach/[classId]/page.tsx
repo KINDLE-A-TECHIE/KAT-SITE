@@ -8,7 +8,10 @@ import { checkClassLicense } from "@/lib/school-license";
 import { prisma } from "@/lib/prisma";
 import { ClassResultsPanel } from "@/components/school/class-results-panel";
 import { ClassAssessmentsPanel } from "@/components/school/class-assessments-panel";
+import { ProjectTeamsPanel } from "@/components/school/project-teams-panel";
 import { TermResultsPanel } from "@/components/school/term-results-panel";
+import { termNumberForModule } from "@/lib/school-term";
+import { Strand } from "@prisma/client";
 import { UnitDeliveryPanel } from "@/components/school/unit-delivery-panel";
 import { StartClassPanel } from "@/components/school/start-class-panel";
 import { TeacherPreviewPanel } from "@/components/school/teacher-preview-panel";
@@ -48,6 +51,27 @@ export default async function TeachClassPage({
   const gate = await checkClassLicense(membership.schoolId, owns.sessionLabel);
   if (!gate.allowed) redirect("/teach");
 
+  // CODING units of this class's course, for the team-projects panel. A module's own strand wins,
+  // falling back to the programme's. Projects are a coding activity, so DIGLIT units are excluded.
+  const program = owns.programId
+    ? await prisma.program.findUnique({ where: { id: owns.programId }, select: { strand: true } })
+    : null;
+  const curriculum = owns.programId
+    ? await prisma.curriculum.findUnique({
+        where: { programId: owns.programId },
+        select: {
+          versions: {
+            where: { isActive: true },
+            take: 1,
+            select: { modules: { orderBy: { sortOrder: "asc" }, select: { id: true, title: true, sortOrder: true, strand: true } } },
+          },
+        },
+      })
+    : null;
+  const codingModules = (curriculum?.versions[0]?.modules ?? [])
+    .filter((m) => (m.strand ?? program?.strand) === Strand.CODING)
+    .map((m) => ({ id: m.id, title: m.title, termNumber: termNumberForModule(m.sortOrder) }));
+
   return (
     <section className="space-y-6">
       <Link
@@ -76,6 +100,9 @@ export default async function TeachClassPage({
 
       {/* KAT-authored tests and exams; the teacher schedules when the class sits them. */}
       <ClassAssessmentsPanel classId={classId} />
+
+      {/* Team projects for CODING units; approving a team records its members' project gate. */}
+      {codingModules.length > 0 ? <ProjectTeamsPanel classId={classId} modules={codingModules} /> : null}
 
       {/* Weighted CA + Exam term results per pupil, with a link to each printable report card. */}
       <TermResultsPanel classId={classId} />
