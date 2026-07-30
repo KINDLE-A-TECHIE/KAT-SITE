@@ -1,0 +1,3 @@
+# Cloudflare Pages SPA fallback: serve the editor's index.html for any path so client routing works.
+# Copy into the Pages build output alongside _headers.
+/*    /index.html    200
