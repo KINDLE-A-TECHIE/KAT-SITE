@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { isWorldId, wrapForWorld, WORLD_META, WORLD_IDS } from "@/lib/blockly-worlds";
+import { isWorldId, wrapForWorld, WORLD_META, WORLD_IDS, parseGridConfig, DEFAULT_GRID } from "@/lib/blockly-worlds";
 
 describe("isWorldId", () => {
   it("accepts known worlds and rejects everything else", () => {
     expect(isWorldId("turtle")).toBe(true);
+    expect(isWorldId("grid")).toBe(true);
     expect(isWorldId("maze")).toBe(false);
     expect(isWorldId("")).toBe(false);
     expect(isWorldId(null)).toBe(false);
@@ -50,5 +51,40 @@ describe("wrapForWorld", () => {
     const empty = wrapForWorld("turtle", "");
     expect(empty).toContain("class _KatTurtle");
     expect(empty.trimEnd().endsWith("print(kat._report())")).toBe(true);
+  });
+
+  it("wraps the grid world with its own runtime, still swallowing stdout and reporting", () => {
+    const wrapped = wrapForWorld("grid", "kat.move()");
+    expect(wrapped).toContain("class _KatActor");
+    expect(wrapped).toContain("_sys.stdout = _io.StringIO()");
+    expect(wrapped).toContain("print(kat._report())");
+    expect(wrapped.indexOf("_sys.stdout = _io.StringIO()")).toBeLessThan(wrapped.indexOf("kat.move()"));
+  });
+});
+
+describe("parseGridConfig", () => {
+  it("returns null for missing or malformed config", () => {
+    expect(parseGridConfig(null)).toBeNull();
+    expect(parseGridConfig("")).toBeNull();
+    expect(parseGridConfig("not json")).toBeNull();
+    expect(parseGridConfig("42")).toBeNull();
+  });
+
+  it("parses a full maze and matches the runtime's shape", () => {
+    const grid = parseGridConfig(JSON.stringify(DEFAULT_GRID));
+    expect(grid).not.toBeNull();
+    expect(grid?.cols).toBe(DEFAULT_GRID.cols);
+    expect(grid?.goal).toEqual(DEFAULT_GRID.goal);
+    expect(grid?.heading).toBe("E");
+  });
+
+  it("applies the runtime's defaults and drops malformed walls", () => {
+    const grid = parseGridConfig(JSON.stringify({ walls: [[1, 1], "bad", [2]], heading: "X" }));
+    expect(grid?.cols).toBe(5);
+    expect(grid?.rows).toBe(5);
+    expect(grid?.start).toEqual([0, 0]);
+    expect(grid?.heading).toBe("E"); // an unknown heading falls back to E, as the runtime does
+    expect(grid?.goal).toBeNull();
+    expect(grid?.walls).toEqual([[1, 1]]);
   });
 });

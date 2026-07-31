@@ -26,8 +26,9 @@ import {
 } from "@/lib/enums";
 import { ProjectAssessmentView } from "@/components/dashboard/project-assessment-view";
 import { BlocklyWorkspace } from "@/components/dashboard/blockly-workspace";
+import { GridWorldView } from "@/components/dashboard/grid-world-view";
 import { runCode } from "@/lib/pyodide-grader";
-import { wrapForWorld, isWorldId, WORLD_META } from "@/lib/blockly-worlds";
+import { wrapForWorld, isWorldId, WORLD_META, DEFAULT_GRID_STDIN } from "@/lib/blockly-worlds";
 
 type Program = {
   id: string;
@@ -421,12 +422,21 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
 
   // Pick a block world for a CODE question. A world question is graded on ONE hidden captured state, so
   // switching to a world resets it to a single test case; switching back to "none" leaves the cases as-is.
+  // The grid world seeds that case's stdin with a starter maze (the maze IS the stdin the runtime reads).
   const setQuestionWorld = (question: QuestionDraft, world: string) => {
     if (world) {
-      patchQuestion(question.id, { world, testCases: [createTestCase()] });
+      const stdin = world === "grid" ? DEFAULT_GRID_STDIN : "";
+      patchQuestion(question.id, { world, testCases: [{ ...createTestCase(), stdin }] });
     } else {
       patchQuestion(question.id, { world: undefined });
     }
+  };
+
+  // Edit a grid question's maze (stored as the single test case's stdin). Changing the maze invalidates a
+  // previously captured expected state, so it is cleared and must be captured again.
+  const setGridConfig = (question: QuestionDraft, value: string) => {
+    const existing = question.testCases?.[0] ?? createTestCase();
+    patchQuestion(question.id, { testCases: [{ ...existing, stdin: value, expectedStdout: "" }] });
   };
 
   // Run the author's reference blocks through the world runtime and store its output as the hidden
@@ -437,7 +447,9 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
     if (!isWorldId(world)) return;
     setCapturing((prev) => ({ ...prev, [question.id]: true }));
     try {
-      const runs = await runCode(wrapForWorld(world, question.worldReferenceCode ?? ""), [{ id: "ref", stdin: "" }]);
+      // The grid world reads its maze from stdin, so the reference must run against THIS question's maze.
+      const stdin = world === "grid" ? (question.testCases?.[0]?.stdin ?? "") : "";
+      const runs = await runCode(wrapForWorld(world, question.worldReferenceCode ?? ""), [{ id: "ref", stdin }]);
       const out = runs[0];
       if (!out || out.errored || !out.stdout.trim()) {
         toast.error("The reference blocks did not produce a result. Add some blocks, then capture again.");
@@ -445,9 +457,20 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
       }
       const existing = question.testCases?.[0] ?? createTestCase();
       patchQuestion(question.id, {
-        testCases: [{ ...existing, stdin: "", expectedStdout: out.stdout.trim(), hidden: true }],
+        testCases: [{ ...existing, expectedStdout: out.stdout.trim(), hidden: true }],
       });
       toast.success("Captured the expected result from your reference blocks.");
+      // A maze whose reference never reaches the goal is almost certainly an authoring mistake.
+      if (world === "grid") {
+        try {
+          const state = JSON.parse(out.stdout.trim());
+          if (state && state.goal_reached === false) {
+            toast("Heads up: the reference robot did not reach the goal. Check your blocks or the maze.");
+          }
+        } catch {
+          /* a non-JSON report is already handled by the empty/errored guard above */
+        }
+      }
     } catch {
       toast.error("Could not run the reference blocks. Check your connection and try again.");
     } finally {
@@ -1129,9 +1152,29 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                             </label>
                             {question.world ? (
                               <div className="space-y-2 rounded-md border border-stone-200 p-2 dark:border-stone-800">
+                                {question.world === "grid" ? (
+                                  <div className="space-y-1.5">
+                                    <p className="text-[11px] font-medium text-stone-500 dark:text-stone-400">
+                                      Maze the robot must solve. Cells are [x, y] from the top-left; heading is E/S/W/N; walls
+                                      are cells the robot cannot enter.
+                                    </p>
+                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                                      <textarea
+                                        className="w-full rounded-md border border-stone-200 bg-stone-950 p-2 font-mono text-[11px] text-stone-100 sm:flex-1"
+                                        rows={5}
+                                        spellCheck={false}
+                                        value={question.testCases?.[0]?.stdin ?? ""}
+                                        onChange={(e) => setGridConfig(question, e.target.value)}
+                                      />
+                                      <div className="shrink-0">
+                                        <GridWorldView config={question.testCases?.[0]?.stdin} />
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : null}
                                 <p className="text-[11px] font-medium text-stone-500 dark:text-stone-400">
                                   Reference solution: build the correct answer in blocks, then capture what it makes. This is
-                                  graded against the pupil&apos;s drawing and is never shown to them.
+                                  graded against the pupil&apos;s work and is never shown to them.
                                 </p>
                                 <BlocklyWorkspace
                                   world={question.world}
@@ -1183,7 +1226,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                                 patchQuestion(question.id, { testCases: [{ ...tc, points: e.target.value }] });
                               }}
                             />
-                            <span className="text-[11px] text-stone-400">The whole drawing is one auto-marked check.</span>
+                            <span className="text-[11px] text-stone-400">The whole task is one auto-marked check.</span>
                           </div>
                         ) : (
                           <>

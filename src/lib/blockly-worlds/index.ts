@@ -12,9 +12,9 @@
  * prints only the runtime's authoritative report. A pupil cannot pass by printing the expected JSON.
  */
 
-export type WorldId = "turtle";
+export type WorldId = "turtle" | "grid";
 
-export const WORLD_IDS: readonly WorldId[] = ["turtle"] as const;
+export const WORLD_IDS: readonly WorldId[] = ["turtle", "grid"] as const;
 
 export function isWorldId(value: unknown): value is WorldId {
   return typeof value === "string" && (WORLD_IDS as readonly string[]).includes(value);
@@ -78,6 +78,68 @@ class _KatTurtle:
 
 kat = _KatTurtle()`;
 
+// A robot on a grid, read from stdin as JSON (so each test case is a different maze). It moves one cell
+// at a time in its heading, turns, and can paint the cell it stands on. Hitting a wall or the boundary
+// raises (the run fails, which is the right outcome for a crash). Graded on the FINAL state: position,
+// the set of painted cells, and whether it ended on the goal, so any route that ends correct passes.
+const GRID_PRELUDE = `import sys as _gsys, json as _gjson
+
+class _KatActor:
+    _DIRS = {"E": (1, 0), "S": (0, 1), "W": (-1, 0), "N": (0, -1)}
+    _ORDER = ["E", "S", "W", "N"]
+
+    def __init__(self, cfg):
+        self._cols = int(cfg.get("cols", 5))
+        self._rows = int(cfg.get("rows", 5))
+        start = cfg.get("start", [0, 0])
+        self._x = int(start[0])
+        self._y = int(start[1])
+        self._heading = cfg.get("heading", "E")
+        if self._heading not in self._DIRS:
+            self._heading = "E"
+        goal = cfg.get("goal")
+        self._goal = (int(goal[0]), int(goal[1])) if goal else None
+        self._walls = set((int(w[0]), int(w[1])) for w in cfg.get("walls", []))
+        self._painted = set()
+
+    def _ahead(self):
+        dx, dy = self._DIRS[self._heading]
+        return (self._x + dx, self._y + dy)
+
+    def _blocked(self, cell):
+        x, y = cell
+        return x < 0 or y < 0 or x >= self._cols or y >= self._rows or (x, y) in self._walls
+
+    def can_move(self):
+        return not self._blocked(self._ahead())
+
+    def at_goal(self):
+        return self._goal is not None and (self._x, self._y) == self._goal
+
+    def move(self):
+        nxt = self._ahead()
+        if self._blocked(nxt):
+            raise RuntimeError("hit a wall")
+        self._x, self._y = nxt
+
+    def turn_right(self):
+        self._heading = self._ORDER[(self._ORDER.index(self._heading) + 1) % 4]
+
+    def turn_left(self):
+        self._heading = self._ORDER[(self._ORDER.index(self._heading) - 1) % 4]
+
+    def paint(self):
+        self._painted.add((self._x, self._y))
+
+    def _report(self):
+        painted = sorted([c[0], c[1]] for c in self._painted)
+        return _gjson.dumps(
+            {"pos": [self._x, self._y], "painted": painted, "goal_reached": self.at_goal()},
+            separators=(",", ":"),
+        )
+
+kat = _KatActor(_gjson.loads((_gsys.stdin.read() or "").strip() or "{}"))`;
+
 const WORLDS: Record<WorldId, WorldDef> = {
   turtle: {
     label: "Turtle (drawing)",
@@ -85,7 +147,70 @@ const WORLDS: Record<WorldId, WorldDef> = {
     prelude: TURTLE_PRELUDE,
     reportExpr: "kat._report()",
   },
+  grid: {
+    label: "Grid robot (maze)",
+    description: "The blocks steer a robot on a grid. Graded on where it ends and what it paints.",
+    prelude: GRID_PRELUDE,
+    reportExpr: "kat._report()",
+  },
 };
+
+// ── Grid config (shared by the Python runtime, which reads it from stdin, and the TS grid renderer) ──
+
+export type GridConfig = {
+  cols: number;
+  rows: number;
+  start: [number, number];
+  heading: "E" | "S" | "W" | "N";
+  goal: [number, number] | null;
+  walls: Array<[number, number]>;
+};
+
+/** A simple, obviously solvable starter maze for the authoring picker (author adds walls). */
+export const DEFAULT_GRID: GridConfig = {
+  cols: 6,
+  rows: 6,
+  start: [0, 0],
+  heading: "E",
+  goal: [5, 5],
+  walls: [],
+};
+
+export const DEFAULT_GRID_STDIN = JSON.stringify(DEFAULT_GRID);
+
+function toCell(value: unknown): [number, number] | null {
+  if (!Array.isArray(value) || value.length < 2) return null;
+  const x = Number(value[0]);
+  const y = Number(value[1]);
+  return Number.isFinite(x) && Number.isFinite(y) ? [Math.trunc(x), Math.trunc(y)] : null;
+}
+
+/**
+ * Parse a grid config (a test case's stdin) into the shape both the maze renderer and the runtime agree
+ * on. Returns null for anything malformed, so a caller can show a placeholder instead of throwing. Mirrors
+ * the defaults the Python `_KatActor` applies, so the picture the pupil sees matches the world it runs in.
+ */
+export function parseGridConfig(raw: string | null | undefined): GridConfig | null {
+  if (!raw || !raw.trim()) return null;
+  let obj: Record<string, unknown>;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    obj = parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+  const cols = Math.max(1, Math.trunc(Number(obj.cols ?? 5)) || 5);
+  const rows = Math.max(1, Math.trunc(Number(obj.rows ?? 5)) || 5);
+  const start = toCell(obj.start) ?? [0, 0];
+  const headingRaw = typeof obj.heading === "string" ? obj.heading : "E";
+  const heading = (["E", "S", "W", "N"] as const).includes(headingRaw as never) ? (headingRaw as GridConfig["heading"]) : "E";
+  const goal = toCell(obj.goal);
+  const walls = Array.isArray(obj.walls)
+    ? obj.walls.map(toCell).filter((c): c is [number, number] => c !== null)
+    : [];
+  return { cols, rows, start, heading, goal, walls };
+}
 
 /** Authoring metadata for a world picker: id + label + description, no runtime source. */
 export const WORLD_META: ReadonlyArray<{ id: WorldId; label: string; description: string }> =

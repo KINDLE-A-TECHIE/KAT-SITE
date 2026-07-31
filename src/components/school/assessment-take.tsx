@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, ClipboardCheck, Loader2, Play } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BlocklyWorkspace } from "@/components/dashboard/blockly-workspace";
+import { GridWorldView } from "@/components/dashboard/grid-world-view";
 import { runCode } from "@/lib/pyodide-grader";
 import { matchOutput } from "@/lib/practical-grading";
 import { wrapForWorld, isWorldId, type WorldId } from "@/lib/blockly-worlds";
@@ -248,6 +249,14 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
                     ))}
                   </div>
                 )}
+                {questionWorld(q) === "grid" && (
+                  // Show the maze the blocks must solve (drawn from the test case's grid config). The
+                  // layout is the puzzle, not the answer, so it is fine for the pupil to see it.
+                  <div className="rounded-lg border border-stone-200 p-2 dark:border-stone-800">
+                    <p className="mb-1.5 text-xs font-medium text-stone-500 dark:text-stone-400">Your maze</p>
+                    <GridWorldView config={q.testCases?.[0]?.stdin} />
+                  </div>
+                )}
                 {q.blocklyConfig != null ? (
                   // Block-answered: the workspace keeps the answer's `code` in sync with the generated
                   // Python, so check-samples, submit and server grading run exactly as for a typed answer.
@@ -284,7 +293,7 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
                   // World questions grade the picture the blocks make; there are no printed examples to
                   // check against, so build to match what the question describes, then submit.
                   <p className="text-xs text-stone-500 dark:text-stone-400">
-                    Build the blocks to match what the question asks, then submit. Your drawing is marked automatically.
+                    Build the blocks to match what the question asks, then submit. Your work is marked automatically.
                   </p>
                 ) : (
                   <div className="flex items-center gap-3">

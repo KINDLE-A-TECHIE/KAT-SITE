@@ -6,6 +6,7 @@ import { Blocks, Code2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getDraft, putDraft } from "@/lib/lesson-block-draft";
 import { registerTurtleWorld, TURTLE_TOOLBOX } from "@/lib/blockly-worlds/turtle-blocks";
+import { registerGridWorld, GRID_TOOLBOX } from "@/lib/blockly-worlds/grid-blocks";
 
 // Same Monaco integration the code playground and assessment editor use (client-only, no SSR).
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -144,12 +145,16 @@ export function BlocklyWorkspace({
       if (cancelled || !hostRef.current) return;
 
       // Register the world's blocks (and default its toolbox) before inject, so the generators exist by
-      // the time workspaceToCode runs. Only "turtle" today; a new world adds a case here.
+      // the time workspaceToCode runs. A new world adds a case here.
       let worldToolbox: object | undefined;
       if (world === "turtle") {
         await registerTurtleWorld();
         if (cancelled || !hostRef.current) return;
         worldToolbox = TURTLE_TOOLBOX;
+      } else if (world === "grid") {
+        await registerGridWorld();
+        if (cancelled || !hostRef.current) return;
+        worldToolbox = GRID_TOOLBOX;
       }
 
       try {
