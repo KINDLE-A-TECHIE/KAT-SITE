@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { PaginationControls } from "@/components/pagination-controls";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { ArrowDown, ArrowUp, CheckCircle2, ClipboardList, Eye, GripVertical, Loader2, Pencil, PlusCircle, Sparkles, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, ClipboardList, Eye, GripVertical, Loader2, Pencil, Play, PlusCircle, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
@@ -27,8 +27,9 @@ import {
 import { ProjectAssessmentView } from "@/components/dashboard/project-assessment-view";
 import { BlocklyWorkspace } from "@/components/dashboard/blockly-workspace";
 import { GridWorldView } from "@/components/dashboard/grid-world-view";
+import { TurtleWorldView } from "@/components/dashboard/turtle-world-view";
 import { runCode } from "@/lib/pyodide-grader";
-import { wrapForWorld, isWorldId, WORLD_META, DEFAULT_GRID_STDIN } from "@/lib/blockly-worlds";
+import { wrapForWorld, wrapForWorldTrace, isWorldId, WORLD_META, DEFAULT_GRID_STDIN } from "@/lib/blockly-worlds";
 
 type Program = {
   id: string;
@@ -419,6 +420,9 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
 
   // Which world questions are currently running their reference capture (per question id).
   const [capturing, setCapturing] = useState<Record<string, boolean>>({});
+  // Reference-solution replays for the authoring preview (per question id): one trace per maze + a counter.
+  const [refReplay, setRefReplay] = useState<Record<string, { traces: string[]; runId: number }>>({});
+  const [previewing, setPreviewing] = useState<Record<string, boolean>>({});
 
   // Pick a block world for a CODE question. A world question is graded on ONE hidden captured state, so
   // switching to a world resets it to a single test case; switching back to "none" leaves the cases as-is.
@@ -432,11 +436,19 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
     }
   };
 
-  // Edit a grid question's maze (stored as the single test case's stdin). Changing the maze invalidates a
-  // previously captured expected state, so it is cleared and must be captured again.
-  const setGridConfig = (question: QuestionDraft, value: string) => {
-    const existing = question.testCases?.[0] ?? createTestCase();
-    patchQuestion(question.id, { testCases: [{ ...existing, stdin: value, expectedStdout: "" }] });
+  // Add another maze (test case) to a grid question. One reference solution must solve them all, so more
+  // mazes push the pupil toward a general solution (sensors + loops) rather than fixed moves.
+  const addMaze = (question: QuestionDraft) => {
+    const marks = question.testCases?.[0]?.points ?? "1";
+    patchQuestion(question.id, {
+      testCases: [...(question.testCases ?? []), { ...createTestCase(), stdin: DEFAULT_GRID_STDIN, points: marks }],
+    });
+  };
+
+  // Every maze in a set is weighted equally: one "marks per maze" value writes to all cases; the question
+  // total is that value times the number of mazes (the existing CODE-total rule).
+  const setMarksPerMaze = (question: QuestionDraft, value: string) => {
+    patchQuestion(question.id, { testCases: (question.testCases ?? []).map((t) => ({ ...t, points: value })) });
   };
 
   // Run the author's reference blocks through the world runtime and store its output as the hidden
@@ -447,34 +459,65 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
     if (!isWorldId(world)) return;
     setCapturing((prev) => ({ ...prev, [question.id]: true }));
     try {
-      // The grid world reads its maze from stdin, so the reference must run against THIS question's maze.
-      const stdin = world === "grid" ? (question.testCases?.[0]?.stdin ?? "") : "";
-      const runs = await runCode(wrapForWorld(world, question.worldReferenceCode ?? ""), [{ id: "ref", stdin }]);
-      const out = runs[0];
-      if (!out || out.errored || !out.stdout.trim()) {
-        toast.error("The reference blocks did not produce a result. Add some blocks, then capture again.");
-        return;
-      }
-      const existing = question.testCases?.[0] ?? createTestCase();
-      patchQuestion(question.id, {
-        testCases: [{ ...existing, expectedStdout: out.stdout.trim(), hidden: true }],
-      });
-      toast.success("Captured the expected result from your reference blocks.");
-      // A maze whose reference never reaches the goal is almost certainly an authoring mistake.
-      if (world === "grid") {
-        try {
-          const state = JSON.parse(out.stdout.trim());
-          if (state && state.goal_reached === false) {
-            toast("Heads up: the reference robot did not reach the goal. Check your blocks or the maze.");
+      // Run the ONE reference against every maze (grid reads its maze from stdin; turtle has none), and
+      // store each maze's output as that case's hidden expected. A maze the reference cannot solve is
+      // left uncaptured, which the save-time "no expected output" guard turns into a hard error.
+      const cases = question.testCases ?? [];
+      const inputs = world === "grid" && cases.length > 0 ? cases.map((t, i) => ({ id: String(i), stdin: t.stdin })) : [{ id: "0", stdin: "" }];
+      const runs = await runCode(wrapForWorld(world, question.worldReferenceCode ?? ""), inputs);
+
+      let failed = 0;
+      let unreached = 0;
+      const updated = cases.map((t, i) => {
+        const out = runs.find((r) => r.id === String(i));
+        const stdout = out && !out.errored ? out.stdout.trim() : "";
+        if (!stdout) {
+          failed += 1;
+        } else if (world === "grid") {
+          try {
+            const state = JSON.parse(stdout);
+            if (state && state.goal_reached === false) unreached += 1;
+          } catch {
+            /* a non-JSON report counts as a failure below via the empty guard on the next capture */
           }
-        } catch {
-          /* a non-JSON report is already handled by the empty/errored guard above */
         }
+        return { ...t, expectedStdout: stdout, hidden: true };
+      });
+      patchQuestion(question.id, { testCases: updated });
+
+      if (failed > 0) {
+        toast.error(`Captured, but the reference crashed on ${failed} maze(s). Fix the reference or those mazes.`);
+      } else {
+        toast.success(cases.length > 1 ? `Captured the expected result for all ${cases.length} mazes.` : "Captured the expected result from your reference blocks.");
+      }
+      if (unreached > 0) {
+        toast(`Heads up: the reference did not reach the goal on ${unreached} maze(s).`);
       }
     } catch {
       toast.error("Could not run the reference blocks. Check your connection and try again.");
     } finally {
       setCapturing((prev) => ({ ...prev, [question.id]: false }));
+    }
+  };
+
+  // Run the reference blocks for a visual preview (trace, not grading), so the author can confirm it does
+  // what they intend before capturing. Grid runs against the question's maze; turtle has no stdin.
+  const previewReference = async (question: QuestionDraft) => {
+    const world = question.world;
+    if (!isWorldId(world)) return;
+    setPreviewing((prev) => ({ ...prev, [question.id]: true }));
+    try {
+      const cases = question.testCases ?? [];
+      const inputs = world === "grid" && cases.length > 0 ? cases.map((t, i) => ({ id: String(i), stdin: t.stdin })) : [{ id: "0", stdin: "" }];
+      const runs = await runCode(wrapForWorldTrace(world, question.worldReferenceCode ?? ""), inputs);
+      const traces = inputs.map((_, i) => runs.find((r) => r.id === String(i))?.stdout?.trim() ?? "");
+      if (traces.some((t) => t.length > 0)) {
+        setRefReplay((prev) => ({ ...prev, [question.id]: { traces, runId: (prev[question.id]?.runId ?? 0) + 1 } }));
+      } else {
+        toast.error("The reference blocks did not run. Add some blocks and try again.");
+      }
+    } finally {
+      setPreviewing((prev) => ({ ...prev, [question.id]: false }));
     }
   };
 
@@ -1153,23 +1196,44 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                             {question.world ? (
                               <div className="space-y-2 rounded-md border border-stone-200 p-2 dark:border-stone-800">
                                 {question.world === "grid" ? (
-                                  <div className="space-y-1.5">
+                                  <div className="space-y-2">
                                     <p className="text-[11px] font-medium text-stone-500 dark:text-stone-400">
-                                      Maze the robot must solve. Cells are [x, y] from the top-left; heading is E/S/W/N; walls
-                                      are cells the robot cannot enter.
+                                      Mazes the robot must solve. Your one reference below must solve EVERY maze, so use the
+                                      sensors and loops, not fixed moves. Cells are [x, y] from the top-left; heading is
+                                      E/S/W/N; walls are cells the robot cannot enter.
                                     </p>
-                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-                                      <textarea
-                                        className="w-full rounded-md border border-stone-200 bg-stone-950 p-2 font-mono text-[11px] text-stone-100 sm:flex-1"
-                                        rows={5}
-                                        spellCheck={false}
-                                        value={question.testCases?.[0]?.stdin ?? ""}
-                                        onChange={(e) => setGridConfig(question, e.target.value)}
-                                      />
-                                      <div className="shrink-0">
-                                        <GridWorldView config={question.testCases?.[0]?.stdin} />
+                                    {(question.testCases ?? []).map((tc, i) => (
+                                      <div key={tc.id} className="flex flex-col gap-2 rounded-md border border-stone-200 p-2 sm:flex-row sm:items-start dark:border-stone-800">
+                                        <div className="flex-1 space-y-1">
+                                          <div className="flex items-center justify-between gap-2">
+                                            <span className="text-[11px] font-medium text-stone-500 dark:text-stone-400">Maze {i + 1}</span>
+                                            <div className="flex items-center gap-2">
+                                              {tc.expectedStdout?.trim() ? (
+                                                <span className="text-[11px] text-emerald-600 dark:text-emerald-400">Captured &#10003;</span>
+                                              ) : (
+                                                <span className="text-[11px] text-stone-400">Not captured</span>
+                                              )}
+                                              <Button type="button" variant="outline" size="sm" disabled={(question.testCases ?? []).length <= 1} onClick={() => removeTestCase(question.id, tc.id)}>
+                                                <Trash2 className="size-4" />
+                                              </Button>
+                                            </div>
+                                          </div>
+                                          <textarea
+                                            className="w-full rounded-md border border-stone-200 bg-stone-950 p-2 font-mono text-[11px] text-stone-100"
+                                            rows={4}
+                                            spellCheck={false}
+                                            value={tc.stdin}
+                                            onChange={(e) => updateTestCase(question.id, tc.id, { stdin: e.target.value, expectedStdout: "" })}
+                                          />
+                                        </div>
+                                        <div className="shrink-0">
+                                          <GridWorldView config={tc.stdin} trace={refReplay[question.id]?.traces?.[i]} runId={refReplay[question.id]?.runId} />
+                                        </div>
                                       </div>
-                                    </div>
+                                    ))}
+                                    <Button type="button" variant="outline" size="sm" onClick={() => addMaze(question)}>
+                                      <PlusCircle className="size-4" /> Add maze
+                                    </Button>
                                   </div>
                                 ) : null}
                                 <p className="text-[11px] font-medium text-stone-500 dark:text-stone-400">
@@ -1181,16 +1245,30 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                                   onCodeChange={(c) => patchQuestion(question.id, { worldReferenceCode: c })}
                                 />
                                 <div className="flex flex-wrap items-center gap-2">
+                                  <Button type="button" variant="outline" size="sm" disabled={previewing[question.id]} onClick={() => void previewReference(question)}>
+                                    {previewing[question.id] ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}
+                                    Preview run
+                                  </Button>
                                   <Button type="button" variant="outline" size="sm" disabled={capturing[question.id]} onClick={() => void captureWorldExpected(question)}>
                                     {capturing[question.id] ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
                                     Capture expected result
                                   </Button>
-                                  {question.testCases?.[0]?.expectedStdout?.trim() ? (
-                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400">Captured &#10003;</span>
-                                  ) : (
-                                    <span className="text-[11px] text-stone-400">Not captured yet</span>
-                                  )}
+                                  {(() => {
+                                    const cs = question.testCases ?? [];
+                                    const done = cs.filter((t) => t.expectedStdout?.trim()).length;
+                                    return done === cs.length && cs.length > 0 ? (
+                                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400">Captured {done}/{cs.length} &#10003;</span>
+                                    ) : (
+                                      <span className="text-[11px] text-stone-400">Captured {done}/{cs.length}</span>
+                                    );
+                                  })()}
                                 </div>
+                                {question.world === "turtle" && refReplay[question.id] ? (
+                                  // Turtle previews here; a grid preview animates in each maze row above.
+                                  <div className="pt-1">
+                                    <TurtleWorldView trace={refReplay[question.id]?.traces?.[0]} runId={refReplay[question.id]?.runId} />
+                                  </div>
+                                ) : null}
                               </div>
                             ) : (
                               <textarea
@@ -1215,18 +1293,21 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                         )}
                         {question.useBlocks && question.world ? (
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Marks</span>
+                            <span className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                              {question.world === "grid" ? "Marks per maze" : "Marks"}
+                            </span>
                             <Input
                               type="number"
                               min={1}
                               className="w-24"
                               value={question.testCases?.[0]?.points ?? "1"}
-                              onChange={(e) => {
-                                const tc = question.testCases?.[0] ?? createTestCase();
-                                patchQuestion(question.id, { testCases: [{ ...tc, points: e.target.value }] });
-                              }}
+                              onChange={(e) => setMarksPerMaze(question, e.target.value)}
                             />
-                            <span className="text-[11px] text-stone-400">The whole task is one auto-marked check.</span>
+                            <span className="text-[11px] text-stone-400">
+                              {question.world === "grid" && (question.testCases?.length ?? 0) > 1
+                                ? `Each maze is worth this. Total: ${(question.testCases?.length ?? 0) * (Number(question.testCases?.[0]?.points) || 0)} marks.`
+                                : "The whole task is one auto-marked check."}
+                            </span>
                           </div>
                         ) : (
                           <>

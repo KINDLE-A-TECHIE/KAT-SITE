@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isWorldId, wrapForWorld, WORLD_META, WORLD_IDS, parseGridConfig, DEFAULT_GRID } from "@/lib/blockly-worlds";
+import { isWorldId, wrapForWorld, wrapForWorldTrace, WORLD_META, WORLD_IDS, parseGridConfig, DEFAULT_GRID } from "@/lib/blockly-worlds";
 
 describe("isWorldId", () => {
   it("accepts known worlds and rejects everything else", () => {
@@ -59,6 +59,31 @@ describe("wrapForWorld", () => {
     expect(wrapped).toContain("_sys.stdout = _io.StringIO()");
     expect(wrapped).toContain("print(kat._report())");
     expect(wrapped.indexOf("_sys.stdout = _io.StringIO()")).toBeLessThan(wrapped.indexOf("kat.move()"));
+  });
+});
+
+describe("wrapForWorldTrace", () => {
+  it("runs the pupil code under try/except (indented) and prints the trace, not the graded report", () => {
+    const wrapped = wrapForWorldTrace("turtle", "kat.forward(50)\nkat.right(90)");
+    expect(wrapped).toContain("try:");
+    expect(wrapped).toContain("except Exception as _e:");
+    expect(wrapped).toContain("_kat_error = str(_e)");
+    expect(wrapped).toContain("print(kat._trace(_kat_error))");
+    expect(wrapped).not.toContain("print(kat._report())");
+    // each pupil line is indented four spaces under the try
+    expect(wrapped).toContain("\n    kat.forward(50)\n");
+    expect(wrapped).toContain("\n    kat.right(90)\n");
+  });
+
+  it("still swallows the pupil's stdout before restoring it for the trace", () => {
+    const wrapped = wrapForWorldTrace("grid", "kat.move()");
+    expect(wrapped).toContain("class _KatActor");
+    expect(wrapped.indexOf("_sys.stdout = _io.StringIO()")).toBeLessThan(wrapped.indexOf("try:"));
+  });
+
+  it("emits a valid body (pass) when the pupil code is empty", () => {
+    const wrapped = wrapForWorldTrace("turtle", "");
+    expect(wrapped).toContain("try:\n    pass\nexcept");
   });
 });
 

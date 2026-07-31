@@ -8,9 +8,10 @@ import { ArrowLeft, CheckCircle2, ClipboardCheck, Loader2, Play } from "lucide-r
 import { Skeleton } from "@/components/ui/skeleton";
 import { BlocklyWorkspace } from "@/components/dashboard/blockly-workspace";
 import { GridWorldView } from "@/components/dashboard/grid-world-view";
+import { TurtleWorldView } from "@/components/dashboard/turtle-world-view";
 import { runCode } from "@/lib/pyodide-grader";
 import { matchOutput } from "@/lib/practical-grading";
-import { wrapForWorld, isWorldId, type WorldId } from "@/lib/blockly-worlds";
+import { wrapForWorld, wrapForWorldTrace, isWorldId, type WorldId } from "@/lib/blockly-worlds";
 
 // The same Monaco editor the lessons use, so a coding exam feels like the lessons. Client-only.
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -72,6 +73,10 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
   const [sampleResult, setSampleResult] = useState<Record<string, string>>({});
+  // Replay traces for world questions: one trace per test case (grid can have several mazes) + a run
+  // counter so pressing Run replays each time.
+  const [replay, setReplay] = useState<Record<string, { traces: string[]; runId: number }>>({});
+  const [replayRunning, setReplayRunning] = useState<Record<string, boolean>>({});
   const [result, setResult] = useState<Result | null>(null);
 
   useEffect(() => {
@@ -107,6 +112,29 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
       return r && !r.errored && matchOutput(r.stdout, t.expectedStdout ?? "");
     }).length;
     setSampleResult((p) => ({ ...p, [q.id]: `${passed}/${samples.length} sample tests passed` }));
+  };
+
+  // Run a world question's blocks for a REPLAY (not grading): the trace wrapper prints a step trace the
+  // world view animates. Grid reads its maze from stdin, so pass it; turtle has no stdin.
+  const runReplay = async (q: Question) => {
+    const world = questionWorld(q);
+    if (!world) return;
+    setReplayRunning((p) => ({ ...p, [q.id]: true }));
+    try {
+      // The one program runs against every maze (grid) or once (turtle, no stdin); one trace per case.
+      const cases = q.testCases ?? [];
+      const inputs =
+        world === "grid" && cases.length > 0 ? cases.map((t, i) => ({ id: String(i), stdin: t.stdin })) : [{ id: "0", stdin: "" }];
+      const runs = await runCode(wrapForWorldTrace(world, answers[q.id]?.code ?? ""), inputs);
+      const traces = inputs.map((_, i) => runs.find((r) => r.id === String(i))?.stdout?.trim() ?? "");
+      if (traces.some((t) => t.length > 0)) {
+        setReplay((p) => ({ ...p, [q.id]: { traces, runId: (p[q.id]?.runId ?? 0) + 1 } }));
+      } else {
+        toast.error("Could not run your blocks. Add some blocks and try again.");
+      }
+    } finally {
+      setReplayRunning((p) => ({ ...p, [q.id]: false }));
+    }
   };
 
   const submit = async () => {
@@ -250,11 +278,23 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
                   </div>
                 )}
                 {questionWorld(q) === "grid" && (
-                  // Show the maze the blocks must solve (drawn from the test case's grid config). The
-                  // layout is the puzzle, not the answer, so it is fine for the pupil to see it.
+                  // Show the maze(s) the blocks must solve (drawn from each test case's grid config). The
+                  // layout is the puzzle, not the answer, so it is fine for the pupil to see it. One program
+                  // must solve every maze; after a Run, each view animates the robot along its own trace.
                   <div className="rounded-lg border border-stone-200 p-2 dark:border-stone-800">
-                    <p className="mb-1.5 text-xs font-medium text-stone-500 dark:text-stone-400">Your maze</p>
-                    <GridWorldView config={q.testCases?.[0]?.stdin} />
+                    <p className="mb-1.5 text-xs font-medium text-stone-500 dark:text-stone-400">
+                      {(q.testCases?.length ?? 0) > 1 ? "Your mazes (one program must solve them all)" : "Your maze"}
+                    </p>
+                    <div className="flex flex-wrap gap-4">
+                      {(q.testCases ?? []).map((tc, i) => (
+                        <div key={tc.id} className="min-w-[8rem]">
+                          {(q.testCases?.length ?? 0) > 1 ? (
+                            <p className="mb-1 text-[11px] font-medium text-stone-400">Maze {i + 1}</p>
+                          ) : null}
+                          <GridWorldView config={tc.stdin} trace={replay[q.id]?.traces?.[i]} runId={replay[q.id]?.runId} />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {q.blocklyConfig != null ? (
@@ -290,11 +330,27 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
                   </div>
                 )}
                 {questionWorld(q) ? (
-                  // World questions grade the picture the blocks make; there are no printed examples to
-                  // check against, so build to match what the question describes, then submit.
-                  <p className="text-xs text-stone-500 dark:text-stone-400">
-                    Build the blocks to match what the question asks, then submit. Your work is marked automatically.
-                  </p>
+                  // World questions grade the picture/state the blocks make; there are no printed examples.
+                  // Run to watch it (turtle draws below; the maze animates above), then submit.
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => void runReplay(q)}
+                        disabled={submitting || replayRunning[q.id]}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:opacity-60 dark:border-stone-800 dark:text-stone-300"
+                      >
+                        {replayRunning[q.id] ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
+                        Run
+                      </button>
+                      <span className="text-xs text-stone-500 dark:text-stone-400">
+                        Run to watch your blocks, then submit. Your work is marked automatically.
+                      </span>
+                    </div>
+                    {questionWorld(q) === "turtle" ? (
+                      <TurtleWorldView trace={replay[q.id]?.traces?.[0]} runId={replay[q.id]?.runId} />
+                    ) : null}
+                  </div>
                 ) : (
                   <div className="flex items-center gap-3">
                     <button

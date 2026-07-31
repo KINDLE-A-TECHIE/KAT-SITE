@@ -26,8 +26,10 @@ type WorldDef = {
   description: string;
   /** Python injected BEFORE the pupil's code: defines `kat` and its recording. */
   prelude: string;
-  /** Python expression printed AFTER the pupil's code: the canonical final-state JSON. */
+  /** Python expression printed AFTER the pupil's code: the canonical final-state JSON (for GRADING). */
   reportExpr: string;
+  /** Python expression printed for a REPLAY run: a step trace + optional error, for animation only. */
+  traceExpr: string;
 };
 
 // A turtle whose forward moves draw line segments. The graded state is the SET of segments (each a
@@ -42,11 +44,13 @@ class _KatTurtle:
         self._heading = 0.0
         self._pen = True
         self._segments = set()
+        self._events = []
 
     def _step(self, dist):
         rad = _math.radians(self._heading)
         nx = self._x + dist * _math.cos(rad)
         ny = self._y + dist * _math.sin(rad)
+        self._events.append({"x1": round(self._x), "y1": round(self._y), "x2": round(nx), "y2": round(ny), "pen": bool(self._pen)})
         if self._pen:
             a = (round(self._x), round(self._y))
             b = (round(nx), round(ny))
@@ -76,6 +80,9 @@ class _KatTurtle:
         segs = sorted([a[0], a[1], b[0], b[1]] for (a, b) in self._segments)
         return _json.dumps({"segments": segs}, separators=(",", ":"))
 
+    def _trace(self, error=None):
+        return _json.dumps({"steps": self._events, "error": error}, separators=(",", ":"))
+
 kat = _KatTurtle()`;
 
 // A robot on a grid, read from stdin as JSON (so each test case is a different maze). It moves one cell
@@ -101,6 +108,10 @@ class _KatActor:
         self._goal = (int(goal[0]), int(goal[1])) if goal else None
         self._walls = set((int(w[0]), int(w[1])) for w in cfg.get("walls", []))
         self._painted = set()
+        self._events = [self._snapshot(0)]
+
+    def _snapshot(self, painted_now):
+        return {"x": self._x, "y": self._y, "h": self._heading, "p": 1 if painted_now else 0}
 
     def _ahead(self):
         dx, dy = self._DIRS[self._heading]
@@ -121,15 +132,19 @@ class _KatActor:
         if self._blocked(nxt):
             raise RuntimeError("hit a wall")
         self._x, self._y = nxt
+        self._events.append(self._snapshot(0))
 
     def turn_right(self):
         self._heading = self._ORDER[(self._ORDER.index(self._heading) + 1) % 4]
+        self._events.append(self._snapshot(0))
 
     def turn_left(self):
         self._heading = self._ORDER[(self._ORDER.index(self._heading) - 1) % 4]
+        self._events.append(self._snapshot(0))
 
     def paint(self):
         self._painted.add((self._x, self._y))
+        self._events.append(self._snapshot(1))
 
     def _report(self):
         painted = sorted([c[0], c[1]] for c in self._painted)
@@ -137,6 +152,9 @@ class _KatActor:
             {"pos": [self._x, self._y], "painted": painted, "goal_reached": self.at_goal()},
             separators=(",", ":"),
         )
+
+    def _trace(self, error=None):
+        return _gjson.dumps({"steps": self._events, "error": error}, separators=(",", ":"))
 
 kat = _KatActor(_gjson.loads((_gsys.stdin.read() or "").strip() or "{}"))`;
 
@@ -146,12 +164,14 @@ const WORLDS: Record<WorldId, WorldDef> = {
     description: "The blocks move a pen that draws lines. Graded on the final picture.",
     prelude: TURTLE_PRELUDE,
     reportExpr: "kat._report()",
+    traceExpr: "kat._trace(_kat_error)",
   },
   grid: {
     label: "Grid robot (maze)",
     description: "The blocks steer a robot on a grid. Graded on where it ends and what it paints.",
     prelude: GRID_PRELUDE,
     reportExpr: "kat._report()",
+    traceExpr: "kat._trace(_kat_error)",
   },
 };
 
@@ -233,6 +253,37 @@ export function wrapForWorld(world: WorldId, pupilCode: string): string {
     pupilCode,
     "_sys.stdout = _kat_real_stdout",
     `print(${def.reportExpr})`,
+    "",
+  ].join("\n");
+}
+
+/**
+ * Assemble a REPLAY run: same runtime, but the pupil's code runs inside try/except so a crash (hitting a
+ * wall) still yields the trace up to that point plus an `error`, and the program prints a STEP TRACE for
+ * animation instead of the graded report. This output is never graded, so its shape can be richer and a
+ * crash is captured rather than failing hard. The pupil code is indented under the try; block-generated
+ * Python is uniformly indented already, so this stays valid.
+ */
+export function wrapForWorldTrace(world: WorldId, pupilCode: string): string {
+  const def = WORLDS[world];
+  const indented = pupilCode
+    .split("\n")
+    .map((line) => (line.length > 0 ? `    ${line}` : line))
+    .join("\n");
+  const body = indented.trim().length > 0 ? indented : "    pass";
+  return [
+    def.prelude,
+    "",
+    "import sys as _sys, io as _io",
+    "_kat_real_stdout = _sys.stdout",
+    "_sys.stdout = _io.StringIO()",
+    "_kat_error = None",
+    "try:",
+    body,
+    "except Exception as _e:",
+    "    _kat_error = str(_e)",
+    "_sys.stdout = _kat_real_stdout",
+    `print(${def.traceExpr})`,
     "",
   ].join("\n");
 }
