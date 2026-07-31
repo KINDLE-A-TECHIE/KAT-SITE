@@ -5,10 +5,10 @@
  * stay identical to SCRATCH_MSG there. It lets the KAT page load a project into the editor and ask it to
  * save, and reports readiness / unsaved-changes / save results back up.
  *
- * WIRING (the only line you complete): `getVM()` must return the running scratch-vm instance from your
- * GUI build. In a standard TurboWarp/scratch-gui `src/playground` entry the VM is created there
- * (`const vm = new VM()`), so expose it, e.g. add `window.__katVM = vm;` next to where the GUI mounts,
- * then this file returns it. Import this file once from that same entry (after the GUI mounts).
+ * WIRING: in TurboWarp/scratch-gui the VM is NOT a global, it lives in the Redux store
+ * (`state.scratchGui.vm`). Expose it with the tiny `KatVmExposer` connected component from the README,
+ * which sets `window.__katVM`, and `getVM()` below returns that. The README also covers the required
+ * patch to allow embedding (TurboWarp blocks iframes by default) and the trademark rebrand.
  *
  * The parent origin (the KAT app allowed to drive this editor) is read from the `?parent=<origin>` query
  * param the KAT iframe sets. Messages from any other origin are ignored.

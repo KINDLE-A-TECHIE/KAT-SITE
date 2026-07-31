@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { PaginationControls } from "@/components/pagination-controls";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { ArrowDown, ArrowUp, CheckCircle2, ClipboardList, Eye, GripVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, ClipboardList, Eye, GripVertical, Loader2, Pencil, PlusCircle, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,9 @@ import {
   type UserRoleValue,
 } from "@/lib/enums";
 import { ProjectAssessmentView } from "@/components/dashboard/project-assessment-view";
+import { BlocklyWorkspace } from "@/components/dashboard/blockly-workspace";
+import { runCode } from "@/lib/pyodide-grader";
+import { wrapForWorld, isWorldId, WORLD_META } from "@/lib/blockly-worlds";
 
 type Program = {
   id: string;
@@ -120,6 +123,11 @@ type QuestionDraft = {
   // CODE questions answered with blocks: the pupil builds Blockly that generates the graded Python.
   useBlocks?: boolean;
   blocklyConfig?: string;
+  // A block "world" (e.g. "turtle"): the blocks are graded on the picture/state they make, not a printout.
+  world?: string;
+  // Authoring-only: the reference solution the author builds to CAPTURE the expected state. Never saved
+  // to blocklyConfig (which reaches the pupil), so it cannot leak the answer.
+  worldReferenceCode?: string;
   // RUBRIC questions
   criteria?: CriterionDraft[];
 };
@@ -158,6 +166,27 @@ function createTestCase(): TestCaseDraft {
 
 function createCriterion(): CriterionDraft {
   return { id: createId("crit"), label: "", maxPoints: "3" };
+}
+
+/**
+ * The blocklyConfig string sent for a block-answered CODE question. A world question keys the take UI on
+ * its `world` id (the toolbox is derived from the world); any hand-authored config is carried through.
+ * The reference solution is NEVER included: blocklyConfig reaches the pupil, so it would leak the answer.
+ */
+function buildBlocklyConfig(question: QuestionDraft): string {
+  let base: Record<string, unknown> = {};
+  const raw = question.blocklyConfig?.trim();
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") base = parsed as Record<string, unknown>;
+    } catch {
+      /* a malformed hand-authored config falls back to the world/default toolbox */
+    }
+  }
+  if (question.world) base.world = question.world;
+  delete (base as { worldReferenceCode?: unknown }).worldReferenceCode;
+  return Object.keys(base).length > 0 ? JSON.stringify(base) : "{}";
 }
 
 function createQuestionDraft(type: QuestionTypeValue): QuestionDraft {
@@ -387,6 +416,45 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
   const patchQuestion = (questionId: string, update: Partial<QuestionDraft>) =>
     setQuestionDrafts((prev) => prev.map((q) => (q.id === questionId ? { ...q, ...update } : q)));
 
+  // Which world questions are currently running their reference capture (per question id).
+  const [capturing, setCapturing] = useState<Record<string, boolean>>({});
+
+  // Pick a block world for a CODE question. A world question is graded on ONE hidden captured state, so
+  // switching to a world resets it to a single test case; switching back to "none" leaves the cases as-is.
+  const setQuestionWorld = (question: QuestionDraft, world: string) => {
+    if (world) {
+      patchQuestion(question.id, { world, testCases: [createTestCase()] });
+    } else {
+      patchQuestion(question.id, { world: undefined });
+    }
+  };
+
+  // Run the author's reference blocks through the world runtime and store its output as the hidden
+  // expected state for this question's single test case. This is the only way to author the expected
+  // value: nobody can hand-write the canonical JSON a drawing produces.
+  const captureWorldExpected = async (question: QuestionDraft) => {
+    const world = question.world;
+    if (!isWorldId(world)) return;
+    setCapturing((prev) => ({ ...prev, [question.id]: true }));
+    try {
+      const runs = await runCode(wrapForWorld(world, question.worldReferenceCode ?? ""), [{ id: "ref", stdin: "" }]);
+      const out = runs[0];
+      if (!out || out.errored || !out.stdout.trim()) {
+        toast.error("The reference blocks did not produce a result. Add some blocks, then capture again.");
+        return;
+      }
+      const existing = question.testCases?.[0] ?? createTestCase();
+      patchQuestion(question.id, {
+        testCases: [{ ...existing, stdin: "", expectedStdout: out.stdout.trim(), hidden: true }],
+      });
+      toast.success("Captured the expected result from your reference blocks.");
+    } catch {
+      toast.error("Could not run the reference blocks. Check your connection and try again.");
+    } finally {
+      setCapturing((prev) => ({ ...prev, [question.id]: false }));
+    }
+  };
+
   const addTestCase = (questionId: string) =>
     setQuestionDrafts((prev) => prev.map((q) => (q.id === questionId ? { ...q, testCases: [...(q.testCases ?? []), createTestCase()] } : q)));
 
@@ -561,8 +629,9 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
           points: testCases.reduce((sum, tc) => sum + tc.points, 0),
           codeLanguage: (question.codeLanguage || "python").trim(),
           starterCode: question.starterCode ?? "",
-          // Block-answered: send the config so the take UI shows Blockly. "{}" = default toolbox.
-          blocklyConfig: question.useBlocks ? (question.blocklyConfig?.trim() || "{}") : undefined,
+          // Block-answered: send the config so the take UI shows Blockly. "{}" = default toolbox; a world
+          // question carries its world id. Never carries the reference solution (see buildBlocklyConfig).
+          blocklyConfig: question.useBlocks ? buildBlocklyConfig(question) : undefined,
           testCases,
         });
         continue;
@@ -1041,14 +1110,56 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                           below; they can still switch to text.
                         </label>
                         {question.useBlocks ? (
-                          <textarea
-                            className="w-full rounded-md border border-stone-200 bg-stone-950 p-2 font-mono text-xs text-stone-100"
-                            rows={3}
-                            spellCheck={false}
-                            placeholder={'Blockly config (JSON, optional): {"toolbox":{...},"startBlocks":{...},"allowCode":true}. Blank = default toolbox.'}
-                            value={question.blocklyConfig ?? ""}
-                            onChange={(event) => patchQuestion(question.id, { blocklyConfig: event.target.value })}
-                          />
+                          <div className="space-y-2">
+                            <label className="flex flex-wrap items-center gap-2 text-xs text-stone-600 dark:text-stone-300">
+                              <span className="font-medium">Grade on</span>
+                              <select
+                                className="rounded-md border border-stone-300 bg-stone-50 px-2 py-1 text-xs dark:border-stone-700 dark:bg-stone-900"
+                                value={question.world ?? ""}
+                                onChange={(e) => setQuestionWorld(question, e.target.value)}
+                              >
+                                <option value="">Program output (print)</option>
+                                {WORLD_META.map((w) => (
+                                  <option key={w.id} value={w.id}>{w.label}</option>
+                                ))}
+                              </select>
+                              {question.world ? (
+                                <span className="text-stone-400">{WORLD_META.find((w) => w.id === question.world)?.description}</span>
+                              ) : null}
+                            </label>
+                            {question.world ? (
+                              <div className="space-y-2 rounded-md border border-stone-200 p-2 dark:border-stone-800">
+                                <p className="text-[11px] font-medium text-stone-500 dark:text-stone-400">
+                                  Reference solution: build the correct answer in blocks, then capture what it makes. This is
+                                  graded against the pupil&apos;s drawing and is never shown to them.
+                                </p>
+                                <BlocklyWorkspace
+                                  world={question.world}
+                                  onCodeChange={(c) => patchQuestion(question.id, { worldReferenceCode: c })}
+                                />
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <Button type="button" variant="outline" size="sm" disabled={capturing[question.id]} onClick={() => void captureWorldExpected(question)}>
+                                    {capturing[question.id] ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                                    Capture expected result
+                                  </Button>
+                                  {question.testCases?.[0]?.expectedStdout?.trim() ? (
+                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400">Captured &#10003;</span>
+                                  ) : (
+                                    <span className="text-[11px] text-stone-400">Not captured yet</span>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <textarea
+                                className="w-full rounded-md border border-stone-200 bg-stone-950 p-2 font-mono text-xs text-stone-100"
+                                rows={3}
+                                spellCheck={false}
+                                placeholder={'Blockly config (JSON, optional): {"toolbox":{...},"startBlocks":{...},"allowCode":true}. Blank = default toolbox.'}
+                                value={question.blocklyConfig ?? ""}
+                                onChange={(event) => patchQuestion(question.id, { blocklyConfig: event.target.value })}
+                              />
+                            )}
+                          </div>
                         ) : (
                           <textarea
                             className="w-full rounded-md border border-stone-200 bg-stone-950 p-2 font-mono text-xs text-stone-100"
@@ -1059,25 +1170,44 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                             onChange={(event) => patchQuestion(question.id, { starterCode: event.target.value })}
                           />
                         )}
-                        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Test cases</p>
-                        {(question.testCases ?? []).map((tc) => (
-                          <div key={tc.id} className="grid grid-cols-1 gap-2 rounded-md border border-stone-200 p-2 sm:grid-cols-[1fr_1fr_5rem_auto_auto] dark:border-stone-800">
-                            <Input placeholder="Input (stdin)" value={tc.stdin} onChange={(e) => updateTestCase(question.id, tc.id, { stdin: e.target.value })} />
-                            <Input placeholder="Expected output" value={tc.expectedStdout} onChange={(e) => updateTestCase(question.id, tc.id, { expectedStdout: e.target.value })} />
-                            <Input type="number" min={1} placeholder="Marks" value={tc.points} onChange={(e) => updateTestCase(question.id, tc.id, { points: e.target.value })} />
-                            <label className="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400">
-                              <input type="checkbox" checked={tc.hidden} onChange={(e) => updateTestCase(question.id, tc.id, { hidden: e.target.checked })} />
-                              Hidden
-                            </label>
-                            <Button type="button" variant="outline" size="sm" disabled={(question.testCases ?? []).length <= 1} onClick={() => removeTestCase(question.id, tc.id)}>
-                              <Trash2 className="size-4" />
-                            </Button>
+                        {question.useBlocks && question.world ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Marks</span>
+                            <Input
+                              type="number"
+                              min={1}
+                              className="w-24"
+                              value={question.testCases?.[0]?.points ?? "1"}
+                              onChange={(e) => {
+                                const tc = question.testCases?.[0] ?? createTestCase();
+                                patchQuestion(question.id, { testCases: [{ ...tc, points: e.target.value }] });
+                              }}
+                            />
+                            <span className="text-[11px] text-stone-400">The whole drawing is one auto-marked check.</span>
                           </div>
-                        ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => addTestCase(question.id)}>
-                          <PlusCircle className="size-4" /> Add test case
-                        </Button>
-                        <p className="text-[11px] text-stone-400">A hidden test case is not shown to the pupil; a visible one is shown as a worked example.</p>
+                        ) : (
+                          <>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Test cases</p>
+                            {(question.testCases ?? []).map((tc) => (
+                              <div key={tc.id} className="grid grid-cols-1 gap-2 rounded-md border border-stone-200 p-2 sm:grid-cols-[1fr_1fr_5rem_auto_auto] dark:border-stone-800">
+                                <Input placeholder="Input (stdin)" value={tc.stdin} onChange={(e) => updateTestCase(question.id, tc.id, { stdin: e.target.value })} />
+                                <Input placeholder="Expected output" value={tc.expectedStdout} onChange={(e) => updateTestCase(question.id, tc.id, { expectedStdout: e.target.value })} />
+                                <Input type="number" min={1} placeholder="Marks" value={tc.points} onChange={(e) => updateTestCase(question.id, tc.id, { points: e.target.value })} />
+                                <label className="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400">
+                                  <input type="checkbox" checked={tc.hidden} onChange={(e) => updateTestCase(question.id, tc.id, { hidden: e.target.checked })} />
+                                  Hidden
+                                </label>
+                                <Button type="button" variant="outline" size="sm" disabled={(question.testCases ?? []).length <= 1} onClick={() => removeTestCase(question.id, tc.id)}>
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button type="button" variant="outline" size="sm" onClick={() => addTestCase(question.id)}>
+                              <PlusCircle className="size-4" /> Add test case
+                            </Button>
+                            <p className="text-[11px] text-stone-400">A hidden test case is not shown to the pupil; a visible one is shown as a worked example.</p>
+                          </>
+                        )}
                       </div>
                     ) : question.type === "RUBRIC" ? (
                       <div className="mt-3 space-y-2">

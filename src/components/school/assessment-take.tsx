@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BlocklyWorkspace } from "@/components/dashboard/blockly-workspace";
 import { runCode } from "@/lib/pyodide-grader";
 import { matchOutput } from "@/lib/practical-grading";
+import { wrapForWorld, isWorldId, type WorldId } from "@/lib/blockly-worlds";
 
 // The same Monaco editor the lessons use, so a coding exam feels like the lessons. Client-only.
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -33,8 +34,8 @@ type Question = {
   rubric?: Criterion[];
 };
 
-/** A Blockly question's config JSON (toolbox/startBlocks/allowCode); a bad value falls back to defaults. */
-function parseBlockly(raw: string | null | undefined): { toolbox?: unknown; startBlocks?: unknown; allowCode?: boolean } {
+/** A Blockly question's config JSON (toolbox/startBlocks/allowCode/world); a bad value falls back to defaults. */
+function parseBlockly(raw: string | null | undefined): { toolbox?: unknown; startBlocks?: unknown; allowCode?: boolean; world?: string } {
   if (!raw || !raw.trim()) return {};
   try {
     const parsed = JSON.parse(raw);
@@ -42,6 +43,18 @@ function parseBlockly(raw: string | null | undefined): { toolbox?: unknown; star
   } catch {
     return {};
   }
+}
+
+/** The block world for a question, if it is a world-graded Blockly question (else undefined). */
+function questionWorld(q: Question): WorldId | undefined {
+  const w = parseBlockly(q.blocklyConfig).world;
+  return isWorldId(w) ? w : undefined;
+}
+
+/** The program to actually run for a CODE answer: wrapped in the world runtime when it is a world question. */
+function runnableCode(q: Question, code: string): string {
+  const world = questionWorld(q);
+  return world ? wrapForWorld(world, code) : code;
 }
 type Answer = { selectedOptionId?: string; responseText?: string; code?: string };
 type Result = { status: string; autoScore: number; totalScore: number };
@@ -86,7 +99,7 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
     const samples = (q.testCases ?? []).filter((t) => !t.hidden && t.expectedStdout != null);
     if (samples.length === 0) return;
     setSampleResult((p) => ({ ...p, [q.id]: "running" }));
-    const runs = await runCode(answers[q.id]?.code ?? "", samples.map((t) => ({ id: t.id, stdin: t.stdin })));
+    const runs = await runCode(runnableCode(q, answers[q.id]?.code ?? ""), samples.map((t) => ({ id: t.id, stdin: t.stdin })));
     const byId = new Map(runs.map((r) => [r.id, r]));
     const passed = samples.filter((t) => {
       const r = byId.get(t.id);
@@ -105,7 +118,9 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
           payload.push({ questionId: q.id, selectedOptionId: a.selectedOptionId ?? null });
         } else if (q.type === "CODE") {
           const code = a.code ?? "";
-          const runs = await runCode(code, (q.testCases ?? []).map((t) => ({ id: t.id, stdin: t.stdin })));
+          // World questions run wrapped (the runtime prints the graded state); the pupil's raw code is
+          // still what we store as responseText for a teacher re-run.
+          const runs = await runCode(runnableCode(q, code), (q.testCases ?? []).map((t) => ({ id: t.id, stdin: t.stdin })));
           payload.push({
             questionId: q.id,
             responseText: code,
@@ -236,7 +251,9 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
                 {q.blocklyConfig != null ? (
                   // Block-answered: the workspace keeps the answer's `code` in sync with the generated
                   // Python, so check-samples, submit and server grading run exactly as for a typed answer.
+                  // A `world` question grades the drawing/state the blocks produce, not a printout.
                   <BlocklyWorkspace
+                    world={questionWorld(q)}
                     toolbox={parseBlockly(q.blocklyConfig).toolbox}
                     startBlocks={parseBlockly(q.blocklyConfig).startBlocks}
                     allowCode={parseBlockly(q.blocklyConfig).allowCode !== false}
@@ -263,20 +280,28 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
                     />
                   </div>
                 )}
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => void checkSamples(q)}
-                    disabled={submitting}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:opacity-60 dark:border-stone-800 dark:text-stone-300"
-                  >
-                    {sampleResult[q.id] === "running" ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
-                    Check against examples
-                  </button>
-                  {sampleResult[q.id] && sampleResult[q.id] !== "running" ? (
-                    <span className="text-xs text-stone-500 dark:text-stone-400">{sampleResult[q.id]}</span>
-                  ) : null}
-                </div>
+                {questionWorld(q) ? (
+                  // World questions grade the picture the blocks make; there are no printed examples to
+                  // check against, so build to match what the question describes, then submit.
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
+                    Build the blocks to match what the question asks, then submit. Your drawing is marked automatically.
+                  </p>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void checkSamples(q)}
+                      disabled={submitting}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 disabled:opacity-60 dark:border-stone-800 dark:text-stone-300"
+                    >
+                      {sampleResult[q.id] === "running" ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
+                      Check against examples
+                    </button>
+                    {sampleResult[q.id] && sampleResult[q.id] !== "running" ? (
+                      <span className="text-xs text-stone-500 dark:text-stone-400">{sampleResult[q.id]}</span>
+                    ) : null}
+                  </div>
+                )}
               </div>
             )}
 

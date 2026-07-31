@@ -7,11 +7,11 @@ load and save projects through it.
 
 What ships in the KAT repo (done, verified):
 
-- `src/lib/scratch.ts` — the parent-side contract: the feature flag, the editor origin, and the
+- `src/lib/scratch.ts`: the parent-side contract, the feature flag, the editor origin, and the
   `postMessage` protocol (`SCRATCH_MSG`, `parseScratchInbound`, `loadMessage`, `saveMessage`,
   `isTrustedScratchMessage`). Unit-tested in `src/__tests__/lib/scratch.test.ts`.
-- `NEXT_PUBLIC_SCRATCH_EDITOR_URL` in `.env.example` — unset means Scratch blocks are off.
-- `bridge.js`, `_headers`, `_redirects` — the editor-side artifacts you deploy (below).
+- `NEXT_PUBLIC_SCRATCH_EDITOR_URL` in `.env.example`. Unset means Scratch blocks are off.
+- `bridge.js`, `_headers`, `_redirects`: the editor-side artifacts you deploy (below).
 
 Building and deploying the editor itself runs in **your** infra (a large Node build + a Cloudflare
 account), so it is not run from the app. The steps:
@@ -24,23 +24,54 @@ cd scratch-gui
 npm ci
 ```
 
-## 2. Add the bridge (one wiring line)
+## 2. Patch the fork (verified against TurboWarp/scratch-gui, 2026-07-30)
 
-Copy `bridge.js` into the GUI's playground entry directory and import it once from the entry that mounts
-the GUI (e.g. `src/playground/render-gui.jsx`), **after** the GUI mounts. In that same entry, expose the
-running VM so the bridge can reach it:
+Two changes are required; both are in `src/playground/render-interface.jsx`.
+
+**(a) Allow embedding.** TurboWarp deliberately refuses to run in an iframe. Near the top:
 
 ```js
-// next to where the GUI is created/mounted:
-window.__katVM = vm;      // the scratch-vm instance the GUI already builds
-import "./bridge.js";     // starts the KAT bridge
+const isInvalidEmbed = window.parent !== window;
+```
+and in `render()`:
+```js
+if (isInvalidEmbed) {
+    return <InvalidEmbed />;
+}
+```
+Un-block it for our own parent only, so it still blocks strangers. Replace the constant with a check that
+allows the KAT origin we pass in `?parent=`:
+
+```js
+const embedParent = new URLSearchParams(window.location.search).get('parent');
+const isInvalidEmbed = window.parent !== window && !embedParent;
 ```
 
-`bridge.js` reads the KAT origin from a `?parent=<origin>` query param (the KAT iframe sets it) and only
-obeys messages from that origin. It handles `LOAD` (fetch a `.sb3` and `vm.loadProject`) and `SAVE`
-(`vm.saveProjectSb3()` -> `PUT` the bytes straight to the presigned R2 URL the KAT page hands it), and
-reports `READY` / `DIRTY` / `SAVED` / `SAVE_FAILED` back up. The message strings mirror
-`src/lib/scratch.ts` exactly — keep them in sync.
+**(b) Expose the VM (it lives in the Redux store, not a global).** Add a tiny connected component
+`src/playground/kat-vm-exposer.jsx`:
+
+```jsx
+import {Component} from 'react';
+import {connect} from 'react-redux';
+class KatVmExposer extends Component {
+    componentDidMount () { window.__katVM = this.props.vm; }
+    componentDidUpdate () { window.__katVM = this.props.vm; }
+    render () { return null; }
+}
+export default connect(state => ({vm: state.scratchGui.vm}))(KatVmExposer);
+```
+
+Then in `render-interface.jsx`, import it, render `<KatVmExposer />` inside the returned tree (it is inside
+`AppStateHOC`, so it has the store), and `import './bridge.js';` once at the top of the file.
+
+`bridge.js` reads the KAT origin from `?parent=<origin>` and only obeys messages from it. It handles `LOAD`
+(fetch a `.sb3` and `vm.loadProject`) and `SAVE` (`vm.saveProjectSb3()` -> `PUT` the bytes straight to the
+presigned R2 URL the KAT page hands it), and reports `READY`/`DIRTY`/`SAVED`/`SAVE_FAILED` back up. The
+message strings mirror `src/lib/scratch.ts` exactly, keep them in sync.
+
+**Licence + name.** scratch-gui is GPLv3, so a public fork is fine. "TurboWarp" and its logo are
+TRADEMARKED (see the fork's TRADEMARK file): rebrand for a school product (change `APP_NAME` in
+`src/lib/brand.js` and the icons), do not ship it as "TurboWarp".
 
 ## 3. Build
 
@@ -52,7 +83,7 @@ npm run build           # produces build/ (a static SPA)
 
 Deploy `build/` to Cloudflare Pages and put `_headers` and `_redirects` (from this directory) in the
 output so headers + SPA routing are correct. Point a first-party custom domain at it, e.g.
-`scratch.kindleatechie.com`. Do **not** set `X-Frame-Options` on the editor — KAT frames it, and framing
+`scratch.kindleatechie.com`. Do **not** set `X-Frame-Options` on the editor. KAT frames it, and framing
 is gated by the KAT app's CSP `frame-src` allow-list, not by the editor.
 
 `COOP`/`COEP` are optional and off by default (see `_headers`): they are only needed for TurboWarp's

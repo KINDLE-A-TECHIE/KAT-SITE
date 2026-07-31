@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Blocks, Code2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getDraft, putDraft } from "@/lib/lesson-block-draft";
+import { registerTurtleWorld, TURTLE_TOOLBOX } from "@/lib/blockly-worlds/turtle-blocks";
 
 // Same Monaco integration the code playground and assessment editor use (client-only, no SSR).
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -82,6 +83,7 @@ export function BlocklyWorkspace({
   startBlocks,
   allowCode = true,
   draftKey,
+  world,
   onCodeChange,
 }: {
   toolbox?: unknown;
@@ -90,6 +92,12 @@ export function BlocklyWorkspace({
   allowCode?: boolean;
   /** When set, the workspace is debounce-saved to the shared LessonBlockDraft store under this key. */
   draftKey?: string;
+  /**
+   * A block "world" (e.g. "turtle"): registers that world's blocks and defaults the toolbox to the
+   * world's toolbox. The generated Python drives the world runtime and is graded on the world state,
+   * not a printout (see @/lib/blockly-worlds). An explicit `toolbox` still wins if both are given.
+   */
+  world?: string;
   /** Fires with the current effective Python (generated in blocks mode, typed in code mode). */
   onCodeChange?: (code: string) => void;
 }) {
@@ -135,13 +143,22 @@ export function BlocklyWorkspace({
       }
       if (cancelled || !hostRef.current) return;
 
+      // Register the world's blocks (and default its toolbox) before inject, so the generators exist by
+      // the time workspaceToCode runs. Only "turtle" today; a new world adds a case here.
+      let worldToolbox: object | undefined;
+      if (world === "turtle") {
+        await registerTurtleWorld();
+        if (cancelled || !hostRef.current) return;
+        worldToolbox = TURTLE_TOOLBOX;
+      }
+
       try {
         // The pupil's saved workspace wins (draft), then the author's starter blocks, else an empty canvas.
         const draft = draftKey ? await getDraft<Record<string, unknown>>(draftKey) : null;
         if (cancelled || !hostRef.current) return;
 
         const ws = Blockly.inject(hostRef.current, {
-          toolbox: ((toolbox as object | undefined) ?? DEFAULT_TOOLBOX) as never,
+          toolbox: ((toolbox as object | undefined) ?? worldToolbox ?? DEFAULT_TOOLBOX) as never,
           media: BLOCKLY_MEDIA_URL,
           trashcan: true,
           move: { scrollbars: true, drag: true, wheel: true },
@@ -210,7 +227,7 @@ export function BlocklyWorkspace({
     };
     // Re-inject only if the block identity/config changes, not on every parent render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draftKey, toolbox, startBlocks]);
+  }, [draftKey, toolbox, startBlocks, world]);
 
   const switchToCode = useCallback(() => {
     // `code` already holds the generated Python (kept current by the change listener); just reveal it.
