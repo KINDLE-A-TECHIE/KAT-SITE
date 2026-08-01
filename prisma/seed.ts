@@ -303,8 +303,8 @@ async function main() {
         cohortId: cohort.id,
         startTime: new Date("2026-03-08T16:00:00Z"),
         endTime: new Date("2026-03-08T16:45:00Z"),
-        dailyRoomName: "kat-mentorship-march-review",
-        dailyRoomUrl: "https://meet.zoho.com/kat-mentorship-march-review",
+        roomName: "kat-mentorship-march-review",
+        roomUrl: "https://meet.jit.si/kat-mentorship-march-review",
         status: MeetingStatus.UPCOMING,
       },
     });
