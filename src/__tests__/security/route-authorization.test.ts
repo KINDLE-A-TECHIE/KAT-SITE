@@ -278,11 +278,17 @@ function stripComments(source: string): string {
 describe("school accounts hold no B2C capability", () => {
   const provisioningFiles = ALL_ROUTE_FILES.filter((f) => {
     const rel = apiRelative(f);
-    return rel.includes("schools/provision") || rel.includes("school/roster/import");
+    return (
+      rel.includes("schools/provision") ||
+      rel.includes("school/roster/import") ||
+      // The teacher-invite endpoint also creates a school account (SCHOOL_STAFF + TEACHER
+      // membership); it must never grant a B2C role either.
+      rel.includes("school/teachers")
+    );
   });
 
   it("finds the account-provisioning routes (guards against a vacuous pass)", () => {
-    expect(provisioningFiles.length).toBeGreaterThanOrEqual(2);
+    expect(provisioningFiles.length).toBeGreaterThanOrEqual(3);
   });
 
   it.each(provisioningFiles.map((f) => [apiRelative(f), f] as const))(

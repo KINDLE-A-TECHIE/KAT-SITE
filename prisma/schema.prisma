@@ -1028,7 +1028,7 @@ model PartnerInquiry {
 
 model Certificate {
   id            String            @id @default(cuid())
-  credentialId  String            @unique @default(cuid())
+  credentialId  String            @unique @default(uuid())
   userId        String
   programId     String
   issuedById    String
@@ -1050,7 +1050,10 @@ model Certificate {
 
 model PasswordResetToken {
   id        String    @id @default(cuid())
-  token     String    @unique @default(cuid())
+  // Stores the SHA-256 hash of the emailed token, never the raw value (see src/lib/reset-token.ts),
+  // so a DB leak yields nothing usable. Every write sets the hash explicitly; the uuid() default is
+  // only a non-null fallback.
+  token     String    @unique @default(uuid())
   userId    String
   expiresAt DateTime
   usedAt    DateTime?

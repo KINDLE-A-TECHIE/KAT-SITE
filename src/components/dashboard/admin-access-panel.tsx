@@ -194,20 +194,6 @@ export function AdminAccessPanel() {
   return (
     <div className="space-y-4">
 
-      {/* Jitsi config info */}
-      <section className="kat-card">
-        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">
-          Jitsi Meetings
-        </h3>
-        <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">
-          Configured via environment variables{" "}
-          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs dark:bg-stone-800">JITSI_DOMAIN</code>,{" "}
-          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs dark:bg-stone-800">JITSI_APP_ID</code>,{" "}
-          <code className="rounded bg-stone-100 px-1 py-0.5 text-xs dark:bg-stone-800">JITSI_APP_SECRET</code>.
-          Contact your system administrator to update these settings.
-        </p>
-      </section>
-
       {/* Invite admin / instructor */}
       <section className="kat-card">
         <div className="flex flex-wrap items-start justify-between gap-2">

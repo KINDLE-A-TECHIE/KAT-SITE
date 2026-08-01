@@ -5,6 +5,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { trackEvent } from "@/lib/analytics";
 import { orgScope } from "@/lib/tenant";
+import { readPageOffset, pageMeta } from "@/lib/pagination";
 
 const createEnrollmentSchema = z.object({
   userId: z.string().cuid().optional(),
@@ -32,26 +33,31 @@ export async function GET(request: Request) {
   const targetUserId =
     isAdmin && filterUserId ? filterUserId : session.user.id;
 
-  const enrollments = await prisma.enrollment.findMany({
-    where: isAdmin && !filterUserId
-      ? {
-          program: orgScope(session.user.organizationId),
-        }
-      : {
-          userId: targetUserId,
-        },
-    include: {
-      user: {
-        select: { id: true, firstName: true, lastName: true, role: true },
-      },
-      program: {
-        select: { id: true, name: true, monthlyFee: true, level: true, isActive: true },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const { limit, page, skip } = readPageOffset(request);
+  const where =
+    isAdmin && !filterUserId
+      ? { program: orgScope(session.user.organizationId) }
+      : { userId: targetUserId };
 
-  return ok({ enrollments });
+  const [enrollments, total] = await prisma.$transaction([
+    prisma.enrollment.findMany({
+      where,
+      include: {
+        user: {
+          select: { id: true, firstName: true, lastName: true, role: true },
+        },
+        program: {
+          select: { id: true, name: true, monthlyFee: true, level: true, isActive: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.enrollment.count({ where }),
+  ]);
+
+  return ok({ enrollments, ...pageMeta(total, page, limit) });
 }
 
 export async function POST(request: Request) {

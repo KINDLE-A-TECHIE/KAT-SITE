@@ -67,7 +67,7 @@ describe("developer docs match the code", () => {
   });
 
   it("quotes the real pagination limits", () => {
-    const api = read("src/lib/api-v1.ts");
+    const api = read("src/lib/pagination.ts");
     const def = /PAGE_DEFAULT = (\d+)/.exec(api)?.[1];
     const max = /PAGE_MAX = (\d+)/.exec(api)?.[1];
     expect(DOCS.includes(`default ${def}, max ${max}`)).toBe(true);

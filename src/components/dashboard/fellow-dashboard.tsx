@@ -12,12 +12,11 @@ import {
   Users,
   Video,
   Clock,
-  CheckCircle2,
   AlertCircle,
   ChevronRight,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatusDot } from "@/components/stat-ledger";
 
 type Mentee = {
   id: string;
@@ -86,7 +85,7 @@ function StatCard({
 
 function MenteeAvatar({ firstName, lastName }: { firstName: string; lastName: string }) {
   return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-xs font-bold text-white">
+    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--kat-clay)] text-xs font-bold text-white">
       {firstName[0]}{lastName[0]}
     </div>
   );
@@ -146,10 +145,10 @@ export function FellowDashboard() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex items-center gap-3 rounded-2xl border border-orange-100 bg-gradient-to-r from-[#1A1714]/5 to-orange-50 p-4 dark:border-orange-900 dark:from-orange-950/40 dark:to-stone-800"
+          className="flex items-center gap-3 rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1A1714]/10 dark:bg-orange-900/40">
-            <GraduationCap className="h-5 w-5 text-[#B2401D]" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-950/40">
+            <GraduationCap className="h-5 w-5 text-[var(--kat-clay)]" />
           </div>
           {loading ? (
             <div className="flex-1 space-y-1.5">
@@ -158,15 +157,11 @@ export function FellowDashboard() {
             </div>
           ) : data?.cohort ? (
             <div className="flex-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-orange-500 dark:text-orange-400">Active Cohort</p>
+              <p className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-stone-400 dark:text-stone-500">Active cohort</p>
               <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{data.cohort.name}</p>
             </div>
           ) : null}
-          {!loading && (
-            <Badge className="bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/40 dark:text-green-400 dark:hover:bg-green-900/40">
-              <CheckCircle2 className="mr-1 h-3 w-3" /> Active Fellow
-            </Badge>
-          )}
+          {!loading && <StatusDot tone="pine" label="Active fellow" />}
         </motion.div>
       )}
 

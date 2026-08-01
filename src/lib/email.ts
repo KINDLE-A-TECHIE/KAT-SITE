@@ -749,3 +749,39 @@ export function buildSchoolAdminWelcomeEmail(params: {
 
   return { html, text };
 }
+
+/** Invite for a teacher a school admin adds, sent at invite time. */
+export function buildTeacherInviteEmail(params: {
+  firstName: string;
+  schoolName: string;
+  schoolUrl: string;
+  setupUrl: string | null;
+}): { html: string; text: string } {
+  const { firstName, schoolName, schoolUrl, setupUrl } = params;
+  const cta = setupUrl
+    ? `<p><a href="${setupUrl}">Set your password</a> (the link is valid for 72 hours), then sign in at <a href="${schoolUrl}">${schoolUrl}</a>.</p>`
+    : `<p>Sign in at <a href="${schoolUrl}">${schoolUrl}</a> with your existing KAT password.</p>`;
+
+  const html = `
+    <p>Hello ${firstName},</p>
+    <p>You have been added as a teacher at <strong>${schoolName}</strong> on KAT for Schools.</p>
+    ${cta}
+    <p>From your dashboard you can see the classes assigned to you, deliver lessons, and mark your pupils' work.</p>
+    <p>Kindle a Techie</p>
+  `.trim();
+
+  const text = [
+    `Hello ${firstName},`,
+    "",
+    `You have been added as a teacher at ${schoolName} on KAT for Schools.`,
+    setupUrl
+      ? `Set your password (valid 72 hours): ${setupUrl}\nThen sign in at ${schoolUrl}`
+      : `Sign in at ${schoolUrl} with your existing KAT password.`,
+    "",
+    "From your dashboard you can see your assigned classes, deliver lessons, and mark your pupils' work.",
+    "",
+    "Kindle a Techie",
+  ].join("\n");
+
+  return { html, text };
+}

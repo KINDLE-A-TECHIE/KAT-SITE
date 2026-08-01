@@ -62,7 +62,6 @@ export function BadgesPanel() {
         </div>
       ) : badges.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-stone-200 py-16 text-center dark:border-stone-700">
-          <span className="text-5xl">🏅</span>
           <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
             No badges yet, complete a module to earn your first one.
           </p>

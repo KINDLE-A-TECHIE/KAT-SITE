@@ -6,6 +6,7 @@ import { requireActiveSchool } from "@/lib/school";
 import { schoolInvoiceCreateSchema } from "@/lib/validators";
 import { getPaymentGateway } from "@/lib/payments/provider";
 import { generateInvoiceReference } from "@/lib/payments/receipt";
+import { SCHOOL_HOST, isSchoolHost } from "@/lib/school-host";
 import { trackEvent } from "@/lib/analytics";
 import { captureError } from "@/lib/sentry";
 
@@ -151,6 +152,17 @@ export async function POST(request: Request) {
       select: { id: true, term: true, seatCount: true, amount: true, status: true, paystackRef: true },
     });
 
+    // Return the admin to the SCHOOL host they paid from, NOT the B2C apex (NEXTAUTH_URL).
+    // Their school session cookie lives on the school host, so landing on the apex /admin
+    // finds no session and bounces them to the B2C /login. Prefer the request's own host,
+    // fall back to the configured SCHOOL_HOST if it is somehow not a school host.
+    const reqHost = request.headers.get("host");
+    const proto =
+      request.headers.get("x-forwarded-proto") ??
+      (process.env.NEXTAUTH_URL?.startsWith("https") ? "https" : "http");
+    const callbackHost = isSchoolHost(reqHost) ? reqHost! : SCHOOL_HOST;
+    const callbackUrl = `${proto}://${callbackHost}/admin/billing?reference=${paystackRef}`;
+
     // Reuse the existing gateway. The reference we generated is what the webhook will
     // look the invoice up by.
     let authorizationUrl: string | null = null;
@@ -161,7 +173,7 @@ export async function POST(request: Request) {
         amount,
         currency: CURRENCY,
         reference: paystackRef,
-        callbackUrl: `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/admin/billing?reference=${paystackRef}`,
+        callbackUrl,
       });
       authorizationUrl = initialized.authorizationUrl;
     } catch (error) {

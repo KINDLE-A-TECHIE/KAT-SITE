@@ -141,15 +141,20 @@ describe("KAT design tokens", () => {
     ).toEqual([]);
   });
 
-  it("loads the three brand faces via next/font, not a bare font-family string", () => {
-    // globals.css used to merely NAME "Manrope"/"Space Grotesk" in a font stack without
-    // ever fetching them, so the whole app silently fell back to Segoe/Arial. The faces
-    // must be imported in layout.tsx for the --font-* vars to resolve to anything.
+  it("loads the three brand faces via next/font (self-hosted), not a bare font-family string", () => {
+    // globals.css used to merely NAME "Manrope"/"Space Grotesk" in a font stack without ever
+    // fetching them, so the whole app silently fell back to Segoe/Arial. The faces must be loaded
+    // in layout.tsx for the --font-* vars to resolve. They are self-hosted via next/font/local
+    // (variable woff2 files in src/app/fonts), so there is no build-time Google Fonts fetch that
+    // could time out on a slow network and drop the app back to the fallback stack.
     const layout = readFileSync(join(SRC, "app", "layout.tsx"), "utf8");
 
-    expect(layout).toMatch(/from\s+["']next\/font\/google["']/);
-    for (const face of ["Bricolage_Grotesque", "Fraunces", "JetBrains_Mono"]) {
-      expect(layout, `${face} is not loaded via next/font in layout.tsx`).toContain(face);
+    expect(layout).toMatch(/from\s+["']next\/font\/local["']/);
+    for (const face of ["bricolage.woff2", "fraunces.woff2", "jetbrains.woff2"]) {
+      expect(layout, `${face} is not loaded via next/font/local in layout.tsx`).toContain(face);
+    }
+    for (const cssVar of ["--font-bricolage", "--font-fraunces", "--font-jetbrains"]) {
+      expect(layout, `${cssVar} is not emitted in layout.tsx`).toContain(cssVar);
     }
   });
 });

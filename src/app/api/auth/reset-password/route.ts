@@ -2,6 +2,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { fail, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { hashResetToken } from "@/lib/reset-token";
 
 const schema = z.object({
   token: z.string().min(1),
@@ -16,8 +17,9 @@ export async function POST(request: Request) {
       return fail(parsed.error.issues[0]?.message ?? "Invalid request.", 400);
     }
 
+    // The DB stores only the SHA-256 hash of the token, so hash the value from the URL to look it up.
     const resetToken = await prisma.passwordResetToken.findUnique({
-      where: { token: parsed.data.token },
+      where: { token: hashResetToken(parsed.data.token) },
       include: { user: { select: { id: true, isActive: true } } },
     });
 

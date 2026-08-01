@@ -24,12 +24,11 @@ const nextConfig: NextConfig = {
     "@prisma/instrumentation",
   ],
 
-  experimental: {
-    // Rewrite barrel imports (import { X } from "lucide-react") to per-module imports so the
-    // dev compiler only builds the icons actually used, not the entire 1k-icon barrel. Same
-    // for framer-motion. Meaningfully faster cold compiles and HMR.
-    optimizePackageImports: ["lucide-react", "framer-motion"],
-  },
+  // NOTE: experimental.optimizePackageImports (lucide-react, framer-motion) was removed. Its
+  // barrel-to-deep-import rewrite is a known cause of "Cannot read properties of undefined
+  // (reading 'call')" (a rewritten module resolving to undefined), which broke /login (it imports
+  // `motion` from framer-motion) and made the build worker retry. Correctness over the compile-speed
+  // win. If reintroduced, keep framer-motion OUT of the list and test /login + a full build first.
 
   async headers() {
     return [

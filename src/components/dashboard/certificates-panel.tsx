@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PROGRAM_LEVEL_COLOR, PROGRAM_LEVEL_LABEL } from "@/lib/enums";
+import { PaginationControls } from "@/components/pagination-controls";
+import { UserSearchPicker } from "@/components/user-search-picker";
 import type { UserRoleValue } from "@/lib/enums";
 
 type CertStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -26,7 +28,6 @@ type Certificate = {
   approvedBy?: { id: string; firstName: string; lastName: string } | null;
 };
 
-type Learner = { id: string; firstName: string; lastName: string; email: string; role: string };
 type Program = { id: string; name: string; level: string };
 
 const STATUS_STYLE: Record<CertStatus, string> = {
@@ -61,12 +62,14 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
   const [certs, setCerts] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<"" | "PENDING" | "APPROVED" | "REJECTED">("");
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [issueOpen, setIssueOpen] = useState(false);
 
   // Issue form
-  const [learners, setLearners] = useState<Learner[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedUser, setSelectedUser] = useState("");
+  const [selectedName, setSelectedName] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("");
   const [issuing, setIssuing] = useState(false);
 
@@ -81,26 +84,25 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
 
   const fetchCerts = async () => {
     setLoading(true);
-    const qs = canIssue && statusFilter ? `?status=${statusFilter}` : "";
-    const res = await fetch(`/api/certificates${qs}`);
+    const params = new URLSearchParams();
+    if (canIssue && statusFilter) params.set("status", statusFilter);
+    params.set("page", String(page));
+    const res = await fetch(`/api/certificates?${params.toString()}`);
     if (res.ok) {
-      const data = await res.json() as { certificates: Certificate[] };
+      const data = await res.json() as { certificates: Certificate[]; page?: number; totalPages?: number; total?: number };
       setCerts(data.certificates);
+      setMeta({ page: data.page ?? 1, totalPages: data.totalPages ?? 1, total: data.total ?? data.certificates.length });
     }
     setLoading(false);
   };
 
-  // Re-fetch whenever the status filter changes
-  useEffect(() => { void fetchCerts(); }, [statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Re-fetch whenever the status filter or page changes
+  useEffect(() => { void fetchCerts(); }, [statusFilter, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openIssue = async () => {
     setIssueOpen(true);
-    if (learners.length === 0) {
-      const [lr, pr] = await Promise.all([
-        fetch("/api/users?roles=STUDENT,FELLOW").then(r => r.ok ? r.json() as Promise<{ users: Learner[] }> : { users: [] }),
-        fetch("/api/programs").then(r => r.ok ? r.json() as Promise<{ programs: Program[] }> : { programs: [] }),
-      ]);
-      setLearners(lr.users ?? []);
+    if (programs.length === 0) {
+      const pr = await fetch("/api/programs").then(r => r.ok ? r.json() as Promise<{ programs: Program[] }> : { programs: [] });
       setPrograms(pr.programs ?? []);
     }
   };
@@ -121,6 +123,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
       toast.success(isSuperAdmin ? "Certificate issued successfully." : "Certificate request submitted for approval.");
       setIssueOpen(false);
       setSelectedUser("");
+      setSelectedName("");
       setSelectedProgram("");
       void fetchCerts();
     } else {
@@ -216,7 +219,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
           {FILTER_TABS.map((tab) => (
             <button
               key={tab.value}
-              onClick={() => setStatusFilter(tab.value)}
+              onClick={() => { setStatusFilter(tab.value); setPage(1); }}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                 statusFilter === tab.value
                   ? "bg-white shadow-sm text-stone-800 dark:bg-stone-700 dark:text-stone-100"
@@ -310,6 +313,14 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
         </div>
       )}
 
+      <PaginationControls
+        page={meta.page}
+        totalPages={meta.totalPages}
+        total={meta.total}
+        onPageChange={setPage}
+        disabled={loading}
+      />
+
       {/* Issue / Request dialog */}
       <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
         <DialogContent className="max-w-md dark:border-stone-700 dark:bg-stone-900">
@@ -329,23 +340,16 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
           <div className="space-y-4 pt-1">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-stone-600 dark:text-stone-400">Student / Fellow</label>
-              <Select value={selectedUser} onValueChange={setSelectedUser}>
-                <SelectTrigger className="[&>span]:truncate">
-                  <SelectValue placeholder="Select recipient…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {learners.length === 0 ? (
-                    <div className="px-3 py-4 text-center text-xs text-stone-400">Loading learners…</div>
-                  ) : (
-                    learners.map(l => (
-                      <SelectItem key={l.id} value={l.id}>
-                        {l.firstName} {l.lastName}
-                        <span className="ml-1.5 text-stone-400">({l.role.toLowerCase()})</span>
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              <UserSearchPicker
+                roles="STUDENT,FELLOW"
+                selectedId={selectedUser}
+                onSelect={(u) => { setSelectedUser(u.id); setSelectedName(`${u.firstName} ${u.lastName}`); }}
+              />
+              {selectedName ? (
+                <p className="text-xs text-stone-500 dark:text-stone-400">
+                  Selected: <span className="font-medium text-stone-700 dark:text-stone-300">{selectedName}</span>
+                </p>
+              ) : null}
             </div>
 
             <div className="space-y-1.5">

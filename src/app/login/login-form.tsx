@@ -56,8 +56,10 @@ type LoginValues = z.infer<typeof loginSchema>;
 export function LoginForm({
   googleEnabled,
   fallback = "/dashboard",
+  schoolHost = false,
 }: {
   googleEnabled: boolean;
+  schoolHost?: boolean;
   /**
    * Default post-login target when neither callbackUrl nor redirect is present. Resolved by the
    * server page from the host: the school host defaults to the workspace (/home, which routes to
@@ -134,24 +136,33 @@ export function LoginForm({
 
           <div className="relative">
             <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-orange-400">
-              Learning Management System
+              {schoolHost ? "KAT for Schools" : "Learning Management System"}
             </p>
-            <h1 className="[font-family:var(--font-space-grotesk)] text-4xl font-bold leading-tight text-white">
-              Empowering the
-              <br />
-              <span className="text-orange-400">next generation</span>
-              <br />
-              of African talent.
-            </h1>
+            {schoolHost ? (
+              <h1 className="[font-family:var(--font-space-grotesk)] text-4xl font-bold leading-tight text-white">
+                Your school&apos;s
+                <br />
+                <span className="text-orange-400">coding &amp; robotics</span>
+                <br />
+                workspace.
+              </h1>
+            ) : (
+              <h1 className="[font-family:var(--font-space-grotesk)] text-4xl font-bold leading-tight text-white">
+                Empowering the
+                <br />
+                <span className="text-orange-400">next generation</span>
+                <br />
+                of African talent.
+              </h1>
+            )}
             <p className="mt-4 text-sm leading-relaxed text-stone-400">
-              A unified platform for students, fellows, parents, and instructors
-              to learn, collaborate, and grow together.
+              {schoolHost
+                ? "For administrators and teachers. Manage classes, rosters, lessons, and pupil progress in one place."
+                : "A unified platform for students, fellows, parents, and instructors to learn, collaborate, and grow together."}
             </p>
           </div>
 
-          <p className="relative text-xs text-stone-500">
-
-          </p>
+          <div aria-hidden className="relative" />
         </div>
 
         {/* Right panel, form */}
@@ -175,7 +186,9 @@ export function LoginForm({
                 Welcome back
               </h2>
               <p className="mt-1 text-sm text-stone-500">
-                Sign in to your account to continue.
+                {schoolHost
+                  ? "Sign in to your school workspace."
+                  : "Sign in to your account to continue."}
               </p>
             </div>
 
@@ -283,19 +296,30 @@ export function LoginForm({
               </>
             )}
 
-            <p className="mt-6 text-center text-sm text-stone-500">
-              Don&apos;t have an account?{" "}
-              <Link
-                href={redirectTo !== fallback ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}
-                className="font-semibold text-kat-blue hover:underline"
-              >
-                Create one
-              </Link>
-            </p>
+            {schoolHost ? (
+              <p className="mt-6 text-center text-xs leading-relaxed text-stone-400">
+                School accounts are created by your administrator. Need access?
+                Contact them or{" "}
+                <a href="mailto:hello@kindleatechie.com" className="font-medium text-kat-blue hover:underline">
+                  hello@kindleatechie.com
+                </a>
+                .
+              </p>
+            ) : (
+              <p className="mt-6 text-center text-sm text-stone-500">
+                Don&apos;t have an account?{" "}
+                <Link
+                  href={redirectTo !== fallback ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}
+                  className="font-semibold text-kat-blue hover:underline"
+                >
+                  Create one
+                </Link>
+              </p>
+            )}
           </motion.div>
         </div>
       </main>
-      <SiteFooter />
+      <SiteFooter schoolHost={schoolHost} />
     </div>
   );
 }

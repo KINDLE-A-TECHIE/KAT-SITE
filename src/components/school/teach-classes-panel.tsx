@@ -3,10 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowRight, BookOpen, Lock } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+import { StatusDot } from "@/components/stat-ledger";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const NERDC_LABELS: Record<string, string> = {
@@ -73,108 +72,96 @@ export function TeachClassesPanel() {
   };
 
   if (loading) {
-    return (
-      <div className="space-y-3">
-        {[0, 1].map((i) => (
-          <Skeleton key={i} className="h-28 w-full rounded-xl" />
-        ))}
-      </div>
-    );
+    return <Skeleton className="h-40 w-full rounded-lg" />;
   }
 
   if (classes.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-10 text-center">
-          <p className="text-sm text-stone-500 dark:text-stone-400">
-            You have no classes assigned yet. Your school administrator assigns classes to teachers.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="rounded-lg border border-stone-200 bg-white py-10 text-center dark:border-stone-800 dark:bg-stone-900">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
+          You have no classes assigned yet. Your school administrator assigns classes to teachers.
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="overflow-hidden rounded-lg border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
       {classes.map((c) => {
         const courses = coursesByLevel[c.nerdcLevel] ?? [];
         const locked = c._count.enrollments > 0;
 
         return (
-          <Card key={c.id}>
-            <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-              <div>
-                <CardTitle className="text-base">{c.name}</CardTitle>
-                <CardDescription>
+          <div
+            key={c.id}
+            className="border-b border-stone-100 p-4 last:border-b-0 dark:border-stone-800 sm:p-5"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{c.name}</p>
+                <p className="mt-0.5 font-mono text-xs tabular-nums text-stone-500 dark:text-stone-400">
                   {NERDC_LABELS[c.nerdcLevel] ?? c.nerdcLevel} · Term {c.term} ·{" "}
                   {c._count.enrollments} student{c._count.enrollments === 1 ? "" : "s"}
-                </CardDescription>
+                </p>
               </div>
               {/* An unlicensed term is a dead end, don't offer a link that will 403. */}
               {c.licensed ? (
                 <Link
                   href={`/teach/${c.id}`}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:underline"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-700 hover:underline dark:text-orange-400"
                 >
                   Roster &amp; progress
                   <ArrowRight className="size-3.5" />
                 </Link>
               ) : (
-                <Badge variant="secondary" className="gap-1.5">
-                  <Lock className="size-3" />
-                  Licence inactive
-                </Badge>
+                <StatusDot tone="clay" label="Licence inactive" />
               )}
-            </CardHeader>
+            </div>
 
-            <CardContent>
-              {/* The licence gate: the same rule is enforced in the API, so this is the
-                  explanation, not the lock. */}
-              {!c.licensed ? (
-                <p className="mb-3 rounded-xl bg-stone-50 p-3 text-sm leading-relaxed text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
-                  {c.licenseReason}
-                </p>
-              ) : null}
+            {/* The licence gate: the same rule is enforced in the API, so this is the
+                explanation, not the lock. */}
+            {!c.licensed ? (
+              <p className="mt-3 border-l-2 border-stone-200 pl-3 text-sm leading-relaxed text-stone-500 dark:border-stone-700 dark:text-stone-400">
+                {c.licenseReason}
+              </p>
+            ) : null}
 
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-stone-400">
-                  <BookOpen className="size-3.5 text-orange-600" />
-                  Course
-                </span>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-stone-400 dark:text-stone-500">
+                Course
+              </span>
 
-                {locked ? (
-                  <>
-                    <Badge variant="secondary" className="gap-1.5">
-                      <Lock className="size-3" />
-                      {c.program?.name ?? "Not assigned"}
-                    </Badge>
-                    <span className="text-xs text-stone-400">
-                      Locked. Students are enrolled, so the course can no longer change.
-                    </span>
-                  </>
-                ) : (
-                  <Select
-                    value={c.programId ?? ""}
-                    onValueChange={(v) => assignCourse(c.id, v)}
-                    disabled={busy === c.id || courses.length === 0 || !c.licensed}
-                  >
-                    <SelectTrigger className="h-9 w-full max-w-sm">
-                      <SelectValue
-                        placeholder={courses.length === 0 ? "No course for this level" : "Choose a course"}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {courses.map((course) => (
-                        <SelectItem key={course.id} value={course.id}>
-                          {course.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              {locked ? (
+                <>
+                  <span className="text-sm font-medium text-stone-800 dark:text-stone-200">
+                    {c.program?.name ?? "Not assigned"}
+                  </span>
+                  <span className="text-xs text-stone-400">
+                    Locked. Students are enrolled, so the course can no longer change.
+                  </span>
+                </>
+              ) : (
+                <Select
+                  value={c.programId ?? ""}
+                  onValueChange={(v) => assignCourse(c.id, v)}
+                  disabled={busy === c.id || courses.length === 0 || !c.licensed}
+                >
+                  <SelectTrigger className="h-9 w-full max-w-sm">
+                    <SelectValue
+                      placeholder={courses.length === 0 ? "No course for this level" : "Choose a course"}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses.map((course) => (
+                      <SelectItem key={course.id} value={course.id}>
+                        {course.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </div>
         );
       })}
     </div>

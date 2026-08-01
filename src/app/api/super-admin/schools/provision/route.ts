@@ -4,6 +4,7 @@ import { PartnerInquiryStatus, PartnerType, SchoolRole, UserRole } from "@prisma
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { generateResetToken, hashResetToken } from "@/lib/reset-token";
 import { schoolProvisionSchema } from "@/lib/validators";
 import { sendEmail, buildSchoolAdminWelcomeEmail } from "@/lib/email";
 import { trackEvent } from "@/lib/analytics";
@@ -142,10 +143,11 @@ export async function POST(request: Request) {
 
       let setupUrl: string | null = null;
       if (!existingUser) {
-        const setupToken = await tx.passwordResetToken.create({
-          data: { userId: adminUserId, expiresAt: new Date(Date.now() + SETUP_TOKEN_TTL_MS) },
+        const rawSetupToken = generateResetToken();
+        await tx.passwordResetToken.create({
+          data: { userId: adminUserId, token: hashResetToken(rawSetupToken), expiresAt: new Date(Date.now() + SETUP_TOKEN_TTL_MS) },
         });
-        setupUrl = `${BASE_URL}/reset-password?token=${setupToken.token}`;
+        setupUrl = `${BASE_URL}/reset-password?token=${rawSetupToken}`;
       }
 
       return { school, adminUserId, adminFirst, setupUrl };
