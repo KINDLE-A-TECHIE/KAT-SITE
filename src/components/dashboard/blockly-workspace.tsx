@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { Blocks, Code2, RotateCcw } from "lucide-react";
+import { Blocks, Code2, Maximize2, Minimize2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getDraft, putDraft } from "@/lib/lesson-block-draft";
 import { registerTurtleWorld, TURTLE_TOOLBOX } from "@/lib/blockly-worlds/turtle-blocks";
 import { registerGridWorld, GRID_TOOLBOX } from "@/lib/blockly-worlds/grid-blocks";
+import { useFullscreen, FULLSCREEN_PANEL_CLASS, FULLSCREEN_BACKDROP_CLASS } from "@/components/dashboard/use-fullscreen";
 
 // Same Monaco integration the code playground and assessment editor use (client-only, no SSR).
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -120,6 +121,15 @@ export function BlocklyWorkspace({
   const [code, setCode] = useState("");
   const [codeDirty, setCodeDirty] = useState(false);
   const [showCode, setShowCode] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const exitFullscreen = useCallback(() => setFullscreen(false), []);
+  useFullscreen(fullscreen, exitFullscreen);
+
+  // Relayout Blockly/Monaco after the container resizes into or out of full screen.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => resizeRef.current?.());
+    return () => cancelAnimationFrame(id);
+  }, [fullscreen]);
 
   const emit = useCallback((next: string) => {
     setCode(next);
@@ -275,45 +285,58 @@ export function BlocklyWorkspace({
   }
 
   return (
-    <div className="space-y-2">
-      {allowCode ? (
-        <div className="inline-flex rounded-lg border border-stone-200 bg-stone-50 p-0.5 text-sm dark:border-stone-800 dark:bg-stone-900">
-          <button
-            type="button"
-            onClick={backToBlocks}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 font-medium transition ${
-              mode === "blocks"
-                ? "bg-white text-orange-700 shadow-sm dark:bg-stone-800 dark:text-orange-400"
-                : "text-stone-500 hover:text-stone-700 dark:hover:text-stone-300"
-            }`}
-          >
-            <Blocks className="size-3.5" /> Blocks
-          </button>
-          <button
-            type="button"
-            onClick={switchToCode}
-            disabled={!ready}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 font-medium transition ${
-              mode === "code"
-                ? "bg-white text-orange-700 shadow-sm dark:bg-stone-800 dark:text-orange-400"
-                : "text-stone-500 hover:text-stone-700 disabled:opacity-50 dark:hover:text-stone-300"
-            }`}
-          >
-            <Code2 className="size-3.5" /> Python
-          </button>
-        </div>
-      ) : null}
+    <>
+      {fullscreen ? <div className={FULLSCREEN_BACKDROP_CLASS} onClick={exitFullscreen} /> : null}
+    <div className={fullscreen ? `${FULLSCREEN_PANEL_CLASS} gap-2` : "space-y-2"}>
+      <div className="flex items-center justify-between gap-2">
+        {allowCode ? (
+          <div className="inline-flex rounded-lg border border-stone-200 bg-stone-50 p-0.5 text-sm dark:border-stone-800 dark:bg-stone-900">
+            <button
+              type="button"
+              onClick={backToBlocks}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 font-medium transition ${
+                mode === "blocks"
+                  ? "bg-white text-orange-700 shadow-sm dark:bg-stone-800 dark:text-orange-400"
+                  : "text-stone-500 hover:text-stone-700 dark:hover:text-stone-300"
+              }`}
+            >
+              <Blocks className="size-3.5" /> Blocks
+            </button>
+            <button
+              type="button"
+              onClick={switchToCode}
+              disabled={!ready}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 font-medium transition ${
+                mode === "code"
+                  ? "bg-white text-orange-700 shadow-sm dark:bg-stone-800 dark:text-orange-400"
+                  : "text-stone-500 hover:text-stone-700 disabled:opacity-50 dark:hover:text-stone-300"
+              }`}
+            >
+              <Code2 className="size-3.5" /> Python
+            </button>
+          </div>
+        ) : <span />}
+        <button
+          type="button"
+          onClick={() => setFullscreen((v) => !v)}
+          title={fullscreen ? "Exit full screen (Esc)" : "Full screen"}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-2.5 py-1 text-xs font-medium text-stone-600 transition hover:bg-stone-50 dark:border-stone-800 dark:text-stone-300 dark:hover:bg-stone-800/40"
+        >
+          {fullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+          {fullscreen ? "Exit" : "Full screen"}
+        </button>
+      </div>
 
       {/* Blockly injects its SVG here. It stays mounted (so the blocks survive a trip to Python) and is
           just hidden in code mode. A fixed height is required for the canvas to render. */}
-      <div className={mode === "code" ? "hidden" : "overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800"}>
-        <div ref={hostRef} className="h-[26rem] w-full" />
+      <div className={mode === "code" ? "hidden" : `overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800 ${fullscreen ? "min-h-0 flex-1" : ""}`}>
+        <div ref={hostRef} className={fullscreen ? "h-full w-full" : "h-[26rem] w-full"} />
       </div>
 
       {mode === "code" ? (
-        <div className="overflow-hidden rounded-xl border border-stone-800">
+        <div className={`overflow-hidden rounded-xl border border-stone-800 ${fullscreen ? "min-h-0 flex-1" : ""}`}>
           <MonacoEditor
-            height="26rem"
+            height={fullscreen ? "100%" : "26rem"}
             language="python"
             theme="vs-dark"
             value={code}
@@ -353,5 +376,6 @@ export function BlocklyWorkspace({
         </pre>
       ) : null}
     </div>
+    </>
   );
 }
