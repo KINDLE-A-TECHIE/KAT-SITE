@@ -46,6 +46,7 @@ export const LESSON_CONTENT_TYPES = [
   "CODE_PLAYGROUND",
   "NETWORK_LAB",
   "BLOCKLY",
+  "SCRATCH",
 ] as const;
 export type LessonContentTypeValue = (typeof LESSON_CONTENT_TYPES)[number];
 

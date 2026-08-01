@@ -1773,6 +1773,7 @@ enum LessonContentType {
   CODE_PLAYGROUND
   NETWORK_LAB
   BLOCKLY
+  SCRATCH
 }
 
 enum ContentReviewStatus {

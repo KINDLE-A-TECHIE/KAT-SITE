@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Blocks, Code2, FileText, Link as LinkIcon, Network, Video, Youtube, Plus, X, Send, ImagePlus } from "lucide-react";
+import { Blocks, Code2, FileText, Link as LinkIcon, Network, Puzzle, Video, Youtube, Plus, X, Send, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SUPPORTED_LANGUAGES } from "@/components/dashboard/code-playground-block";
 import { LEVELS } from "@/lib/network-lab/levels";
 
-type Tab = "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB" | "BLOCKLY";
+type Tab = "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB" | "BLOCKLY" | "SCRATCH";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "RICH_TEXT",       label: "Rich Text", icon: <FileText className="h-3.5 w-3.5" /> },
@@ -20,6 +20,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "CODE_PLAYGROUND", label: "Code",      icon: <Code2 className="h-3.5 w-3.5" /> },
   { id: "NETWORK_LAB",     label: "Network Lab", icon: <Network className="h-3.5 w-3.5" /> },
   { id: "BLOCKLY",         label: "Blocks",    icon: <Blocks className="h-3.5 w-3.5" /> },
+  { id: "SCRATCH",         label: "Scratch",   icon: <Puzzle className="h-3.5 w-3.5" /> },
 ];
 
 const TAB_ICON: Record<Tab, React.ReactNode> = {
@@ -30,6 +31,7 @@ const TAB_ICON: Record<Tab, React.ReactNode> = {
   CODE_PLAYGROUND: <Code2 className="h-3.5 w-3.5" />,
   NETWORK_LAB:     <Network className="h-3.5 w-3.5" />,
   BLOCKLY:         <Blocks className="h-3.5 w-3.5" />,
+  SCRATCH:         <Puzzle className="h-3.5 w-3.5" />,
 };
 
 const TAB_LABEL: Record<Tab, string> = {
@@ -40,6 +42,7 @@ const TAB_LABEL: Record<Tab, string> = {
   CODE_PLAYGROUND: "Code",
   NETWORK_LAB:     "Network Lab",
   BLOCKLY:         "Blocks",
+  SCRATCH:         "Scratch",
 };
 
 const LAB_LEVELS = Object.entries(LEVELS).map(([key, level]) => ({ key, unit: level.unit }));
@@ -219,6 +222,8 @@ export function ContentCreateForm({
         else if (block.type === "NETWORK_LAB")  payload.body = block.body;
         // BLOCKLY config is optional: send body only when the author provided one (blank = default toolbox).
         else if (block.type === "BLOCKLY")      { if (block.body.trim()) payload.body = block.body; }
+        // SCRATCH: the optional prompt rides body as JSON { prompt }. Blank = a bare editor, no prompt.
+        else if (block.type === "SCRATCH")      { if (block.body.trim()) payload.body = JSON.stringify({ prompt: block.body.trim() }); }
         else                                    payload.url = block.url;
 
         const res = await fetch(`/api/curriculum/lessons/${lessonId}/contents`, {
@@ -432,6 +437,26 @@ export function ContentCreateForm({
             keys: <code>prompt</code> (an instruction line), <code>toolbox</code> (a Blockly toolbox),
             <code>startBlocks</code> (a saved workspace), <code>allowCode</code> (set <code>false</code> to
             keep it blocks-only). Add a Rich Text block for full instructions.
+          </p>
+        </div>
+      )}
+
+      {tab === "SCRATCH" && (
+        <div className="space-y-1.5">
+          <Label htmlFor="scratch-prompt" className="text-sm">
+            Prompt <span className="font-normal text-stone-400 dark:text-stone-500">(optional)</span>
+          </Label>
+          <Textarea
+            id="scratch-prompt"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={3}
+            placeholder="e.g. Make the cat walk across the stage and say hello."
+            className="text-sm"
+          />
+          <p className="text-xs text-stone-400 dark:text-stone-500">
+            Learners build in the Scratch editor and save their project; their work resumes next time. Blank
+            shows the editor with no prompt. Add a Rich Text block for full instructions.
           </p>
         </div>
       )}

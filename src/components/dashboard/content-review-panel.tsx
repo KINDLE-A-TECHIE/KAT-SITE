@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Blocks, CheckCircle2, ChevronDown, ExternalLink, FileText,
-  Link as LinkIcon, Network, RefreshCw, Terminal, Video, XCircle, Youtube,
+  Link as LinkIcon, Network, Puzzle, RefreshCw, Terminal, Video, XCircle, Youtube,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +14,7 @@ import { PaginationControls } from "@/components/pagination-controls";
 
 type ContentItem = {
   id: string;
-  type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB" | "BLOCKLY";
+  type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB" | "BLOCKLY" | "SCRATCH";
   title: string;
   body: string | null;
   url: string | null;
@@ -57,6 +57,7 @@ const TYPE_ICONS = {
   CODE_PLAYGROUND: <Terminal className="h-4 w-4 text-emerald-500" />,
   NETWORK_LAB:     <Network className="h-4 w-4 text-amber-500" />,
   BLOCKLY:         <Blocks className="h-4 w-4 text-orange-500" />,
+  SCRATCH:         <Puzzle className="h-4 w-4 text-orange-500" />,
 };
 
 function extractYouTubeId(url: string): string | null {
@@ -216,6 +217,13 @@ function ReviewCard({
                   <span className="text-stone-700 dark:text-stone-300">
                     Blocks activity{content.body ? " (custom config)" : " (default toolbox)"}
                   </span>
+                </div>
+              )}
+
+              {content.type === "SCRATCH" && (
+                <div className="flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm dark:border-orange-900/40 dark:bg-orange-950/30">
+                  <Puzzle className="h-4 w-4 shrink-0 text-orange-600 dark:text-orange-400" />
+                  <span className="text-stone-700 dark:text-stone-300">Scratch activity (opens the editor)</span>
                 </div>
               )}
 

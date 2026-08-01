@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, Award, Blocks, BookOpen, CheckCircle2, ExternalLink,
-  FileText, Link as LinkIcon, Network, Plus, Sparkles,
+  FileText, Link as LinkIcon, Network, Plus, Puzzle, Sparkles,
   Terminal, Video, Youtube, XCircle,
 } from "lucide-react";
 import DOMPurify from "dompurify";
@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ContentCreateForm } from "@/components/dashboard/content-create-form";
 import { CodePlaygroundBlock } from "@/components/dashboard/code-playground-block";
 import { BlocklyBlock } from "@/components/dashboard/blockly-block";
+import { ScratchBlock } from "@/components/dashboard/scratch-block";
 import { NetworkLabBlock } from "@/components/network-lab/network-lab-block";
 import { LessonSlides } from "@/components/dashboard/lesson-slides";
 import { LessonWatermark } from "@/components/dashboard/lesson-watermark";
@@ -25,7 +26,7 @@ import { flushDrafts } from "@/lib/lesson-block-draft";
 
 export type ContentItem = {
   id: string;
-  type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB" | "BLOCKLY";
+  type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB" | "BLOCKLY" | "SCRATCH";
   title: string;
   body: string | null;
   url: string | null;
@@ -67,6 +68,7 @@ const TYPE_CONFIG = {
   CODE_PLAYGROUND: { label: "Try it",      Icon: Terminal },
   NETWORK_LAB:     { label: "Network Lab", Icon: Network },
   BLOCKLY:         { label: "Blocks",      Icon: Blocks },
+  SCRATCH:         { label: "Scratch",     Icon: Puzzle },
 } as const;
 
 const REVIEW_STYLE = {
@@ -223,6 +225,10 @@ export function ContentBody({
 
       {content.type === "BLOCKLY" && (
         <BlocklyBlock contentId={content.id} body={content.body} onComplete={onBlockComplete} />
+      )}
+
+      {content.type === "SCRATCH" && (
+        <ScratchBlock contentId={content.id} body={content.body} onComplete={onBlockComplete} />
       )}
     </>
   );
