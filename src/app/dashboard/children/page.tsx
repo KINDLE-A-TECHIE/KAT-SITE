@@ -14,7 +14,7 @@ export default async function ChildrenPage() {
       <PageHeader
         badge="Family"
         title="My Children"
-        subtitle="Register a new student account or link an existing one. Manage payments and track each child's progress from here."
+        subtitle="Register a new student account or link an existing one."
       />
       <ChildrenPanel />
     </section>

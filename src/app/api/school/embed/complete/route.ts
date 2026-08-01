@@ -3,7 +3,7 @@ import { z } from "zod";
 import { fail, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { EMBED_COOKIE, assertEmbedOrigin, readEmbedSession } from "@/lib/school-embed";
-import { checkEnrollmentLicense } from "@/lib/school-license";
+import { checkEnrollmentLicense, checkModuleLicenseForEnrollment } from "@/lib/school-license";
 import { captureError } from "@/lib/sentry";
 import { emitLessonCompleted } from "@/lib/school-webhook";
 
@@ -69,9 +69,13 @@ export async function POST(request: Request) {
         id: parsed.data.lessonId,
         module: { version: { curriculum: { programId: enrollment.programId } } },
       },
-      select: { id: true },
+      select: { id: true, module: { select: { sortOrder: true } } },
     });
     if (!lesson) return fail("Not found.", 404);
+
+    // PER-MODULE licence (#6): cannot complete a lesson in a term the school has not licensed.
+    const moduleGate = await checkModuleLicenseForEnrollment(enrollment, lesson.module.sortOrder);
+    if (!moduleGate.allowed) return fail(moduleGate.reason, 403);
 
     await prisma.lessonProgress.upsert({
       where: { userId_lessonId: { userId: session.userId, lessonId: lesson.id } },

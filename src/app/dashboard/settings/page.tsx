@@ -16,7 +16,7 @@ export default async function SettingsPage() {
       <PageHeader
         badge="Account Settings"
         title="Settings"
-        subtitle="Manage your password, notifications, appearance, and active sessions."
+        subtitle="Password, notifications, appearance, and active sessions."
       />
       <SettingsPanel role={session.user.role as UserRoleValue} />
     </div>

@@ -66,6 +66,8 @@ model User {
   certificatesApproved                                     Certificate[]            @relation("CertificateApprover")
   certificatesIssued                                       Certificate[]            @relation("CertificateIssuer")
   certificatesEarned                                       Certificate[]            @relation("CertificateRecipient")
+  schoolCertificatesIssued                                 SchoolCertificate[]      @relation("SchoolCertIssuer")
+  schoolCertificatesEarned                                 SchoolCertificate[]      @relation("SchoolCertRecipient")
   createdChallenges                                        Challenge[]              @relation("ChallengeCreator")
   gradedChallengeSubmissions                               ChallengeSubmission[]    @relation("ChallengeGrader")
   challengeSubmissions                                     ChallengeSubmission[]    @relation("ChallengeSubmitter")
@@ -78,6 +80,7 @@ model User {
   lessonContentsCreated                                    LessonContent[]          @relation("LessonContentCreator")
   lessonContentsReviewed                                   LessonContent[]          @relation("LessonContentReviewer")
   lessonProgress                                           LessonProgress[]
+  lessonBlockDrafts                                        LessonBlockDraft[]
   manualGrades                                             ManualGrade[]
   hostedMeetings                                           Meeting[]                @relation("MeetingHost")
   meetingParticipations                                    MeetingParticipant[]
@@ -285,15 +288,19 @@ model Program {
   level           ProgramLevel
   durationWeeks   Int            @default(0)
   monthlyFee      Decimal        @db.Decimal(10, 2)
+  // Lifecycle: Draft (isPublished false) -> Published (true) -> Archived (isActive false).
+  // Availability to learners/schools requires isActive AND isPublished. New programmes start Draft.
   isActive        Boolean        @default(true)
+  isPublished     Boolean        @default(false)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   discountPercent Decimal?       @db.Decimal(5, 2)
   audience        CourseAudience @default(B2C)
   nerdcLevel      NerdcLevel?
   strand          Strand?
-  assessments     Assessment[]
-  certificates    Certificate[]
+  assessments        Assessment[]
+  certificates       Certificate[]
+  schoolCertificates SchoolCertificate[]
   challenges      Challenge[]
   cohorts         Cohort[]
   curriculum      Curriculum?
@@ -350,6 +357,7 @@ model Enrollment {
   periods            EnrollmentPeriod[]
   moduleGateStatuses ModuleGateStatus[]
   payments           Payment[]
+  studentCredential  SchoolStudentCredential?
 
   @@unique([userId, programId])
   @@unique([schoolId, externalRef])
@@ -415,6 +423,7 @@ model Assessment {
   submissions        AssessmentSubmission[]
   projects           Project[]
   retakeGrants       RetakeGrant[]
+  schoolSchedules    SchoolClassAssessment[]
 
   @@index([programId, moduleId, published, verificationStatus])
   @@index([verificationStatus, verifiedAt])
@@ -446,11 +455,51 @@ model AssessmentQuestion {
   sortOrder    Int                @default(0)
   answerKey    String?
   createdAt    DateTime           @default(now())
+  // CODE questions only: the runtime/language the practical runs in (default "python" = Pyodide) and
+  // the starter code shown to the pupil.
+  codeLanguage String?
+  starterCode  String?
+  // CODE questions only: when set, the pupil answers with BLOCKLY (blocks that generate the Python that
+  // is graded), not a text editor. Optional JSON { toolbox?, startBlocks?, allowCode? }; "{}" = defaults.
+  // Grading is unchanged: the generated Python runs against the same hidden test cases.
+  blocklyConfig String?
   answers      AssessmentAnswer[]
   options      AssessmentOption[]
+  testCases    AssessmentTestCase[]
+  rubricCriteria RubricCriterion[]
   assessment   Assessment         @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 
   @@index([assessmentId, sortOrder])
+}
+
+// A hidden input/expected-output pair for a CODE question. The pupil's program is run with `stdin`
+// and its output compared to `expectedStdout`; each passed case is worth `points`. Authored by KAT.
+model AssessmentTestCase {
+  id             String             @id @default(cuid())
+  questionId     String
+  name           String?
+  stdin          String             @default("")
+  expectedStdout String
+  points         Int                @default(1)
+  hidden         Boolean            @default(true)
+  sortOrder      Int                @default(0)
+  question       AssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+// One row of a rubric for a RUBRIC (teacher-graded practical) question. The teacher awards up to
+// `maxPoints` per criterion while observing the pupil or their build. Authored by KAT.
+model RubricCriterion {
+  id          String             @id @default(cuid())
+  questionId  String
+  label       String
+  description String?
+  maxPoints   Int
+  sortOrder   Int                @default(0)
+  question    AssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
 }
 
 model AssessmentOption {
@@ -844,6 +893,8 @@ model Module {
   version         CurriculumVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
   gateStatuses    ModuleGateStatus[]
   SchoolClassUnit SchoolClassUnit[]
+  schoolCertificates SchoolCertificate[]
+  projectTeams    SchoolProjectTeam[]
 
   @@index([versionId, sortOrder])
 }
@@ -879,6 +930,12 @@ model Lesson {
   title       String
   description String?
   sortOrder   Int              @default(0)
+  // A free taster: school STAFF may preview this lesson even when its term is not licensed, so a
+  // school can evaluate a term before buying it. Pupils are never shown samples of unlicensed terms.
+  isSample    Boolean          @default(false)
+  // A marquee lesson an author flags to feature on a school completion certificate. The cert snapshots
+  // the titles of up to a few completed highlight lessons ("This term Ada built: a Maze Game, ...").
+  certHighlight Boolean        @default(false)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   module      Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
@@ -951,9 +1008,27 @@ model LessonContent {
   reviewedBy        User?               @relation("LessonContentReviewer", fields: [reviewedById], references: [id])
   peerSessions      PeerSession[]
   playgroundInvites PlaygroundInvite[]
+  blockDrafts       LessonBlockDraft[]
 
   @@index([lessonId, sortOrder])
   @@index([reviewStatus, createdAt])
+}
+
+// Per-learner working state for an interactive lesson block (code-playground code, network-lab
+// launcher setup, etc.). One row per (user, content), so a draft survives a device switch instead of
+// living in that browser's localStorage. `state` is opaque JSON owned by the block that wrote it.
+model LessonBlockDraft {
+  id        String        @id @default(cuid())
+  userId    String
+  contentId String
+  state     Json
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   LessonContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contentId])
+  @@index([userId])
 }
 
 model PeerSession {
@@ -1243,10 +1318,32 @@ model EmbedTokenUse {
   @@index([expiresAt])
 }
 
+/**
+ * A school pupil's PIN, for class-code + PIN sign-in (Option B).
+ *
+ * Keyed on the Enrollment (the pupil-in-a-school grain), NOT the User, so all PIN state lives inside
+ * the school domain and never touches the shared B2C account. The PIN is stored HASHED; the plaintext
+ * exists only on the printed card. failedAttempts + lockedUntil throttle brute force at the pupil
+ * grain (a 6-digit PIN is low entropy, so this row IS the lockout).
+ */
+model SchoolStudentCredential {
+  id             String     @id @default(cuid())
+  enrollmentId   String     @unique
+  pinHash        String
+  failedAttempts Int        @default(0)
+  lockedUntil    DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  enrollment     Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+}
+
 model School {
   id                  String                @id @default(cuid())
   name                String
   slug                String                @unique
+  // R2 object key for the school's logo (its "profile picture"). Store the KEY, build the URL at read
+  // time via r2PublicUrl (per the storage rule), so a domain change never breaks stored rows.
+  logoKey             String?
   createdAt           DateTime              @default(now())
   updatedAt           DateTime @updatedAt
   pricePerSeat        Decimal               @default(0) @db.Decimal(10, 2)
@@ -1260,6 +1357,7 @@ model School {
   licenses       SchoolLicense[]
   memberships    SchoolMembership[]
   webhooks       SchoolWebhook[]
+  certificates   SchoolCertificate[]
 }
 
 model SchoolAllowedOrigin {
@@ -1295,8 +1393,12 @@ model SchoolClass {
   schoolId           String
   name               String
   nerdcLevel         NerdcLevel
-  term               String
+  // A class is a cohort for a SESSION (academic year), spanning that session's three term-modules.
+  // NOT a single term: term-level access is decided per module against the session's term licences.
+  sessionLabel       String
   teacherId          String?
+  // Short class code a pupil types to sign in (Option B). Generated on demand; rotatable.
+  joinCode           String?              @unique
   createdAt          DateTime             @default(now())
   updatedAt          DateTime @updatedAt
   programId          String?
@@ -1306,10 +1408,75 @@ model SchoolClass {
   teacher               User?                @relation(fields: [teacherId], references: [id])
   teacherTerms SchoolClassTeacher[]
   units    SchoolClassUnit[]
+  certificates SchoolCertificate[]
+  scheduledAssessments SchoolClassAssessment[]
+  projectTeams SchoolProjectTeam[]
 
   @@index([programId])
   @@index([schoolId])
   @@index([teacherId])
+}
+
+// A team of pupils working together on a module's project (a coding build or a robotics practical).
+// Teacher-driven, matching the observed-practical model: the teacher forms teams and reviews them; on
+// approval, the module's project gate passes for every member (report-only, never blocks advancement).
+model SchoolProjectTeam {
+  id             String                    @id @default(cuid())
+  schoolClassId  String
+  moduleId       String
+  name           String
+  status         ProjectTeamStatus         @default(FORMING)
+  submissionNote String?
+  submissionUrl  String?
+  reviewNote     String?
+  reviewedById   String?
+  reviewedByName String?
+  approvedAt     DateTime?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  schoolClass    SchoolClass               @relation(fields: [schoolClassId], references: [id], onDelete: Cascade)
+  module         Module                    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  members        SchoolProjectTeamMember[]
+
+  @@index([schoolClassId, moduleId])
+  @@index([moduleId])
+}
+
+model SchoolProjectTeamMember {
+  id     String            @id @default(cuid())
+  teamId String
+  userId String
+  team   SchoolProjectTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+enum ProjectTeamStatus {
+  FORMING
+  APPROVED
+  NEEDS_WORK
+}
+
+// A KAT-authored assessment (test/exam) that a teacher has scheduled to their class, with an optional
+// open/close window. KAT authors the assessment; the teacher only decides WHEN their class sits it.
+// `assignedBy*` is a snapshot of who scheduled it (display only, not a compliance claim).
+model SchoolClassAssessment {
+  id             String      @id @default(cuid())
+  schoolClassId  String
+  assessmentId   String
+  opensAt        DateTime?
+  closesAt       DateTime?
+  assignedById   String?
+  assignedByName String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  schoolClass    SchoolClass @relation(fields: [schoolClassId], references: [id], onDelete: Cascade)
+  assessment     Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolClassId, assessmentId])
+  @@index([schoolClassId])
+  @@index([assessmentId])
 }
 
 model SchoolClassTeacher {
@@ -1353,16 +1520,20 @@ model SchoolClassUnit {
 }
 
 model SchoolInvoice {
-  id          String              @id @default(cuid())
-  schoolId    String
-  term        String
-  seatCount   Int
-  amount      Decimal             @db.Decimal(10, 2)
-  status      SchoolInvoiceStatus @default(PENDING)
-  paystackRef String              @unique
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime @updatedAt
-  school      School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  id           String              @id @default(cuid())
+  schoolId     String
+  sessionLabel String
+  termNumber   Int
+  // Admin-entered term start; the licence's window is [startsAt, startsAt + 15 weeks). Nullable until
+  // the billing UI captures it (A4); the gate treats a null window as no time limit.
+  startsAt     DateTime?
+  seatCount    Int
+  amount       Decimal             @db.Decimal(10, 2)
+  status       SchoolInvoiceStatus @default(PENDING)
+  paystackRef  String              @unique
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime @updatedAt
+  school       School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@index([schoolId])
   @@index([status])
@@ -1371,7 +1542,9 @@ model SchoolInvoice {
 model SchoolLicense {
   id           String              @id @default(cuid())
   schoolId     String
-  term         String
+  sessionLabel String
+  termNumber   Int
+  startsAt     DateTime?
   seatLimit    Int
   seatsUsed    Int                 @default(0)
   status       SchoolLicenseStatus @default(PENDING)
@@ -1380,7 +1553,7 @@ model SchoolLicense {
   updatedAt    DateTime @updatedAt
   school       School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
-  @@unique([schoolId, term])
+  @@unique([schoolId, sessionLabel, termNumber])
   @@index([status])
 }
 
@@ -1396,6 +1569,56 @@ model SchoolMembership {
 
   @@unique([schoolId, userId])
   @@index([userId])
+}
+
+// A school completion certificate for one pupil finishing one MODULE (a term). Term-scoped, not
+// program-scoped, because schools license term-by-term and a program-only credential would strand a
+// pupil whose school never bought the final term. Everything a certificate shows is SNAPSHOTTED here at
+// issue time so it stays an accurate historical record even after the curriculum is edited. Separate
+// from the B2C `Certificate` model on purpose (its @@unique([userId, programId]) is load-bearing).
+model SchoolCertificate {
+  id            String                @id @default(cuid())
+  credentialId  String                @unique // crypto-random public verification id (generateCredentialId)
+  kind          SchoolCertificateKind @default(TERM)
+  schoolId      String
+  userId        String // the pupil (a global STUDENT whose enrolment carries this schoolId)
+  schoolClassId String
+  // The term/module certified. NULL for a SESSION (year) capstone, which spans the whole programme.
+  moduleId      String?
+  // The programme a SESSION capstone certifies. NULL for a TERM certificate (it is per-module instead).
+  programId     String?
+
+  // Immutable snapshot taken at issue.
+  pupilName        String
+  programTitle     String
+  // The module (term) title. NULL for a SESSION capstone.
+  moduleTitle      String?
+  sessionLabel     String
+  // The term number. NULL for a SESSION capstone (it is the whole year).
+  termNumber       Int?
+  highlightLessons Json // string[]: highlight lesson titles (TERM) or term titles (SESSION), in order
+
+  // Parental consent to show the pupil's NAME on the public verification page. Lesson titles are
+  // curriculum (not PII) and always show; without consent the page verifies but hides the child's name.
+  nameConsent Boolean                 @default(false)
+  status      SchoolCertificateStatus @default(ISSUED)
+  issuedById  String
+  issuedAt    DateTime                @default(now())
+  revokedAt   DateTime?
+
+  school      School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user        User        @relation("SchoolCertRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  schoolClass SchoolClass @relation(fields: [schoolClassId], references: [id], onDelete: Cascade)
+  module      Module?     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  program     Program?    @relation(fields: [programId], references: [id], onDelete: Cascade)
+  issuedBy    User        @relation("SchoolCertIssuer", fields: [issuedById], references: [id])
+
+  // Postgres treats NULLs as distinct, so each key dedups its own kind: TERM by (user, module) with a
+  // set moduleId, SESSION by (user, programme) with a set programId; the other column is NULL and free.
+  @@unique([userId, moduleId])
+  @@unique([userId, programId])
+  @@index([schoolId])
+  @@index([schoolClassId])
 }
 
 model SchoolWebhook {
@@ -1467,6 +1690,11 @@ enum QuestionType {
   MULTIPLE_CHOICE
   TRUE_FALSE
   OPEN_ENDED
+  // A coding practical, auto-graded by running the pupil's code against hidden test cases in the
+  // platform's own runtime (Pyodide by default, Judge0 when configured).
+  CODE
+  // A teacher-graded practical (robotics, a creative build, an observed skill) scored against a rubric.
+  RUBRIC
 }
 
 enum AttemptStatus {
@@ -1544,6 +1772,8 @@ enum LessonContentType {
   DOCUMENT_LINK
   CODE_PLAYGROUND
   NETWORK_LAB
+  BLOCKLY
+  SCRATCH
 }
 
 enum ContentReviewStatus {
@@ -1610,6 +1840,16 @@ enum CertificateStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum SchoolCertificateStatus {
+  ISSUED
+  REVOKED
+}
+
+enum SchoolCertificateKind {
+  TERM // one completed module (a term)
+  SESSION // the year capstone: all of a programme's terms completed
 }
 
 enum TestimonialStatus {

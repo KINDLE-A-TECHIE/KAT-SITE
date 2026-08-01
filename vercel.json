@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/webhook-drain",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 2 * * *"
     }
   ]
 }

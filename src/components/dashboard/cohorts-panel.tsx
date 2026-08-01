@@ -91,10 +91,10 @@ const emptyNew = (): Draft => ({
 // ── Shared input styles ────────────────────────────────────────────────────────
 
 const INPUT_CLS =
-  "h-11 w-full rounded-xl border border-stone-200 bg-white px-4 text-sm font-medium text-stone-700 " +
-  "dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 " +
+  "h-9 w-full rounded-lg border border-stone-200 bg-white px-4 text-sm font-medium text-stone-700 " +
+  "dark:border-stone-800 dark:bg-stone-800 dark:text-stone-200 " +
   "shadow-[0_1px_2px_rgba(26, 23, 20,0.05)] transition-all duration-150 " +
-  "focus:border-[#B2401D] focus:outline-none focus:shadow-[0_1px_2px_rgba(26, 23, 20,0.05),0_0_0_3px_rgba(178, 64, 29,0.12)] " +
+  "focus:border-kat-clay focus:outline-none focus:shadow-[0_1px_2px_rgba(26, 23, 20,0.05),0_0_0_3px_rgba(178, 64, 29,0.12)] " +
   "hover:border-stone-300 dark:hover:border-stone-600 disabled:cursor-not-allowed disabled:opacity-50";
 
 // ── Small reusable inputs ──────────────────────────────────────────────────────
@@ -502,10 +502,10 @@ export function CohortsPanel() {
 
       {loading ? (
         <div className="space-y-4">
-          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-lg" />)}
         </div>
       ) : cohorts.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-stone-300 p-8 text-center dark:border-stone-700">
+        <div className="rounded-lg border border-dashed border-stone-300 p-8 text-center dark:border-stone-800">
           <p className="text-sm text-stone-500 dark:text-stone-400">No cohorts yet.</p>
           <p className="mt-1 text-xs text-stone-400 dark:text-stone-500">Click <strong>New Cohort</strong> above to create one.</p>
         </div>
@@ -529,7 +529,7 @@ export function CohortsPanel() {
                     )}
                     <h3 className="text-base font-semibold text-stone-800 dark:text-stone-200">{cohort.name}</h3>
                     <p className="mt-0.5 text-xs text-stone-400 dark:text-stone-500">
-                      {fmtDate(cohort.startsAt)} &mdash; {fmtDate(cohort.endsAt)}
+                      {fmtDate(cohort.startsAt)} &ndash; {fmtDate(cohort.endsAt)}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${cohort.applicationOpen ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:ring-emerald-800" : "bg-stone-100 text-stone-500 dark:bg-stone-700 dark:text-stone-400"}`}>
@@ -623,7 +623,7 @@ export function CohortsPanel() {
                         type="button"
                         onClick={() => void handleSave(cohort.id)}
                         disabled={isSaving}
-                        className="flex shrink-0 items-center gap-1.5 rounded-xl bg-[var(--kat-primary-blue)] px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                        className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--kat-primary-blue)] px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
                       >
                         {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
                         Save Changes
@@ -652,7 +652,7 @@ export function CohortsPanel() {
                           const available = programs.filter((p) => !assignedIds.has(p.id));
 
                           return (
-                            <div key={fellow.userId} className="rounded-xl border border-stone-200 bg-stone-50/60 p-4 dark:border-stone-700 dark:bg-stone-800/60">
+                            <div key={fellow.userId} className="rounded-lg border border-stone-200 bg-stone-50/60 p-4 dark:border-stone-800 dark:bg-stone-800/60">
                               <div className="mb-3">
                                 <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">{fellow.firstName} {fellow.lastName}</p>
                                 <p className="text-xs text-stone-500 dark:text-stone-400">{fellow.email}</p>
@@ -701,7 +701,7 @@ export function CohortsPanel() {
                                     type="button"
                                     disabled={!selectedProgram || isAssigning}
                                     onClick={() => void handleAssign(cohort.id, fellow.userId)}
-                                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--kat-primary-blue)] px-4 py-2.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50 sm:w-auto sm:shrink-0"
+                                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--kat-primary-blue)] px-4 py-2.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50 sm:w-auto sm:shrink-0"
                                   >
                                     {isAssigning ? <Loader2 className="size-3 animate-spin" /> : <Plus className="size-3" />}
                                     Assign
@@ -761,7 +761,7 @@ export function CohortsPanel() {
               </FormField>
             </div>
 
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-stone-50/60 p-3.5 dark:border-stone-700 dark:bg-stone-800/60">
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-stone-200 bg-stone-50/60 p-3.5 dark:border-stone-800 dark:bg-stone-800/60">
               <input
                 type="checkbox"
                 className="mt-0.5 size-4 accent-[var(--kat-primary-blue)]"

@@ -224,13 +224,13 @@ export function NotificationsPopover() {
           className={cn(
             "relative rounded-full border p-2 transition-all duration-150",
             "border-stone-200 bg-white text-stone-600 hover:bg-stone-50 hover:text-stone-900",
-            "dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-stone-100",
+            "dark:border-stone-800 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-stone-100",
             open && "bg-stone-50 dark:bg-stone-700",
           )}
         >
           <Bell className={cn("size-4 transition-transform duration-150", open && "scale-110")} />
           {unreadCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 py-px text-[10px] font-bold leading-none text-white ring-2 ring-white dark:ring-stone-900">
+            <span className="absolute -right-1 -top-1 flex min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 py-px text-[11px] font-bold leading-none text-white ring-2 ring-white dark:ring-stone-900">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -244,7 +244,7 @@ export function NotificationsPopover() {
         className="w-[min(95vw,380px)] overflow-hidden p-0 shadow-xl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-stone-100 bg-white px-4 py-3 dark:border-stone-700 dark:bg-stone-900">
+        <div className="flex items-center justify-between border-b border-stone-100 bg-white px-4 py-3 dark:border-stone-800 dark:bg-stone-900">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1A1714]/10 dark:bg-orange-900/40">
               <Bell className="size-3.5 text-[#1A1714] dark:text-orange-400" />
@@ -320,7 +320,7 @@ export function NotificationsPopover() {
                       {/* Content */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="line-clamp-1 text-sm font-semibold text-stone-900 dark:text-stone-100 group-hover:text-[#B2401D] dark:group-hover:text-orange-400">
+                          <p className="line-clamp-1 text-sm font-semibold text-stone-900 dark:text-stone-100 group-hover:text-kat-clay dark:group-hover:text-orange-400">
                             {notification.title}
                           </p>
                           {isUnread && (
@@ -344,7 +344,7 @@ export function NotificationsPopover() {
 
         {/* Footer */}
         {notifications.length > 0 && (
-          <div className="border-t border-stone-100 bg-white px-4 py-2.5 dark:border-stone-700 dark:bg-stone-900">
+          <div className="border-t border-stone-100 bg-white px-4 py-2.5 dark:border-stone-800 dark:bg-stone-900">
             <p className="text-center text-[11px] text-stone-400 dark:text-stone-500">
               Click a notification to dismiss and navigate
             </p>

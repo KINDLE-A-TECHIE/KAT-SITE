@@ -16,7 +16,7 @@ export default async function TestimonialsPage() {
         <PageHeader
           badge="Testimonials"
           title="Share your experience"
-          subtitle="Tell us about your child's journey with KAT. Approved testimonials may appear on our website."
+          subtitle="Tell other parents what KAT has been like for your child. Approved testimonials may appear on the website."
         />
         <ParentTestimonialsPanel />
       </section>

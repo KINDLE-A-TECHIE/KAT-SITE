@@ -95,6 +95,9 @@ async function seedCourse(
   {
     const programData = {
       name: course.name,
+      // In the update branch too, so a wording fix in the crosswalk reaches
+      // existing rows on re-seed instead of living only on fresh databases.
+      description: `${course.subject}, ${course.classYear}, NERDC-aligned.`,
       level: PROGRAM_LEVEL[course.nerdcLevel],
       audience: CourseAudience.SCHOOL,
       nerdcLevel: course.nerdcLevel as NerdcLevel,
@@ -105,6 +108,8 @@ async function seedCourse(
       monthlyFee: 0,
       durationWeeks: 36,
       isActive: true,
+      // Seeded crosswalk courses are canonical and live, not drafts.
+      isPublished: true,
     };
 
     const program = await prisma.program.upsert({
@@ -113,7 +118,6 @@ async function seedCourse(
       create: {
         ...programData,
         slug: course.slug,
-        description: `${course.subject}, ${course.classYear}, NERDC-aligned.`,
       },
       select: { id: true },
     });
@@ -233,6 +237,17 @@ async function seedCourse(
       }
     }
 
+    // Sample lessons: the first lesson of each module is a free taster a school's staff can preview on
+    // an unlicensed term. Reconciled both ways so re-seeding keeps exactly one sample per module.
+    await prisma.lesson.updateMany({
+      where: { moduleId: { in: moduleIds }, sortOrder: 0 },
+      data: { isSample: true },
+    });
+    await prisma.lesson.updateMany({
+      where: { moduleId: { in: moduleIds }, sortOrder: { not: 0 } },
+      data: { isSample: false },
+    });
+
     // ── Playgrounds for CODING topics: one read, one bulk create ──────────────
     const codingLessonIds: string[] = [];
     const desiredContent = new Map<string, { title: string; body: string; language: string }>();
@@ -300,14 +315,14 @@ async function retireSupersededPrograms(prisma: PrismaClient): Promise<void> {
   for (const slug of RETIRED_SLUGS) {
     const program = await prisma.program.findUnique({
       where: { slug },
-      select: { id: true, _count: { select: { enrollments: true, schoolClasses: true } } },
+      select: { id: true, _count: { select: { enrollments: true, SchoolClass: true } } },
     });
     if (!program) continue;
 
-    if (program._count.enrollments > 0 || program._count.schoolClasses > 0) {
+    if (program._count.enrollments > 0 || program._count.SchoolClass > 0) {
       console.warn(
         `[nerdc] Superseded program "${slug}" still has ${program._count.enrollments} enrollment(s) ` +
-          `and ${program._count.schoolClasses} class(es), leaving it in place. Migrate them, then remove it.`,
+          `and ${program._count.SchoolClass} class(es), leaving it in place. Migrate them, then remove it.`,
       );
       continue;
     }

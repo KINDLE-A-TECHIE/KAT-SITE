@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-type SchoolClass = { id: string; name: string; term: string };
+type SchoolClass = { id: string; name: string; sessionLabel: string };
 
 type ImportSummary = {
   created: number;
@@ -99,7 +99,7 @@ export function RosterImportPanel() {
               <SelectContent>
                 {classes.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    {c.name} · Term {c.term}
+                    {c.name} · {c.sessionLabel}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -137,7 +137,7 @@ export function RosterImportPanel() {
 
         {/* Summary */}
         {summary ? (
-          <div className="space-y-3 rounded-xl border border-stone-200 p-4 dark:border-stone-700">
+          <div className="space-y-3 rounded-lg border border-stone-200 p-4 dark:border-stone-800">
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <span className="inline-flex items-center gap-1.5 font-medium text-emerald-700 dark:text-emerald-400">
                 <Check className="size-4" /> {summary.created} created

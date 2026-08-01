@@ -12,7 +12,7 @@ import type { SchoolReport } from "@/lib/school-report-data";
 
 const populated: SchoolReport = {
   school: { name: "XT Academy" },
-  term: "2025/2026 Term 1",
+  session: "2025/2026",
   scope: "class",
   licence: {
     term: "2025/2026 Term 1",
@@ -24,7 +24,7 @@ const populated: SchoolReport = {
   classes: [
     {
       summary: {
-        class: { id: "c1", name: "JSS 1 Blue", term: "2025/2026 Term 1", nerdcLevel: "JSS" },
+        class: { id: "c1", name: "JSS 1 Blue", sessionLabel: "2025/2026", nerdcLevel: "JSS" },
         course: { id: "p1", name: "Coding Basics" },
         studentCount: 2,
         totalLessons: 10,
@@ -58,7 +58,7 @@ const populated: SchoolReport = {
       coverage: {
         classId: "c1",
         className: "JSS 1 Blue",
-        term: "2025/2026 Term 1",
+        sessionLabel: "2025/2026",
         course: { id: "p1", name: "Coding Basics", slug: "coding-basics" },
         matchedCrosswalk: true,
         studentCount: 2,

@@ -3,7 +3,7 @@ import { SchoolLicenseStatus, SchoolRole } from "@prisma/client";
 import { prisma } from "./prisma";
 import { getClassTermSummary, type ClassTermSummary } from "./school-report";
 import { getClassCoverage, type ClassCoverage } from "./school-coverage";
-import { normalizeTerm } from "./school-license";
+import { formatTerm, normalizeSession } from "./school-term";
 
 /**
  * The assembled termly progress & NERDC-coverage report, shared by BOTH the JSON route
@@ -16,7 +16,7 @@ export type SchoolReportSection = { summary: ClassTermSummary; coverage: ClassCo
 
 export type SchoolReport = {
   school: { name: string };
-  term: string | null;
+  session: string | null;
   scope: "class" | "school";
   licence: { term: string; status: SchoolLicenseStatus; seatLimit: number; seatsUsed: number } | null;
   generatedAt: string;
@@ -30,9 +30,9 @@ export async function getSchoolReport(
   schoolId: string,
   role: SchoolRole,
   userId: string,
-  opts: { term?: string | null; classId?: string | null },
+  opts: { session?: string | null; classId?: string | null },
 ): Promise<SchoolReport> {
-  const { term = null, classId = null } = opts;
+  const { session = null, classId = null } = opts;
 
   const school = await prisma.school.findUnique({
     where: { id: schoolId },
@@ -48,12 +48,12 @@ export async function getSchoolReport(
       ...(role === SchoolRole.TEACHER ? { teacherId: userId } : {}),
     },
     orderBy: { name: "asc" },
-    select: { id: true, term: true },
+    select: { id: true, sessionLabel: true },
   });
 
-  // Term is free text, so filter on the normalized form.
-  const wanted = term ? normalizeTerm(term) : null;
-  const inScope = wanted ? classes.filter((c) => normalizeTerm(c.term) === wanted) : classes;
+  // Session labels are free text, so filter on the normalized form.
+  const wanted = session ? normalizeSession(session) : null;
+  const inScope = wanted ? classes.filter((c) => normalizeSession(c.sessionLabel) === wanted) : classes;
 
   if (classId && inScope.length === 0) {
     throw new ReportClassNotFoundError("Class not found.");
@@ -69,15 +69,26 @@ export async function getSchoolReport(
     }),
   );
 
+  // The session's licence to show: the ACTIVE one if any, else its most-recent term.
   const licences = await prisma.schoolLicense.findMany({
     where: { schoolId },
-    select: { term: true, status: true, seatLimit: true, seatsUsed: true },
+    orderBy: { termNumber: "desc" },
+    select: { sessionLabel: true, termNumber: true, status: true, seatLimit: true, seatsUsed: true },
   });
-  const licence = wanted ? (licences.find((l) => normalizeTerm(l.term) === wanted) ?? null) : null;
+  const forSession = wanted ? licences.filter((l) => normalizeSession(l.sessionLabel) === wanted) : [];
+  const chosen = forSession.find((l) => l.status === SchoolLicenseStatus.ACTIVE) ?? forSession[0] ?? null;
+  const licence = chosen
+    ? {
+        term: formatTerm(chosen.sessionLabel, chosen.termNumber),
+        status: chosen.status,
+        seatLimit: chosen.seatLimit,
+        seatsUsed: chosen.seatsUsed,
+      }
+    : null;
 
   return {
     school: { name: school?.name ?? "" },
-    term,
+    session,
     scope: classId ? "class" : "school",
     licence,
     generatedAt: new Date().toISOString(),

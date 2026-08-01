@@ -91,7 +91,7 @@ export function UnitDeliveryPanel({ classId }: { classId: string }) {
     setAsking(unit);
   };
 
-  if (loading) return <Skeleton className="h-48 w-full rounded-xl" />;
+  if (loading) return <Skeleton className="h-48 w-full rounded-lg" />;
   if (units.length === 0) return null;
 
   const delivered = units.filter((u) => u.delivered).length;
@@ -174,7 +174,7 @@ export function UnitDeliveryPanel({ classId }: { classId: string }) {
             <button
               type="button"
               onClick={() => asking && mark(asking, "FIRST_HAND")}
-              className="w-full rounded-xl border border-stone-200 p-3 text-left transition hover:border-orange-400 dark:border-stone-700"
+              className="w-full rounded-lg border border-stone-200 p-3 text-left transition hover:border-orange-400 dark:border-stone-800"
             >
               <p className="font-medium text-stone-900 dark:text-stone-100">I taught this unit</p>
               <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
@@ -185,7 +185,7 @@ export function UnitDeliveryPanel({ classId }: { classId: string }) {
             <button
               type="button"
               onClick={() => asking && mark(asking, "SUCCESSOR")}
-              className="w-full rounded-xl border border-stone-200 p-3 text-left transition hover:border-orange-400 dark:border-stone-700"
+              className="w-full rounded-lg border border-stone-200 p-3 text-left transition hover:border-orange-400 dark:border-stone-800"
             >
               <p className="font-medium text-stone-900 dark:text-stone-100">
                 {predecessor} taught this before I took the class

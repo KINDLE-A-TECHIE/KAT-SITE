@@ -120,11 +120,11 @@ export function SchoolTeachersPanel() {
         {loading ? (
           <div className="space-y-2">
             {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-12 w-full rounded-xl" />
+              <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}
           </div>
         ) : teachers.length === 0 ? (
-          <p className="rounded-xl bg-stone-50 p-4 text-sm leading-relaxed text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
+          <p className="rounded-lg bg-stone-50 p-4 text-sm leading-relaxed text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
             Invite your teachers by email. Each gets a link to set their password, then they can sign
             in, see the classes you assign them, and mark their pupils&rsquo; work. Teachers do not
             use a seat, seats are for pupils.

@@ -248,7 +248,7 @@ export function DeveloperDocs() {
       "id": "cls_abc123",
       "name": "Primary 5A",
       "nerdc_level": "PRIMARY_4_6",
-      "term": "2026/2027 Term 1",
+      "session": "2026/2027",
       "teacher": "Ngozi Okafor",
       "student_count": 32
     }

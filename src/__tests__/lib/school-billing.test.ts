@@ -22,7 +22,9 @@ import { markInvoicePaidAndActivate } from "@/lib/school-billing";
 const invoice = (status: SchoolInvoiceStatus) => ({
   id: "inv_1",
   schoolId: "sch_1",
-  term: "2025/2026 Term 1",
+  sessionLabel: "2025/2026",
+  termNumber: 1,
+  startsAt: null,
   seatCount: 40,
   status,
   school: { pricePerSeat: 2500 },

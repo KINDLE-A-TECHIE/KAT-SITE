@@ -1,5 +1,30 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { assertSafeWebhookUrl, signWebhook, verifyWebhook } from "@/lib/school-webhook";
+
+/**
+ * Hermetic DNS. `assertSafeWebhookUrl` resolves any hostname and judges the RESOLVED IP, so a few
+ * cases below reach `dns.lookup`. A live lookup (example.com) made this file flake and time out
+ * under parallel load. Resolve from a fixed table instead: deterministic, offline, and it lets us
+ * test a public-looking name that answers with a private IP, the SSRF the real resolver cannot.
+ */
+vi.mock("dns/promises", () => {
+  const table: Record<string, string> = {
+    "example.com": "93.184.216.34", // ordinary public host
+    localhost: "127.0.0.1", // caught as private (not merely "does not resolve")
+    "rebind.evil.test": "169.254.169.254", // public NAME, private ANSWER: the metadata SSRF
+  };
+  return {
+    lookup: async (hostname: string) => {
+      const address = table[hostname.toLowerCase()];
+      if (!address) {
+        const err = new Error(`ENOTFOUND ${hostname}`) as NodeJS.ErrnoException;
+        err.code = "ENOTFOUND";
+        throw err;
+      }
+      return [{ address, family: 4 }];
+    },
+  };
+});
 
 /**
  * The SSRF filter is the most dangerous code in the product: a school hands us a URL and our own
@@ -64,6 +89,18 @@ describe("assertSafeWebhookUrl", () => {
     expect(await assertSafeWebhookUrl("https://[::ffff:169.254.169.254]/")).toMatch(
       /private or internal/,
     );
+  });
+
+  it("rejects a public-looking hostname whose DNS answer is private (blocklist-of-names defeat)", async () => {
+    // evil.test looks public; its A record points at the metadata service. The check judges the
+    // resolved IP, not the string, so it is refused.
+    expect(await assertSafeWebhookUrl("https://rebind.evil.test/hook")).toMatch(
+      /private or internal/,
+    );
+  });
+
+  it("rejects a hostname that does not resolve", async () => {
+    expect(await assertSafeWebhookUrl("https://nope.invalid/hook")).toMatch(/does not resolve/);
   });
 
   it("rejects junk", async () => {

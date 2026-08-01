@@ -21,7 +21,7 @@ type TeachClass = {
   id: string;
   name: string;
   nerdcLevel: string;
-  term: string;
+  sessionLabel: string;
   programId: string | null;
   program: Course | null;
   _count: { enrollments: number };
@@ -100,7 +100,7 @@ export function TeachClassesPanel() {
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{c.name}</p>
                 <p className="mt-0.5 font-mono text-xs tabular-nums text-stone-500 dark:text-stone-400">
-                  {NERDC_LABELS[c.nerdcLevel] ?? c.nerdcLevel} · Term {c.term} ·{" "}
+                  {NERDC_LABELS[c.nerdcLevel] ?? c.nerdcLevel} · {c.sessionLabel} ·{" "}
                   {c._count.enrollments} student{c._count.enrollments === 1 ? "" : "s"}
                 </p>
               </div>
@@ -121,7 +121,7 @@ export function TeachClassesPanel() {
             {/* The licence gate: the same rule is enforced in the API, so this is the
                 explanation, not the lock. */}
             {!c.licensed ? (
-              <p className="mt-3 border-l-2 border-stone-200 pl-3 text-sm leading-relaxed text-stone-500 dark:border-stone-700 dark:text-stone-400">
+              <p className="mt-3 border-l-2 border-stone-200 pl-3 text-sm leading-relaxed text-stone-500 dark:border-stone-800 dark:text-stone-400">
                 {c.licenseReason}
               </p>
             ) : null}

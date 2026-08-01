@@ -1,6 +1,7 @@
 import "server-only";
 import { CourseAudience, NerdcLevel } from "@prisma/client";
 import { prisma } from "./prisma";
+import { PROGRAM_AVAILABLE } from "./program";
 
 /**
  * Rules for assigning a SCHOOL course to a class. Shared by the teacher route and
@@ -30,7 +31,7 @@ export async function checkCourseAssignable(
 
   const program = await prisma.program.findUnique({
     where: { id: programId },
-    select: { audience: true, nerdcLevel: true },
+    select: { audience: true, nerdcLevel: true, isActive: true, isPublished: true },
   });
   if (!program) return "That course does not exist.";
   if (program.audience !== CourseAudience.SCHOOL) {
@@ -39,6 +40,10 @@ export async function checkCourseAssignable(
   if (program.nerdcLevel !== schoolClass.nerdcLevel) {
     return `That course is not for ${schoolClass.nerdcLevel.replace(/_/g, " ")}.`;
   }
+  // A draft or archived course can't be assigned; publish it first.
+  if (!program.isActive || !program.isPublished) {
+    return "That course is not published yet.";
+  }
 
   return null;
 }
@@ -46,7 +51,7 @@ export async function checkCourseAssignable(
 /** SCHOOL courses available for a given NERDC level (drives the picker). */
 export async function listCoursesForLevel(nerdcLevel: NerdcLevel) {
   return prisma.program.findMany({
-    where: { audience: CourseAudience.SCHOOL, nerdcLevel, isActive: true },
+    where: { audience: CourseAudience.SCHOOL, nerdcLevel, ...PROGRAM_AVAILABLE },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });

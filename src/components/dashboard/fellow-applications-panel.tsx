@@ -78,7 +78,7 @@ export function FellowApplicationsPanel() {
       <div className="kat-card flex items-center gap-3">
         <span className="text-sm text-stone-600 dark:text-stone-400">Filter by status:</span>
         <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-          <SelectTrigger className="h-9 w-40 rounded-xl border border-stone-300 dark:border-stone-600 text-sm">
+          <SelectTrigger className="h-9 w-40 rounded-lg border border-stone-300 dark:border-stone-600 text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -109,7 +109,7 @@ export function FellowApplicationsPanel() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
-              className="rounded-xl border border-stone-100 dark:border-stone-800 bg-stone-50 dark:bg-stone-800"
+              className="rounded-lg border border-stone-100 dark:border-stone-800 bg-stone-50 dark:bg-stone-800"
             >
               {/* Summary row */}
               <button
@@ -155,7 +155,7 @@ export function FellowApplicationsPanel() {
                   {app.status === "PENDING" && (
                     <>
                       <textarea
-                        className="w-full rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-200 min-h-[70px]"
+                        className="w-full rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-200 min-h-[70px]"
                         placeholder="Optional reviewer note (visible to applicant if rejected)"
                         value={reviewNotes[app.id] ?? ""}
                         onChange={(e) => setReviewNotes((prev) => ({ ...prev, [app.id]: e.target.value }))}

@@ -2,15 +2,25 @@ import { ContentReviewStatus, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkModuleLicenseForEnrollment } from "@/lib/school-license";
+import { deleteNoteImagesInBodies } from "@/lib/note-images";
 import { updateLessonSchema } from "@/lib/validators";
 
 interface Params { params: Promise<{ lessonId: string }> }
 
-const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW];
+// SCHOOL_STUDENT is a learner here too: PUBLISHED-only content + enrollment check + (below) the
+// per-module school licence gate. Without this a school pupil would fall through as a non-learner and
+// get un-gated, unpublished content.
+const LEARNER_ROLES: UserRole[] = [UserRole.STUDENT, UserRole.FELLOW, UserRole.SCHOOL_STUDENT];
 
 export async function GET(_req: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
+
+  // School STAFF do not read curriculum content here: this un-scoped B2C route would hand them any
+  // lesson ungated. Their gated, term-scoped preview is the (school)/teach/[classId] surface, which
+  // reads content directly. (SCHOOL_STUDENT is a learner and IS served below.)
+  if (session.user.role === UserRole.SCHOOL_STAFF) return fail("Forbidden", 403);
 
   const { lessonId } = await params;
   const isLearner = LEARNER_ROLES.includes(session.user.role as UserRole);
@@ -20,7 +30,7 @@ export async function GET(_req: Request, { params }: Params) {
     include: {
       module: {
         select: {
-          id: true, title: true,
+          id: true, title: true, sortOrder: true,
           version: {
             select: {
               id: true, versionNumber: true, label: true,
@@ -56,9 +66,14 @@ export async function GET(_req: Request, { params }: Params) {
     const programId = lesson.module.version.curriculum.program.id;
     const enrollment = await prisma.enrollment.findUnique({
       where: { userId_programId: { userId: session.user.id, programId } },
-      select: { id: true },
+      select: { id: true, schoolId: true, schoolClassId: true },
     });
     if (!enrollment) return fail("You are not enrolled in this program.", 403);
+
+    // PER-MODULE school licence (#6). A school pupil may only open a module whose term is licensed.
+    // No-op for B2C (null schoolId). This is the real lock, the learn shell only shows it.
+    const moduleGate = await checkModuleLicenseForEnrollment(enrollment, lesson.module.sortOrder);
+    if (!moduleGate.allowed) return fail(moduleGate.reason, 403);
   }
 
   // Build flat ordered lesson list for prev/next
@@ -114,6 +129,8 @@ export async function PATCH(request: Request, { params }: Params) {
       ...(parsed.data.title !== undefined && { title: parsed.data.title }),
       ...(parsed.data.description !== undefined && { description: parsed.data.description }),
       ...(parsed.data.sortOrder !== undefined && { sortOrder: parsed.data.sortOrder }),
+      ...(parsed.data.isSample !== undefined && { isSample: parsed.data.isSample }),
+      ...(parsed.data.certHighlight !== undefined && { certHighlight: parsed.data.certHighlight }),
     },
   });
 
@@ -129,7 +146,12 @@ export async function DELETE(_req: Request, { params }: Params) {
   }
 
   const { lessonId } = await params;
+
+  // Gather the note-image keys before the delete cascades the content rows away, then reap them so a
+  // deleted lesson does not leave orphaned images on R2 (the per-content DELETE never runs on cascade).
+  const contents = await prisma.lessonContent.findMany({ where: { lessonId }, select: { body: true } });
   await prisma.lesson.delete({ where: { id: lessonId } });
+  await deleteNoteImagesInBodies(contents.map((c) => c.body));
 
   return ok({ deleted: true });
 }

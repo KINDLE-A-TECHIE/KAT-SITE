@@ -120,7 +120,7 @@ function SummaryCard({ label, value, sub, icon: Icon, color }: {
 }) {
   return (
     <div className="kat-card flex items-center gap-4">
-      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${color}`}>
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${color}`}>
         <Icon className="h-5 w-5" />
       </div>
       <div className="min-w-0">
@@ -141,7 +141,7 @@ function FeedbackSection({ submission, isParent }: { submission: Submission; isP
   if (!hasSubmissionFeedback && answerFeedbacks.length === 0) return null;
 
   return (
-    <div className="mt-3 space-y-2 rounded-xl border border-orange-100 bg-orange-50 p-3 dark:border-orange-900/50 dark:bg-orange-900/20">
+    <div className="mt-3 space-y-2 rounded-lg border border-orange-100 bg-orange-50 p-3 dark:border-orange-900/50 dark:bg-orange-900/20">
       <div className="flex items-center gap-1.5">
         <MessageSquare className="h-3.5 w-3.5 text-orange-500" />
         <span className="text-xs font-semibold text-orange-700 dark:text-orange-400">
@@ -161,7 +161,7 @@ function FeedbackSection({ submission, isParent }: { submission: Submission; isP
           <div className="flex flex-wrap items-center justify-between gap-1">
             <p className="text-xs font-medium text-stone-600 line-clamp-1 dark:text-stone-400">{a.question.prompt}</p>
             {a.gradedBy && (
-              <span className="text-[10px] text-stone-400 dark:text-stone-500">
+              <span className="text-[11px] text-stone-400 dark:text-stone-500">
                 {ROLE_LABEL[a.gradedBy.role] ?? a.gradedBy.role}: {a.gradedBy.firstName} {a.gradedBy.lastName}
               </span>
             )}
@@ -188,7 +188,7 @@ function AssessmentRow({ assessment, isParent }: { assessment: Assessment; isPar
   const passed = pct !== null && pct >= passPct;
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900">
+    <div className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         {/* Left: assessment info */}
         <div className="min-w-0 flex-1">
@@ -315,7 +315,7 @@ function GradesContent({ enrollments, isParent }: { enrollments: Enrollment[]; i
 
             <div className="mt-4 space-y-2">
               {program.assessments.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-stone-200 py-6 text-center dark:border-stone-700">
+                <div className="rounded-lg border border-dashed border-stone-200 py-6 text-center dark:border-stone-800">
                   <p className="text-sm text-stone-400 dark:text-stone-500">No published assessments for this program yet.</p>
                 </div>
               ) : (
@@ -380,13 +380,13 @@ export function GradesPanel({ children, isParent }: { children?: Child[]; isPare
                   key={child.id}
                   type="button"
                   onClick={() => setSelectedChild(child)}
-                  className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all ${
+                  className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
                     selectedChild?.id === child.id
-                      ? "border-[#B2401D] bg-orange-50 text-[#B2401D] ring-1 ring-[#B2401D]/30 dark:bg-orange-900/30 dark:text-orange-400"
-                      : "border-stone-200 bg-white text-stone-700 hover:border-stone-300 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:border-stone-600"
+                      ? "border-kat-clay bg-orange-50 text-kat-clay ring-1 ring-kat-clay/30 dark:bg-orange-900/30 dark:text-orange-400"
+                      : "border-stone-200 bg-white text-stone-700 hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-300 dark:hover:border-stone-600"
                   }`}
                 >
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 text-[10px] font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-400">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 text-[11px] font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-400">
                     {child.firstName[0]}{child.lastName[0]}
                   </div>
                   {child.firstName} {child.lastName}
@@ -400,9 +400,9 @@ export function GradesPanel({ children, isParent }: { children?: Child[]; isPare
           loading ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}
+                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />)}
               </div>
-              <Skeleton className="h-48 w-full rounded-2xl" />
+              <Skeleton className="h-48 w-full rounded-lg" />
             </div>
           ) : (
             <GradesContent enrollments={enrollments} isParent={true} />
@@ -417,10 +417,10 @@ export function GradesPanel({ children, isParent }: { children?: Child[]; isPare
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />)}
         </div>
-        <Skeleton className="h-48 w-full rounded-2xl" />
-        <Skeleton className="h-48 w-full rounded-2xl" />
+        <Skeleton className="h-48 w-full rounded-lg" />
+        <Skeleton className="h-48 w-full rounded-lg" />
       </div>
     );
   }

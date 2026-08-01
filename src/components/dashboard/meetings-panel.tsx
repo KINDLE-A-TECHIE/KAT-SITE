@@ -345,7 +345,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
   return (
     <div className="space-y-5">
       {/* Mobile tab switcher, hidden on xl where columns show side by side */}
-      <div className="flex gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1 xl:hidden dark:border-stone-700 dark:bg-stone-800/50">
+      <div className="flex gap-1 rounded-lg border border-stone-200 bg-stone-50 p-1 xl:hidden dark:border-stone-800 dark:bg-stone-800/50">
         {(["live", "upcoming", "ended"] as const).map((key) => {
           const Icon = key === "live" ? Radio : key === "upcoming" ? CalendarClock : Video;
           return (
@@ -356,7 +356,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
             >
               <Icon className="size-3.5" />
               {COLUMN_META[key].label}
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${COLUMN_META[key].chip}`}>
+              <span className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${COLUMN_META[key].chip}`}>
                 {grouped[key].length}
               </span>
             </button>
@@ -365,9 +365,9 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
       </div>
 
       {canHost ? (
-        <section className="rounded-2xl border border-stone-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(26, 23, 20,0.5)] sm:p-5 dark:border-stone-700 dark:bg-stone-900/95">
+        <section className="rounded-lg border border-stone-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(26, 23, 20,0.5)] sm:p-5 dark:border-stone-800 dark:bg-stone-900/95">
           <div className="mb-4 flex items-center gap-3">
-            <div className="inline-flex size-10 items-center justify-center rounded-xl bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+            <div className="inline-flex size-10 items-center justify-center rounded-lg bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
               <CalendarClock className="size-5" />
             </div>
             <div>
@@ -384,7 +384,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">Session Title</p>
               <Input
-                className="h-11 border-stone-300 bg-stone-50 dark:border-stone-600 dark:bg-stone-800"
+                className="h-9 border-stone-300 bg-stone-50 dark:border-stone-600 dark:bg-stone-800"
                 placeholder="e.g. Python Mission Lab"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
@@ -415,7 +415,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">Description (Optional)</p>
               <Input
-                className="h-11 border-stone-300 bg-stone-50 dark:border-stone-600 dark:bg-stone-800"
+                className="h-9 border-stone-300 bg-stone-50 dark:border-stone-600 dark:bg-stone-800"
                 placeholder="Add context for participants"
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
@@ -447,7 +447,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                 setParticipantPickerId("");
               }}
             >
-              <SelectTrigger className="h-10 w-full rounded-xl border border-stone-300 bg-stone-50/70 px-3 text-sm text-stone-700 focus-visible:ring-2 focus-visible:ring-orange-200 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200">
+              <SelectTrigger className="h-10 w-full rounded-lg border border-stone-300 bg-stone-50/70 px-3 text-sm text-stone-700 focus-visible:ring-2 focus-visible:ring-orange-200 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200">
                 <SelectValue placeholder="Add participants" />
               </SelectTrigger>
               <SelectContent className="max-h-56 overflow-y-auto" position="popper" side="bottom" align="start" sideOffset={6}>
@@ -465,11 +465,11 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
               <p className="text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">Quick Add Participants</p>
               {contactsLoading ? (
                 <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-                  <Skeleton className="h-28 w-full rounded-xl" />
-                  <Skeleton className="h-28 w-full rounded-xl" />
+                  <Skeleton className="h-28 w-full rounded-lg" />
+                  <Skeleton className="h-28 w-full rounded-lg" />
                 </div>
               ) : participantOptions.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-stone-200 bg-stone-50 p-3 text-sm text-stone-600 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
+                <p className="rounded-lg border border-dashed border-stone-200 bg-stone-50 p-3 text-sm text-stone-600 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-400">
                   No available contacts match this skill.
                 </p>
               ) : (
@@ -503,7 +503,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                     <button
                       key={participantId}
                       type="button"
-                      className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-stone-100 py-1 pl-3 pr-2 text-xs font-medium text-stone-700 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-stone-700 dark:bg-stone-700 dark:text-stone-300 dark:hover:border-rose-800 dark:hover:bg-rose-950 dark:hover:text-rose-300"
+                      className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-stone-100 py-1 pl-3 pr-2 text-xs font-medium text-stone-700 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-stone-800 dark:bg-stone-700 dark:text-stone-300 dark:hover:border-rose-800 dark:hover:bg-rose-950 dark:hover:text-rose-300"
                       onClick={() => removeParticipant(participantId)}
                     >
                       {participant ? `${participant.firstName} ${participant.lastName}` : participantId}
@@ -530,7 +530,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
           return (
             <div
               key={key}
-              className={`flex flex-col rounded-2xl border border-stone-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(26, 23, 20,0.5)] dark:border-stone-700 dark:bg-stone-900/95 ${activeColumn === key ? "block" : "hidden xl:flex"}`}
+              className={`flex flex-col rounded-lg border border-stone-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(26, 23, 20,0.5)] dark:border-stone-800 dark:bg-stone-900/95 ${activeColumn === key ? "block" : "hidden xl:flex"}`}
             >
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -551,11 +551,11 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                <div className="max-h-[58vh] space-y-3 overflow-y-auto pr-1 sm:max-h-[62vh] xl:max-h-[560px]">
                 {loading ? (
                   <>
-                    <Skeleton className="h-24 w-full rounded-xl" />
-                    <Skeleton className="h-24 w-full rounded-xl" />
+                    <Skeleton className="h-24 w-full rounded-lg" />
+                    <Skeleton className="h-24 w-full rounded-lg" />
                   </>
                 ) : columnMeetings.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-stone-200 bg-stone-50/50 px-4 py-10 text-center dark:border-stone-700 dark:bg-stone-800/30">
+                  <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-stone-200 bg-stone-50/50 px-4 py-10 text-center dark:border-stone-800 dark:bg-stone-800/30">
                     <Icon className="size-7 text-stone-300 dark:text-stone-600" />
                     <p className="text-sm text-stone-500 dark:text-stone-400">{COLUMN_META[key].emptyLabel}</p>
                   </div>
@@ -569,7 +569,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.04 }}
-                        className={`rounded-xl border border-l-4 border-stone-200 bg-white p-3 shadow-sm dark:border-stone-700 dark:bg-stone-800/80 ${COLUMN_META[key].accent}`}
+                        className={`rounded-lg border border-l-4 border-stone-200 bg-white p-3 shadow-sm dark:border-stone-800 dark:bg-stone-800/80 ${COLUMN_META[key].accent}`}
                       >
                         {/* Title row */}
                         <div className="flex items-start justify-between gap-2">
@@ -584,7 +584,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                               {meeting.title}
                             </p>
                           </div>
-                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${COLUMN_META[key].chip}`}>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${COLUMN_META[key].chip}`}>
                             {meeting.status}
                           </span>
                         </div>
@@ -594,8 +594,8 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                           <span
                             className={
                               meeting.host.id === userId
-                                ? "inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300"
-                                : "inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300"
+                                ? "inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300"
+                                : "inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300"
                             }
                           >
                             {meeting.host.id === userId ? "Host" : "Attendee"}
@@ -618,17 +618,17 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
 
                         {/* Recording chips */}
                         <div className="mt-2.5 flex flex-wrap gap-1.5">
-                          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-medium text-stone-600 dark:bg-stone-700 dark:text-stone-300">
+                          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600 dark:bg-stone-700 dark:text-stone-300">
                             {recordingModeLabel(meeting.recordingMode)}
                           </span>
                           {meeting.recordingStatus !== "NOT_REQUESTED" && (
                             <span
                               className={
                                 meeting.recordingStatus === "AVAILABLE"
-                                  ? "rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                                  ? "rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
                                   : meeting.recordingStatus === "FAILED"
-                                    ? "rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-400"
-                                    : "rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                                    ? "rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-400"
+                                    : "rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
                               }
                             >
                               {recordingStatusLabel(meeting.recordingStatus)}
@@ -638,13 +638,13 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
 
                         {/* Recording mode selector (super_admin) */}
                         {role === "SUPER_ADMIN" && (
-                          <div className="mt-3 border-t border-stone-100 pt-3 dark:border-stone-700/60">
-                            <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide text-stone-400 dark:text-stone-500">Recording Mode</p>
+                          <div className="mt-3 border-t border-stone-100 pt-3 dark:border-stone-800/60">
+                            <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-stone-400 dark:text-stone-500">Recording Mode</p>
                             <Select
                               value={meeting.recordingMode}
                               onValueChange={(v) => void setRecordingMode(meeting.id, v as MeetingRecordingModeValue)}
                             >
-                              <SelectTrigger className="h-8 w-full rounded-lg border-stone-200 bg-stone-50 text-xs dark:border-stone-700 dark:bg-stone-800 sm:w-52">
+                              <SelectTrigger className="h-8 w-full rounded-lg border-stone-200 bg-stone-50 text-xs dark:border-stone-800 dark:bg-stone-800 sm:w-52">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -657,7 +657,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                         )}
 
                         {/* Actions footer */}
-                        <div className="mt-3 flex flex-wrap gap-2 border-t border-stone-100 pt-3 dark:border-stone-700/60">
+                        <div className="mt-3 flex flex-wrap gap-2 border-t border-stone-100 pt-3 dark:border-stone-800/60">
                           {(meeting.status === "LIVE" || meeting.status === "UPCOMING") && (
                             <Button
                               size="sm"
@@ -713,7 +713,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
       </section>
 
       {canViewRecordingLibrary ? (
-        <section className="rounded-2xl border border-stone-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(26, 23, 20,0.5)] sm:p-5 dark:border-stone-700 dark:bg-stone-900/95">
+        <section className="rounded-lg border border-stone-200 bg-white/95 p-4 shadow-[0_18px_40px_-30px_rgba(26, 23, 20,0.5)] sm:p-5 dark:border-stone-800 dark:bg-stone-900/95">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
               <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">Recording Library</h3>
@@ -737,11 +737,11 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
           <div className="mt-3 space-y-3">
             {recordingLibraryLoading ? (
               <>
-                <Skeleton className="h-24 w-full rounded-xl" />
-                <Skeleton className="h-24 w-full rounded-xl" />
+                <Skeleton className="h-24 w-full rounded-lg" />
+                <Skeleton className="h-24 w-full rounded-lg" />
               </>
             ) : recordingLibrary.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-stone-200 bg-stone-50/50 px-4 py-10 text-center dark:border-stone-700 dark:bg-stone-800/30">
+              <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-stone-200 bg-stone-50/50 px-4 py-10 text-center dark:border-stone-800 dark:bg-stone-800/30">
                 <Video className="size-7 text-stone-300 dark:text-stone-600" />
                 <p className="text-sm text-stone-500 dark:text-stone-400">No ended meetings with recordings found yet.</p>
               </div>
@@ -750,7 +750,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                 {recordingLibrary.map((meeting) => {
                   const recordingUrl = meeting.recordingPlayUrl ?? meeting.recordingDownloadUrl;
                   return (
-                    <div key={`recording-${meeting.id}`} className="flex flex-col rounded-xl border border-l-4 border-stone-200 border-l-stone-300 bg-white p-3 shadow-sm dark:border-stone-700 dark:border-l-stone-600 dark:bg-stone-800/80">
+                    <div key={`recording-${meeting.id}`} className="flex flex-col rounded-lg border border-l-4 border-stone-200 border-l-stone-300 bg-white p-3 shadow-sm dark:border-stone-800 dark:border-l-stone-600 dark:bg-stone-800/80">
                       {/* Header */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
@@ -759,7 +759,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                             Host: {meeting.host.firstName} {meeting.host.lastName}
                           </p>
                         </div>
-                        <span className="shrink-0 rounded-full bg-stone-200 px-2 py-0.5 text-[10px] font-semibold text-stone-600 dark:bg-stone-700 dark:text-stone-300">
+                        <span className="shrink-0 rounded-full bg-stone-200 px-2 py-0.5 text-[11px] font-semibold text-stone-600 dark:bg-stone-700 dark:text-stone-300">
                           {meeting.status}
                         </span>
                       </div>
@@ -774,16 +774,16 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
 
                       {/* Recording chips */}
                       <div className="mt-2.5 flex flex-wrap gap-1.5">
-                        <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-medium text-stone-600 dark:bg-stone-700 dark:text-stone-300">
+                        <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600 dark:bg-stone-700 dark:text-stone-300">
                           {recordingModeLabel(meeting.recordingMode)}
                         </span>
                         <span
                           className={
                             meeting.recordingStatus === "AVAILABLE"
-                              ? "rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                              ? "rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
                               : meeting.recordingStatus === "FAILED"
-                                ? "rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-400"
-                                : "rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                                ? "rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-400"
+                                : "rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
                           }
                         >
                           {recordingStatusLabel(meeting.recordingStatus)}
@@ -791,7 +791,7 @@ export function MeetingsPanel({ role, userId }: MeetingsPanelProps) {
                       </div>
 
                       {/* Actions */}
-                      <div className="mt-3 flex flex-wrap gap-2 border-t border-stone-100 pt-3 dark:border-stone-700/60">
+                      <div className="mt-3 flex flex-wrap gap-2 border-t border-stone-100 pt-3 dark:border-stone-800/60">
                         {recordingUrl ? (
                           <Button
                             size="sm"

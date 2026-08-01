@@ -192,30 +192,26 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
 
   return (
     <div className="space-y-5">
-      {/* Header row */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-stone-500 dark:text-stone-400">
-          {canIssue
-            ? isSuperAdmin
-              ? "Issue and manage certificates for your learners."
-              : "Request certificates for your learners, they require super admin approval."
-            : "Your earned certificates, view, download, or share them."}
-        </p>
-        {canIssue && (
+      {/* Header row. The page header explains the surface; only the approval rule is added here. */}
+      {canIssue && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
+            {isSuperAdmin ? "" : "Requests need super admin approval before they are issued."}
+          </p>
           <Button
             size="sm"
-            className="gap-1.5 bg-[#1A1714] hover:bg-[#162d5e]"
+            className="ml-auto gap-1.5 bg-kat-ink hover:bg-stone-800"
             onClick={() => void openIssue()}
           >
             <Plus className="size-3.5" />
             {isSuperAdmin ? "Issue Certificate" : "Request Certificate"}
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Status filter tabs, issuers only */}
       {canIssue && (
-        <div className="flex w-fit items-center gap-1 rounded-xl bg-stone-100 p-1 dark:bg-stone-800/60">
+        <div className="flex w-fit items-center gap-1 rounded-lg bg-stone-100 p-1 dark:bg-stone-800/60">
           {FILTER_TABS.map((tab) => (
             <button
               key={tab.value}
@@ -234,10 +230,10 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
 
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map(n => <Skeleton key={n} className="h-20 w-full rounded-xl" />)}
+          {[1, 2, 3].map(n => <Skeleton key={n} className="h-20 w-full rounded-lg" />)}
         </div>
       ) : certs.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-stone-200 py-16 text-center dark:border-stone-700">
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
           <Award className="size-10 text-stone-300 dark:text-stone-600" />
           <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
             {canIssue
@@ -266,23 +262,23 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
                   <h3 className="text-sm font-semibold text-stone-800 dark:text-stone-200">
                     {program.name}
                   </h3>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${PROGRAM_LEVEL_COLOR[program.level] ?? "bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300"}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${PROGRAM_LEVEL_COLOR[program.level] ?? "bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300"}`}>
                     {PROGRAM_LEVEL_LABEL[program.level] ?? program.level}
                   </span>
                   {canIssue && (
                     <div className="ml-1 flex items-center gap-1.5">
                       {pendingCount > 0 && (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
                           {pendingCount} pending
                         </span>
                       )}
                       {approvedCount > 0 && (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
                           {approvedCount} approved
                         </span>
                       )}
                       {rejectedCount > 0 && (
-                        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-900/40 dark:text-rose-400">
+                        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:bg-rose-900/40 dark:text-rose-400">
                           {rejectedCount} rejected
                         </span>
                       )}
@@ -323,7 +319,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
 
       {/* Issue / Request dialog */}
       <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
-        <DialogContent className="max-w-md dark:border-stone-700 dark:bg-stone-900">
+        <DialogContent className="max-w-md dark:border-stone-800 dark:bg-stone-900">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 dark:text-stone-100">
               <Award className="size-4 text-[#1A1714] dark:text-orange-400" />
@@ -394,7 +390,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
 
       {/* Revoke confirmation dialog */}
       <Dialog open={!!revokeTarget} onOpenChange={open => !open && setRevokeTarget(null)}>
-        <DialogContent className="max-w-sm dark:border-stone-700 dark:bg-stone-900">
+        <DialogContent className="max-w-sm dark:border-stone-800 dark:bg-stone-900">
           <DialogHeader>
             <DialogTitle className="dark:text-stone-100">Revoke Certificate</DialogTitle>
           </DialogHeader>
@@ -416,7 +412,7 @@ export function CertificatesPanel({ role }: { role: UserRoleValue }) {
 
       {/* Reject dialog */}
       <Dialog open={!!rejectTarget} onOpenChange={open => !open && setRejectTarget(null)}>
-        <DialogContent className="max-w-sm dark:border-stone-700 dark:bg-stone-900">
+        <DialogContent className="max-w-sm dark:border-stone-800 dark:bg-stone-900">
           <DialogHeader>
             <DialogTitle className="dark:text-stone-100">Reject Certificate Request</DialogTitle>
           </DialogHeader>
@@ -491,9 +487,9 @@ function CertRow({
   };
 
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-stone-200 bg-white px-4 py-3.5 shadow-sm dark:border-stone-700 dark:bg-stone-900">
+    <div className="flex items-center gap-4 rounded-lg border border-stone-200 bg-white px-4 py-3.5 shadow-sm dark:border-stone-800 dark:bg-stone-900">
       {/* Icon */}
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#1A1714]/8 dark:bg-[#1A1714]/30">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#1A1714]/8 dark:bg-[#1A1714]/30">
         <Award className="size-5 text-[#1A1714] dark:text-orange-300" />
       </div>
 
@@ -504,11 +500,11 @@ function CertRow({
           <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
             {canIssue ? `${cert.user.firstName} ${cert.user.lastName}` : cert.program.name}
           </p>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${PROGRAM_LEVEL_COLOR[cert.program.level] ?? "bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300"}`}>
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${PROGRAM_LEVEL_COLOR[cert.program.level] ?? "bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300"}`}>
             {PROGRAM_LEVEL_LABEL[cert.program.level] ?? cert.program.level}
           </span>
           {canIssue && (
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS_STYLE[cert.status]}`}>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[cert.status]}`}>
               {STATUS_LABEL[cert.status]}
             </span>
           )}
@@ -533,7 +529,7 @@ function CertRow({
             <> · <span className="text-rose-400 dark:text-rose-500">{cert.rejectionNote}</span></>
           )}
           {" · "}
-          <span className="font-mono text-[10px]">{cert.credentialId.slice(0, 12)}…</span>
+          <span className="font-mono text-[11px]">{cert.credentialId.slice(0, 12)}…</span>
         </p>
       </div>
 
@@ -569,7 +565,7 @@ function CertRow({
             </button>
             <Link
               href={`/certificate/${cert.credentialId}`}
-              className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 transition hover:border-stone-300 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
+              className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-700 transition hover:border-stone-300 hover:bg-stone-50 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
             >
               <ExternalLink className="size-3" />
               View

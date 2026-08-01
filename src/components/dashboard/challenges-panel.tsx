@@ -145,7 +145,7 @@ function LeaderboardDialog({ challenge, open, onClose }: {
         </DialogHeader>
 
         {loading ? (
-          <div className="space-y-2 pt-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>
+          <div className="space-y-2 pt-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}</div>
         ) : entries.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
             <p className="font-semibold text-stone-600 dark:text-stone-400">No scores yet</p>
@@ -178,7 +178,7 @@ function LeaderboardDialog({ challenge, open, onClose }: {
             )}
             {entries.map((e) => (
               <motion.div key={e.studentId} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${e.isCurrentUser ? "bg-orange-50 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:ring-orange-700" : "bg-stone-50 dark:bg-stone-800/50"}`}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${e.isCurrentUser ? "bg-orange-50 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:ring-orange-700" : "bg-stone-50 dark:bg-stone-800/50"}`}
               >
                 <span className="w-6 text-center text-base">
                   {e.rank <= 3 ? (
@@ -194,11 +194,11 @@ function LeaderboardDialog({ challenge, open, onClose }: {
                   <p className="truncate text-sm font-semibold text-stone-800 dark:text-stone-200">
                     {e.studentName}{e.isCurrentUser ? " (You)" : ""}
                   </p>
-                  <p className="text-[10px] text-stone-400">{rankTitle(e.score, e.maxPoints)}</p>
+                  <p className="text-[11px] text-stone-400">{rankTitle(e.score, e.maxPoints)}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-stone-700 dark:text-stone-200">
-                    {e.score}<span className="text-[10px] font-normal text-stone-400">/{e.maxPoints}</span>
+                    {e.score}<span className="text-[11px] font-normal text-stone-400">/{e.maxPoints}</span>
                   </p>
                   <div className="mt-0.5 h-1.5 w-16 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
                     <div className="h-full rounded-full bg-kat-clay" style={{ width: `${Math.round((e.score / Math.max(e.maxPoints, 1)) * 100)}%` }} />
@@ -302,13 +302,13 @@ function SubmitDialog({ challenge, open, onClose, onSubmitted }: {
         </DialogHeader>
 
         {challenge.description && (
-          <p className="rounded-xl bg-stone-50 px-4 py-3 text-sm leading-relaxed text-stone-700 dark:bg-stone-800 dark:text-stone-300">
+          <p className="rounded-lg bg-stone-50 px-4 py-3 text-sm leading-relaxed text-stone-700 dark:bg-stone-800 dark:text-stone-300">
             {challenge.description}
           </p>
         )}
 
 
-        <div className="flex gap-1 rounded-xl bg-stone-100 p-1 dark:bg-stone-800">
+        <div className="flex gap-1 rounded-lg bg-stone-100 p-1 dark:bg-stone-800">
           {([["link", Link2, "Share a Link"], ["file", FileUp, "Upload a File"]] as const).map(([t, Icon, label]) => (
             <button key={t} onClick={() => setTab(t)}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors ${tab === t ? "bg-white text-stone-900 shadow-sm dark:bg-stone-700 dark:text-stone-100" : "text-stone-500 hover:text-stone-700"}`}
@@ -333,14 +333,14 @@ function SubmitDialog({ challenge, open, onClose, onSubmitted }: {
               </label>
               <input ref={fileRef} type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
               {file ? (
-                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 dark:border-emerald-800 dark:bg-emerald-900/20">
+                <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 dark:border-emerald-800 dark:bg-emerald-900/20">
                   <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
                   <p className="min-w-0 flex-1 truncate text-sm font-medium text-emerald-700 dark:text-emerald-400">{file.name}</p>
                   <button onClick={() => setFile(null)} className="shrink-0 text-xs text-stone-400 hover:text-red-500">Remove</button>
                 </div>
               ) : (
                 <button onClick={() => fileRef.current?.click()}
-                  className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-stone-200 py-6 text-center transition hover:border-orange-300 hover:bg-orange-50/50 dark:border-stone-700 dark:hover:border-orange-600"
+                  className="flex w-full flex-col items-center gap-2 rounded-lg border-2 border-dashed border-stone-200 py-6 text-center transition hover:border-orange-300 hover:bg-orange-50/50 dark:border-stone-800 dark:hover:border-orange-600"
                 >
                   <FileUp className="size-6 text-stone-400" />
                   <span className="text-sm font-medium text-stone-500">Click to choose a file</span>
@@ -429,7 +429,7 @@ function GradeSubmissionsDialog({ challenge, open, onClose }: {
         </DialogHeader>
 
         {loading ? (
-          <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}</div>
+          <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-lg" />)}</div>
         ) : submissions.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
             <p className="font-semibold text-stone-600 dark:text-stone-400">No submissions yet</p>
@@ -440,7 +440,7 @@ function GradeSubmissionsDialog({ challenge, open, onClose }: {
               const g = grading[s.id] ?? { score: "", feedback: "", saving: false };
               const isGraded = s.score !== null;
               return (
-                <div key={s.id} className="rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-800/50">
+                <div key={s.id} className="rounded-lg border border-stone-200 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-800/50">
                   <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <p className="font-semibold text-stone-900 dark:text-stone-100">{s.student.firstName} {s.student.lastName}</p>
@@ -609,7 +609,7 @@ function CreateChallengeDialog({ open, onClose, onCreated }: {
 
           <div className="col-span-2">
             <button type="button" onClick={() => set("published", !form.published)}
-              className={`flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors ${form.published ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20" : "border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800"}`}
+              className={`flex w-full items-center gap-3 rounded-lg border-2 p-3 text-left transition-colors ${form.published ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20" : "border-stone-200 bg-stone-50 dark:border-stone-800 dark:bg-stone-800"}`}
             >
               <div className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${form.published ? "bg-emerald-100 dark:bg-emerald-800" : "bg-stone-100 dark:bg-stone-700"}`}>
                 {form.published ? <Eye className="size-4 text-emerald-600 dark:text-emerald-400" /> : <EyeOff className="size-4 text-stone-400" />}
@@ -690,7 +690,7 @@ function ChallengeCard({ challenge, isLearner, onRefresh }: {
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm dark:border-stone-700 dark:bg-stone-900 border-l-4 ${accent} ${!challenge.published ? "opacity-70" : ""}`}
+        className={`overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm dark:border-stone-800 dark:bg-stone-900 border-l-4 ${accent} ${!challenge.published ? "opacity-70" : ""}`}
       >
         <div className="p-3 sm:p-4">
           <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
@@ -739,7 +739,7 @@ function ChallengeCard({ challenge, isLearner, onRefresh }: {
               <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Your score: {mySubmission.score}/{challenge.points}</p>
-                <p className="text-[10px] text-emerald-600 dark:text-emerald-500">{rankTitle(mySubmission.score!, challenge.points)}</p>
+                <p className="text-[11px] text-emerald-600 dark:text-emerald-500">{rankTitle(mySubmission.score!, challenge.points)}</p>
               </div>
               <div className="h-2 w-16 overflow-hidden rounded-full bg-emerald-200 dark:bg-emerald-800">
                 <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.round((mySubmission.score! / Math.max(challenge.points, 1)) * 100)}%` }} />
@@ -846,12 +846,12 @@ export function ChallengesPanel({ role }: { role: UserRoleValue }) {
       <AnimatePresence>
         {isLearner && featured && (
           <motion.div key={featured.id} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="rounded-2xl bg-kat-clay px-4 py-5 text-white sm:px-6 sm:py-6"
+            className="rounded-lg bg-kat-clay px-4 py-5 text-white sm:px-6 sm:py-6"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider">This Week&apos;s Challenge</span>
+                  <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide">This Week&apos;s Challenge</span>
                   {featured.weekNumber && <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium">Week {featured.weekNumber}</span>}
                 </div>
                 <h2 className="font-display text-lg font-bold leading-snug sm:text-xl">{featured.title}</h2>
@@ -876,7 +876,7 @@ export function ChallengesPanel({ role }: { role: UserRoleValue }) {
       </AnimatePresence>
 
       <div className="flex items-center justify-between gap-2">
-        <div className="flex gap-1 rounded-xl bg-stone-100 p-1 dark:bg-stone-800">
+        <div className="flex gap-1 rounded-lg bg-stone-100 p-1 dark:bg-stone-800">
           {tabs.map(([t, list]) => (
             <button key={t} onClick={() => setTab(t as typeof tab)}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors sm:px-4 sm:text-sm ${tab === t ? "bg-white text-stone-900 shadow-sm dark:bg-stone-700 dark:text-stone-100" : "text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"}`}
@@ -896,10 +896,10 @@ export function ChallengesPanel({ role }: { role: UserRoleValue }) {
 
       {loading ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-48 rounded-lg" />)}
         </div>
       ) : displayed.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-stone-200 py-16 text-center dark:border-stone-700">
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
           <p className="font-medium text-stone-600 dark:text-stone-400">
             {tab === "active" ? "No active challenges right now" : tab === "draft" ? "No drafts" : "No past challenges yet"}
           </p>

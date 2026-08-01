@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { getServerAuthSession } from "@/lib/auth";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { prisma } from "@/lib/prisma";
+import { SCHOOL_ROLES, DASHBOARD_ROUTES } from "@/lib/roles";
 
 const getEnrollmentStatus = unstable_cache(
   async (userId: string) =>
@@ -22,6 +23,16 @@ export default async function DashboardLayout({
   const session = await getServerAuthSession();
   if (!session?.user) {
     redirect("/login");
+  }
+
+  // School-provisioned accounts (SCHOOL_STUDENT / SCHOOL_STAFF) hold NO B2C capability and must
+  // never render the consumer dashboard: its shell carries a Messages tab and profile chrome, and a
+  // school pupil is a child. Messaging never crosses the school boundary. Send them to their own
+  // surface (/learn or /home). /home, /learn, /teach are real routes in the (school) group and
+  // resolve on any host, so this relative redirect works everywhere and cannot loop (school /home
+  // routes on by role).
+  if (SCHOOL_ROLES.includes(session.user.role)) {
+    redirect(DASHBOARD_ROUTES[session.user.role]);
   }
 
   let isEnrolled = true;

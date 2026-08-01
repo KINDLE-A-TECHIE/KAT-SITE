@@ -13,7 +13,7 @@ export default async function ContentReviewPage() {
       <PageHeader
         badge="Content"
         title="Content Review"
-        subtitle="Review, approve, or reject lesson content submitted by instructors before it goes live to learners."
+        subtitle="Approve or reject instructor-submitted lesson content before it goes live."
       />
       <ContentReviewPanel />
     </section>

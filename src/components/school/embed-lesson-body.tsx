@@ -99,7 +99,7 @@ export function EmbedLessonBody({
               </a>
             ) : null}
 
-            {c.type === "CODE_PLAYGROUND" || c.type === "NETWORK_LAB" ? (
+            {c.type === "CODE_PLAYGROUND" || c.type === "NETWORK_LAB" || c.type === "BLOCKLY" || c.type === "SCRATCH" ? (
               <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                 This activity needs the full editor.{" "}
                 <a
@@ -117,7 +117,7 @@ export function EmbedLessonBody({
         ))}
       </div>
 
-      <div className="mt-8 border-t border-stone-200 pt-5 dark:border-stone-700">
+      <div className="mt-8 border-t border-stone-200 pt-5 dark:border-stone-800">
         {done ? (
           <p className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-400">
             <Check className="size-4" />

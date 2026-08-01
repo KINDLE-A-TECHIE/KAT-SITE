@@ -31,11 +31,11 @@ export async function GET(request: Request) {
 
   const session = await getServerAuthSession();
   const url = new URL(request.url);
-  const term = url.searchParams.get("term");
+  const sessionLabel = url.searchParams.get("session");
   const classId = url.searchParams.get("classId");
 
   try {
-    const report = await getSchoolReport(schoolId, role, session!.user.id, { term, classId });
+    const report = await getSchoolReport(schoolId, role, session!.user.id, { session: sessionLabel, classId });
     return ok(report);
   } catch (error) {
     if (error instanceof ReportClassNotFoundError) return fail("Class not found.", 404);

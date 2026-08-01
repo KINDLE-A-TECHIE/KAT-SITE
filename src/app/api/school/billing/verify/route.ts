@@ -3,6 +3,7 @@ import { fail, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { requireActiveSchool } from "@/lib/school";
 import { schoolInvoiceVerifySchema } from "@/lib/validators";
+import { formatTerm } from "@/lib/school-term";
 import { getPaymentGateway } from "@/lib/payments/provider";
 import { markInvoicePaidAndActivate } from "@/lib/school-billing";
 import { captureError } from "@/lib/sentry";
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     // otherwise an admin could verify (and activate) another school's invoice.
     const invoice = await prisma.schoolInvoice.findFirst({
       where: { paystackRef: reference, schoolId },
-      select: { id: true, status: true, term: true },
+      select: { id: true, status: true, sessionLabel: true, termNumber: true },
     });
     if (!invoice) return fail("Invoice not found.", 404);
 
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
     return ok({
       paid: true,
       activated, // false when the webhook had already done it, not an error
-      term: invoice.term,
+      term: formatTerm(invoice.sessionLabel, invoice.termNumber),
     });
   } catch (error) {
     captureError(error);

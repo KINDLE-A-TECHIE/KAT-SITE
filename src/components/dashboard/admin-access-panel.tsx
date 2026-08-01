@@ -215,7 +215,7 @@ export function AdminAccessPanel() {
             onChange={(e) => setEmail(e.target.value)}
           />
           <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "ADMIN" | "INSTRUCTOR")}>
-            <SelectTrigger className="h-10 rounded-xl border border-stone-300 bg-stone-50/70 px-3 text-sm text-stone-700 focus-visible:ring-2 focus-visible:ring-orange-200 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200">
+            <SelectTrigger className="h-10 rounded-lg border border-stone-300 bg-stone-50/70 px-3 text-sm text-stone-700 focus-visible:ring-2 focus-visible:ring-orange-200 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200">
               <SelectValue placeholder="Select role" />
             </SelectTrigger>
             <SelectContent className="max-h-56 overflow-y-auto" position="popper" side="bottom" align="start" sideOffset={6}>
@@ -287,7 +287,7 @@ export function AdminAccessPanel() {
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-3 rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-800"
+            className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-800"
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -338,7 +338,7 @@ export function AdminAccessPanel() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
-                className="rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900"
+                className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -412,7 +412,7 @@ export function AdminAccessPanel() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
-                className="rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900"
+                className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">

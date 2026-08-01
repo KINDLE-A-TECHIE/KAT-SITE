@@ -16,7 +16,7 @@ export default async function FellowApplicationsPage() {
       <PageHeader
         badge="Fellowship"
         title="Fellow Applications"
-        subtitle="Review applications from students ready to become mentors. Approved applicants are automatically promoted to the Fellow role."
+        subtitle="Applications from students who want to mentor. Approving one promotes them to Fellow."
       />
       <FellowApplicationsPanel />
     </section>

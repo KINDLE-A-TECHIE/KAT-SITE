@@ -76,10 +76,10 @@ export function ProfilePreviewCard({ contact, compact = false }: ProfilePreviewC
     contact.profile.education.length > 0 ||
     contact.profile.experience.length > 0 ||
     Boolean(link);
-  const avatarClasses = compact ? "size-10 border border-stone-200 dark:border-stone-700" : "size-12 border border-stone-200 dark:border-stone-700";
+  const avatarClasses = compact ? "size-10 border border-stone-200 dark:border-stone-800" : "size-12 border border-stone-200 dark:border-stone-800";
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-900">
+    <div className="rounded-lg border border-stone-200 bg-white p-3 dark:border-stone-800 dark:bg-stone-900">
       <div className="flex items-start gap-3">
         {compact ? (
           <Avatar className={avatarClasses}>
@@ -129,7 +129,7 @@ export function ProfilePreviewCard({ contact, compact = false }: ProfilePreviewC
           {contact.profile.skills.slice(0, 2).map((skill) => (
             <span
               key={skill}
-              className="rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-medium text-orange-900 dark:border-orange-800 dark:bg-orange-900/40 dark:text-orange-400"
+              className="rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-medium text-orange-900 dark:border-orange-800 dark:bg-orange-900/40 dark:text-orange-400"
             >
               {skill}
             </span>
@@ -166,7 +166,7 @@ export function ProfilePreviewCard({ contact, compact = false }: ProfilePreviewC
                     {contact.profile.skills.map((skill) => (
                       <span
                         key={skill}
-                        className="rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-medium text-orange-900 dark:border-orange-800 dark:bg-orange-900/40 dark:text-orange-400"
+                        className="rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-medium text-orange-900 dark:border-orange-800 dark:bg-orange-900/40 dark:text-orange-400"
                       >
                         {skill}
                       </span>

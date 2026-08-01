@@ -40,7 +40,7 @@ type StudentSummary = {
 };
 
 type Summary = {
-  class: { id: string; name: string; term: string };
+  class: { id: string; name: string; sessionLabel: string };
   course: { id: string; name: string } | null;
   studentCount: number;
   totalLessons: number;
@@ -72,7 +72,7 @@ export function ClassResultsPanel({ classId }: { classId: string }) {
     };
   }, [classId]);
 
-  if (loading) return <Skeleton className="h-72 w-full rounded-xl" />;
+  if (loading) return <Skeleton className="h-72 w-full rounded-lg" />;
   if (!data) return null;
 
   const noCourse = !data.course;
@@ -88,7 +88,7 @@ export function ClassResultsPanel({ classId }: { classId: string }) {
           {data.class.name}
         </h1>
         <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-          Term {data.class.term} · {data.course?.name ?? "No course assigned"} ·{" "}
+          {data.class.sessionLabel} · {data.course?.name ?? "No course assigned"} ·{" "}
           {data.studentCount} student{data.studentCount === 1 ? "" : "s"}
         </p>
       </header>
@@ -150,7 +150,7 @@ export function ClassResultsPanel({ classId }: { classId: string }) {
               ) : null}
 
               {t.assessments.length === 0 ? (
-                <p className="rounded-xl bg-stone-50 p-3 text-xs text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
+                <p className="rounded-lg bg-stone-50 p-3 text-xs text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
                   No published assessment for this unit yet.
                 </p>
               ) : (
@@ -216,7 +216,7 @@ export function ClassResultsPanel({ classId }: { classId: string }) {
         </CardHeader>
         <CardContent>
           {data.students.length === 0 ? (
-            <p className="rounded-xl bg-stone-50 p-4 text-sm leading-relaxed text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
+            <p className="rounded-lg bg-stone-50 p-4 text-sm leading-relaxed text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
               Once students are imported into this class, their results and mastery appear here.
             </p>
           ) : (

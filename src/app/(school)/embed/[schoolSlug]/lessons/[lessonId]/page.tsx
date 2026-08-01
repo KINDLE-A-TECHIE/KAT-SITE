@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { ContentReviewStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { EMBED_COOKIE, readEmbedSession } from "@/lib/school-embed";
-import { checkEnrollmentLicense } from "@/lib/school-license";
+import { checkEnrollmentLicense, checkModuleLicenseForEnrollment } from "@/lib/school-license";
 import { EmbedLessonBody } from "@/components/school/embed-lesson-body";
 
 /**
@@ -59,6 +59,7 @@ export default async function EmbedLessonPage({
     select: {
       id: true,
       title: true,
+      module: { select: { sortOrder: true } },
       contents: {
         // PUBLISHED only, the same filter the learner API applies. Draft and in-review content is
         // not shown to children here either.
@@ -69,6 +70,10 @@ export default async function EmbedLessonPage({
     },
   });
   if (!lesson) notFound();
+
+  // PER-MODULE licence (#6): the lesson's term must be one the school has unlocked.
+  const moduleGate = await checkModuleLicenseForEnrollment(enrollment, lesson.module.sortOrder);
+  if (!moduleGate.allowed) notFound();
 
   const done = await prisma.lessonProgress.findFirst({
     where: { userId: session.userId, lessonId: lesson.id },

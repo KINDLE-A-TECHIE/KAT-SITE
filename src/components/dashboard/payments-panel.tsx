@@ -102,7 +102,7 @@ function PromoCodeInput({
 
   if (appliedCode) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm">
+      <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm">
         <Tag className="h-3.5 w-3.5 text-emerald-600" />
         <span className="font-medium text-emerald-700">{appliedCode} applied</span>
         <button type="button" onClick={remove} className="ml-auto rounded p-0.5 text-emerald-500 hover:text-emerald-700">
@@ -253,12 +253,12 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
   };
 
   if (loading) {
-    return <div className="space-y-3"><Skeleton className="h-10 w-full rounded-xl" /><Skeleton className="h-10 w-full rounded-xl" /></div>;
+    return <div className="space-y-3"><Skeleton className="h-10 w-full rounded-lg" /><Skeleton className="h-10 w-full rounded-lg" /></div>;
   }
 
   if (children.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-stone-200 bg-stone-50 p-6 text-center dark:border-stone-700 dark:bg-stone-800">
+      <div className="rounded-lg border border-dashed border-stone-200 bg-stone-50 p-6 text-center dark:border-stone-800 dark:bg-stone-800">
         <User className="mx-auto mb-2 h-8 w-8 text-stone-300" />
         <p className="text-sm font-medium text-stone-600 dark:text-stone-400">No children linked yet</p>
         <p className="mt-1 text-xs text-stone-400 dark:text-stone-500">
@@ -280,17 +280,17 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
               key={child.id}
               type="button"
               onClick={() => setSelectedChildId(child.id)}
-              className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-all ${
+              className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
                 selectedChildId === child.id
-                  ? "border-[#B2401D] bg-orange-50 ring-1 ring-[#B2401D]/20 dark:bg-orange-950/40"
-                  : "border-stone-200 bg-white hover:border-stone-300 dark:border-stone-700 dark:bg-stone-900 dark:hover:border-stone-600"
+                  ? "border-kat-clay bg-orange-50 ring-1 ring-kat-clay/20 dark:bg-orange-950/40"
+                  : "border-stone-200 bg-white hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-stone-600"
               }`}
             >
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-kat-clay text-xs font-bold text-white">
                 {child.firstName[0]}{child.lastName[0]}
               </div>
               <div className="min-w-0">
-                <p className={`truncate text-sm font-semibold ${selectedChildId === child.id ? "text-[#B2401D]" : "text-stone-800 dark:text-stone-200"}`}>
+                <p className={`truncate text-sm font-semibold ${selectedChildId === child.id ? "text-kat-clay" : "text-stone-800 dark:text-stone-200"}`}>
                   {child.firstName} {child.lastName}
                 </p>
                 <p className="truncate text-xs text-stone-500 dark:text-stone-400">{child.email}</p>
@@ -305,7 +305,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Step 2. Select a program</p>
           {programs.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-stone-200 bg-stone-50 p-4 text-center text-sm text-stone-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">No programs available yet.</p>
+            <p className="rounded-lg border border-dashed border-stone-200 bg-stone-50 p-4 text-center text-sm text-stone-500 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-400">No programs available yet.</p>
           ) : (
             <div className="space-y-2">
               {programs.map((prog) => {
@@ -316,10 +316,10 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
                     key={prog.id}
                     type="button"
                     onClick={() => setSelectedProgramId(prog.id)}
-                    className={`flex w-full items-center justify-between rounded-xl border p-3 text-left transition-all ${
+                    className={`flex w-full items-center justify-between rounded-lg border p-3 text-left transition-all ${
                       selectedProgramId === prog.id
-                        ? "border-[#B2401D] bg-orange-50 ring-1 ring-[#B2401D]/20 dark:bg-orange-950/40"
-                        : "border-stone-200 bg-white hover:border-stone-300 dark:border-stone-700 dark:bg-stone-900 dark:hover:border-stone-600"
+                        ? "border-kat-clay bg-orange-50 ring-1 ring-kat-clay/20 dark:bg-orange-950/40"
+                        : "border-stone-200 bg-white hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-stone-600"
                     }`}
                   >
                     <div>
@@ -329,7 +329,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
                     <div className="flex shrink-0 items-center gap-1.5">
                       {inCart && <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">In cart</span>}
                       {alreadyEnrolled && !inCart && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">Enrolled</span>}
-                      {selectedProgramId === prog.id && <span className="rounded-full bg-[#B2401D] px-2.5 py-0.5 text-xs font-semibold text-white">Selected</span>}
+                      {selectedProgramId === prog.id && <span className="rounded-full bg-kat-clay px-2.5 py-0.5 text-xs font-semibold text-white">Selected</span>}
                     </div>
                   </button>
                 );
@@ -356,7 +356,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
           </div>
 
           {/* Summary */}
-          <div className="mb-3 rounded-xl border border-stone-100 bg-stone-50 p-3 text-sm dark:border-stone-700 dark:bg-stone-800">
+          <div className="mb-3 rounded-lg border border-stone-100 bg-stone-50 p-3 text-sm dark:border-stone-800 dark:bg-stone-800">
             <div className="flex justify-between text-stone-500 dark:text-stone-400">
               <span>For</span>
               <span className="font-medium text-stone-900 dark:text-stone-100">{selectedChild.firstName} {selectedChild.lastName}</span>
@@ -371,9 +371,9 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
                 <span className="font-medium">− NGN {(baseAmount - discountedAmt).toLocaleString()}</span>
               </div>
             )}
-            <div className="mt-1.5 flex justify-between border-t border-stone-200 pt-1.5 font-semibold dark:border-stone-700">
+            <div className="mt-1.5 flex justify-between border-t border-stone-200 pt-1.5 font-semibold dark:border-stone-800">
               <span className="text-stone-700 dark:text-stone-300">Amount</span>
-              <span className="text-[#B2401D]">
+              <span className="text-kat-clay">
                 {pendingCode && (
                   <span className="mr-2 text-xs font-normal text-stone-400 dark:text-stone-500 line-through">
                     NGN {baseAmount.toLocaleString()}
@@ -387,7 +387,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
           <Button
             variant="outline"
             disabled={alreadyInCart}
-            className="w-full rounded-xl border-[#B2401D] text-[#B2401D] hover:bg-orange-50"
+            className="w-full rounded-lg border-kat-clay text-kat-clay hover:bg-orange-50"
             onClick={addToCart}
           >
             <ShoppingCart className="mr-2 h-4 w-4" />
@@ -403,7 +403,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="rounded-xl border border-orange-200 bg-orange-50 p-4"
+            className="rounded-lg border border-orange-200 bg-orange-50 p-4"
           >
             <div className="mb-3 flex items-center justify-between">
               <p className="flex items-center gap-1.5 text-sm font-semibold text-orange-800">
@@ -453,7 +453,7 @@ function ParentPayForm({ onSuccess }: { onSuccess: () => void }) {
             </ul>
             <Button
               disabled={busy}
-              className="h-11 w-full rounded-xl bg-[#B2401D] font-semibold hover:bg-[#8F3316]"
+              className="h-9 w-full rounded-lg bg-kat-clay font-semibold hover:bg-kat-clay-deep"
               onClick={() => void checkout()}
             >
               {busy ? "Processing…" : `Checkout ${cart.length} payment${cart.length !== 1 ? "s" : ""} · NGN ${cartTotal.toLocaleString()} →`}
@@ -581,7 +581,7 @@ function AdminPayForStudentForm({ onSuccess }: { onSuccess: () => void }) {
           {usersLoading && <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-stone-400" />}
         </div>
         {showDropdown && users.length > 0 && (
-          <div className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-stone-200 bg-white shadow-lg dark:border-stone-700 dark:bg-stone-900">
+          <div className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-stone-200 bg-white shadow-lg dark:border-stone-800 dark:bg-stone-900">
             {users.map((u) => (
               <button
                 key={u.id}
@@ -615,7 +615,7 @@ function AdminPayForStudentForm({ onSuccess }: { onSuccess: () => void }) {
       <div>
         <label className="mb-1.5 block text-xs font-medium text-stone-600 dark:text-stone-400">Program</label>
         <Select value={programId || undefined} onValueChange={setProgramId} disabled={!selectedUser}>
-          <SelectTrigger className="h-10 w-full rounded-xl border border-stone-300 bg-stone-50/70 px-3 text-sm dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"><SelectValue placeholder="Select program" /></SelectTrigger>
+          <SelectTrigger className="h-10 w-full rounded-lg border border-stone-300 bg-stone-50/70 px-3 text-sm dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"><SelectValue placeholder="Select program" /></SelectTrigger>
           <SelectContent className="max-h-56 overflow-y-auto" position="popper" sideOffset={6}>
             {programs.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}. NGN {p.monthlyFee.toLocaleString()}/mo</SelectItem>)}
           </SelectContent>
@@ -643,7 +643,7 @@ function AdminPayForStudentForm({ onSuccess }: { onSuccess: () => void }) {
 
       {/* Summary */}
       {selectedUser && selectedProgram && (
-        <div className="rounded-xl border border-stone-100 bg-stone-50 p-3 text-sm dark:border-stone-700 dark:bg-stone-800">
+        <div className="rounded-lg border border-stone-100 bg-stone-50 p-3 text-sm dark:border-stone-800 dark:bg-stone-800">
           <div className="flex justify-between text-stone-500 dark:text-stone-400">
             <span>For</span>
             <span className="font-medium text-stone-900 dark:text-stone-100">{selectedUser.firstName} {selectedUser.lastName}</span>
@@ -658,9 +658,9 @@ function AdminPayForStudentForm({ onSuccess }: { onSuccess: () => void }) {
               <span className="font-medium">− NGN {(baseAmount - finalAmount).toLocaleString()}</span>
             </div>
           )}
-          <div className="mt-1.5 flex justify-between border-t border-stone-200 pt-1.5 font-semibold dark:border-stone-700">
+          <div className="mt-1.5 flex justify-between border-t border-stone-200 pt-1.5 font-semibold dark:border-stone-800">
             <span className="text-stone-700 dark:text-stone-300">Amount</span>
-            <span className="text-[#B2401D]">
+            <span className="text-kat-clay">
               {appliedCode && <span className="mr-2 text-xs font-normal text-stone-400 dark:text-stone-500 line-through">NGN {baseAmount.toLocaleString()}</span>}
               NGN {finalAmount.toLocaleString()}
             </span>
@@ -670,7 +670,7 @@ function AdminPayForStudentForm({ onSuccess }: { onSuccess: () => void }) {
 
       <Button
         disabled={busy || !selectedUser || !programId}
-        className="w-full bg-[#B2401D] hover:bg-[#8F3316]"
+        className="w-full bg-kat-clay hover:bg-kat-clay-deep"
         onClick={() => void pay()}
       >
         {busy ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processing…</> : "Pay for Student"}
@@ -803,7 +803,7 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
           {usersLoading && <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-stone-400" />}
         </div>
         {showDropdown && users.length > 0 && (
-          <div className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-stone-200 bg-white shadow-lg dark:border-stone-700 dark:bg-stone-900">
+          <div className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-stone-200 bg-white shadow-lg dark:border-stone-800 dark:bg-stone-900">
             {users.map((u) => {
               const already = selectedUsers.some((x) => x.id === u.id);
               return (
@@ -843,7 +843,7 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
           <label className="mb-1.5 block text-xs font-medium text-stone-600 dark:text-stone-400">
             Programs <span className="text-stone-400 dark:text-stone-500">(select one or more)</span>
           </label>
-          <div className="space-y-2 rounded-xl border border-stone-200 bg-stone-50 p-2 dark:border-stone-700 dark:bg-stone-800">
+          <div className="space-y-2 rounded-lg border border-stone-200 bg-stone-50 p-2 dark:border-stone-800 dark:bg-stone-800">
             {programs.map((prog) => {
               const checked = selectedProgramIds.has(prog.id);
               return (
@@ -853,11 +853,11 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
                   onClick={() => toggleProgram(prog.id)}
                   className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-all ${
                     checked
-                      ? "border-[#B2401D] bg-orange-50 ring-1 ring-[#B2401D]/20 dark:bg-orange-950/40"
+                      ? "border-kat-clay bg-orange-50 ring-1 ring-kat-clay/20 dark:bg-orange-950/40"
                       : "border-transparent bg-white hover:border-stone-200 dark:bg-stone-900 dark:hover:border-stone-700"
                   }`}
                 >
-                  <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${checked ? "border-[#B2401D] bg-[#B2401D]" : "border-stone-300 bg-white dark:border-stone-600 dark:bg-stone-900"}`}>
+                  <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${checked ? "border-kat-clay bg-kat-clay" : "border-stone-300 bg-white dark:border-stone-600 dark:bg-stone-900"}`}>
                     {checked && <Check className="h-3 w-3 text-white" />}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -882,12 +882,12 @@ function ManualEnrollmentForm({ programs, onSuccess }: { programs: Program[]; on
               key={type}
               type="button"
               onClick={() => setBillingType(type)}
-              className={`rounded-xl border px-3 py-2.5 text-left transition-all ${
+              className={`rounded-lg border px-3 py-2.5 text-left transition-all ${
                 billingType === type
                   ? type === "WAIVED"
                     ? "border-emerald-400 bg-emerald-50 ring-1 ring-emerald-400/30 dark:bg-emerald-950/40"
                     : "border-amber-400 bg-amber-50 ring-1 ring-amber-400/30 dark:bg-amber-950/40"
-                  : "border-stone-200 bg-white hover:border-stone-300 dark:border-stone-700 dark:bg-stone-900"
+                  : "border-stone-200 bg-white hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900"
               }`}
             >
               <p className={`text-sm font-semibold ${
@@ -1025,7 +1025,7 @@ function EnrollmentsManager() {
             <Skeleton className="h-12 w-full" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-stone-200 py-8 text-center dark:border-stone-700">
+          <div className="rounded-lg border border-dashed border-stone-200 py-8 text-center dark:border-stone-800">
             <UserPlus className="mx-auto mb-2 h-8 w-8 text-stone-300" />
             <p className="text-sm text-stone-400 dark:text-stone-500">{search ? "No results." : "No enrollments yet."}</p>
           </div>
@@ -1034,7 +1034,7 @@ function EnrollmentsManager() {
             {filtered.map((e) => (
               <div
                 key={e.id}
-                className={`flex items-center gap-3 rounded-xl border p-3 transition-colors ${e.status === "DROPPED" ? "border-stone-100 bg-stone-50 opacity-60 dark:border-stone-800 dark:bg-stone-800/50" : "border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900"}`}
+                className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${e.status === "DROPPED" ? "border-stone-100 bg-stone-50 opacity-60 dark:border-stone-800 dark:bg-stone-800/50" : "border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900"}`}
               >
                 {/* Avatar */}
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-kat-clay text-xs font-bold text-white">
@@ -1184,11 +1184,11 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
         </div>
         <Dialog open={formOpen} onOpenChange={setFormOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5 bg-[#B2401D] hover:bg-[#8F3316]">
+            <Button size="sm" className="gap-1.5 bg-kat-clay hover:bg-kat-clay-deep">
               <Plus className="h-4 w-4" /> New Code
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md dark:bg-stone-900 dark:border-stone-700">
+          <DialogContent className="max-w-md dark:bg-stone-900 dark:border-stone-800">
             <DialogHeader>
               <DialogTitle>Create Discount Code</DialogTitle>
             </DialogHeader>
@@ -1224,7 +1224,7 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-stone-600 dark:text-stone-400">Restrict to program</label>
                 <Select value={form.programId || undefined} onValueChange={(v) => setForm((f) => ({ ...f, programId: v === "__all" ? "" : v }))}>
-                  <SelectTrigger className="h-10 w-full rounded-xl text-sm dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"><SelectValue placeholder="All programs" /></SelectTrigger>
+                  <SelectTrigger className="h-10 w-full rounded-lg text-sm dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"><SelectValue placeholder="All programs" /></SelectTrigger>
                   <SelectContent position="popper" sideOffset={6}>
                     <SelectItem value="__all">All programs</SelectItem>
                     {programs.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
@@ -1254,7 +1254,7 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
               </div>
               <div className="flex gap-2 pt-1">
                 <Button variant="outline" className="flex-1" onClick={() => setFormOpen(false)}>Cancel</Button>
-                <Button disabled={saving} className="flex-1 bg-[#B2401D] hover:bg-[#8F3316]" onClick={() => void create()}>
+                <Button disabled={saving} className="flex-1 bg-kat-clay hover:bg-kat-clay-deep" onClick={() => void create()}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Code"}
                 </Button>
               </div>
@@ -1267,7 +1267,7 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
         {loading ? (
           <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
         ) : codes.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-stone-200 py-8 text-center dark:border-stone-700">
+          <div className="rounded-lg border border-dashed border-stone-200 py-8 text-center dark:border-stone-800">
             <Tag className="mx-auto mb-2 h-8 w-8 text-stone-300" />
             <p className="text-sm text-stone-400 dark:text-stone-500">No discount codes yet.</p>
           </div>
@@ -1276,7 +1276,7 @@ function DiscountCodesManager({ programs }: { programs: Program[] }) {
             {codes.map((dc) => (
               <div
                 key={dc.id}
-                className={`flex items-center gap-3 rounded-xl border p-3 transition-colors ${dc.isActive ? "border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900" : "border-stone-100 bg-stone-50 opacity-60 dark:border-stone-800 dark:bg-stone-800/50"}`}
+                className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${dc.isActive ? "border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900" : "border-stone-100 bg-stone-50 opacity-60 dark:border-stone-800 dark:bg-stone-800/50"}`}
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-orange-700">
                   <Tag className="h-4 w-4" />
@@ -1449,7 +1449,7 @@ export function PaymentsPanel({ role }: { role: string }) {
           {canVerify && (
             <div className="kat-card">
               <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Verify Financial Records</h3>
-              <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">Confirm transactions and maintain receipt transparency.</p>
+              <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">Confirm transactions and issue receipts.</p>
               <div className="space-y-3">
                 <Input placeholder="Reference (e.g. KAT-ABC-123)" value={referenceToVerify} onChange={(e) => setReferenceToVerify(e.target.value)} />
                 <Button disabled={busy} variant="outline" className="w-full" onClick={() => void verifyPayment()}>
@@ -1471,7 +1471,7 @@ export function PaymentsPanel({ role }: { role: string }) {
       {isSA && (
         <div className="kat-card">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-100">
               <UserPlus className="h-5 w-5 text-orange-600" />
             </div>
             <div className="min-w-0">
@@ -1502,7 +1502,7 @@ export function PaymentsPanel({ role }: { role: string }) {
           ) : (
             <table className="min-w-[820px] w-full text-sm">
               <thead>
-                <tr className="border-b border-stone-200 text-left text-xs uppercase tracking-wide text-stone-500 dark:border-stone-700 dark:text-stone-400">
+                <tr className="border-b border-stone-200 text-left text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:text-stone-400">
                   <th className="pb-2 pr-4">Reference</th>
                   {showFor && <th className="pb-2 pr-4">For</th>}
                   <th className="pb-2 pr-4">Program</th>

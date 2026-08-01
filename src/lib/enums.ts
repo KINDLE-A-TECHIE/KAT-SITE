@@ -17,7 +17,7 @@ export type AssessmentTypeValue = (typeof ASSESSMENT_TYPES)[number];
 export const ASSESSMENT_VERIFICATION_STATUSES = ["PENDING", "APPROVED", "REJECTED"] as const;
 export type AssessmentVerificationStatusValue = (typeof ASSESSMENT_VERIFICATION_STATUSES)[number];
 
-export const QUESTION_TYPES = ["MULTIPLE_CHOICE", "TRUE_FALSE", "OPEN_ENDED"] as const;
+export const QUESTION_TYPES = ["MULTIPLE_CHOICE", "TRUE_FALSE", "OPEN_ENDED", "CODE", "RUBRIC"] as const;
 export type QuestionTypeValue = (typeof QUESTION_TYPES)[number];
 
 export const PAYMENT_PROVIDERS = ["PAYSTACK", "STRIPE"] as const;
@@ -45,6 +45,8 @@ export const LESSON_CONTENT_TYPES = [
   "DOCUMENT_LINK",
   "CODE_PLAYGROUND",
   "NETWORK_LAB",
+  "BLOCKLY",
+  "SCRATCH",
 ] as const;
 export type LessonContentTypeValue = (typeof LESSON_CONTENT_TYPES)[number];
 

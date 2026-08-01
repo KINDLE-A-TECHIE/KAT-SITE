@@ -50,11 +50,12 @@ const pct = (v: number | null) => (v == null ? "n/a" : `${Math.round(v)}%`);
 function ClassSection({ section }: { section: SchoolReportSection }) {
   const { summary, coverage } = section;
   const t = coverage.totals;
+  const licensedUnits = coverage.units.filter((u) => u.licensed).length;
   return (
     <View style={s.classBlock} wrap={false}>
       <Text style={s.className}>{summary.class.name}</Text>
       <Text style={s.classMeta}>
-        {summary.class.nerdcLevel.replace(/_/g, " ")} {"·"} {summary.class.term} {"·"} {summary.studentCount} students
+        {summary.class.nerdcLevel.replace(/_/g, " ")} {"·"} {summary.class.sessionLabel} {"·"} {summary.studentCount} students
         {summary.course ? ` · ${summary.course.name}` : ""}
       </Text>
 
@@ -75,6 +76,10 @@ function ClassSection({ section }: { section: SchoolReportSection }) {
         <View style={s.stat}>
           <Text style={s.statLabel}>First-hand</Text>
           <Text style={s.statValue}>{t.unitsFirstHand}</Text>
+        </View>
+        <View style={s.stat}>
+          <Text style={s.statLabel}>Terms licensed</Text>
+          <Text style={s.statValue}>{licensedUnits} / {coverage.units.length}</Text>
         </View>
       </View>
       {!coverage.matchedCrosswalk ? (
@@ -116,7 +121,7 @@ function ReportDocument({ report }: { report: SchoolReport }) {
         <Text style={s.title}>Progress &amp; NERDC Coverage</Text>
         <Text style={s.meta}>
           {report.school.name}
-          {report.term ? ` · ${report.term}` : ""}
+          {report.session ? ` · ${report.session}` : ""}
           {"  ·  "}
           {report.scope === "class" ? "Single class" : "Whole school"}
           {"  ·  Generated "}{generated}

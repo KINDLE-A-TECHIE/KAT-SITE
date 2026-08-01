@@ -15,8 +15,10 @@ type AnalyticsPayload = {
   scope: "user" | "platform";
   userAnalytics: {
     loginStats30d: number;
+    /** Role-aware label for assessmentsSubmitted ("Assessments graded" for staff, etc.). */
+    activityLabel?: string;
     assessmentsSubmitted: number;
-    unreadMessages: number;
+    classesAttended: number;
     upcomingMeetings: number;
   };
   platformAnalytics?: {
@@ -152,14 +154,15 @@ function GenericOverview({ role }: { role: UserRoleValue }) {
 
   const stats: StatLedgerEntry[] = useMemo(() => {
     if (!analytics) return [];
+    // The API has no unread-message count; the old "Unread messages" cell
+    // rendered undefined (blank) for every role. These four all exist.
     const list: StatLedgerEntry[] = [
       { label: "Logins (30d)", value: analytics.userAnalytics.loginStats30d },
-      { label: "Assessments", value: analytics.userAnalytics.assessmentsSubmitted },
       {
-        label: "Unread messages",
-        value: analytics.userAnalytics.unreadMessages,
-        href: "/dashboard/messages",
+        label: analytics.userAnalytics.activityLabel ?? "Assessments",
+        value: analytics.userAnalytics.assessmentsSubmitted,
       },
+      { label: "Classes attended", value: analytics.userAnalytics.classesAttended },
       {
         label: "Upcoming meetings",
         value: analytics.userAnalytics.upcomingMeetings,

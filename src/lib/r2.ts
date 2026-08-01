@@ -1,4 +1,4 @@
-import { S3Client, DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const r2Client = new S3Client({
@@ -25,6 +25,19 @@ export async function generatePresignedUploadUrl(
   const command = new PutObjectCommand({ Bucket: BUCKET, Key: key, ContentType: contentType });
   // @aws-sdk/client-s3 and @aws-sdk/s3-request-presigner resolve different copies of @smithy/types,
   // so the S3Client they each describe is nominally incompatible. The runtime object is the same one.
+  return getSignedUrl(
+    r2Client as unknown as Parameters<typeof getSignedUrl>[0],
+    command,
+    { expiresIn: expiresInSeconds },
+  );
+}
+
+/**
+ * A short-lived signed URL to READ a private object. Used for a pupil's own Scratch project (a child's
+ * work, so it is never served from the public R2 URL); the editor iframe fetches this to load a project.
+ */
+export async function generatePresignedDownloadUrl(key: string, expiresInSeconds = 900): Promise<string> {
+  const command = new GetObjectCommand({ Bucket: BUCKET, Key: key });
   return getSignedUrl(
     r2Client as unknown as Parameters<typeof getSignedUrl>[0],
     command,

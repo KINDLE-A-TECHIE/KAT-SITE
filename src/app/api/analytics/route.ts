@@ -2,7 +2,7 @@ import { UserRole } from "@prisma/client";
 import { z } from "zod";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
-import { getPlatformAnalytics, getUserAnalytics, trackEvent } from "@/lib/analytics";
+import { getPlatformAnalytics, getSchoolOverview, getUserAnalytics, trackEvent } from "@/lib/analytics";
 import { prisma } from "@/lib/prisma";
 
 const eventSchema = z.object({
@@ -46,10 +46,13 @@ export async function GET(request: Request) {
       orgId = dbUser?.organizationId ?? null;
     }
 
-    // All roles get user-level analytics; admins additionally get platform analytics
-    const [userAnalytics, platformAnalytics] = await Promise.all([
+    // All roles get user-level analytics; admins additionally get platform + school (B2B) oversight.
+    // School data is NOT org-scoped (schools carry no organizationId), so it is gated on isAdmin
+    // alone, not on orgId, unlike the org-scoped platform analytics.
+    const [userAnalytics, platformAnalytics, schoolAnalytics] = await Promise.all([
       getUserAnalytics(session.user.id, rangeDays),
       isAdmin && orgId ? getPlatformAnalytics(orgId, rangeDays) : Promise.resolve(undefined),
+      isAdmin ? getSchoolOverview(rangeDays) : Promise.resolve(undefined),
     ]);
 
     return ok({
@@ -58,6 +61,7 @@ export async function GET(request: Request) {
       viewerRole: session.user.role,
       userAnalytics,
       ...(platformAnalytics ? { platformAnalytics } : {}),
+      ...(schoolAnalytics ? { schoolAnalytics } : {}),
     });
   } catch (error) {
     return fail("Failed to load analytics.", 500, error instanceof Error ? error.message : String(error));

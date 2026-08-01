@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
-  Archive, BookOpen, GraduationCap, Pencil, Plus, Settings, ArchiveRestore,
+  Archive, BookOpen, EyeOff, GraduationCap, Loader2, Pencil, Plus, Send, Settings, ArchiveRestore,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,32 @@ type Program = {
   monthlyFee: string | number;
   discountPercent: string | number | null;
   isActive: boolean;
+  isPublished: boolean;
+  // School programmes are seat-licensed, not priced. audience drives whether fee/discount are shown.
+  audience: "B2C" | "SCHOOL";
+  nerdcLevel: string | null;
+  strand: string | null;
+};
+
+type AudienceFilter = "ALL" | "B2C" | "SCHOOL";
+type Lifecycle = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
+function lifecycleOf(p: { isActive: boolean; isPublished: boolean }): Lifecycle {
+  if (!p.isActive) return "ARCHIVED";
+  return p.isPublished ? "PUBLISHED" : "DRAFT";
+}
+
+const LIFECYCLE_BADGE: Record<Lifecycle, string> = {
+  DRAFT: "bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300",
+  PUBLISHED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
+  ARCHIVED: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+};
+
+const NERDC_LEVEL_LABEL: Record<string, string> = {
+  PRIMARY_1_3: "Primary 1–3",
+  PRIMARY_4_6: "Primary 4–6",
+  JSS: "JSS",
+  SSS: "SSS",
 };
 
 const LEVEL_COLORS: Record<string, string> = {
@@ -45,11 +71,21 @@ type FormState = {
   level: string;
   monthlyFee: string;
   discountPercent: string;
+  audience: "B2C" | "SCHOOL";
+  nerdcLevel: string;
+  strand: string;
 };
 
 const EMPTY_FORM: FormState = {
   name: "", slug: "", description: "", level: "BEGINNER", monthlyFee: "", discountPercent: "",
+  audience: "B2C", nerdcLevel: "", strand: "",
 };
+
+const NERDC_LEVELS = ["PRIMARY_1_3", "PRIMARY_4_6", "JSS", "SSS"];
+const STRANDS: { value: string; label: string }[] = [
+  { value: "CODING", label: "Coding" },
+  { value: "DIGLIT", label: "Digital literacy" },
+];
 
 function toSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -60,14 +96,23 @@ function ProgramForm({
   onSave,
   onCancel,
   busy,
+  isSchool = false,
+  allowAudienceChange = false,
 }: {
   initial: FormState;
   onSave: (data: FormState) => Promise<void>;
   onCancel: () => void;
   busy: boolean;
+  /** School programmes are seat-licensed; fee/discount don't apply and are hidden. */
+  isSchool?: boolean;
+  /** Add mode: let the creator choose B2C vs School (and enter NERDC level + strand for School). */
+  allowAudienceChange?: boolean;
 }) {
   const [form, setForm] = useState<FormState>(initial);
   const [slugEdited, setSlugEdited] = useState(!!initial.slug);
+
+  // In add mode the audience is chosen here; in edit mode it's fixed (isSchool prop).
+  const school = allowAudienceChange ? form.audience === "SCHOOL" : isSchool;
 
   const set = (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm((p) => ({ ...p, [key]: e.target.value }));
@@ -101,43 +146,103 @@ function ProgramForm({
         <Textarea value={form.description} onChange={set("description")} rows={3} placeholder="Brief program overview…" className="text-sm" />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      {/* Audience: only choosable at creation. B2C is priced; School is seat-licensed + NERDC-tagged. */}
+      {allowAudienceChange && (
+        <div className="space-y-1.5">
+          <Label className="text-sm">Audience</Label>
+          <div className="flex gap-2">
+            {(["B2C", "SCHOOL"] as const).map((a) => (
+              <button
+                key={a}
+                type="button"
+                onClick={() => setForm((p) => ({ ...p, audience: a }))}
+                className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${form.audience === a ? "border-kat-clay bg-orange-50 text-kat-clay dark:bg-orange-950/30" : "border-stone-200 text-stone-600 hover:bg-stone-50 dark:border-stone-800 dark:text-stone-300"}`}
+              >
+                {a === "B2C" ? "B2C (priced)" : "School (seat-licensed)"}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* School: NERDC level + strand replace the priced fields. Only collected at creation. */}
+      {allowAudienceChange && school && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label className="text-sm">NERDC level</Label>
+            <select
+              value={form.nerdcLevel}
+              onChange={set("nerdcLevel")}
+              className="w-full rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-kat-clay focus:outline-none focus:ring-1 focus:ring-kat-clay"
+            >
+              <option value="">Select level…</option>
+              {NERDC_LEVELS.map((l) => <option key={l} value={l}>{NERDC_LEVEL_LABEL[l] ?? l}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm">Strand</Label>
+            <select
+              value={form.strand}
+              onChange={set("strand")}
+              className="w-full rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-kat-clay focus:outline-none focus:ring-1 focus:ring-kat-clay"
+            >
+              <option value="">Select strand…</option>
+              {STRANDS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </div>
+        </div>
+      )}
+
+      <div className={`grid gap-4 ${school ? "" : "sm:grid-cols-3"}`}>
+        {/* Level is B2C-only; a school programme's level is derived from its NERDC level. */}
+        {!(allowAudienceChange && school) && (
         <div className="space-y-1.5">
           <Label className="text-sm">Level</Label>
           <select
             value={form.level}
             onChange={set("level")}
-            className="w-full rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-[#B2401D] focus:outline-none focus:ring-1 focus:ring-[#B2401D]"
+            className="w-full rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-kat-clay focus:outline-none focus:ring-1 focus:ring-kat-clay"
           >
             {LEVELS.map((l) => <option key={l} value={l}>{l.charAt(0) + l.slice(1).toLowerCase()}</option>)}
           </select>
         </div>
-        <div className="space-y-1.5">
-          <Label className="text-sm">Monthly Fee (₦)</Label>
-          <Input
-            type="number" min={0} step={100}
-            value={form.monthlyFee}
-            onChange={set("monthlyFee")}
-            placeholder="e.g. 50000"
-            className="text-sm"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-sm">Discount <span className="font-normal text-stone-400 dark:text-stone-500">(%)</span></Label>
-          <Input
-            type="number" min={0} max={100} step={1}
-            value={form.discountPercent}
-            onChange={set("discountPercent")}
-            placeholder="e.g. 20"
-            className="text-sm"
-          />
-          {form.monthlyFee && form.discountPercent && Number(form.discountPercent) > 0 && (
-            <p className="text-xs text-emerald-600">
-              Effective: ₦{(Number(form.monthlyFee) * (1 - Number(form.discountPercent) / 100)).toLocaleString()}/mo
-            </p>
-          )}
-        </div>
+        )}
+        {/* Fee + discount are B2C-only; a school programme is paid per seat, per term. */}
+        {!school && (
+          <>
+            <div className="space-y-1.5">
+              <Label className="text-sm">Monthly Fee (₦)</Label>
+              <Input
+                type="number" min={0} step={100}
+                value={form.monthlyFee}
+                onChange={set("monthlyFee")}
+                placeholder="e.g. 50000"
+                className="text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">Discount <span className="font-normal text-stone-400 dark:text-stone-500">(%)</span></Label>
+              <Input
+                type="number" min={0} max={100} step={1}
+                value={form.discountPercent}
+                onChange={set("discountPercent")}
+                placeholder="e.g. 20"
+                className="text-sm"
+              />
+              {form.monthlyFee && form.discountPercent && Number(form.discountPercent) > 0 && (
+                <p className="text-xs text-emerald-600">
+                  Effective: ₦{(Number(form.monthlyFee) * (1 - Number(form.discountPercent) / 100)).toLocaleString()}/mo
+                </p>
+              )}
+            </div>
+          </>
+        )}
       </div>
+      {school && (
+        <p className="text-xs text-stone-400 dark:text-stone-500">
+          This is a school programme, seat-licensed per term. There is no monthly fee.
+        </p>
+      )}
 
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="ghost" size="sm" onClick={onCancel} disabled={busy}>Cancel</Button>
@@ -145,7 +250,7 @@ function ProgramForm({
           size="sm"
           disabled={busy}
           onClick={() => void onSave(form)}
-          className="bg-[#B2401D] hover:bg-[#8F3316]"
+          className="bg-kat-clay hover:bg-kat-clay-deep"
         >
           {busy ? "Saving…" : "Save Program"}
         </Button>
@@ -158,11 +263,35 @@ export function CurriculumPanel({ role }: { role: string }) {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInactive, setShowInactive] = useState(false);
+  const [audienceFilter, setAudienceFilter] = useState<AudienceFilter>("ALL");
   const [dialogMode, setDialogMode] = useState<"add" | "edit" | null>(null);
   const [editTarget, setEditTarget] = useState<Program | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<Program | null>(null);
   const [busy, setBusy] = useState(false);
   const [archiveBusy, setArchiveBusy] = useState(false);
+  const [publishBusy, setPublishBusy] = useState<string | null>(null);
+
+  // Publish (Draft -> live) or unpublish (back to Draft). The server rejects publishing a programme
+  // with no active curriculum version, so surface that message rather than assuming success.
+  const togglePublish = async (program: Program) => {
+    const publish = !program.isPublished;
+    setPublishBusy(program.id);
+    try {
+      const res = await fetch(`/api/programs/${program.id}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ publish }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { toast.error(data?.error ?? "Could not update the programme."); return; }
+      toast.success(publish ? "Programme published." : "Programme moved to draft.");
+      await load();
+    } catch {
+      toast.error("Could not update the programme.");
+    } finally {
+      setPublishBusy(null);
+    }
+  };
 
   const isCreator = CREATOR_ROLES.includes(role);
   const isSA = role === "SUPER_ADMIN";
@@ -171,7 +300,11 @@ export function CurriculumPanel({ role }: { role: string }) {
     setLoading(true);
     try {
       if (isCreator) {
-        const res = await fetch(`/api/programs${isSA && showInactive ? "?includeInactive=true" : ""}`);
+        const params = new URLSearchParams();
+        if (isSA && showInactive) params.set("includeInactive", "true");
+        if (audienceFilter !== "ALL") params.set("audience", audienceFilter);
+        const qs = params.toString();
+        const res = await fetch(`/api/programs${qs ? `?${qs}` : ""}`);
         if (res.ok) {
           const data = await res.json() as { programs: Program[] };
           setPrograms(data.programs ?? []);
@@ -191,7 +324,7 @@ export function CurriculumPanel({ role }: { role: string }) {
     setLoading(false);
   };
 
-  useEffect(() => { void load(); }, [role, showInactive]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void load(); }, [role, showInactive, audienceFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openAdd = () => { setEditTarget(null); setDialogMode("add"); };
   const openEdit = (p: Program) => {
@@ -201,20 +334,35 @@ export function CurriculumPanel({ role }: { role: string }) {
   const closeDialog = () => { setDialogMode(null); setEditTarget(null); };
 
   const handleSave = async (form: FormState) => {
+    const isAdd = dialogMode === "add";
+    const school = isAdd ? form.audience === "SCHOOL" : editTarget?.audience === "SCHOOL";
     if (!form.name.trim()) { toast.error("Name is required."); return; }
     if (!form.slug.trim()) { toast.error("Slug is required."); return; }
-    if (!form.monthlyFee || Number(form.monthlyFee) < 0) { toast.error("Monthly fee is required."); return; }
+    if (isAdd && school && !form.nerdcLevel) { toast.error("NERDC level is required for a school programme."); return; }
+    if (isAdd && school && !form.strand) { toast.error("Strand is required for a school programme."); return; }
+    if (!school && (!form.monthlyFee || Number(form.monthlyFee) < 0)) { toast.error("Monthly fee is required."); return; }
 
     setBusy(true);
     try {
-      const payload = {
+      const base = {
         name: form.name.trim(),
         slug: form.slug.trim(),
         description: form.description.trim() || null,
-        level: form.level,
-        monthlyFee: Number(form.monthlyFee),
-        discountPercent: form.discountPercent ? Number(form.discountPercent) : null,
       };
+      // School create: send audience + NERDC level + strand; the server derives level and sets fee 0.
+      // School edit: omit fee/discount entirely (the PATCH schema forbids a non-positive fee).
+      // B2C: level + fee + discount as before.
+      const payload = school
+        ? isAdd
+          ? { ...base, level: "BEGINNER", monthlyFee: 0, audience: "SCHOOL", nerdcLevel: form.nerdcLevel, strand: form.strand }
+          : { ...base, level: form.level }
+        : {
+            ...base,
+            level: form.level,
+            monthlyFee: Number(form.monthlyFee),
+            discountPercent: form.discountPercent ? Number(form.discountPercent) : null,
+            ...(isAdd ? { audience: "B2C" } : {}),
+          };
 
       const res = dialogMode === "edit" && editTarget
         ? await fetch(`/api/programs/${editTarget.id}`, {
@@ -271,7 +419,7 @@ export function CurriculumPanel({ role }: { role: string }) {
           <Skeleton className="h-4 w-72" />
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-40 rounded-lg" />)}
         </div>
       </div>
     );
@@ -285,15 +433,24 @@ export function CurriculumPanel({ role }: { role: string }) {
         <div className="kat-card flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-stone-900 dark:text-stone-100">
-              {isCreator ? "All Programs" : "Your Enrolled Programs"}
+              {isCreator ? "All programmes" : "Your programmes"}
             </h2>
-            <p className="text-sm text-stone-500 dark:text-stone-400">
-              {isCreator
-                ? "Manage curriculum, lessons, and learning content."
-                : "Browse your program curriculum and learning materials."}
-            </p>
           </div>
           <div className="flex items-center gap-2">
+            {isCreator && (
+              /* Audience facet: B2C (priced) vs School (seat-licensed). */
+              <div className="flex items-center gap-0.5 rounded-lg border border-stone-200 p-0.5 dark:border-stone-700">
+                {(["ALL", "B2C", "SCHOOL"] as const).map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => setAudienceFilter(a)}
+                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${audienceFilter === a ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900" : "text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800"}`}
+                  >
+                    {a === "ALL" ? "All" : a === "B2C" ? "B2C" : "School"}
+                  </button>
+                ))}
+              </div>
+            )}
             {isSA && (
               <button
                 onClick={() => setShowInactive((p) => !p)}
@@ -303,7 +460,7 @@ export function CurriculumPanel({ role }: { role: string }) {
               </button>
             )}
             {isSA && (
-              <Button size="sm" onClick={openAdd} className="gap-1.5 bg-[#B2401D] hover:bg-[#8F3316]">
+              <Button size="sm" onClick={openAdd} className="gap-1.5 bg-kat-clay hover:bg-kat-clay-deep">
                 <Plus className="h-3.5 w-3.5" /> Add Program
               </Button>
             )}
@@ -338,13 +495,25 @@ export function CurriculumPanel({ role }: { role: string }) {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="truncate font-semibold text-stone-900 dark:text-stone-100">{program.name}</h3>
-                          {!program.isActive && (
-                            <span className="shrink-0 rounded-full bg-stone-100 dark:bg-stone-700 px-2 py-0.5 text-xs font-medium text-stone-500 dark:text-stone-400">
-                              Archived
-                            </span>
-                          )}
+                          {isSA && (() => {
+                            const status = lifecycleOf(program);
+                            return (
+                              <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${LIFECYCLE_BADGE[status]}`}>
+                                {status.charAt(0) + status.slice(1).toLowerCase()}
+                              </span>
+                            );
+                          })()}
                         </div>
-                        {(() => {
+                        {program.audience === "SCHOOL" ? (
+                          /* School programmes are paid per seat, per term, not priced here. */
+                          <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-stone-400 dark:text-stone-500">
+                            <span className="rounded-full bg-orange-100 px-1.5 py-0.5 font-medium text-orange-700 dark:bg-orange-900/40 dark:text-orange-400">
+                              Seat-licensed
+                            </span>
+                            {program.nerdcLevel ? <span>{NERDC_LEVEL_LABEL[program.nerdcLevel] ?? program.nerdcLevel}</span> : null}
+                            {program.strand ? <span>· {program.strand === "DIGLIT" ? "Digital literacy" : "Coding"}</span> : null}
+                          </p>
+                        ) : (() => {
                           const fee = Number(program.monthlyFee);
                           const disc = program.discountPercent ? Number(program.discountPercent) : 0;
                           const effective = disc > 0 ? fee * (1 - disc / 100) : fee;
@@ -371,6 +540,19 @@ export function CurriculumPanel({ role }: { role: string }) {
                         </span>
                         {isSA && (
                           <>
+                            {/* Publish / unpublish, hidden for archived programmes (restore first). */}
+                            {program.isActive && (
+                              <button
+                                onClick={() => void togglePublish(program)}
+                                disabled={publishBusy === program.id}
+                                title={program.isPublished ? "Unpublish (back to draft)" : "Publish programme"}
+                                className="rounded p-1 text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-700 hover:text-stone-600 dark:hover:text-stone-300 disabled:opacity-50"
+                              >
+                                {publishBusy === program.id
+                                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  : program.isPublished ? <EyeOff className="h-3.5 w-3.5" /> : <Send className="h-3.5 w-3.5" />}
+                              </button>
+                            )}
                             <button onClick={() => openEdit(program)} title="Edit program" className="rounded p-1 text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-700 hover:text-stone-600 dark:hover:text-stone-300">
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
@@ -385,11 +567,11 @@ export function CurriculumPanel({ role }: { role: string }) {
                       <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-stone-500 dark:text-stone-400">{program.description}</p>
                     )}
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <Link href={`/dashboard/curriculum/${program.id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-[#B2401D] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#8F3316] transition-colors">
+                      <Link href={`/dashboard/curriculum/${program.id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-kat-clay px-3 py-1.5 text-xs font-semibold text-white hover:bg-kat-clay-deep transition-colors">
                         <BookOpen className="h-3.5 w-3.5" />Manage Curriculum
                       </Link>
                       {(isSA || role === "ADMIN") && (
-                        <Link href={`/dashboard/curriculum/${program.id}/versions`} className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 dark:border-stone-700 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
+                        <Link href={`/dashboard/curriculum/${program.id}/versions`} className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 dark:border-stone-800 px-3 py-1.5 text-xs font-medium text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors">
                           <Settings className="h-3.5 w-3.5" />Versions
                         </Link>
                       )}
@@ -399,8 +581,8 @@ export function CurriculumPanel({ role }: { role: string }) {
                   /* ── Learner card ── */
                   <>
                     <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#B2401D]/10 dark:bg-orange-900/30">
-                        <GraduationCap className="h-5 w-5 text-[#B2401D] dark:text-orange-400" />
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-kat-clay/10 dark:bg-orange-900/30">
+                        <GraduationCap className="h-5 w-5 text-kat-clay dark:text-orange-400" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold text-stone-900 dark:text-stone-100">{program.name}</h3>
@@ -411,7 +593,7 @@ export function CurriculumPanel({ role }: { role: string }) {
                     </div>
                     <Link
                       href={`/dashboard/curriculum/${program.id}`}
-                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#B2401D] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#8F3316]"
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-kat-clay py-2.5 text-sm font-semibold text-white transition-colors hover:bg-kat-clay-deep"
                     >
                       <BookOpen className="h-4 w-4" />
                       Open Course
@@ -476,6 +658,9 @@ export function CurriculumPanel({ role }: { role: string }) {
                     slug: editTarget.slug,
                     description: editTarget.description ?? "",
                     level: editTarget.level,
+                    audience: editTarget.audience,
+                    nerdcLevel: editTarget.nerdcLevel ?? "",
+                    strand: editTarget.strand ?? "",
                     monthlyFee: String(Number(editTarget.monthlyFee)),
                     discountPercent: editTarget.discountPercent ? String(Number(editTarget.discountPercent)) : "",
                   }
@@ -484,6 +669,8 @@ export function CurriculumPanel({ role }: { role: string }) {
             onSave={handleSave}
             onCancel={closeDialog}
             busy={busy}
+            isSchool={dialogMode === "edit" && editTarget?.audience === "SCHOOL"}
+            allowAudienceChange={dialogMode === "add"}
           />
         </DialogContent>
       </Dialog>

@@ -16,8 +16,8 @@ export default async function CurriculumPage() {
         title="Programmes & Curriculum"
         subtitle={
           isLearner
-            ? "Explore your enrolled programmes, browse modules, and work through your lessons at your own pace."
-            : "Manage published programmes, build modules, and create lesson content for your learners."
+            ? "Your programmes, their modules, and the lessons inside."
+            : "Build programmes, modules, and lesson content."
         }
       />
       <CurriculumPanel role={session.user.role} />

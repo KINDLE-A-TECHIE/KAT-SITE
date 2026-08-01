@@ -29,16 +29,16 @@ export async function GET(request: Request) {
 
   const session = await getServerAuthSession();
   const url = new URL(request.url);
-  const term = url.searchParams.get("term");
+  const sessionLabel = url.searchParams.get("session");
   const classId = url.searchParams.get("classId");
 
   try {
-    const report = await getSchoolReport(schoolId, role, session!.user.id, { term, classId });
+    const report = await getSchoolReport(schoolId, role, session!.user.id, { session: sessionLabel, classId });
     const pdf = await renderSchoolReportPdf(report);
 
     const slug = (report.school.name || "school").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-    const termSlug = term ? "-" + term.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : "";
-    const filename = `kat-report-${slug}${termSlug}.pdf`;
+    const sessionSlug = sessionLabel ? "-" + sessionLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : "";
+    const filename = `kat-report-${slug}${sessionSlug}.pdf`;
 
     return new Response(new Uint8Array(pdf), {
       status: 200,

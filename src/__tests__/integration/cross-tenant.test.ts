@@ -42,7 +42,7 @@ vi.mock("@/lib/auth", async (importOriginal) => ({
 }));
 
 const SUFFIX = randomBytes(4).toString("hex");
-const TERM = "XT Term";
+const SESSION = "XT Session";
 
 type School = {
   id: string;
@@ -93,7 +93,8 @@ async function seedSchool(tag: string, programId: string, orgId: string | null):
   await prisma.schoolLicense.create({
     data: {
       schoolId: school.id,
-      term: TERM,
+      sessionLabel: SESSION,
+      termNumber: 1,
       seatLimit: 50,
       seatsUsed: 1,
       pricePerSeat: 1000,
@@ -106,7 +107,7 @@ async function seedSchool(tag: string, programId: string, orgId: string | null):
       schoolId: school.id,
       name: `${tag} class`,
       nerdcLevel: "PRIMARY_4_6",
-      term: TERM,
+      sessionLabel: SESSION,
       programId,
       teacherId: teacher.id,
     },

@@ -78,7 +78,7 @@ export type TermSummary = {
 };
 
 export type ClassTermSummary = {
-  class: { id: string; name: string; term: string; nerdcLevel: string };
+  class: { id: string; name: string; sessionLabel: string; nerdcLevel: string };
   course: { id: string; name: string } | null;
   studentCount: number;
   /** Total lessons across the whole course, 0 when no curriculum is published. */
@@ -106,7 +106,7 @@ export async function getClassTermSummary(
     select: {
       id: true,
       name: true,
-      term: true,
+      sessionLabel: true,
       nerdcLevel: true,
       programId: true,
       program: { select: { id: true, name: true } },
@@ -126,7 +126,7 @@ export async function getClassTermSummary(
     class: {
       id: schoolClass.id,
       name: schoolClass.name,
-      term: schoolClass.term,
+      sessionLabel: schoolClass.sessionLabel,
       nerdcLevel: schoolClass.nerdcLevel,
     },
     course: schoolClass.program,

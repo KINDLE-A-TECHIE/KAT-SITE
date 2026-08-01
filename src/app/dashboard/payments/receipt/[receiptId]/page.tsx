@@ -85,11 +85,11 @@ export default async function ReceiptPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-stone-50 p-6 print:bg-white print:p-0">
-      <div className="mx-auto max-w-2xl rounded-2xl bg-white shadow-lg print:shadow-none">
+      <div className="mx-auto max-w-2xl rounded-lg bg-white shadow-lg print:shadow-none">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-stone-100 px-8 py-7">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-stone-400">
+            <p className="text-xs font-bold uppercase tracking-wide text-stone-400">
               KAT Learning
             </p>
             <h1 className="mt-1 text-2xl font-bold text-stone-900">Payment Receipt</h1>
@@ -125,7 +125,7 @@ export default async function ReceiptPage({ params }: Props) {
           </div>
 
           {/* Payment Details */}
-          <div className="overflow-hidden rounded-xl border border-stone-100">
+          <div className="overflow-hidden rounded-lg border border-stone-100">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-stone-100">
                 <tr>
@@ -174,7 +174,7 @@ export default async function ReceiptPage({ params }: Props) {
           </div>
 
           {/* Amount */}
-          <div className="flex items-baseline justify-between rounded-xl bg-stone-50 px-4 py-4">
+          <div className="flex items-baseline justify-between rounded-lg bg-stone-50 px-4 py-4">
             <p className="text-sm font-semibold text-stone-500 uppercase tracking-wider">
               Amount Paid
             </p>

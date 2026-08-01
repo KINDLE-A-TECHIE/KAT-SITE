@@ -9,18 +9,18 @@ export default function DashboardLoading() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="h-28 rounded-xl bg-stone-200 dark:bg-stone-800"
+            className="h-28 rounded-lg bg-stone-200 dark:bg-stone-800"
           />
         ))}
       </div>
 
       {/* Main content block */}
-      <div className="h-64 rounded-xl bg-stone-200 dark:bg-stone-800" />
+      <div className="h-64 rounded-lg bg-stone-200 dark:bg-stone-800" />
 
       {/* Secondary row */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="h-48 rounded-xl bg-stone-200 dark:bg-stone-800" />
-        <div className="h-48 rounded-xl bg-stone-200 dark:bg-stone-800" />
+        <div className="h-48 rounded-lg bg-stone-200 dark:bg-stone-800" />
+        <div className="h-48 rounded-lg bg-stone-200 dark:bg-stone-800" />
       </div>
     </div>
   );

@@ -224,12 +224,37 @@ export async function POST(request: Request) {
             points: question.points,
             answerKey: question.answerKey,
             sortOrder: index + 1,
+            codeLanguage: question.codeLanguage,
+            starterCode: question.starterCode,
+            blocklyConfig: question.blocklyConfig,
             options: question.options
               ? {
                   create: question.options.map((option) => ({
                     label: option.label,
                     value: option.value,
                     isCorrect: option.isCorrect ?? false,
+                  })),
+                }
+              : undefined,
+            testCases: question.testCases
+              ? {
+                  create: question.testCases.map((tc, tcIndex) => ({
+                    name: tc.name,
+                    stdin: tc.stdin ?? "",
+                    expectedStdout: tc.expectedStdout,
+                    points: tc.points,
+                    hidden: tc.hidden ?? true,
+                    sortOrder: tcIndex,
+                  })),
+                }
+              : undefined,
+            rubricCriteria: question.criteria
+              ? {
+                  create: question.criteria.map((c, cIndex) => ({
+                    label: c.label,
+                    description: c.description,
+                    maxPoints: c.maxPoints,
+                    sortOrder: cIndex,
                   })),
                 }
               : undefined,

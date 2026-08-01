@@ -1,0 +1,20 @@
+# Cloudflare Pages headers for the self-hosted TurboWarp editor.
+# Drop this file (and _redirects, see README) into the Pages build output so the SPA serves correctly.
+
+/*
+  X-Content-Type-Options: nosniff
+  # Do NOT set X-Frame-Options here: the KAT app must be able to frame this editor. Framing is controlled
+  # by the KAT app's own CSP frame-src (see next.config.ts), which allow-lists this exact origin.
+
+# Long-cache the fingerprinted build assets; the HTML entry stays uncached so deploys take effect.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# OPTIONAL: cross-origin isolation, only if you want TurboWarp's COMPILER / SharedArrayBuffer features.
+# It is NOT required for the editor, the VM, or saving. It also makes every cross-origin subresource need
+# CORP/CORS, which can break some extensions, so enable it deliberately, not by default.
+# /*
+#   Cross-Origin-Opener-Policy: same-origin
+#   Cross-Origin-Embedder-Policy: require-corp

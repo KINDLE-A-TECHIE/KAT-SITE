@@ -4,7 +4,11 @@ dist
 coverage
 playwright-report
 test-results
-todo.md
+
+# Markdown is treated as local (notes, planning), except README.md. Files already tracked stay
+# tracked until `git rm --cached`; use `git add -f <f>` to commit a new one despite this rule.
+*.md
+!README.md
 
 .env
 .env.local
