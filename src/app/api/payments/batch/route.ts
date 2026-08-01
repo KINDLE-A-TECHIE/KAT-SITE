@@ -5,18 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { batchPaymentSchema } from "@/lib/validators";
 import { getPaymentGateway } from "@/lib/payments/provider";
 import { trackEvent } from "@/lib/analytics";
-
-function generatePaymentReference() {
-  const stamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `KAT-${stamp}-${random}`;
-}
-
-function generateBatchReference() {
-  const stamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `KAT-BATCH-${stamp}-${random}`;
-}
+import { generatePaymentReference, generateBatchReference } from "@/lib/payments/receipt";
 
 export async function POST(request: Request) {
   const session = await getServerAuthSession();

@@ -5,6 +5,8 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { trackEvent } from "@/lib/analytics";
 import { orgScope } from "@/lib/tenant";
+import { PROGRAM_AVAILABLE } from "@/lib/program";
+import { readPageOffset, pageMeta } from "@/lib/pagination";
 
 const createEnrollmentSchema = z.object({
   userId: z.string().cuid().optional(),
@@ -32,26 +34,31 @@ export async function GET(request: Request) {
   const targetUserId =
     isAdmin && filterUserId ? filterUserId : session.user.id;
 
-  const enrollments = await prisma.enrollment.findMany({
-    where: isAdmin && !filterUserId
-      ? {
-          program: orgScope(session.user.organizationId),
-        }
-      : {
-          userId: targetUserId,
-        },
-    include: {
-      user: {
-        select: { id: true, firstName: true, lastName: true, role: true },
-      },
-      program: {
-        select: { id: true, name: true, monthlyFee: true, level: true, isActive: true },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const { limit, page, skip } = readPageOffset(request);
+  const where =
+    isAdmin && !filterUserId
+      ? { program: orgScope(session.user.organizationId) }
+      : { userId: targetUserId };
 
-  return ok({ enrollments });
+  const [enrollments, total] = await prisma.$transaction([
+    prisma.enrollment.findMany({
+      where,
+      include: {
+        user: {
+          select: { id: true, firstName: true, lastName: true, role: true },
+        },
+        program: {
+          select: { id: true, name: true, monthlyFee: true, level: true, isActive: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.enrollment.count({ where }),
+  ]);
+
+  return ok({ enrollments, ...pageMeta(total, page, limit) });
 }
 
 export async function POST(request: Request) {
@@ -104,6 +111,19 @@ export async function POST(request: Request) {
 
     const isReactivation = !!existing && existing.status !== EnrollmentStatus.ACTIVE;
     const isFirstTime = !existing;
+
+    // AVAILABILITY GATE. A programme must be published + live to accept a NEW enrolment. Reactivating
+    // someone who was already on it is allowed (their progress predates any unpublish), so this only
+    // blocks first-time entry, exactly what Draft/Unpublished is meant to prevent.
+    if (isFirstTime) {
+      const program = await prisma.program.findFirst({
+        where: { id: parsed.data.programId, ...orgScope(session.user.organizationId), ...PROGRAM_AVAILABLE },
+        select: { id: true },
+      });
+      if (!program) {
+        return fail("This programme isn't available to enrol in yet.", 422);
+      }
+    }
 
     const startReason: EnrollmentPeriodReason = isFirstTime
       ? EnrollmentPeriodReason.INITIAL

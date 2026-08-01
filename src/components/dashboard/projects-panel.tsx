@@ -112,12 +112,12 @@ type Assignment = {
 const STATUS_CONFIG = {
   DRAFT: {
     label: "Draft",
-    className: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+    className: "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400",
     description: "Not submitted yet",
   },
   SUBMITTED: {
     label: "Under Review",
-    className: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+    className: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
     description: "Waiting for instructor review",
   },
   APPROVED: {
@@ -138,8 +138,8 @@ const STATUS_CONFIG = {
 };
 
 const STATUS_ACCENT: Record<Project["status"], string> = {
-  DRAFT: "border-t-4 border-t-slate-300 dark:border-t-slate-600",
-  SUBMITTED: "border-t-4 border-t-blue-400 dark:border-t-blue-500",
+  DRAFT: "border-t-4 border-t-stone-300 dark:border-t-stone-600",
+  SUBMITTED: "border-t-4 border-t-orange-400 dark:border-t-orange-500",
   APPROVED: "border-t-4 border-t-emerald-400 dark:border-t-emerald-500",
   NEEDS_WORK: "border-t-4 border-t-amber-400 dark:border-t-amber-500",
   REJECTED: "border-t-4 border-t-rose-400 dark:border-t-rose-500",
@@ -286,13 +286,13 @@ function FileUploader({ projectId, onUploaded }: { projectId: string; onUploaded
       />
 
       {uploading ? (
-        <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-blue-300 bg-blue-50 px-4 py-5 text-center dark:border-blue-700 dark:bg-blue-900/10">
-          <Loader2 className="size-5 animate-spin text-blue-500" />
-          <span className="text-sm text-slate-600 dark:text-slate-400">
+        <div className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-orange-300 bg-orange-50 px-4 py-5 text-center dark:border-orange-700 dark:bg-orange-900/10">
+          <Loader2 className="size-5 animate-spin text-orange-500" />
+          <span className="text-sm text-stone-600 dark:text-stone-400">
             {statusMsg} {progress > 0 ? `${progress}%` : ""}
           </span>
-          <div className="h-1.5 w-40 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-            <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${progress}%` }} />
+          <div className="h-1.5 w-40 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
+            <div className="h-full rounded-full bg-orange-500 transition-all" style={{ width: `${progress}%` }} />
           </div>
         </div>
       ) : (
@@ -300,20 +300,20 @@ function FileUploader({ projectId, onUploaded }: { projectId: string; onUploaded
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-center transition hover:border-blue-400 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-blue-500 dark:hover:bg-blue-900/10"
+            className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-stone-300 bg-stone-50 px-3 py-4 text-center transition hover:border-orange-400 hover:bg-orange-50 dark:border-stone-800 dark:bg-stone-800/50 dark:hover:border-orange-500 dark:hover:bg-orange-900/10"
           >
-            <Upload className="size-5 text-slate-400 dark:text-slate-500" />
-            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Upload a file</span>
-            <span className="text-[11px] text-slate-400 dark:text-slate-500">Images, PDFs, ZIPs…</span>
+            <Upload className="size-5 text-stone-400 dark:text-stone-500" />
+            <span className="text-xs font-medium text-stone-700 dark:text-stone-300">Upload a file</span>
+            <span className="text-[11px] text-stone-400 dark:text-stone-500">Images, PDFs, ZIPs…</span>
           </button>
           <button
             type="button"
             onClick={() => folderInputRef.current?.click()}
-            className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-center transition hover:border-emerald-400 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-emerald-500 dark:hover:bg-emerald-900/10"
+            className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-stone-300 bg-stone-50 px-3 py-4 text-center transition hover:border-emerald-400 hover:bg-emerald-50 dark:border-stone-800 dark:bg-stone-800/50 dark:hover:border-emerald-500 dark:hover:bg-emerald-900/10"
           >
-            <FolderOpen className="size-5 text-slate-400 dark:text-slate-500" />
-            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Upload folder</span>
-            <span className="text-[11px] text-slate-400 dark:text-slate-500">Zipped automatically</span>
+            <FolderOpen className="size-5 text-stone-400 dark:text-stone-500" />
+            <span className="text-xs font-medium text-stone-700 dark:text-stone-300">Upload folder</span>
+            <span className="text-[11px] text-stone-400 dark:text-stone-500">Zipped automatically</span>
           </button>
         </div>
       )}
@@ -369,7 +369,7 @@ function AssetUploader({ projectId, onUploaded }: { projectId: string; onUploade
         value={assetDesc}
         onChange={(e) => setAssetDesc(e.target.value)}
         placeholder="Asset description (optional)…"
-        className="text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+        className="text-sm dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
         maxLength={500}
       />
       <input ref={inputRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { void handleUpload(f); } }} />
@@ -377,7 +377,7 @@ function AssetUploader({ projectId, onUploaded }: { projectId: string; onUploade
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
-        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-blue-300 bg-blue-50 px-4 py-2.5 text-sm text-blue-600 transition hover:border-blue-400 hover:bg-blue-100 disabled:opacity-50 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-orange-300 bg-orange-50 px-4 py-2.5 text-sm text-orange-600 transition hover:border-orange-400 hover:bg-orange-100 disabled:opacity-50 dark:border-orange-700 dark:bg-orange-900/20 dark:text-orange-300"
       >
         {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
         {uploading ? "Uploading asset…" : "Upload asset file"}
@@ -440,7 +440,7 @@ function AssessmentResourceUploader({
         value={desc}
         onChange={(e) => setDesc(e.target.value)}
         placeholder="Resource description (optional)…"
-        className="text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+        className="text-sm dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
         maxLength={500}
       />
       <input ref={inputRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { void handleUpload(f); } }} />
@@ -448,7 +448,7 @@ function AssessmentResourceUploader({
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
-        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-violet-300 bg-violet-50 px-4 py-2.5 text-sm text-violet-600 transition hover:border-violet-400 hover:bg-violet-100 disabled:opacity-50 dark:border-violet-700 dark:bg-violet-900/20 dark:text-violet-300"
+        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-orange-300 bg-orange-50 px-4 py-2.5 text-sm text-orange-600 transition hover:border-orange-400 hover:bg-orange-100 disabled:opacity-50 dark:border-orange-700 dark:bg-orange-900/20 dark:text-orange-300"
       >
         {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
         {uploading ? "Uploading…" : "Upload reference file"}
@@ -690,7 +690,7 @@ function ProjectCard({
   };
 
   return (
-    <div className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-slate-700 dark:bg-slate-900 ${STATUS_ACCENT[p.status]}`}>
+    <div className={`overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-stone-800 dark:bg-stone-900 ${STATUS_ACCENT[p.status]}`}>
 
       {/* Cover image */}
       {p.coverImageUrl && !editing && (
@@ -714,7 +714,7 @@ function ProjectCard({
 
         {/* Student name (reviewer/parent view) */}
         {p.student && (
-          <p className="mb-2 text-xs font-medium text-slate-400 dark:text-slate-500">
+          <p className="mb-2 text-xs font-medium text-stone-400 dark:text-stone-500">
             {p.student.firstName} {p.student.lastName}
           </p>
         )}
@@ -725,19 +725,19 @@ function ProjectCard({
             <Input
               value={editForm.title}
               onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
-              className="font-semibold dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              className="font-semibold dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
               maxLength={120}
             />
           ) : (
             <button onClick={() => setExpanded((v) => !v)} className="min-w-0 flex-1 text-left">
-              <h3 className="[font-family:var(--font-space-grotesk)] text-base font-bold leading-snug text-slate-900 dark:text-slate-100">{p.title}</h3>
+              <h3 className="[font-family:var(--font-space-grotesk)] text-base font-bold leading-snug text-stone-900 dark:text-stone-100">{p.title}</h3>
             </button>
           )}
           <div className="flex shrink-0 items-center gap-1">
             {canEdit && !editing && (
               <button
                 onClick={() => { setEditing(true); setExpanded(true); }}
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 touch-manipulation"
+                className="rounded-lg p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-stone-800 dark:hover:text-stone-300 touch-manipulation"
                 title="Edit project"
               >
                 <Pencil className="size-4" />
@@ -745,7 +745,7 @@ function ProjectCard({
             )}
             <button
               onClick={() => setExpanded((v) => !v)}
-              className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 touch-manipulation"
+              className="rounded-lg p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-stone-800 dark:hover:text-stone-300 touch-manipulation"
             >
               {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
             </button>
@@ -759,7 +759,7 @@ function ProjectCard({
               {cfg.label}
             </span>
             {p.program && (
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-500 dark:bg-stone-800 dark:text-stone-400">
                 {p.program.name}
               </span>
             )}
@@ -775,8 +775,8 @@ function ProjectCard({
 
         {/* Meta row */}
         {!editing && (
-          <div className="flex flex-col gap-2 border-t border-slate-100 pt-3 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
+          <div className="flex flex-col gap-2 border-t border-stone-100 pt-3 dark:border-stone-800 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 text-xs text-stone-400 dark:text-stone-500">
               <span className="flex items-center gap-1">
                 <FileText className="size-3" />{p.files.length} file{p.files.length !== 1 ? "s" : ""}
               </span>
@@ -785,7 +785,7 @@ function ProjectCard({
                   <MessageSquare className="size-3" />{p.feedback.length} note{p.feedback.length !== 1 ? "s" : ""}
                 </span>
               )}
-              <span className="text-slate-300 dark:text-slate-600">{formatDate(p.updatedAt)}</span>
+              <span className="text-stone-300 dark:text-stone-600">{formatDate(p.updatedAt)}</span>
             </div>
             {!isReviewer && !readOnly && canRetract && (
               <Button size="sm" variant="outline" onClick={() => void handleRetract()} disabled={submitting} className="h-8 shrink-0 gap-1 px-3 text-xs sm:h-7">
@@ -806,68 +806,68 @@ function ProjectCard({
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="space-y-4 border-t border-slate-100 p-3 sm:p-4 dark:border-slate-800">
+            <div className="space-y-4 border-t border-stone-100 p-3 sm:p-4 dark:border-stone-800">
 
               {/* Edit form */}
               {editing ? (
                 <div className="space-y-3">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Description</label>
+                    <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">Description</label>
                     <Textarea
                       value={editForm.description}
                       onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
                       placeholder="What did you build?"
                       rows={3}
                       maxLength={2000}
-                      className="text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      className="text-sm dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
                     />
                   </div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Tags (comma separated)</label>
+                      <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">Tags (comma separated)</label>
                       <Input
                         value={editForm.tags}
                         onChange={(e) => setEditForm((f) => ({ ...f, tags: e.target.value }))}
                         placeholder="python, web, game"
-                        className="dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        className="dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Live URL</label>
+                      <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">Live URL</label>
                       <Input
                         type="url"
                         value={editForm.deployedUrl}
                         onChange={(e) => setEditForm((f) => ({ ...f, deployedUrl: e.target.value }))}
                         placeholder="https://myproject.vercel.app"
-                        className="dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        className="dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">How to Use / Run</label>
+                    <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">How to Use / Run</label>
                     <Textarea
                       value={editForm.howToUse}
                       onChange={(e) => setEditForm((f) => ({ ...f, howToUse: e.target.value }))}
                       placeholder="Instructions for running or using this project…"
                       rows={2}
                       maxLength={2000}
-                      className="text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      className="text-sm dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
-                      Cover Image <span className="font-normal text-slate-400">(JPEG, PNG or WebP · max 5 MB)</span>
+                    <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">
+                      Cover Image <span className="font-normal text-stone-400">(JPEG, PNG or WebP · max 5 MB)</span>
                     </label>
                     {p.coverImageUrl ? (
                       <div className="flex items-center gap-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={p.coverImageUrl} alt="cover" className="h-14 w-24 rounded-lg object-cover border border-slate-200 dark:border-slate-700" />
+                        <img src={p.coverImageUrl} alt="cover" className="h-14 w-24 rounded-lg object-cover border border-stone-200 dark:border-stone-800" />
                         <Button size="sm" variant="outline" className="text-rose-500 hover:text-rose-600" onClick={() => void handleRemoveCoverImage()} disabled={coverUploading}>
                           Remove
                         </Button>
                       </div>
                     ) : (
-                      <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-500 hover:border-slate-400 hover:text-slate-600 dark:border-slate-600 dark:text-slate-400 dark:hover:border-slate-500">
+                      <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-stone-300 px-4 py-3 text-sm text-stone-500 hover:border-stone-400 hover:text-stone-600 dark:border-stone-600 dark:text-stone-400 dark:hover:border-stone-500">
                         {coverUploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
                         {coverUploading ? "Uploading…" : "Upload cover image"}
                         <input
@@ -892,11 +892,11 @@ function ProjectCard({
                 </div>
               ) : (
                 <>
-                  {p.description && <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">{p.description}</p>}
+                  {p.description && <p className="text-sm leading-relaxed text-stone-600 dark:text-stone-400">{p.description}</p>}
                   {p.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {p.tags.map((tag) => (
-                        <span key={tag} className="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
+                        <span key={tag} className="flex items-center gap-1 rounded-full bg-orange-50 px-2 py-0.5 text-xs text-orange-600 dark:bg-orange-900/30 dark:text-orange-300">
                           <Tag className="size-2.5" />{tag}
                         </span>
                       ))}
@@ -904,12 +904,12 @@ function ProjectCard({
                   )}
                   {p.howToUse && (
                     <div>
-                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">How to Use</p>
-                      <p className="whitespace-pre-line text-sm text-slate-600 dark:text-slate-400">{p.howToUse}</p>
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">How to Use</p>
+                      <p className="whitespace-pre-line text-sm text-stone-600 dark:text-stone-400">{p.howToUse}</p>
                     </div>
                   )}
                   {p.deployedUrl && (
-                    <a href={p.deployedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:underline dark:text-blue-400">
+                    <a href={p.deployedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-orange-600 hover:underline dark:text-orange-400">
                       <ExternalLink className="size-3.5" /> View live project
                     </a>
                   )}
@@ -919,23 +919,23 @@ function ProjectCard({
               {/* Files */}
               {!editing && (
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                    Files {readOnly && p.files.length > 0 && <span className="ml-1 font-normal normal-case text-slate-400">(click to download)</span>}
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">
+                    Files {readOnly && p.files.length > 0 && <span className="ml-1 font-normal normal-case text-stone-400">(click to download)</span>}
                   </p>
                   {p.files.length === 0 ? (
-                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                    <p className="text-xs text-stone-400 dark:text-stone-500">
                       No files uploaded.{p.deployedUrl ? " Project link provided above." : ""}
                     </p>
                   ) : (
                     <div className="space-y-1.5">
                       {p.files.map((file) => (
-                        <div key={file.id} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800">
+                        <div key={file.id} className="flex items-center justify-between gap-2 rounded-lg bg-stone-50 px-3 py-2 dark:bg-stone-800">
                           <div className="flex min-w-0 items-center gap-2">
-                            <FileText className="size-4 shrink-0 text-slate-400" />
-                            <a href={file.url} target="_blank" rel="noopener noreferrer" className="truncate text-sm text-blue-600 hover:underline dark:text-blue-400">
+                            <FileText className="size-4 shrink-0 text-stone-400" />
+                            <a href={file.url} target="_blank" rel="noopener noreferrer" className="truncate text-sm text-orange-600 hover:underline dark:text-orange-400">
                               {file.name}
                             </a>
-                            <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{formatBytes(file.size)}</span>
+                            <span className="shrink-0 text-xs text-stone-400 dark:text-stone-500">{formatBytes(file.size)}</span>
                           </div>
                           <div className="flex shrink-0 items-center gap-1">
                             {readOnly && (
@@ -944,7 +944,7 @@ function ProjectCard({
                                 download={file.name}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+                                className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-medium text-stone-600 transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400"
                                 title="Download file"
                               >
                                 <Upload className="size-3 rotate-180" />
@@ -972,14 +972,14 @@ function ProjectCard({
               {/* Feedback */}
               {p.feedback.length > 0 && !editing && (
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Feedback</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Feedback</p>
                   <div className="space-y-2">
                     {p.feedback.map((fb) => (
-                      <div key={fb.id} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
+                      <div key={fb.id} className="rounded-lg bg-stone-50 p-3 dark:bg-stone-800">
                         <div className="mb-1 flex items-center justify-between gap-2">
                           <div className="flex min-w-0 items-center gap-2">
-                            <span className="truncate text-xs font-medium text-slate-700 dark:text-slate-300">{fb.author.firstName} {fb.author.lastName}</span>
-                            <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{formatDate(fb.createdAt)}</span>
+                            <span className="truncate text-xs font-medium text-stone-700 dark:text-stone-300">{fb.author.firstName} {fb.author.lastName}</span>
+                            <span className="shrink-0 text-xs text-stone-400 dark:text-stone-500">{formatDate(fb.createdAt)}</span>
                           </div>
                           {isReviewer && (
                             <div className="flex shrink-0 items-center gap-1">
@@ -988,16 +988,16 @@ function ProjectCard({
                                   <button onClick={() => void handleSaveFeedback(fb.id)} className="flex size-8 items-center justify-center rounded text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 touch-manipulation" title="Save">
                                     <Check className="size-4" />
                                   </button>
-                                  <button onClick={() => setEditingFeedbackId(null)} className="flex size-8 items-center justify-center rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 touch-manipulation" title="Cancel">
+                                  <button onClick={() => setEditingFeedbackId(null)} className="flex size-8 items-center justify-center rounded text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-700 touch-manipulation" title="Cancel">
                                     <X className="size-4" />
                                   </button>
                                 </>
                               ) : (
                                 <>
-                                  <button onClick={() => handleEditFeedback(fb)} className="flex size-8 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 touch-manipulation" title="Edit">
+                                  <button onClick={() => handleEditFeedback(fb)} className="flex size-8 items-center justify-center rounded text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-stone-700 dark:hover:text-stone-300 touch-manipulation" title="Edit">
                                     <Pencil className="size-3.5" />
                                   </button>
-                                  <button onClick={() => void handleDeleteFeedback(fb.id)} className="flex size-8 items-center justify-center rounded text-slate-400 hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20 touch-manipulation" title="Delete">
+                                  <button onClick={() => void handleDeleteFeedback(fb.id)} className="flex size-8 items-center justify-center rounded text-stone-400 hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20 touch-manipulation" title="Delete">
                                     <Trash2 className="size-3.5" />
                                   </button>
                                 </>
@@ -1009,12 +1009,12 @@ function ProjectCard({
                           <Textarea
                             value={editingFeedbackText}
                             onChange={(e) => setEditingFeedbackText(e.target.value)}
-                            className="mt-1 text-sm dark:border-slate-700 dark:bg-slate-900"
+                            className="mt-1 text-sm dark:border-stone-800 dark:bg-stone-900"
                             rows={3}
                             autoFocus
                           />
                         ) : (
-                          <p className="text-sm text-slate-600 dark:text-slate-400">{fb.body}</p>
+                          <p className="text-sm text-stone-600 dark:text-stone-400">{fb.body}</p>
                         )}
                       </div>
                     ))}
@@ -1025,15 +1025,15 @@ function ProjectCard({
               {/* Review history */}
               {p.reviews && p.reviews.length > 0 && !editing && (
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Review History</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Review History</p>
                   <div className="space-y-1">
                     {p.reviews.map((rv) => (
-                      <div key={rv.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400">
+                      <div key={rv.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-stone-500 dark:text-stone-400">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium ${STATUS_CONFIG[rv.status].className}`}>
                           {STATUS_CONFIG[rv.status].label}
                         </span>
                         <span>by {rv.reviewer.firstName} {rv.reviewer.lastName}</span>
-                        <span className="text-slate-400 dark:text-slate-500">· {formatDate(rv.createdAt)}</span>
+                        <span className="text-stone-400 dark:text-stone-500">· {formatDate(rv.createdAt)}</span>
                       </div>
                     ))}
                   </div>
@@ -1043,7 +1043,7 @@ function ProjectCard({
               {/* Reviewer assets (read-only) */}
               {isReviewer && !editing && (p.assets ?? []).length > 0 && (
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Project Assets</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Project Assets</p>
                   <div className="space-y-1.5">
                     {(p.assets ?? []).map((asset) => (
                       <a
@@ -1052,12 +1052,12 @@ function ProjectCard({
                         download={asset.name}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2.5 text-sm text-blue-600 hover:bg-blue-50 dark:bg-slate-800 dark:text-blue-400 dark:hover:bg-slate-700"
+                        className="flex items-center gap-2 rounded-lg bg-stone-50 px-3 py-2.5 text-sm text-orange-600 hover:bg-orange-50 dark:bg-stone-800 dark:text-orange-400 dark:hover:bg-stone-700"
                       >
-                        <FileText className="size-4 shrink-0 text-slate-400" />
+                        <FileText className="size-4 shrink-0 text-stone-400" />
                         <div className="min-w-0">
                           <p className="truncate font-medium">{asset.name}</p>
-                          {asset.description && <p className="truncate text-xs text-slate-400 dark:text-slate-500">{asset.description}</p>}
+                          {asset.description && <p className="truncate text-xs text-stone-400 dark:text-stone-500">{asset.description}</p>}
                         </div>
                       </a>
                     ))}
@@ -1068,12 +1068,12 @@ function ProjectCard({
               {/* Reviewer controls */}
               {isReviewer && p.status !== "DRAFT" && !editing && (
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Add Feedback</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Add Feedback</p>
                   <Textarea
                     value={feedbackText}
                     onChange={(e) => setFeedbackText(e.target.value)}
                     placeholder="Leave feedback for the student…"
-                    className="mb-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="mb-2 text-sm dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
                     rows={3}
                   />
                   <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -1100,22 +1100,22 @@ function ProjectCard({
               {/* Student assets */}
               {!isReviewer && !editing && (canEdit || (p.assets ?? []).length > 0) && (
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Project Assets</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Project Assets</p>
                   {(p.assets ?? []).length > 0 && (
                     <div className="mb-2 space-y-1.5">
                       {(p.assets ?? []).map((asset) => (
-                        <div key={asset.id} className="flex items-center justify-between gap-2 rounded-lg bg-blue-50 px-3 py-2.5 dark:bg-blue-900/20">
+                        <div key={asset.id} className="flex items-center justify-between gap-2 rounded-lg bg-orange-50 px-3 py-2.5 dark:bg-orange-900/20">
                           <a
                             href={asset.url}
                             download={asset.name}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex min-w-0 items-center gap-2 text-sm text-blue-600 hover:underline dark:text-blue-300"
+                            className="flex min-w-0 items-center gap-2 text-sm text-orange-600 hover:underline dark:text-orange-300"
                           >
                             <FileText className="size-4 shrink-0" />
                             <div className="min-w-0">
                               <p className="truncate font-medium">{asset.name}</p>
-                              {asset.description && <p className="truncate text-xs text-blue-400 dark:text-blue-500">{asset.description}</p>}
+                              {asset.description && <p className="truncate text-xs text-orange-400 dark:text-orange-500">{asset.description}</p>}
                             </div>
                           </a>
                           {canEdit && (
@@ -1145,7 +1145,7 @@ function ProjectCard({
 
               {/* Student actions */}
               {!isReviewer && !editing && (
-                <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                <div className="flex flex-wrap gap-2 border-t border-stone-100 pt-3 dark:border-stone-800">
                   {p.status === "APPROVED" && (
                     <Button
                       size="sm"
@@ -1246,10 +1246,10 @@ function NewProjectForm({ programs, onCreated, assignment, onCancelAssignment }:
   // ── Step 2: upload files (optional) ────────────────────────────────────────
   if (created) {
     return (
-      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 dark:border-slate-700 dark:bg-slate-900">
+      <div className="space-y-4 rounded-lg border border-stone-200 bg-white p-4 sm:p-5 dark:border-stone-800 dark:bg-stone-900">
         <div>
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100">Upload Files</h3>
-          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+          <h3 className="font-semibold text-stone-900 dark:text-stone-100">Upload Files</h3>
+          <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">
             Add files to <span className="font-medium">{created.title}</span>, this is optional. You can also add them later from your project.
           </p>
         </div>
@@ -1262,10 +1262,10 @@ function NewProjectForm({ programs, onCreated, assignment, onCancelAssignment }:
         {created.files.length > 0 && (
           <ul className="space-y-1.5">
             {created.files.map((f) => (
-              <li key={f.id} className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-800">
-                <FileText className="size-4 shrink-0 text-slate-400" />
-                <span className="min-w-0 flex-1 truncate text-slate-700 dark:text-slate-300">{f.name}</span>
-                <span className="shrink-0 text-xs text-slate-400">{formatBytes(f.size)}</span>
+              <li key={f.id} className="flex items-center gap-2 rounded-lg bg-stone-50 px-3 py-2 text-sm dark:bg-stone-800">
+                <FileText className="size-4 shrink-0 text-stone-400" />
+                <span className="min-w-0 flex-1 truncate text-stone-700 dark:text-stone-300">{f.name}</span>
+                <span className="shrink-0 text-xs text-stone-400">{formatBytes(f.size)}</span>
               </li>
             ))}
           </ul>
@@ -1281,29 +1281,29 @@ function NewProjectForm({ programs, onCreated, assignment, onCancelAssignment }:
 
   // ── Step 1: project details ─────────────────────────────────────────────────
   return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 dark:border-slate-700 dark:bg-slate-900">
+    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 rounded-lg border border-stone-200 bg-white p-4 sm:p-5 dark:border-stone-800 dark:bg-stone-900">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+        <h3 className="font-semibold text-stone-900 dark:text-stone-100">
           {assignment ? "Start Assignment" : "New Project"}
         </h3>
         {onCancelAssignment && (
-          <button type="button" onClick={onCancelAssignment} className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+          <button type="button" onClick={onCancelAssignment} className="text-xs text-stone-400 hover:text-stone-600 dark:hover:text-stone-300">
             Cancel
           </button>
         )}
       </div>
       {assignment && (
-        <div className="rounded-lg bg-blue-50 px-3 py-2.5 dark:bg-blue-900/20">
+        <div className="rounded-lg bg-orange-50 px-3 py-2.5 dark:bg-orange-900/20">
           <div className="flex items-start gap-2">
-            <Briefcase className="mt-0.5 size-4 shrink-0 text-blue-500" />
+            <Briefcase className="mt-0.5 size-4 shrink-0 text-orange-500" />
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">Assignment: {assignment.title}</p>
-              {assignment.description && <p className="mt-0.5 line-clamp-2 text-xs text-blue-600 dark:text-blue-500">{assignment.description}</p>}
+              <p className="text-xs font-semibold text-orange-700 dark:text-orange-400">Assignment: {assignment.title}</p>
+              {assignment.description && <p className="mt-0.5 line-clamp-2 text-xs text-orange-600 dark:text-orange-500">{assignment.description}</p>}
             </div>
           </div>
           {assignment.resources.length > 0 && (
-            <div className="mt-2.5 border-t border-blue-100 pt-2.5 dark:border-blue-800/40">
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">Reference Files</p>
+            <div className="mt-2.5 border-t border-orange-100 pt-2.5 dark:border-orange-800/40">
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-orange-600 dark:text-orange-400">Reference Files</p>
               <div className="space-y-1">
                 {assignment.resources.map((r) => (
                   <a
@@ -1312,11 +1312,11 @@ function NewProjectForm({ programs, onCreated, assignment, onCancelAssignment }:
                     download={r.name}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 rounded-md bg-violet-50 px-2.5 py-1.5 text-xs text-violet-700 hover:bg-violet-100 dark:bg-violet-900/20 dark:text-violet-300"
+                    className="flex items-center gap-2 rounded-md bg-orange-50 px-2.5 py-1.5 text-xs text-orange-700 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-300"
                   >
                     <FileText className="size-3 shrink-0" />
                     <span className="truncate font-medium">{r.name}</span>
-                    {r.description && <span className="ml-auto shrink-0 truncate text-violet-500 dark:text-violet-400">{r.description}</span>}
+                    {r.description && <span className="ml-auto shrink-0 truncate text-orange-500 dark:text-orange-400">{r.description}</span>}
                   </a>
                 ))}
               </div>
@@ -1326,35 +1326,35 @@ function NewProjectForm({ programs, onCreated, assignment, onCancelAssignment }:
       )}
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Title *</label>
-        <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="My awesome project" required maxLength={120} className="dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+        <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Title *</label>
+        <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="My awesome project" required maxLength={120} className="dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100" />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Description <span className="text-rose-400">*</span></label>
-        <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="What did you build? What did you learn?" rows={3} maxLength={2000} required className="dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+        <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Description <span className="text-rose-400">*</span></label>
+        <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="What did you build? What did you learn?" rows={3} maxLength={2000} required className="dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100" />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">How to Use / Run <span className="text-slate-400">(optional)</span></label>
-        <Textarea value={form.howToUse} onChange={(e) => setForm((f) => ({ ...f, howToUse: e.target.value }))} placeholder="How to run or use your project…" rows={2} maxLength={2000} className="dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+        <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">How to Use / Run <span className="text-stone-400">(optional)</span></label>
+        <Textarea value={form.howToUse} onChange={(e) => setForm((f) => ({ ...f, howToUse: e.target.value }))} placeholder="How to run or use your project…" rows={2} maxLength={2000} className="dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Tags <span className="text-slate-400">(comma separated)</span></label>
-          <Input value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder="python, web, game" className="dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+          <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Tags <span className="text-stone-400">(comma separated)</span></label>
+          <Input value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder="python, web, game" className="dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Live URL <span className="text-slate-400">(optional)</span></label>
-          <Input type="url" value={form.deployedUrl} onChange={(e) => setForm((f) => ({ ...f, deployedUrl: e.target.value }))} placeholder="https://myproject.vercel.app" className="dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+          <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Live URL <span className="text-stone-400">(optional)</span></label>
+          <Input type="url" value={form.deployedUrl} onChange={(e) => setForm((f) => ({ ...f, deployedUrl: e.target.value }))} placeholder="https://myproject.vercel.app" className="dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100" />
         </div>
       </div>
 
       {programs.length > 0 && (
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Link to Program <span className="text-slate-400">(optional)</span></label>
-          <select value={form.programId} onChange={(e) => setForm((f) => ({ ...f, programId: e.target.value }))} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+          <label className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Link to Program <span className="text-stone-400">(optional)</span></label>
+          <select value={form.programId} onChange={(e) => setForm((f) => ({ ...f, programId: e.target.value }))} className="h-10 w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100">
             <option value="">Standalone project</option>
             {programs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
@@ -1385,7 +1385,7 @@ function NewProjectDialog({ open, onClose, programs, onCreated, assignment }: {
           <DialogTitle className="flex items-center gap-2">
             {assignment ? <><Briefcase className="size-4 text-amber-500" />Start Assignment</> : <><Plus className="size-4" />New Project</>}
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-500">
+          <DialogDescription className="text-sm text-stone-500">
             {assignment ? `Working on: ${assignment.title}` : "Start a new project for your portfolio."}
           </DialogDescription>
         </DialogHeader>
@@ -1570,10 +1570,10 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900 dark:text-slate-100">
+          <h2 className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-stone-900 dark:text-stone-100">
             {isParent ? "Children's Projects" : isReviewer ? "Project Centre" : "My Projects"}
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {isParent ? "Track your children's work and download their project files." : isReviewer ? "Review submissions and manage project assignments." : "Build real projects, get feedback, and grow your portfolio."}
           </p>
         </div>
@@ -1592,9 +1592,9 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
 
       {/* Tabs, only for reviewers; students get a single merged view */}
       {tabs.length > 1 && (
-        <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/50">
+        <div className="flex gap-1 rounded-lg border border-stone-200 bg-stone-50 p-1 dark:border-stone-800 dark:bg-stone-800/50">
           {tabs.map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)} className={`flex-1 rounded-lg px-2 py-2 text-xs font-medium transition touch-manipulation sm:px-3 sm:py-2.5 sm:text-sm ${tab === t.key ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>
+            <button key={t.key} onClick={() => setTab(t.key)} className={`flex-1 rounded-lg px-2 py-2 text-xs font-medium transition touch-manipulation sm:px-3 sm:py-2.5 sm:text-sm ${tab === t.key ? "bg-white text-stone-900 shadow-sm dark:bg-stone-900 dark:text-stone-100" : "text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"}`}>
               {t.label}
             </button>
           ))}
@@ -1615,14 +1615,14 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
         <div className="space-y-3">
           {isReviewer && (
             <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-stone-500 dark:text-stone-400">
                 Project assignments visible to enrolled students.
               </p>
               <Link
                 href="/dashboard/assessments"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded-lg bg-[#0D1F45] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#162d5e]"
+                className="flex items-center gap-1.5 rounded-lg bg-[#1A1714] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#162d5e]"
               >
                 <Plus className="size-3.5" />
                 <span className="hidden sm:inline">New Assignment</span>
@@ -1632,13 +1632,13 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
           )}
           {assignmentsLoading ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-40 w-full rounded-xl" />)}
+              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-40 w-full rounded-lg" />)}
             </div>
           ) : assignments.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-200 py-16 text-center dark:border-slate-700">
-              <BookMarked className="size-10 text-slate-300 dark:text-slate-600" />
-              <p className="font-medium text-slate-600 dark:text-slate-400">No project assignments yet</p>
-              <p className="text-sm text-slate-400">
+            <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
+              <BookMarked className="size-10 text-stone-300 dark:text-stone-600" />
+              <p className="font-medium text-stone-600 dark:text-stone-400">No project assignments yet</p>
+              <p className="text-sm text-stone-400">
                 {isReviewer ? "Create a PROJECT-type assessment, it will appear here for enrolled students." : "Your instructor hasn't assigned any projects yet."}
               </p>
               {isReviewer && (
@@ -1646,7 +1646,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                   href="/dashboard/assessments"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1 flex items-center gap-1.5 rounded-lg bg-[#0D1F45] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#162d5e]"
+                  className="mt-1 flex items-center gap-1.5 rounded-lg bg-[#1A1714] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#162d5e]"
                 >
                   <Plus className="size-3.5" />
                   Go to Assessments
@@ -1678,33 +1678,33 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                     key={a.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
+                    className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm dark:border-stone-800 dark:bg-stone-900"
                   >
                     <div className="p-4">
                       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                        <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                           {a.program.name}
                         </span>
                         {a.module && (
-                          <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-medium text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                          <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                             {a.module.title}
                           </span>
                         )}
                         {a.weekNumber && (
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-stone-500 dark:bg-stone-800 dark:text-stone-400">
                             Week {a.weekNumber}
                           </span>
                         )}
                       </div>
-                      <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-900 leading-snug dark:text-slate-100">
+                      <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-stone-900 leading-snug dark:text-stone-100">
                         {a.title}
                       </h3>
                       {a.description && (
-                        <p className="mt-1 line-clamp-2 text-sm text-slate-500 leading-relaxed dark:text-slate-400">
+                        <p className="mt-1 line-clamp-2 text-sm text-stone-500 leading-relaxed dark:text-stone-400">
                           {a.description}
                         </p>
                       )}
-                      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-stone-400">
                         <span className="flex items-center gap-1">
                           <Star className="size-3.5 text-amber-400" />
                           {a.totalPoints} pts
@@ -1725,17 +1725,17 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                     </div>
 
                     {/* Resources section */}
-                    <div className="border-t border-slate-100 dark:border-slate-800">
+                    <div className="border-t border-stone-100 dark:border-stone-800">
                       <button
                         type="button"
                         onClick={() => setShowResources((v) => !v)}
-                        className="flex w-full items-center justify-between px-4 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50"
+                        className="flex w-full items-center justify-between px-4 py-2.5 text-xs font-medium text-stone-600 hover:bg-stone-50 dark:text-stone-400 dark:hover:bg-stone-800/50"
                       >
                         <span className="flex items-center gap-1.5">
-                          <FileText className="size-3.5 text-violet-500" />
+                          <FileText className="size-3.5 text-orange-500" />
                           Reference Files
                           {resources.length > 0 && (
-                            <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
+                            <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[11px] font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
                               {resources.length}
                             </span>
                           )}
@@ -1756,18 +1756,18 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                               {resources.length > 0 && (
                                 <div className="space-y-1.5">
                                   {resources.map((r) => (
-                                    <div key={r.id} className="flex items-center justify-between gap-2 rounded-lg bg-violet-50 px-3 py-2 dark:bg-violet-900/20">
+                                    <div key={r.id} className="flex items-center justify-between gap-2 rounded-lg bg-orange-50 px-3 py-2 dark:bg-orange-900/20">
                                       <a
                                         href={r.url}
                                         download={r.name}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex min-w-0 items-center gap-2 text-sm text-violet-700 hover:underline dark:text-violet-300"
+                                        className="flex min-w-0 items-center gap-2 text-sm text-orange-700 hover:underline dark:text-orange-300"
                                       >
                                         <FileText className="size-3.5 shrink-0" />
                                         <div className="min-w-0">
                                           <p className="truncate font-medium">{r.name}</p>
-                                          {r.description && <p className="truncate text-xs text-violet-500 dark:text-violet-400">{r.description}</p>}
+                                          {r.description && <p className="truncate text-xs text-orange-500 dark:text-orange-400">{r.description}</p>}
                                         </div>
                                       </a>
                                       <button
@@ -1819,33 +1819,33 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                     key={a.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-slate-900 ${accent ?? "border-slate-200 dark:border-slate-700"}`}
+                    className={`overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-stone-900 ${accent ?? "border-stone-200 dark:border-stone-800"}`}
                   >
                     <div className="p-4">
                       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                        <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                           {a.program.name}
                         </span>
                         {a.module && (
-                          <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-medium text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                          <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                             {a.module.title}
                           </span>
                         )}
                         {a.weekNumber && (
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-stone-500 dark:bg-stone-800 dark:text-stone-400">
                             Week {a.weekNumber}
                           </span>
                         )}
                       </div>
-                      <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-slate-900 leading-snug dark:text-slate-100">
+                      <h3 className="[font-family:var(--font-space-grotesk)] font-semibold text-stone-900 leading-snug dark:text-stone-100">
                         {a.title}
                       </h3>
                       {a.description && (
-                        <p className="mt-1 line-clamp-2 text-sm text-slate-500 leading-relaxed dark:text-slate-400">
+                        <p className="mt-1 line-clamp-2 text-sm text-stone-500 leading-relaxed dark:text-stone-400">
                           {a.description}
                         </p>
                       )}
-                      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-stone-400">
                         <span className="flex items-center gap-1">
                           <Star className="size-3.5 text-amber-400" />
                           {a.totalPoints} pts
@@ -1858,13 +1858,13 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                         )}
                       </div>
                       {linked && statusConfig && (
-                        <div className="mt-3 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800">
+                        <div className="mt-3 flex items-center gap-2 rounded-lg bg-stone-50 px-3 py-2 dark:bg-stone-800">
                           <span className={`inline-block shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusConfig.className}`}>
                             {statusConfig.label}
                           </span>
-                          <span className="min-w-0 truncate text-xs text-slate-500 dark:text-slate-400">{statusConfig.description}</span>
+                          <span className="min-w-0 truncate text-xs text-stone-500 dark:text-stone-400">{statusConfig.description}</span>
                           {fileCount > 0 && (
-                            <span className="ml-auto flex shrink-0 items-center gap-1 text-xs text-slate-400">
+                            <span className="ml-auto flex shrink-0 items-center gap-1 text-xs text-stone-400">
                               <FileText className="size-3.5" />{fileCount}
                             </span>
                           )}
@@ -1874,7 +1874,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                       {/* Reference files from instructor */}
                       {a.resources.length > 0 && (
                         <div className="mt-3">
-                          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">
+                          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-orange-600 dark:text-orange-400">
                             Reference Files
                           </p>
                           <div className="space-y-1">
@@ -1885,12 +1885,12 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                                 download={r.name}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 rounded-lg bg-violet-50 px-3 py-2 text-sm text-violet-700 hover:bg-violet-100 dark:bg-violet-900/20 dark:text-violet-300 dark:hover:bg-violet-900/30"
+                                className="flex items-center gap-2 rounded-lg bg-orange-50 px-3 py-2 text-sm text-orange-700 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-300 dark:hover:bg-orange-900/30"
                               >
                                 <FileText className="size-3.5 shrink-0" />
                                 <div className="min-w-0">
                                   <p className="truncate font-medium">{r.name}</p>
-                                  {r.description && <p className="truncate text-xs text-violet-500 dark:text-violet-400">{r.description}</p>}
+                                  {r.description && <p className="truncate text-xs text-orange-500 dark:text-orange-400">{r.description}</p>}
                                 </div>
                               </a>
                             ))}
@@ -1898,11 +1898,11 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 border-t border-slate-100 bg-slate-50/50 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-800/30">
+                    <div className="flex items-center gap-2 border-t border-stone-100 bg-stone-50/50 px-4 py-2.5 dark:border-stone-800 dark:bg-stone-800/30">
                       {linked ? (
                         <button
                           onClick={() => setTab("mine")}
-                          className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                          className="text-xs font-medium text-orange-600 hover:underline dark:text-orange-400"
                         >
                           View in My Work →
                         </button>
@@ -1937,8 +1937,8 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                   {inProgress.length > 0 && (
                     <div>
                       <div className="mb-3 flex items-center gap-2">
-                        <h3 className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">In Progress</h3>
-                        <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">{inProgress.length}</span>
+                        <h3 className="text-xs font-semibold uppercase tracking-wide text-orange-600 dark:text-orange-400">In Progress</h3>
+                        <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-xs font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">{inProgress.length}</span>
                       </div>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {inProgress.map((a) => <AssignmentCard key={a.id} a={a} />)}
@@ -1957,10 +1957,10 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                     </div>
                   )}
                   {notStarted.length === 0 && inProgress.length === 0 && completed.length === 0 && (
-                    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-200 py-16 text-center dark:border-slate-700">
-                      <BookMarked className="size-10 text-slate-300 dark:text-slate-600" />
-                      <p className="font-medium text-slate-600 dark:text-slate-400">No assignments yet</p>
-                      <p className="text-sm text-slate-400">Your instructor hasn&apos;t assigned any projects yet.</p>
+                    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
+                      <BookMarked className="size-10 text-stone-300 dark:text-stone-600" />
+                      <p className="font-medium text-stone-600 dark:text-stone-400">No assignments yet</p>
+                      <p className="text-sm text-stone-400">Your instructor hasn&apos;t assigned any projects yet.</p>
                     </div>
                   )}
                 </div>
@@ -1976,18 +1976,18 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
           {/* Filters */}
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-stone-400" />
               <Input
                 value={reviewSearch}
                 onChange={(e) => setReviewSearch(e.target.value)}
                 placeholder="Search by title, tag, or student name…"
-                className="pl-8 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                className="pl-8 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
               />
             </div>
             <select
               value={reviewStatus}
               onChange={(e) => setReviewStatus(e.target.value)}
-              className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 sm:w-44"
+              className="h-10 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-300 sm:w-44"
             >
               <option value="all">All statuses</option>
               <option value="SUBMITTED">Under Review</option>
@@ -1999,11 +1999,11 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
 
           {/* Results */}
           {reviewLoading && reviewProjects.length === 0 ? (
-            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />)
           ) : reviewProjects.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-12 text-center dark:border-slate-700">
+            <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-12 text-center dark:border-stone-800">
               <CheckCircle2 className="size-10 text-emerald-300 dark:text-emerald-700" />
-              <p className="font-medium text-slate-700 dark:text-slate-300">
+              <p className="font-medium text-stone-700 dark:text-stone-300">
                 {reviewSearch
                   ? "No projects match your search"
                   : reviewStatus === "SUBMITTED"
@@ -2028,7 +2028,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
               )}
               {reviewLoading && reviewProjects.length > 0 && (
                 <div className="flex justify-center py-2">
-                  <Loader2 className="size-5 animate-spin text-slate-400" />
+                  <Loader2 className="size-5 animate-spin text-stone-400" />
                 </div>
               )}
             </>
@@ -2042,24 +2042,24 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
           {/* Search bar, students only, not parents */}
           {!isParent && !isReviewer && (
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-stone-400" />
               <input
                 type="search"
                 value={mySearch}
                 onChange={(e) => setMySearch(e.target.value)}
                 placeholder="Search your projects…"
-                className="h-10 w-full rounded-md border border-slate-200 bg-white pl-8 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                className="h-10 w-full rounded-md border border-stone-200 bg-white pl-8 pr-3 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-stone-800 dark:bg-stone-800 dark:text-stone-100"
               />
             </div>
           )}
           {loading || assignmentsLoading ? (
-            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />)
           ) : isParent ? (
             // ── Parent: group by child ──────────────────────────────────────
             projects.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-12 text-center dark:border-slate-700">
-                <FolderOpen className="size-10 text-slate-300 dark:text-slate-600" />
-                <p className="font-medium text-slate-700 dark:text-slate-300">No projects from your children yet</p>
+              <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-12 text-center dark:border-stone-800">
+                <FolderOpen className="size-10 text-stone-300 dark:text-stone-600" />
+                <p className="font-medium text-stone-700 dark:text-stone-300">No projects from your children yet</p>
               </div>
             ) : (
               (() => {
@@ -2073,8 +2073,8 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                 return Array.from(byChild.entries()).map(([childId, { name, projects: childProjects }]) => (
                   <div key={childId}>
                     <div className="mb-2 flex items-center gap-2">
-                      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{name}</h3>
-                      <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">{name}</h3>
+                      <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-xs text-stone-500 dark:bg-stone-800 dark:text-stone-400">
                         {childProjects.length}
                       </span>
                     </div>
@@ -2122,7 +2122,7 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                           key={a.id}
                           initial={{ opacity: 0, y: 6 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="overflow-hidden rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm dark:border-amber-800/50 dark:from-amber-950/30 dark:to-orange-950/20"
+                          className="overflow-hidden rounded-lg border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-sm dark:border-amber-800/50 dark:from-amber-950/30 dark:to-orange-950/20"
                         >
                           <div className="p-4">
                             <div className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -2135,33 +2135,33 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                                 </span>
                               )}
                               {a.weekNumber && (
-                                <span className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+                                <span className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-semibold text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
                                   Week {a.weekNumber}
                                 </span>
                               )}
                             </div>
-                            <h3 className="[font-family:var(--font-space-grotesk)] font-semibold leading-snug text-slate-900 dark:text-slate-100">
+                            <h3 className="[font-family:var(--font-space-grotesk)] font-semibold leading-snug text-stone-900 dark:text-stone-100">
                               {a.title}
                             </h3>
                             {a.description && (
-                              <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                              <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
                                 {a.description}
                               </p>
                             )}
-                            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-stone-500">
                               <span className="flex items-center gap-1">
                                 <Star className="size-3.5 text-amber-400" />
                                 {a.totalPoints} pts
                               </span>
                               {a.dueDate && (
-                                <span className={`flex items-center gap-1 font-medium ${overdue ? "text-red-500 dark:text-red-400" : urgent ? "text-orange-500 dark:text-orange-400" : "text-slate-500"}`}>
+                                <span className={`flex items-center gap-1 font-medium ${overdue ? "text-red-500 dark:text-red-400" : urgent ? "text-orange-500 dark:text-orange-400" : "text-stone-500"}`}>
                                   <Clock className="size-3.5" />
                                   {dueDays === null ? "" : dueDays < 0 ? `Overdue by ${Math.abs(dueDays)}d` : dueDays === 0 ? "Due today!" : dueDays === 1 ? "Due tomorrow" : `${dueDays} days left`}
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 border-t border-amber-200/60 bg-white/40 px-4 py-2.5 dark:border-amber-800/30 dark:bg-slate-800/20">
+                          <div className="flex items-center gap-2 border-t border-amber-200/60 bg-white/40 px-4 py-2.5 dark:border-amber-800/30 dark:bg-stone-800/20">
                             <Button
                               size="sm"
                               className="h-7 gap-1.5 border-amber-400 bg-amber-500 px-3 text-xs text-white hover:bg-amber-600 dark:border-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500"
@@ -2180,18 +2180,18 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
 
               {/* Portfolio sections grouped by status */}
               {projects.length === 0 && pendingAssignments.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-center dark:border-slate-700">
-                  <FolderOpen className="size-10 text-slate-300 dark:text-slate-600" />
+                <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
+                  <FolderOpen className="size-10 text-stone-300 dark:text-stone-600" />
                   <div>
                     {mySearch ? (
                       <>
-                        <p className="font-medium text-slate-700 dark:text-slate-300">No projects match your search</p>
-                        <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">Try a different keyword</p>
+                        <p className="font-medium text-stone-700 dark:text-stone-300">No projects match your search</p>
+                        <p className="mt-1 text-sm text-stone-400 dark:text-stone-500">Try a different keyword</p>
                       </>
                     ) : (
                       <>
-                        <p className="font-medium text-slate-700 dark:text-slate-300">Your portfolio is empty</p>
-                        <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">Hit <strong>New Project</strong> to add your first project</p>
+                        <p className="font-medium text-stone-700 dark:text-stone-300">Your portfolio is empty</p>
+                        <p className="mt-1 text-sm text-stone-400 dark:text-stone-500">Hit <strong>New Project</strong> to add your first project</p>
                       </>
                     )}
                   </div>
@@ -2200,8 +2200,8 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                 <>
                   {pendingAssignments.length > 0 && (
                     <div className="flex items-center gap-2">
-                      <Briefcase className="size-4 text-slate-400" />
-                      <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400">My Portfolio</h3>
+                      <Briefcase className="size-4 text-stone-400" />
+                      <h3 className="text-sm font-semibold text-stone-600 dark:text-stone-400">My Portfolio</h3>
                     </div>
                   )}
                   {mySearch ? (
@@ -2220,15 +2220,15 @@ export function ProjectsPanel({ role }: { role: UserRoleValue }) {
                       return (
                         <div key={label}>
                           <div className="mb-2 flex items-center gap-2">
-                            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</h3>
+                            <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">{label}</h3>
                             {group.length > 0 && (
-                              <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                              <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-xs text-stone-500 dark:bg-stone-800 dark:text-stone-400">
                                 {group.length}
                               </span>
                             )}
                           </div>
                           {group.length === 0 ? (
-                            <p className="text-xs text-slate-400 dark:text-slate-500">{emptyText}</p>
+                            <p className="text-xs text-stone-400 dark:text-stone-500">{emptyText}</p>
                           ) : (
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                               {group.map((p) => (

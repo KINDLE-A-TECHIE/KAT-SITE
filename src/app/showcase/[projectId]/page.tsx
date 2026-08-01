@@ -50,14 +50,14 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
   if (!project) notFound();
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-stone-50">
       <LandingHeader />
 
       <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
         {/* Back link */}
         <Link
           href="/showcase"
-          className="mb-8 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+          className="mb-8 inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-700"
         >
           <ArrowLeft className="size-3.5" /> Back to Showcase
         </Link>
@@ -71,22 +71,22 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
             className="mb-8 h-64 w-full rounded-2xl object-cover shadow-sm"
           />
         ) : (
-          <div className="mb-8 flex h-40 w-full items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200">
-            <FolderOpen className="size-12 text-slate-300" />
+          <div className="mb-8 flex h-40 w-full items-center justify-center rounded-2xl bg-gradient-to-br from-stone-100 to-stone-200">
+            <FolderOpen className="size-12 text-stone-300" />
           </div>
         )}
 
         {/* Header */}
         <div className="mb-6">
           {project.program && (
-            <span className="mb-3 inline-block rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+            <span className="mb-3 inline-block rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700">
               {project.program.name}
             </span>
           )}
-          <h1 className="[font-family:var(--font-space-grotesk)] text-3xl font-bold text-slate-900 sm:text-4xl">
+          <h1 className="[font-family:var(--font-space-grotesk)] text-3xl font-bold text-stone-900 sm:text-4xl">
             {project.title}
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-stone-500">
             by {project.student.firstName} {project.student.lastName}
           </p>
 
@@ -95,7 +95,7 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
               {project.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600"
+                  className="flex items-center gap-1 rounded-full bg-stone-100 px-2.5 py-1 text-xs text-stone-600"
                 >
                   <Tag className="size-3" /> {tag}
                 </span>
@@ -106,8 +106,8 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
 
         {/* Description */}
         {project.description && (
-          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5">
-            <p className="text-sm leading-relaxed text-slate-700">{project.description}</p>
+          <div className="mb-6 rounded-xl border border-stone-200 bg-white p-5">
+            <p className="text-sm leading-relaxed text-stone-700">{project.description}</p>
           </div>
         )}
 
@@ -118,7 +118,7 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
               href={project.deployedUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#1E5FAF] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#1a52a0]"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#B2401D] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#8F3316]"
             >
               <ExternalLink className="size-4" /> View Live Demo
             </a>
@@ -128,7 +128,7 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
               href={project.files[0].url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:border-stone-300 hover:bg-stone-50"
             >
               <FileText className="size-4" /> View Project File
             </a>
@@ -137,8 +137,8 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
 
         {/* Files list */}
         {project.files.length > 1 && (
-          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5">
-            <h2 className="mb-3 text-sm font-semibold text-slate-700">Project Files</h2>
+          <div className="mb-6 rounded-xl border border-stone-200 bg-white p-5">
+            <h2 className="mb-3 text-sm font-semibold text-stone-700">Project Files</h2>
             <div className="space-y-2">
               {project.files.map((file) => (
                 <a
@@ -146,9 +146,9 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
                   href={file.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 hover:underline"
+                  className="flex items-center gap-2 rounded-lg bg-stone-50 px-3 py-2 text-sm text-orange-600 hover:bg-orange-50 hover:underline"
                 >
-                  <FileText className="size-4 shrink-0 text-slate-400" />
+                  <FileText className="size-4 shrink-0 text-stone-400" />
                   {file.name}
                 </a>
               ))}
@@ -158,15 +158,15 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
 
         {/* Instructor feedback */}
         {project.feedback.length > 0 && (
-          <div className="rounded-xl border border-slate-200 bg-white p-5">
-            <h2 className="mb-4 text-sm font-semibold text-slate-700">Instructor Feedback</h2>
+          <div className="rounded-xl border border-stone-200 bg-white p-5">
+            <h2 className="mb-4 text-sm font-semibold text-stone-700">Instructor Feedback</h2>
             <div className="space-y-3">
               {project.feedback.map((fb) => (
-                <div key={fb.id} className="rounded-lg bg-slate-50 p-4">
-                  <p className="mb-1 text-xs font-medium text-slate-600">
+                <div key={fb.id} className="rounded-lg bg-stone-50 p-4">
+                  <p className="mb-1 text-xs font-medium text-stone-600">
                     {fb.author.firstName} {fb.author.lastName}
                   </p>
-                  <p className="text-sm text-slate-700">{fb.body}</p>
+                  <p className="text-sm text-stone-700">{fb.body}</p>
                 </div>
               ))}
             </div>

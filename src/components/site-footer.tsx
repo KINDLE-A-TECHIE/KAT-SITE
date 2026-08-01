@@ -1,27 +1,50 @@
 import Link from "next/link";
 import Image from "next/image";
 
-const LINKS = {
-  Company: [
-    { label: "Our Programs", href: "/#tracks" },
-    { label: "Pricing", href: "/#pricing" },
-    { label: "KAT for Schools", href: "/schools" },
-    { label: "Partner with Us", href: "/partners" },
-    { label: "FAQ", href: "/#faq" },
-    { label: "Contact Us", href: "mailto:support@kindleatechie.com" },
-  ],
-  Support: [
-    { label: "Privacy Policy", href: "/privacy" },
-    { label: "Terms of Service", href: "/terms" },
-    { label: "Cookie Policy", href: "/cookies" },
-  ],
-  Account: [
-    { label: "Sign In", href: "/login" },
-    { label: "Register as a Parent", href: "/register" },
-    { label: "Parent Portal", href: "/dashboard" },
-    { label: "Student Portal", href: "/dashboard" },
-  ],
-};
+// The Company column is host-aware: the school host drops the consumer landing anchors
+// (tracks/pricing/faq live on the apex only) for school-relevant destinations.
+const B2C_COMPANY = [
+  { label: "Our Programs", href: "/#tracks" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "KAT for Schools", href: "/schools" },
+  { label: "Partner with Us", href: "/partners" },
+  { label: "FAQ", href: "/#faq" },
+  { label: "Contact Us", href: "mailto:support@kindleatechie.com" },
+];
+const SCHOOL_COMPANY = [
+  { label: "KAT for Schools", href: "/schools" },
+  { label: "For Developers", href: "/schools/developers" },
+  { label: "Partner with Us", href: "/partners" },
+  { label: "Contact Us", href: "mailto:hello@kindleatechie.com" },
+];
+
+// The Account column is host-aware too: on the school host it points at the school
+// workspace and pilot request, not the parent/student consumer flows.
+const B2C_ACCOUNT = [
+  { label: "Sign In", href: "/login" },
+  { label: "Register as a Parent", href: "/register" },
+  { label: "Parent Portal", href: "/dashboard" },
+  { label: "Student Portal", href: "/dashboard" },
+];
+const SCHOOL_ACCOUNT = [
+  { label: "Sign In", href: "/login" },
+  { label: "Request a Pilot", href: "/partners" },
+  { label: "Admin Dashboard", href: "/admin" },
+  { label: "Teacher Dashboard", href: "/teach" },
+];
+
+// Legal links depend on the surface: the school host and /schools/* pages are governed by the
+// B2B documents, everyone else by the consumer documents.
+const B2C_LEGAL = [
+  { label: "Privacy Policy", short: "Privacy", href: "/privacy" },
+  { label: "Terms of Service", short: "Terms", href: "/terms" },
+  { label: "Cookie Policy", short: "Cookies", href: "/cookies" },
+];
+const SCHOOL_LEGAL = [
+  { label: "School Privacy Notice", short: "Privacy", href: "/schools/privacy" },
+  { label: "School Terms", short: "Terms", href: "/schools/terms" },
+  { label: "Data Processing Agreement", short: "DPA", href: "/schools/dpa" },
+];
 
 const SOCIALS = [
   {
@@ -62,7 +85,13 @@ const SOCIALS = [
   },
 ];
 
-export function SiteFooter() {
+export function SiteFooter({ schoolHost = false }: { schoolHost?: boolean }) {
+  const legal = schoolHost ? SCHOOL_LEGAL : B2C_LEGAL;
+  const columns = {
+    Company: schoolHost ? SCHOOL_COMPANY : B2C_COMPANY,
+    Support: legal.map(({ label, href }) => ({ label, href })),
+    Account: schoolHost ? SCHOOL_ACCOUNT : B2C_ACCOUNT,
+  };
   return (
     <footer className="border-t border-[var(--kat-border)] bg-[var(--kat-paper)]">
       <div className="mx-auto max-w-6xl px-6 py-14">
@@ -103,7 +132,7 @@ export function SiteFooter() {
           </div>
 
           {/* Link columns */}
-          {Object.entries(LINKS).map(([heading, links]) => (
+          {Object.entries(columns).map(([heading, links]) => (
             <div key={heading}>
               <p className="mb-3 font-mono text-[0.7rem] font-medium uppercase tracking-[0.22em] text-[var(--kat-muted)]">
                 {heading}
@@ -139,9 +168,9 @@ export function SiteFooter() {
             © {new Date().getFullYear()} Kindle a Techie · kindleatechie.com
           </p>
           <div className="flex gap-4 font-mono text-[0.7rem] uppercase tracking-wider text-[var(--kat-muted)]">
-            <Link href="/privacy" className="kat-focus-ring rounded hover:text-[var(--kat-clay)]">Privacy</Link>
-            <Link href="/terms" className="kat-focus-ring rounded hover:text-[var(--kat-clay)]">Terms</Link>
-            <Link href="/cookies" className="kat-focus-ring rounded hover:text-[var(--kat-clay)]">Cookies</Link>
+            {legal.map((l) => (
+              <Link key={l.href} href={l.href} className="kat-focus-ring rounded hover:text-[var(--kat-clay)]">{l.short}</Link>
+            ))}
           </div>
         </div>
       </div>

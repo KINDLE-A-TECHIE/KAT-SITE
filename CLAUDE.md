@@ -194,6 +194,7 @@ over. See SCHOOL-BUILD-NOTES §2b.
 | `JITSI_DOMAIN/APP_ID/APP_SECRET` | Jitsi JWT auth |
 | `JIBRI_WEBHOOK_SECRET` | Recording webhook |
 | `JUDGE0_API_URL/API_KEY` | Code execution |
+| `NEXT_PUBLIC_PYODIDE_INDEX_URL` | In-browser Python (Pyodide) core URL; unset = public CDN, set = R2 mirror (scripts/mirror-pyodide-to-r2.mjs) |
 | `UPSTASH_REDIS_REST_URL/TOKEN` | Rate limiting |
 | `REDIS_URL` | Pub/sub for multi-instance messaging (optional) |
 | `CRON_SECRET` | Bearer token for cron endpoints |
@@ -228,6 +229,10 @@ After running `npm run prisma:seed`, the following demo accounts exist (password
 
 - **Jitsi + Jibri**: setup scripts in `scripts/jitsi-jibri/`
 - **Judge0 CE**: Docker-based, setup in `scripts/judge0/`
+
+## Network Lab (module)
+
+In-browser network/cybersecurity practical (ported CS4G Netsim). Module code and its own nested `CLAUDE.md` + build guide live in `src/lib/network-lab/`; read that CLAUDE.md before touching the module.
 
 ## School (B2B / NERDC) Product
 
@@ -307,11 +312,23 @@ when you add a route, do not create a second harness.
 
 ### Billing (schools)
 - Per-seat, per-term, INVOICE-based. Admin confirms seat count for a term → SchoolInvoice
-  (amount = seats × price) → Paystack transfer/checkout → verify via the EXISTING HMAC webhook
-  pattern → PAID activates the term's SchoolLicense → access unlocks.
-- Reuse src/lib/payments/receipt.ts for any receipt/reference numbers (crypto, collision-safe).
-- Access gated by an ACTIVE license for the current term + seatsUsed <= seatLimit. Do NOT reuse the
-  B2C monthly subscription path.
+  (amount = seats × price) → Paystack → verify via the EXISTING HMAC webhook pattern → PAID activates
+  that term's SchoolLicense → access unlocks. Reuse src/lib/payments/receipt.ts for reference numbers.
+- The term model is STRUCTURED, not a free-text string. SchoolClass carries `sessionLabel`;
+  SchoolLicense and SchoolInvoice carry `sessionLabel` + `termNumber` (1..3) + `startsAt`
+  (`@@unique([schoolId, sessionLabel, termNumber])`). A term ends `startsAt + 15 weeks`
+  (`TERM_LENGTH_WEEKS` in src/lib/school-term.ts; endsAt is derived, never stored). A class is a
+  cohort for a SESSION spanning its three term-modules. Parse legacy strings with `parseTerm`.
+- Access is PER-MODULE: a module (its term number = `Module.sortOrder + 1`) unlocks only when the
+  school holds an ACTIVE, in-window licence for that term, and seatsUsed <= seatLimit. Use
+  `getLicensedTermNumbers` / `checkModuleLicenseForEnrollment` (src/lib/school-license.ts); enforce it
+  in the shared curriculum routes AND the embed, not just the learn shell. Do NOT reuse the B2C
+  monthly subscription path.
+- School STAFF may preview a lesson when its term is licensed OR the lesson is a `Lesson.isSample`
+  taster (`checkLessonPreviewLicense`); pupils never receive samples of an unlicensed term.
+- Session rollover (`POST /api/school/rollover`) promotes a class's pupils into a next-session class
+  via roster-sync (seat-checked); it is promotion-only (a DIFFERENT programme). Repeating the same
+  programme is refused (the Enrolment `@@unique([userId, programId])` is deliberately unchanged).
 
 ### Design register
 - Reuse the shipped warm tokens + fonts + shadcn primitives + orange-* accents. School surface =
@@ -341,3 +358,9 @@ when you add a route, do not create a second harness.
   progress and certificates with them, and a deleted key destroys the record of what it did.
 - NEVER fetch a school-supplied URL without `assertSafeWebhookUrl()` (SSRF: 169.254.169.254 is our
   cloud credentials).
+
+## Network lab
+  Network Lab (in-browser network/cybersecurity practical) lives in lib/network-lab/, see its own CLAUDE.md for engine details.
+
+Read docs/audits/pyodide-audit-prompt.md and carry out the audit it describes.
+Write your findings to docs/audits/pyodide-findings.md.

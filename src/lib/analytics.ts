@@ -1,4 +1,11 @@
-import { AttemptStatus, EnrollmentStatus, PaymentStatus, UserRole } from "@prisma/client";
+import {
+  AttemptStatus,
+  EnrollmentStatus,
+  PaymentStatus,
+  SchoolInvoiceStatus,
+  SchoolLicenseStatus,
+  UserRole,
+} from "@prisma/client";
 import { prisma } from "./prisma";
 
 type TrackEventInput = {
@@ -24,6 +31,24 @@ type PlatformTrendPoint = {
   revenue: number;
   activityEvents: number;
   messagesSent: number;
+};
+
+type SchoolTrendPoint = {
+  date: string;
+  label: string;
+  paidRevenue: number;
+  newPupils: number;
+};
+
+type SchoolSummary = {
+  schoolId: string;
+  name: string;
+  activeLicenses: number;
+  seatLimit: number;
+  seatsUsed: number;
+  paidRevenue: number;
+  classCount: number;
+  pupilCount: number;
 };
 
 type RiskAlert = {
@@ -804,5 +829,136 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
       programStats: assessmentProgramStats,
       gradingBacklog,
     },
+  };
+}
+
+/**
+ * B2B (school) business oversight for org staff (ADMIN / SUPER_ADMIN).
+ *
+ * Read-only aggregate only. Schools carry no organizationId (the deployment is single-org), so org
+ * staff oversee every school on the platform. This surfaces money and capacity, NOT children: PAID
+ * SchoolInvoice revenue, active licence seats, and per-school COUNTS. It deliberately exposes no
+ * pupil PII (names/emails/refs), so there is no enumeration oracle and nothing that crosses the
+ * school messaging boundary. Any real pupil-level drill-down belongs to a teacher/admin of THAT
+ * school, not to org staff, so it is intentionally absent here.
+ */
+export async function getSchoolOverview(rangeDays = 30) {
+  const trend = buildDateRange(rangeDays);
+
+  const [schools, licenses, paidInvoices, pendingInvoices, classGroups, pupilGroups, pupilsInRange] =
+    await Promise.all([
+      prisma.school.findMany({ select: { id: true, name: true } }),
+      prisma.schoolLicense.findMany({
+        select: { schoolId: true, status: true, seatLimit: true, seatsUsed: true },
+      }),
+      // updatedAt is the best available paid-time (there is no paidAt column); a PAID invoice was
+      // last written when it was marked paid.
+      prisma.schoolInvoice.findMany({
+        where: { status: SchoolInvoiceStatus.PAID },
+        select: { schoolId: true, amount: true, updatedAt: true },
+      }),
+      prisma.schoolInvoice.aggregate({
+        where: { status: SchoolInvoiceStatus.PENDING },
+        _count: { _all: true },
+        _sum: { amount: true },
+      }),
+      prisma.schoolClass.groupBy({ by: ["schoolId"], _count: { _all: true } }),
+      prisma.enrollment.groupBy({
+        by: ["schoolId"],
+        where: { schoolId: { not: null } },
+        _count: { _all: true },
+      }),
+      prisma.enrollment.findMany({
+        where: { schoolId: { not: null }, createdAt: { gte: trend.start } },
+        select: { createdAt: true },
+      }),
+    ]);
+
+  const classCountBySchool = new Map<string, number>(
+    classGroups.map((row) => [row.schoolId, row._count._all]),
+  );
+  const pupilCountBySchool = new Map<string, number>(
+    pupilGroups
+      .filter((row): row is typeof row & { schoolId: string } => row.schoolId !== null)
+      .map((row) => [row.schoolId, row._count._all]),
+  );
+
+  const licenseAgg = new Map<string, { active: number; seatLimit: number; seatsUsed: number }>();
+  for (const license of licenses) {
+    if (license.status !== SchoolLicenseStatus.ACTIVE) {
+      continue;
+    }
+    const entry = licenseAgg.get(license.schoolId) ?? { active: 0, seatLimit: 0, seatsUsed: 0 };
+    entry.active += 1;
+    entry.seatLimit += license.seatLimit;
+    entry.seatsUsed += license.seatsUsed;
+    licenseAgg.set(license.schoolId, entry);
+  }
+
+  const paidRevenueBySchool = new Map<string, number>();
+  for (const invoice of paidInvoices) {
+    paidRevenueBySchool.set(
+      invoice.schoolId,
+      (paidRevenueBySchool.get(invoice.schoolId) ?? 0) + Number(invoice.amount),
+    );
+  }
+
+  const schoolTrendByDate = new Map<string, SchoolTrendPoint>(
+    trend.keys.map((key) => [
+      key,
+      { date: key, label: labelFromDateKey(key), paidRevenue: 0, newPupils: 0 },
+    ]),
+  );
+  for (const invoice of paidInvoices) {
+    const point = schoolTrendByDate.get(keyFromDate(invoice.updatedAt));
+    if (point) {
+      point.paidRevenue += Number(invoice.amount);
+    }
+  }
+  for (const pupil of pupilsInRange) {
+    const point = schoolTrendByDate.get(keyFromDate(pupil.createdAt));
+    if (point) {
+      point.newPupils += 1;
+    }
+  }
+
+  const summaries: SchoolSummary[] = schools
+    .map((school) => {
+      const lic = licenseAgg.get(school.id);
+      return {
+        schoolId: school.id,
+        name: school.name,
+        activeLicenses: lic?.active ?? 0,
+        seatLimit: lic?.seatLimit ?? 0,
+        seatsUsed: lic?.seatsUsed ?? 0,
+        paidRevenue: paidRevenueBySchool.get(school.id) ?? 0,
+        classCount: classCountBySchool.get(school.id) ?? 0,
+        pupilCount: pupilCountBySchool.get(school.id) ?? 0,
+      };
+    })
+    .sort((a, b) => b.paidRevenue - a.paidRevenue || b.pupilCount - a.pupilCount)
+    .slice(0, 20);
+
+  // Headline totals span every school, not just the top-20 shown in the table.
+  const seatLimit = Array.from(licenseAgg.values()).reduce((sum, l) => sum + l.seatLimit, 0);
+  const seatsUsed = Array.from(licenseAgg.values()).reduce((sum, l) => sum + l.seatsUsed, 0);
+
+  return {
+    schoolCount: schools.length,
+    activeSchoolCount: licenseAgg.size,
+    activeLicenseCount: Array.from(licenseAgg.values()).reduce((sum, l) => sum + l.active, 0),
+    seatLimit,
+    seatsUsed,
+    seatUtilization: seatLimit === 0 ? null : roundToOneDecimal((seatsUsed / seatLimit) * 100),
+    paidRevenue: paidInvoices.reduce((sum, invoice) => sum + Number(invoice.amount), 0),
+    pendingInvoiceCount: pendingInvoices._count._all,
+    pendingInvoiceAmount: Number(pendingInvoices._sum.amount ?? 0),
+    classCount: classGroups.reduce((sum, row) => sum + row._count._all, 0),
+    pupilCount: pupilGroups.reduce((sum, row) => sum + row._count._all, 0),
+    trends: {
+      rangeDays,
+      points: trend.keys.map((key) => schoolTrendByDate.get(key)!),
+    },
+    schools: summaries,
   };
 }

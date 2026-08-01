@@ -4,16 +4,17 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  CheckCircle2, ChevronDown, ExternalLink, FileText,
-  Link as LinkIcon, RefreshCw, Terminal, Video, XCircle, Youtube,
+  Blocks, CheckCircle2, ChevronDown, ExternalLink, FileText,
+  Link as LinkIcon, Network, Puzzle, RefreshCw, Terminal, Video, XCircle, Youtube,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { PaginationControls } from "@/components/pagination-controls";
 
 type ContentItem = {
   id: string;
-  type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND";
+  type: "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB" | "BLOCKLY" | "SCRATCH";
   title: string;
   body: string | null;
   url: string | null;
@@ -49,11 +50,14 @@ const REVIEW_STYLES = {
 };
 
 const TYPE_ICONS = {
-  RICH_TEXT:       <FileText className="h-4 w-4 text-slate-500" />,
+  RICH_TEXT:       <FileText className="h-4 w-4 text-stone-500" />,
   YOUTUBE_EMBED:   <Youtube className="h-4 w-4 text-red-500" />,
-  EXTERNAL_VIDEO:  <Video className="h-4 w-4 text-blue-500" />,
-  DOCUMENT_LINK:   <LinkIcon className="h-4 w-4 text-violet-500" />,
+  EXTERNAL_VIDEO:  <Video className="h-4 w-4 text-orange-500" />,
+  DOCUMENT_LINK:   <LinkIcon className="h-4 w-4 text-orange-500" />,
   CODE_PLAYGROUND: <Terminal className="h-4 w-4 text-emerald-500" />,
+  NETWORK_LAB:     <Network className="h-4 w-4 text-amber-500" />,
+  BLOCKLY:         <Blocks className="h-4 w-4 text-orange-500" />,
+  SCRATCH:         <Puzzle className="h-4 w-4 text-orange-500" />,
 };
 
 function extractYouTubeId(url: string): string | null {
@@ -109,28 +113,28 @@ function ReviewCard({
   };
 
   return (
-    <div className={`overflow-hidden rounded-xl border ${content.reviewStatus === "REJECTED" ? "border-rose-200 dark:border-rose-800" : content.reviewStatus === "PUBLISHED" ? "border-emerald-200 dark:border-emerald-800" : "border-slate-200 dark:border-slate-700"}`}>
+    <div className={`overflow-hidden rounded-lg border ${content.reviewStatus === "REJECTED" ? "border-rose-200 dark:border-rose-800" : content.reviewStatus === "PUBLISHED" ? "border-emerald-200 dark:border-emerald-800" : "border-stone-200 dark:border-stone-800"}`}>
       {/* Header */}
       <div
-        className="flex cursor-pointer items-start justify-between gap-3 bg-slate-50 px-4 py-3 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700"
+        className="flex cursor-pointer items-start justify-between gap-3 bg-stone-50 px-4 py-3 hover:bg-stone-100 dark:bg-stone-800 dark:hover:bg-stone-700"
         onClick={() => setExpanded((p) => !p)}
       >
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2">
             {TYPE_ICONS[content.type]}
-            <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-200">{content.title}</span>
+            <span className="truncate text-sm font-medium text-stone-800 dark:text-stone-200">{content.title}</span>
             <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${REVIEW_STYLES[content.reviewStatus]}`}>
               {content.reviewStatus.replace("_", " ")}
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-stone-500 dark:text-stone-400">
             {program.name} › v{version.versionNumber} ({version.label}) › {content.lesson.module.title} › {content.lesson.title}
           </p>
-          <p className="text-xs text-slate-400 dark:text-slate-500">
+          <p className="text-xs text-stone-400 dark:text-stone-500">
             By {content.createdBy.firstName} {content.createdBy.lastName} · {new Date(content.createdAt).toLocaleDateString()}
           </p>
         </div>
-        <ChevronDown className={`mt-0.5 h-4 w-4 shrink-0 text-slate-400 transition-transform ${expanded ? "rotate-180" : ""}`} />
+        <ChevronDown className={`mt-0.5 h-4 w-4 shrink-0 text-stone-400 transition-transform ${expanded ? "rotate-180" : ""}`} />
       </div>
 
       {/* Expandable preview */}
@@ -142,10 +146,10 @@ function ReviewCard({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="border-t border-slate-100 p-4 dark:border-slate-800">
+            <div className="border-t border-stone-100 p-4 dark:border-stone-800">
               {content.type === "RICH_TEXT" && content.body && (
                 <div
-                  className="prose prose-sm max-w-none text-slate-700 dark:text-slate-300"
+                  className="prose prose-sm max-w-none text-stone-700 dark:text-stone-300"
                   dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.body) }}
                 />
               )}
@@ -162,7 +166,7 @@ function ReviewCard({
                     />
                   </div>
                 ) : (
-                  <a href={content.url} target="_blank" rel="noopener noreferrer" className="text-sm text-[#1E5FAF] hover:underline">
+                  <a href={content.url} target="_blank" rel="noopener noreferrer" className="text-sm text-kat-clay hover:underline">
                     {content.url}
                   </a>
                 );
@@ -178,25 +182,48 @@ function ReviewCard({
                   href={content.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 p-4 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                  className="flex items-center gap-3 rounded-lg border border-stone-200 p-4 hover:bg-stone-50 dark:border-stone-800 dark:hover:bg-stone-800"
                 >
-                  <FileText className="h-8 w-8 shrink-0 text-violet-400" />
+                  <FileText className="h-8 w-8 shrink-0 text-orange-400" />
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-800 dark:text-slate-200">{content.title}</p>
-                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">{content.url}</p>
+                    <p className="truncate font-medium text-stone-800 dark:text-stone-200">{content.title}</p>
+                    <p className="truncate text-xs text-stone-500 dark:text-stone-400">{content.url}</p>
                   </div>
-                  <ExternalLink className="ml-auto h-4 w-4 shrink-0 text-slate-400" />
+                  <ExternalLink className="ml-auto h-4 w-4 shrink-0 text-stone-400" />
                 </a>
               )}
               {content.type === "CODE_PLAYGROUND" && content.body && (
-                <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center gap-2 border-b border-slate-200 bg-[#1e1e1e] px-3 py-2 dark:border-slate-700">
-                    <Terminal className="h-3.5 w-3.5 text-slate-400" />
-                    <span className="text-xs font-medium text-slate-300">{content.language ?? "code"}</span>
+                <div className="overflow-hidden rounded-lg border border-stone-200 dark:border-stone-800">
+                  <div className="flex items-center gap-2 border-b border-stone-200 bg-[#1e1e1e] px-3 py-2 dark:border-stone-800">
+                    <Terminal className="h-3.5 w-3.5 text-stone-400" />
+                    <span className="text-xs font-medium text-stone-300">{content.language ?? "code"}</span>
                   </div>
-                  <pre className="max-h-64 overflow-auto bg-[#1e1e1e] px-4 py-3 font-mono text-xs text-slate-200">
+                  <pre className="max-h-64 overflow-auto bg-[#1e1e1e] px-4 py-3 font-mono text-xs text-stone-200">
                     {content.body}
                   </pre>
+                </div>
+              )}
+              {content.type === "NETWORK_LAB" && content.body && (
+                <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm dark:border-amber-900/40 dark:bg-amber-950/30">
+                  <Network className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <span className="text-stone-700 dark:text-stone-300">
+                    Network Lab level: <span className="font-mono">{content.body}</span>
+                  </span>
+                </div>
+              )}
+              {content.type === "BLOCKLY" && (
+                <div className="flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm dark:border-orange-900/40 dark:bg-orange-950/30">
+                  <Blocks className="h-4 w-4 shrink-0 text-orange-600 dark:text-orange-400" />
+                  <span className="text-stone-700 dark:text-stone-300">
+                    Blocks activity{content.body ? " (custom config)" : " (default toolbox)"}
+                  </span>
+                </div>
+              )}
+
+              {content.type === "SCRATCH" && (
+                <div className="flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm dark:border-orange-900/40 dark:bg-orange-950/30">
+                  <Puzzle className="h-4 w-4 shrink-0 text-orange-600 dark:text-orange-400" />
+                  <span className="text-stone-700 dark:text-stone-300">Scratch activity (opens the editor)</span>
                 </div>
               )}
 
@@ -209,7 +236,7 @@ function ReviewCard({
 
             {/* Review actions, only for PENDING_REVIEW */}
             {content.reviewStatus === "PENDING_REVIEW" && (
-              <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-800">
+              <div className="border-t border-stone-100 px-4 py-3 dark:border-stone-800">
                 {!showReject ? (
                   <div className="flex gap-2">
                     <Button
@@ -267,27 +294,30 @@ export function ContentReviewPanel() {
   const [contents, setContents] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("PENDING_REVIEW");
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
 
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/curriculum/review?status=${statusFilter}`);
+      const res = await fetch(`/api/curriculum/review?status=${statusFilter}&page=${page}`);
       if (res.ok) {
-        const data = await res.json() as { items: ContentItem[] };
+        const data = await res.json() as { items: ContentItem[]; page?: number; totalPages?: number; total?: number };
         setContents(data.items);
+        setMeta({ page: data.page ?? 1, totalPages: data.totalPages ?? 1, total: data.total ?? data.items.length });
       }
     } catch { /* ignore */ }
     setLoading(false);
   };
 
-  useEffect(() => { void load(); }, [statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void load(); }, [statusFilter, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-4">
       <div className="kat-card flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-slate-900 dark:text-slate-100">Content Review</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Review and publish lesson content submitted by admins and instructors.</p>
+          <h2 className="[font-family:var(--font-space-grotesk)] text-xl font-bold text-stone-900 dark:text-stone-100">Content Review</h2>
+          <p className="text-sm text-stone-500 dark:text-stone-400">Review and publish lesson content submitted by admins and instructors.</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => void load()} className="gap-1.5">
           <RefreshCw className="h-3.5 w-3.5" />
@@ -300,11 +330,11 @@ export function ContentReviewPanel() {
         {STATUS_FILTER_OPTIONS.map((opt) => (
           <button
             key={opt.value}
-            onClick={() => setStatusFilter(opt.value)}
+            onClick={() => { setStatusFilter(opt.value); setPage(1); }}
             className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               statusFilter === opt.value
-                ? "bg-[#1E5FAF] text-white"
-                : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
+                ? "bg-kat-clay text-white"
+                : "text-stone-600 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-700"
             }`}
           >
             {opt.label}
@@ -314,12 +344,12 @@ export function ContentReviewPanel() {
 
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
         </div>
       ) : contents.length === 0 ? (
         <div className="kat-card py-16 text-center">
-          <CheckCircle2 className="mx-auto mb-3 h-8 w-8 text-slate-300" />
-          <p className="text-slate-500 dark:text-slate-400">
+          <CheckCircle2 className="mx-auto mb-3 h-8 w-8 text-stone-300" />
+          <p className="text-stone-500 dark:text-stone-400">
             {statusFilter === "PENDING_REVIEW"
               ? "No content pending review."
               : statusFilter === "PUBLISHED"
@@ -329,7 +359,7 @@ export function ContentReviewPanel() {
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-xs text-slate-400 dark:text-slate-500">{contents.length} item{contents.length !== 1 ? "s" : ""}</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500">{meta.total} item{meta.total !== 1 ? "s" : ""}</p>
           <AnimatePresence>
             {contents.map((c, i) => (
               <motion.div
@@ -345,6 +375,14 @@ export function ContentReviewPanel() {
           </AnimatePresence>
         </div>
       )}
+
+      <PaginationControls
+        page={meta.page}
+        totalPages={meta.totalPages}
+        total={meta.total}
+        onPageChange={setPage}
+        disabled={loading}
+      />
     </div>
   );
 }

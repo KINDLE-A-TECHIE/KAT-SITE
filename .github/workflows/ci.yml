@@ -157,6 +157,13 @@ jobs:
       - name: Apply migrations to a clean database
         run: npx prisma migrate deploy
 
+      # The licence-gate test (a3-module-license) runs against the seeded Demo Academy: its class,
+      # Term 1 licence and NERDC curriculum. cross-tenant self-provisions everything and would pass
+      # without this, but a test that reads seed data must have it, or it fails "demo school class is
+      # missing". Seeding is idempotent (upserts), so a re-run is safe.
+      - name: Seed demo data
+        run: npm run prisma:seed
+
       # The suite hard-fails (does not skip) when CI has no DATABASE_URL, a security test that
       # silently skips reports green while testing nothing.
       - name: Cross-tenant leak test

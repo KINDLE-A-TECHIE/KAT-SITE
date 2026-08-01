@@ -2,6 +2,7 @@ import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { deleteNoteImagesInBodies } from "@/lib/note-images";
 import { updateModuleSchema } from "@/lib/validators";
 
 interface Params { params: Promise<{ moduleId: string }> }
@@ -40,7 +41,15 @@ export async function DELETE(_req: Request, { params }: Params) {
   if (!([UserRole.SUPER_ADMIN, UserRole.ADMIN] as UserRole[]).includes(role)) return fail("Forbidden", 403);
 
   const { moduleId } = await params;
+
+  // Reap note images across every lesson in this module before the delete cascades the content rows
+  // away (the per-content DELETE never runs on cascade), so no orphaned images are left on R2.
+  const contents = await prisma.lessonContent.findMany({
+    where: { lesson: { moduleId } },
+    select: { body: true },
+  });
   await prisma.module.delete({ where: { id: moduleId } });
+  await deleteNoteImagesInBodies(contents.map((c) => c.body));
 
   return ok({ deleted: true });
 }

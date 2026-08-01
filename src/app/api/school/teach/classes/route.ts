@@ -40,18 +40,18 @@ export async function GET() {
         id: true,
         name: true,
         nerdcLevel: true,
-        term: true,
+        sessionLabel: true,
         programId: true,
         program: { select: { id: true, name: true } },
         _count: { select: { enrollments: true } },
       },
     });
 
-    // LICENCE GATE. Seats are bought per term, so each class is gated by ITS OWN
-    // term's licence, a teacher can hold a class in a paid term and another in a
-    // lapsed one. The class is still listed (so they can see what is blocked and
-    // why), but it is marked unlicensed and its roster/results are refused.
-    const gates = await Promise.all(classes.map((c) => checkClassLicense(schoolId, c.term)));
+    // LICENCE GATE. Seats are bought per term within a session, so each class is gated by its
+    // session's current term-licence, a teacher can hold a class in a paid session and another in a
+    // lapsed one. The class is still listed (so they can see what is blocked and why), but it is
+    // marked unlicensed and its roster/results are refused.
+    const gates = await Promise.all(classes.map((c) => checkClassLicense(schoolId, c.sessionLabel)));
     const gated = classes.map((c, i) => ({
       ...c,
       licensed: gates[i].allowed,
@@ -98,12 +98,12 @@ export async function PATCH(request: Request) {
     // Scoped by schoolId AND teacherId: another teacher's class simply isn't found.
     const schoolClass = await prisma.schoolClass.findFirst({
       where: { id, schoolId, teacherId: session!.user.id },
-      select: { id: true, nerdcLevel: true, programId: true, term: true },
+      select: { id: true, nerdcLevel: true, programId: true, sessionLabel: true },
     });
     if (!schoolClass) return fail("Class not found.", 404);
 
-    // A teacher cannot act on a class whose term is not licensed.
-    const gate = await checkClassLicense(schoolId, schoolClass.term);
+    // A teacher cannot act on a class whose session is not licensed.
+    const gate = await checkClassLicense(schoolId, schoolClass.sessionLabel);
     if (!gate.allowed) return fail(gate.reason, 403);
 
     const problem = await checkCourseAssignable(schoolClass, programId);

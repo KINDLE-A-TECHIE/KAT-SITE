@@ -31,8 +31,8 @@ export default async function GradesPage() {
         title={isParent ? "Children's Grades" : "My Grades"}
         subtitle={
           isParent
-            ? "Assessment scores, instructor feedback, and progress for each of your enrolled children."
-            : "Your scores, pass/fail status, and instructor feedback across every enrolled programme."
+            ? "Each child's scores and instructor feedback, by programme."
+            : "Your results and instructor feedback for each programme you're enrolled in."
         }
       />
       <GradesPanel isParent={isParent} children={isParent ? children : undefined} />

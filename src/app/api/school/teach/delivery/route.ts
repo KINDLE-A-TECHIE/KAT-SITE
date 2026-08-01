@@ -56,11 +56,11 @@ export async function PATCH(request: Request) {
     // The class must be THIS teacher's, in THIS school.
     const schoolClass = await prisma.schoolClass.findFirst({
       where: { id: classId, schoolId, teacherId: session!.user.id },
-      select: { id: true, term: true, programId: true },
+      select: { id: true, sessionLabel: true, programId: true },
     });
     if (!schoolClass) return fail("Class not found.", 404);
 
-    const gate = await checkClassLicense(schoolId, schoolClass.term);
+    const gate = await checkClassLicense(schoolId, schoolClass.sessionLabel);
     if (!gate.allowed) return fail(gate.reason, 403);
 
     // The module must belong to the course this class is actually teaching, a teacher

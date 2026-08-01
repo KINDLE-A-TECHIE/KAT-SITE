@@ -41,7 +41,7 @@ export async function GET(request: Request) {
         id: classId,
         schoolId, ...(role === SchoolRole.TEACHER ? { teacherId: session!.user.id } : {}),
       },
-      select: { id: true, term: true },
+      select: { id: true, sessionLabel: true },
     });
     if (!visible) return fail("Class not found.", 404);
 
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     // school when a licence lapses, since they are the one who has to go and fix it;
     // locking them out of the thing that unlocks the school would be a deadlock.
     if (role === SchoolRole.TEACHER) {
-      const gate = await checkClassLicense(schoolId, visible.term);
+      const gate = await checkClassLicense(schoolId, visible.sessionLabel);
       if (!gate.allowed) return fail(gate.reason, 403);
     }
 

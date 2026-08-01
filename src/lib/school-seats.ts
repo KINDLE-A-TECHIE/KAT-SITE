@@ -1,7 +1,6 @@
 import "server-only";
 import { SchoolLicenseStatus } from "@prisma/client";
 import { prisma } from "./prisma";
-import { normalizeTerm } from "./school-license";
 
 /**
  * The transaction client, typed structurally.
@@ -55,31 +54,26 @@ export async function reserveSeats(
 }
 
 /**
- * Recompute a term's `seatsUsed` from the enrollments that actually exist in that
- * term's classes. Drift repair. `reserveSeats` is the authoritative path, but a
- * student removed outside it (or a legacy row) would leave the counter stale.
+ * Recompute a session's `seatsUsed` from the enrollments that actually exist in that session's
+ * classes, and write it to every term-licence of the session. Drift repair. `reserveSeats` is the
+ * authoritative path, but a student removed outside it (or a legacy row) would leave the counter
+ * stale.
+ *
+ * The cohort of a session occupies the same seat count in each of its term-licences (a pupil is
+ * taught every term they are licensed for), so all term-licences of the session get the same figure.
  */
-export async function reconcileSeats(schoolId: string, term: string): Promise<number> {
-  // Terms are free text, so match on the normalized form rather than exact equality.
-  const licenses = await prisma.schoolLicense.findMany({
-    where: { schoolId },
-    select: { id: true, term: true },
-  });
-  const wanted = normalizeTerm(term);
-  const match = licenses.find((l) => normalizeTerm(l.term) === wanted);
-  if (!match) return 0;
-
-  // A term's seats = ACTIVE students in classes belonging to that term.
+export async function reconcileSeats(schoolId: string, sessionLabel: string): Promise<number> {
+  // A session's seats = ACTIVE students in classes belonging to that session.
   //
   // `status: "ACTIVE"` is load-bearing. Without it a DROPPED pupil still occupies a seat forever,
   // so a school that deactivates a leaver can never reuse the seat it is still paying for, and the
   // licence counter drifts permanently away from reality.
   const seatsUsed = await prisma.enrollment.count({
-    where: { schoolId, schoolClass: { term: match.term }, status: "ACTIVE" },
+    where: { schoolId, schoolClass: { sessionLabel }, status: "ACTIVE" },
   });
 
-  await prisma.schoolLicense.update({
-    where: { id: match.id },
+  await prisma.schoolLicense.updateMany({
+    where: { schoolId, sessionLabel },
     data: { seatsUsed },
   });
 

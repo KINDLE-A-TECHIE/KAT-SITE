@@ -18,8 +18,8 @@ export default async function AnalyticsPage() {
         title={canViewPlatform ? "Analytics" : "Your Analytics"}
         subtitle={
           canViewPlatform
-            ? "Enrolment trends, revenue, activity heatmaps, and risk signals across the entire academy."
-            : "Your login activity, submission history, and learning trajectory at a glance."
+            ? "Enrolment, revenue, activity, and risk signals."
+            : "Your login activity and submission history."
         }
       />
       <AnalyticsPanel />

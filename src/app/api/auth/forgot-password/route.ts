@@ -2,6 +2,7 @@ import { z } from "zod";
 import { fail, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, buildPasswordResetEmail } from "@/lib/email";
+import { generateResetToken, hashResetToken } from "@/lib/reset-token";
 import { forgotPasswordLimiter, getClientIp, rateLimitResponse } from "@/lib/ratelimit";
 
 const schema = z.object({
@@ -41,14 +42,16 @@ export async function POST(request: Request) {
       where: { userId: user.id, usedAt: null },
     });
 
-    const token = await prisma.passwordResetToken.create({
+    const rawToken = generateResetToken();
+    await prisma.passwordResetToken.create({
       data: {
         userId: user.id,
+        token: hashResetToken(rawToken),
         expiresAt: new Date(Date.now() + TOKEN_TTL_MS),
       },
     });
 
-    const resetUrl = `${BASE_URL}/reset-password?token=${token.token}`;
+    const resetUrl = `${BASE_URL}/reset-password?token=${rawToken}`;
 
     await sendEmail({
       to: user.email,

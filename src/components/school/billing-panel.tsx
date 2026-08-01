@@ -144,7 +144,7 @@ export function BillingPanel() {
     );
   };
 
-  if (loading) return <Skeleton className="h-72 w-full rounded-xl" />;
+  if (loading) return <Skeleton className="h-72 w-full rounded-lg" />;
   if (!data) return null;
 
   const noPrice = data.school.pricePerSeat <= 0;
@@ -166,7 +166,7 @@ export function BillingPanel() {
         <Button
           onClick={() => setOpen(true)}
           disabled={noPrice}
-          className="gap-1.5 bg-orange-600 text-white hover:bg-orange-700"
+          className="gap-1.5 bg-orange-700 text-white hover:bg-orange-800"
         >
           <Plus className="size-4" />
           Confirm seats for a term
@@ -183,7 +183,7 @@ export function BillingPanel() {
         </CardHeader>
         <CardContent>
           {data.licenses.length === 0 ? (
-            <p className="rounded-xl bg-stone-50 p-4 text-sm text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
+            <p className="rounded-lg bg-stone-50 p-4 text-sm text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
               No licence yet. Confirm your seat count for a term to raise an invoice.
             </p>
           ) : (
@@ -217,7 +217,7 @@ export function BillingPanel() {
         </CardHeader>
         <CardContent>
           {data.invoices.length === 0 ? (
-            <p className="rounded-xl bg-stone-50 p-4 text-sm text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
+            <p className="rounded-lg bg-stone-50 p-4 text-sm text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
               Invoices you raise will appear here with their payment status.
             </p>
           ) : (
@@ -294,7 +294,7 @@ export function BillingPanel() {
               />
             </div>
 
-            <div className="rounded-xl bg-stone-50 p-3 text-sm dark:bg-stone-800/50">
+            <div className="rounded-lg bg-stone-50 p-3 text-sm dark:bg-stone-800/50">
               <div className="flex items-center justify-between">
                 <span className="text-stone-500 dark:text-stone-400">
                   {seatCount > 0 ? `${seatCount} × ${naira(data.school.pricePerSeat)}` : "Amount"}
@@ -313,7 +313,7 @@ export function BillingPanel() {
             <Button
               onClick={createInvoice}
               disabled={busy || !term.trim() || !(seatCount > 0)}
-              className="bg-orange-600 text-white hover:bg-orange-700"
+              className="bg-orange-700 text-white hover:bg-orange-800"
             >
               {busy ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : null}
               {busy ? "Creating…" : "Raise invoice & pay"}

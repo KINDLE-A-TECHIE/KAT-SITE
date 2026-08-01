@@ -11,9 +11,17 @@ import { randomUUID } from "node:crypto";
  * concurrency is highest. All suffixes therefore come from `crypto.randomUUID()`.
  */
 
-/** 8 uppercase hex chars from a cryptographically-strong UUID → 16^8 (~4.3B) per day. */
+/**
+ * 16 uppercase hex chars (64 bits) from a cryptographically-strong UUID.
+ *
+ * Width matters here. These suffixes back UNIQUE columns written without a retry loop, so a
+ * collision does not repeat a number, it throws and fails a payment. 8 hex (32 bits) is not enough:
+ * by the birthday bound, 20000 values in a 2^32 space collide with ~5% probability, which made the
+ * uniqueness test genuinely flaky. 64 bits pushes that below ~1e-11 even at 20000/day, and stays
+ * safe at far higher volumes (the date prefix already resets the space daily).
+ */
 function cryptoSuffix(): string {
-  return randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+  return randomUUID().replace(/-/g, "").slice(0, 16).toUpperCase();
 }
 
 function utcDateStamp(): string {
@@ -24,23 +32,23 @@ function utcDateStamp(): string {
   return `${yyyy}${mm}${dd}`;
 }
 
-/** Receipt number. `KAT-RCP-YYYYMMDD-XXXXXXXX`. Backs `PaymentReceipt.receiptNumber` (unique). */
+/** Receipt number. `KAT-RCP-YYYYMMDD-<16 hex>`. Backs `PaymentReceipt.receiptNumber` (unique). */
 export function generateReceiptNumber(): string {
   return `KAT-RCP-${utcDateStamp()}-${cryptoSuffix()}`;
 }
 
-/** B2C payment reference. `KAT-PAY-YYYYMMDD-XXXXXXXX`. Backs `Payment.reference` (unique). */
+/** B2C payment reference. `KAT-PAY-YYYYMMDD-<16 hex>`. Backs `Payment.reference` (unique). */
 export function generatePaymentReference(): string {
   return `KAT-PAY-${utcDateStamp()}-${cryptoSuffix()}`;
 }
 
-/** Batch payment reference. `KAT-BATCH-YYYYMMDD-XXXXXXXX`. */
+/** Batch payment reference. `KAT-BATCH-YYYYMMDD-<16 hex>`. */
 export function generateBatchReference(): string {
   return `KAT-BATCH-${utcDateStamp()}-${cryptoSuffix()}`;
 }
 
 /**
- * School invoice reference. `KAT-SCH-YYYYMMDD-XXXXXXXX`. Backs
+ * School invoice reference. `KAT-SCH-YYYYMMDD-<16 hex>`. Backs
  * `SchoolInvoice.paystackRef` (unique).
  *
  * The distinct `SCH` prefix is deliberate: the Paystack webhook receives B2C and

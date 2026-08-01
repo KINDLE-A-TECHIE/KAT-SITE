@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { SignOutButton } from "@/components/sign-out-button";
 import { motion } from "framer-motion";
 import {
   Award,
@@ -33,6 +33,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { UserRoleValue } from "@/lib/enums";
+import { SCHOOL_ROLES } from "@/lib/roles";
 import { NotificationsPopover } from "@/components/dashboard/notifications-popover";
 
 type DashboardShellProps = {
@@ -61,6 +62,12 @@ const LEARNING_NAV = [
 ];
 
 function getNavItems(role: UserRoleValue, isEnrolled = true) {
+  // Backstop: school-provisioned accounts are redirected off this shell by the dashboard layout, so
+  // they should never reach here. If one ever does, it must NOT be handed a Messages tab or any B2C
+  // nav (messaging never crosses the school boundary). Return nothing rather than fall through to
+  // the default CORE_NAV, which includes Messages.
+  if (SCHOOL_ROLES.includes(role)) return [];
+
   if (role === "STUDENT" && !isEnrolled) {
     return [
       { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -221,33 +228,33 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
       <div className="kat-page grid grid-cols-1 gap-4 py-4 max-[360px]:gap-3 max-[360px]:py-3 sm:gap-6 sm:py-6 lg:grid-cols-[256px_1fr]">
 
         {/* ── Sidebar ─────────────────────────────────────────────── */}
-        <aside className="h-fit overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 print:hidden">
+        <aside className="h-fit overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm dark:border-stone-800 dark:bg-stone-900 print:hidden">
           {/* Brand, desktop only (top bar serves this role on mobile) */}
-          <Link href="/" className="hidden items-center gap-2.5 border-b border-slate-100 px-4 py-4 dark:border-slate-800 lg:flex">
+          <Link href="/" className="hidden items-center gap-2.5 border-b border-stone-100 px-4 py-4 dark:border-stone-800 lg:flex">
             <Image src="/kindle-a-techie.svg" alt="KAT logo" width={30} height={30} className="shrink-0" />
-            <span className="[font-family:var(--font-space-grotesk)] text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <span className="[font-family:var(--font-space-grotesk)] text-sm font-semibold text-stone-900 dark:text-stone-100">
               KAT Learning
             </span>
           </Link>
 
           {/* User card, desktop only (top bar shows avatar on mobile) */}
-          <div className="mx-3 my-3 hidden items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800 lg:flex">
-            <Avatar className="size-9 shrink-0 border border-slate-200">
+          <div className="mx-3 my-3 hidden items-center gap-3 rounded-lg bg-stone-50 px-3 py-2.5 dark:bg-stone-800 lg:flex">
+            <Avatar className="size-9 shrink-0 border border-stone-200">
               <AvatarImage src={avatarUrl ?? undefined} alt={`${displayFirstName} ${displayLastName}`} />
               <AvatarFallback className="bg-kat-dark text-[11px] font-bold text-white">{initials}</AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+              <p className="truncate text-sm font-medium text-stone-900 dark:text-stone-100">
                 {displayFirstName} {displayLastName}
               </p>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">{ROLE_LABEL[user.role]}</p>
+              <p className="text-[11px] text-stone-400 dark:text-stone-500">{ROLE_LABEL[user.role]}</p>
             </div>
           </div>
 
           {/* Nav */}
           <div className="relative">
             {/* Gradient fade to hint at horizontal scroll on mobile */}
-            <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-14 bg-gradient-to-l from-white to-transparent dark:from-slate-900 lg:hidden" />
+            <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-14 bg-gradient-to-l from-white to-transparent dark:from-stone-900 lg:hidden" />
             <nav className="flex gap-1 overflow-x-auto px-3 pb-2 pt-2 lg:block lg:space-y-0.5 lg:overflow-visible lg:pb-3 lg:pt-0">
               {navItems.map((item, index) => {
                 const Icon = item.icon;
@@ -264,13 +271,13 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex items-center gap-2.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition-colors max-[360px]:gap-1.5 max-[360px]:px-2.5 max-[360px]:py-1.5 max-[360px]:text-xs",
+                        "flex items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition-colors max-[360px]:gap-1.5 max-[360px]:px-2.5 max-[360px]:py-1.5 max-[360px]:text-xs",
                         active
                           ? "bg-kat-dark text-white"
-                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
+                          : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100",
                       )}
                     >
-                      <Icon className={cn("size-4 shrink-0", active ? "text-blue-300" : "text-slate-400 dark:text-slate-500")} />
+                      <Icon className={cn("size-4 shrink-0", active ? "text-orange-300" : "text-stone-400 dark:text-stone-500")} />
                       <span>{item.label}</span>
                     </Link>
                   </motion.div>
@@ -280,7 +287,7 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
           </div>
 
           {/* Settings + Sign out, compact row on mobile, stacked on desktop */}
-          <div className="flex gap-1 border-t border-slate-100 px-3 py-2 dark:border-slate-800 lg:block lg:space-y-0.5 lg:py-3">
+          <div className="flex gap-1 border-t border-stone-100 px-3 py-2 dark:border-stone-800 lg:block lg:space-y-0.5 lg:py-3">
             {(() => {
               const active = pathname === "/dashboard/settings";
               return (
@@ -288,47 +295,44 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
                   href="/dashboard/settings"
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors lg:gap-2.5 lg:py-2.5",
+                    "flex flex-1 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors lg:gap-2.5 lg:py-2.5",
                     active
                       ? "bg-kat-dark text-white"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
+                      : "text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100",
                   )}
                 >
-                  <Settings className={cn("size-4 shrink-0", active ? "text-blue-300" : "text-slate-400 dark:text-slate-500")} />
+                  <Settings className={cn("size-4 shrink-0", active ? "text-orange-300" : "text-stone-400 dark:text-stone-500")} />
                   <span>Settings</span>
                 </Link>
               );
             })()}
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="flex flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 lg:w-full lg:gap-2.5 lg:py-2.5"
-            >
-              <LogOut className="size-4 shrink-0 text-slate-400 dark:text-slate-500" />
+            <SignOutButton className="flex flex-1 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200 lg:w-full lg:gap-2.5 lg:py-2.5">
+              <LogOut className="size-4 shrink-0 text-stone-400 dark:text-stone-500" />
               <span>Sign out</span>
-            </button>
+            </SignOutButton>
           </div>
         </aside>
 
         {/* ── Main content ─────────────────────────────────────────── */}
         <div className="min-w-0 space-y-4 max-[360px]:space-y-3">
           {/* Top bar */}
-          <header className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900 print:hidden">
+          <header className="flex items-center justify-between rounded-lg border border-stone-200 bg-white px-5 py-3 shadow-sm dark:border-stone-800 dark:bg-stone-900 print:hidden">
             <div className="flex items-center gap-2 text-sm">
-              <span className="font-semibold text-slate-900 dark:text-slate-100">KAT Learning</span>
-              <span className="text-slate-300 dark:text-slate-600">/</span>
-              <span className="text-slate-500 dark:text-slate-400">{ROLE_LABEL[user.role]}</span>
+              <span className="font-semibold text-stone-900 dark:text-stone-100">KAT Learning</span>
+              <span className="text-stone-300 dark:text-stone-600">/</span>
+              <span className="text-stone-500 dark:text-stone-400">{ROLE_LABEL[user.role]}</span>
             </div>
             <div className="flex items-center gap-2">
               <NotificationsPopover />
               <Link
                 href="/dashboard/profile"
-                className="flex items-center gap-2 rounded-full border border-slate-200 py-1 pl-1 pr-3 transition hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600"
+                className="flex items-center gap-2 rounded-full border border-stone-200 py-1 pl-1 pr-3 transition hover:border-stone-300 dark:border-stone-800 dark:hover:border-stone-600"
               >
-                <Avatar className="size-7 border border-slate-200">
+                <Avatar className="size-7 border border-stone-200">
                   <AvatarImage src={avatarUrl ?? undefined} alt={`${displayFirstName} ${displayLastName}`} />
-                  <AvatarFallback className="bg-kat-dark text-[10px] font-bold text-white">{initials}</AvatarFallback>
+                  <AvatarFallback className="bg-kat-dark text-[11px] font-bold text-white">{initials}</AvatarFallback>
                 </Avatar>
-                <span className="hidden text-xs font-medium text-slate-700 sm:inline dark:text-slate-300">{displayFirstName}</span>
+                <span className="hidden text-xs font-medium text-stone-700 sm:inline dark:text-stone-300">{displayFirstName}</span>
               </Link>
             </div>
           </header>

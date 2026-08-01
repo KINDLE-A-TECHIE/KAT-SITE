@@ -248,7 +248,7 @@ export function DeveloperDocs() {
       "id": "cls_abc123",
       "name": "Primary 5A",
       "nerdc_level": "PRIMARY_4_6",
-      "term": "2026/2027 Term 1",
+      "session": "2026/2027",
       "teacher": "Ngozi Okafor",
       "student_count": 32
     }
@@ -293,6 +293,37 @@ export function DeveloperDocs() {
   "errors": [],
   "seats": { "used": 32, "limit": 40 }
 }`}
+            />
+
+            <h3 className="mt-8 font-display text-base font-semibold tracking-tight">Using WordPress?</h3>
+            <p>
+              The same call from your server. Run it on a daily <Code>wp_schedule_event</Code>, or
+              from your enrolment form. Store each <Code>student_id</Code> back on the WordPress user
+              so the lesson window (above) can find that pupil later.
+            </p>
+            <CopyBlock
+              label="a nightly sync · PHP"
+              language="php"
+              code={`<?php
+$res = wp_remote_post( 'https://schools.kindleatechie.com/api/v1/roster', array(
+  'headers' => array(
+    'Authorization'   => 'Bearer ' . KAT_API_KEY,
+    'Content-Type'    => 'application/json',
+    'Idempotency-Key' => wp_date( 'Y-m-d' ) . '-primary5a', // stable per sync. a retry replays.
+  ),
+  'body'    => wp_json_encode( array(
+    'class_id' => 'cls_abc123',
+    'students' => array(
+      array( 'student_id' => 'STU-0417', 'name' => 'Chidi Okafor', 'guardian_email' => 'parent@example.com' ),
+      array( 'student_id' => 'STU-0418', 'name' => 'Ada Balogun' ),
+    ),
+  ) ),
+  'timeout' => 20,
+) );
+
+$body = is_wp_error( $res ) ? null : json_decode( wp_remote_retrieve_body( $res ), true );
+// $body['created'], $body['seats']['used'] … then remember the mapping for the lesson window:
+//   update_user_meta( $wp_user_id, 'kat_external_ref', 'STU-0417' );`}
             />
 
             <h3 className="mt-8 font-display text-base font-semibold tracking-tight">Always send an Idempotency-Key</h3>
@@ -522,6 +553,52 @@ function verify(req, secret) {
   referrerpolicy="no-referrer"
 ></iframe>`}
             />
+
+            <h3 className="mt-8 font-display text-base font-semibold tracking-tight">Using WordPress?</h3>
+            <p>
+              The same two steps, as one shortcode. The key lives in <Code>wp-config.php</Code> and
+              is read only on the server. You mint a token for the pupil who is signed in{" "}
+              <em>right now</em>, from your own user mapping, never from a query string.
+            </p>
+            <CopyBlock
+              label="functions.php or an mu-plugin · PHP"
+              language="php"
+              code={`<?php
+// wp-config.php:  define( 'KAT_API_KEY', 'kat_sk_live_…' );   // server-only. never in a page.
+
+function kat_launch_iframe( $student_id ) {
+  $res = wp_remote_post( 'https://schools.kindleatechie.com/api/school/embed/token', array(
+    'headers' => array(
+      'Authorization' => 'Bearer ' . KAT_API_KEY,
+      'Content-Type'  => 'application/json',
+    ),
+    'body'    => wp_json_encode( array( 'ref' => $student_id ) ),
+    'timeout' => 15,
+  ) );
+  if ( is_wp_error( $res ) || 200 !== wp_remote_retrieve_response_code( $res ) ) {
+    return '<p>Could not open the classroom. Please try again.</p>';
+  }
+  $token = json_decode( wp_remote_retrieve_body( $res ), true )['token'] ?? '';
+
+  // Token goes after the #, so it never reaches a server log or a Referer header.
+  $src = 'https://schools.kindleatechie.com/embed/your-school#t=' . rawurlencode( $token );
+  return sprintf(
+    '<iframe src="%s" style="width:100%%;height:720px;border:0" referrerpolicy="no-referrer"></iframe>',
+    esc_url( $src )
+  );
+}
+
+// [kat_classroom] on a members-only page. Only ever the ref of the current logged-in pupil.
+add_shortcode( 'kat_classroom', function () {
+  if ( ! is_user_logged_in() ) { return 'Please sign in.'; }
+  $ref = get_user_meta( get_current_user_id(), 'kat_external_ref', true );
+  return $ref ? kat_launch_iframe( $ref ) : 'Your account is not linked to KAT yet.';
+} );`}
+            />
+            <p className="text-sm text-[var(--kat-text-2)]">
+              Do not cache a page that carries the shortcode. The token is minted at render and lives
+              60 seconds, so the page must be built fresh on each visit.
+            </p>
 
             <h3 className="mt-8 font-display text-base font-semibold tracking-tight">The token</h3>
             <ul className="my-4 list-disc space-y-2 pl-5 text-sm leading-relaxed marker:text-[var(--kat-clay)]">

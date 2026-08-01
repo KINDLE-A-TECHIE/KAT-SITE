@@ -6,6 +6,30 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: __dirname,
+
+  /*
+   * Keep server-only, dynamically-required native/instrumentation packages OUT of the
+   * bundler graph. They are `require()`d at runtime from node_modules instead of being
+   * compiled. This is the documented fix for the OpenTelemetry "Critical dependency: the
+   * request of a dependency is an expression" warning (require-in-the-middle uses a dynamic
+   * require the bundler cannot statically analyse), and it cuts a large chunk off dev
+   * compile time because the whole OTel/Prisma-instrumentation tree no longer compiles.
+   */
+  serverExternalPackages: [
+    "@sentry/nextjs",
+    "@sentry/node",
+    "@fastify/otel",
+    "require-in-the-middle",
+    "@opentelemetry/instrumentation",
+    "@prisma/instrumentation",
+  ],
+
+  // NOTE: experimental.optimizePackageImports (lucide-react, framer-motion) was removed. Its
+  // barrel-to-deep-import rewrite is a known cause of "Cannot read properties of undefined
+  // (reading 'call')" (a rewritten module resolving to undefined), which broke /login (it imports
+  // `motion` from framer-motion) and made the build worker retry. Correctness over the compile-speed
+  // win. If reintroduced, keep framer-motion OUT of the list and test /login + a full build first.
+
   async headers() {
     return [
       {

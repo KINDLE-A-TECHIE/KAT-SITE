@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { EMBED_COOKIE, readEmbedSession } from "@/lib/school-embed";
-import { checkEnrollmentLicense } from "@/lib/school-license";
+import { checkEnrollmentLicense, getLicensedTermNumbers } from "@/lib/school-license";
 import { EmbedLauncher } from "@/components/school/embed-launcher";
 import { EmbedLessons } from "@/components/school/embed-lessons";
 
@@ -55,6 +55,7 @@ export default async function EmbedPage({
       programId: true,
       schoolId: true,
       schoolClassId: true,
+      schoolClass: { select: { sessionLabel: true } },
       user: { select: { firstName: true } },
     },
   });
@@ -72,11 +73,17 @@ export default async function EmbedPage({
     );
   }
 
+  // Which terms are unlocked, so locked modules render locked here too (the lesson page enforces it).
+  const licensedTerms = enrollment.schoolClass
+    ? [...(await getLicensedTermNumbers(enrollment.schoolId!, enrollment.schoolClass.sessionLabel))]
+    : [];
+
   return (
     <EmbedLessons
       programId={enrollment.programId}
       firstName={enrollment.user.firstName}
       schoolName={school.name}
+      licensedTerms={licensedTerms}
     />
   );
 }

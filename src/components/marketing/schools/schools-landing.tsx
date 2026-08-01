@@ -343,7 +343,7 @@ export function SchoolsLanding() {
         </Reveal>
       </section>
 
-      <SiteFooter />
+      <SiteFooter schoolHost />
     </main>
   );
 }

@@ -1,26 +1,16 @@
 import type { Metadata } from "next";
-import { LegalLayout } from "../legal-layout";
+import { LegalLayout, type LegalSection } from "../legal-layout";
 
 export const metadata: Metadata = {
   title: "Terms of Service. KAT Learning",
   description: "The terms that govern your use of the KAT Learning platform.",
 };
 
-export default function TermsPage() {
-  return (
-    <LegalLayout
-      eyebrow="Legal"
-      title="Terms of Service"
-      updated="March 2026"
-    >
-      <p>
-        By registering for or using the KAT Learning platform (&ldquo;the Platform&rdquo;) operated
-        by Kindle a Techie (&ldquo;we&rdquo;, &ldquo;us&rdquo;), you agree to these terms. Please
-        read them carefully. If you are registering on behalf of a child, you accept these terms on
-        their behalf.
-      </p>
-
-      <h2>1. Eligibility and accounts</h2>
+const sections: LegalSection[] = [
+  {
+    id: "eligibility-accounts",
+    title: "Eligibility and accounts",
+    body: (
       <ul>
         <li>
           Student accounts are for learners aged <strong>8 to 19</strong>. A parent or guardian
@@ -35,8 +25,12 @@ export default function TermsPage() {
           may be suspended.
         </li>
       </ul>
-
-      <h2>2. Enrollment and payment</h2>
+    ),
+  },
+  {
+    id: "enrollment-payment",
+    title: "Enrollment and payment",
+    body: (
       <ul>
         <li>
           Enrollment is activated after successful payment. Access is granted immediately upon
@@ -59,19 +53,29 @@ export default function TermsPage() {
           one cohort does not guarantee one in the next.
         </li>
       </ul>
-
-      <h2>3. Platform use</h2>
-      <p>You agree not to:</p>
-      <ul>
-        <li>Share your account or class access with anyone outside your enrolled household</li>
-        <li>Record, redistribute, or publish live class sessions without written permission</li>
-        <li>Upload content that is harmful, abusive, or inappropriate, especially given that
-          children use this platform</li>
-        <li>Attempt to access parts of the platform you are not authorised to use</li>
-        <li>Use the platform for any commercial purpose without our written consent</li>
-      </ul>
-
-      <h2>4. Content and intellectual property</h2>
+    ),
+  },
+  {
+    id: "platform-use",
+    title: "Platform use",
+    body: (
+      <>
+        <p>You agree not to:</p>
+        <ul>
+          <li>Share your account or class access with anyone outside your enrolled household</li>
+          <li>Record, redistribute, or publish live class sessions without written permission</li>
+          <li>Upload content that is harmful, abusive, or inappropriate, especially given that
+            children use this platform</li>
+          <li>Attempt to access parts of the platform you are not authorised to use</li>
+          <li>Use the platform for any commercial purpose without our written consent</li>
+        </ul>
+      </>
+    ),
+  },
+  {
+    id: "content-ip",
+    title: "Content and intellectual property",
+    body: (
       <ul>
         <li>
           Curriculum materials, videos, and platform content remain the intellectual property of
@@ -83,16 +87,24 @@ export default function TermsPage() {
           platform (e.g., on a student profile or in a showcase), nothing more.
         </li>
       </ul>
-
-      <h2>5. Code of conduct</h2>
+    ),
+  },
+  {
+    id: "code-of-conduct",
+    title: "Code of conduct",
+    body: (
       <p>
         KAT Learning is a safe learning environment for children and teens. All users, students,
         parents, instructors, and fellows, are expected to treat one another with respect. We
         reserve the right to suspend or remove any account that engages in bullying, harassment,
         hate speech, or any behaviour that harms other users.
       </p>
-
-      <h2>6. Fellowship programme</h2>
+    ),
+  },
+  {
+    id: "fellowship",
+    title: "Fellowship programme",
+    body: (
       <ul>
         <li>Fellowship applications are reviewed independently for each cohort.</li>
         <li>
@@ -104,34 +116,69 @@ export default function TermsPage() {
           who benefit from the experience, credentials, and community.
         </li>
       </ul>
-
-      <h2>7. Availability and changes</h2>
+    ),
+  },
+  {
+    id: "availability-changes",
+    title: "Availability and changes",
+    body: (
       <p>
         We aim for high availability but do not guarantee uninterrupted access. We may update
         features, pricing, or these terms at any time. Material changes will be communicated by
         email at least 14 days before taking effect. Continued use of the platform after that
         date constitutes acceptance.
       </p>
-
-      <h2>8. Limitation of liability</h2>
+    ),
+  },
+  {
+    id: "liability",
+    title: "Limitation of liability",
+    body: (
       <p>
         To the extent permitted by law, Kindle a Techie is not liable for indirect or consequential
         losses arising from your use of the platform. Our total liability in any 12-month period is
         limited to the amount you paid us during that period.
       </p>
-
-      <h2>9. Governing law</h2>
+    ),
+  },
+  {
+    id: "governing-law",
+    title: "Governing law",
+    body: (
       <p>
         These terms are governed by the laws of the Federal Republic of Nigeria. Any disputes will
         be resolved in the courts of Nigeria.
       </p>
-
-      <h2>10. Contact</h2>
+    ),
+  },
+  {
+    id: "contact",
+    title: "Contact",
+    body: (
       <p>
         <a href="mailto:support@kindleatechie.com">support@kindleatechie.com</a>
         <br />
-        Kindle a Techie · kindleatechie.com
+        Kindle a Techie Technologies Limited (RC 9411414) · kindleatechie.com
       </p>
-    </LegalLayout>
+    ),
+  },
+];
+
+export default function TermsPage() {
+  return (
+    <LegalLayout
+      eyebrow="Legal"
+      title="Terms of Service"
+      updated="July 2026"
+      intro={
+        <p>
+          By registering for or using the KAT Learning platform (&ldquo;the Platform&rdquo;) operated
+          by Kindle a Techie (&ldquo;we&rdquo;, &ldquo;us&rdquo;), you agree to these terms. Please
+          read them carefully. If you are registering on behalf of a child, you accept these terms on
+          their behalf.
+        </p>
+      }
+      sections={sections}
+    />
   );
 }

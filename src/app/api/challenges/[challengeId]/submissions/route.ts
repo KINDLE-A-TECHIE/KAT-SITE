@@ -22,7 +22,7 @@ const submitSchema = z.object({
   { message: "Either a link or a file upload is required." },
 );
 
-export async function GET(_req: Request, { params }: Params) {
+export async function GET(_request: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!MANAGER_ROLES.includes(session.user.role as UserRole)) return fail("Forbidden", 403);
@@ -40,6 +40,9 @@ export async function GET(_req: Request, { params }: Params) {
     challenge.organizationId !== session.user.organizationId
   ) return fail("Forbidden", 403);
 
+  // The grading dialog needs every submission in one view, so this is not offset-paginated
+  // (a default page would silently hide submissions from the grader). Flat safety cap only,
+  // matching the meetings kanban: raises the ceiling without a UI control the dialog lacks.
   const submissions = await prisma.challengeSubmission.findMany({
     where: { challengeId },
     include: {
@@ -47,6 +50,7 @@ export async function GET(_req: Request, { params }: Params) {
       gradedBy: { select: { id: true, firstName: true, lastName: true } },
     },
     orderBy: [{ score: "desc" }, { submittedAt: "asc" }],
+    take: 200,
   });
 
   return ok({ submissions });

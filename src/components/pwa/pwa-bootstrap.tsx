@@ -73,12 +73,12 @@ function InstallBanner({
         left: "auto",
       }}
     >
-      <div className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-white/20 bg-[#0D1F45]/95 px-4 py-3 shadow-2xl shadow-black/30 backdrop-blur-md">
+      <div className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-white/20 bg-[#1A1714]/95 px-4 py-3 shadow-2xl shadow-black/30 backdrop-blur-md">
         {/* Subtle gradient shimmer */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-violet-500/10" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-orange-500/10" />
 
         {/* App icon */}
-        <div className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 shadow-inner">
+        <div className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-inner">
           <span className="text-base font-black text-white">K</span>
         </div>
 

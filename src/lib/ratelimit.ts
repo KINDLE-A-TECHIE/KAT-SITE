@@ -34,6 +34,9 @@ export const projectCreateLimiter = makeLimiter(10, "1 h", "kat:projects:create"
 /** File upload presigned URL: 30 per hour per user */
 export const projectUploadLimiter = makeLimiter(30, "1 h", "kat:projects:upload");
 
+/** Lesson note image upload presigned URL: 40 per hour per author */
+export const contentUploadLimiter = makeLimiter(40, "1 h", "kat:content:upload");
+
 /** Feedback submission: 60 per hour per user */
 export const projectFeedbackLimiter = makeLimiter(60, "1 h", "kat:projects:feedback");
 
@@ -65,6 +68,14 @@ export const embedRedeemLimiter = makeLimiter(20, "1 m", "kat:embed:redeem");
 /** Public v1 API, keyed on the API KEY (not the IP): a school behind one NAT must not rate-limit
  *  itself, and a stolen key must not be usable from a botnet to multiply its own quota. */
 export const apiV1Limiter = makeLimiter(600, "1 m", "kat:api:v1");
+
+/** Pupil PIN attempts, keyed on (class code, pupil). A coarse ceiling on top of the per-pupil DB
+ *  lockout, so a 6-digit PIN cannot be walked in a burst. */
+export const studentPinLimiter = makeLimiter(10, "5 m", "kat:auth:student-pin");
+
+/** Reading a class roster behind a join code (the pre-login "pick your name" step). Bounds how fast
+ *  a guessed code can be probed for the names it unlocks. */
+export const studentRosterLimiter = makeLimiter(30, "5 m", "kat:auth:student-roster");
 
 export function getClientIp(request: Request): string {
   return (

@@ -12,6 +12,18 @@ function LogRow({ builds }: { builds: Build[] }) {
           <span className="font-mono text-xs uppercase tracking-widest text-[var(--kat-sun)]">
             {String(i + 1).padStart(2, "0")}
           </span>
+          {/* Real project thumbnail when the build has a cover image. Kept small so the
+              oversized display type stays the signature; no image = pure type, as before. */}
+          {b.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={b.imageUrl}
+              alt=""
+              aria-hidden
+              className="h-9 w-9 shrink-0 rounded-sm border border-white/15 object-cover sm:h-11 sm:w-11"
+              loading="lazy"
+            />
+          ) : null}
           <span className="font-display text-2xl font-bold text-[var(--kat-paper)] sm:text-3xl">
             {b.firstName}
             {b.program ? (

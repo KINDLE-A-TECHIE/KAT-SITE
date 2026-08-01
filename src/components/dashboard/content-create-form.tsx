@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Code2, FileText, Link as LinkIcon, Video, Youtube, Plus, X, Send } from "lucide-react";
+import { Blocks, Code2, FileText, Link as LinkIcon, Network, Puzzle, Video, Youtube, Plus, X, Send, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SUPPORTED_LANGUAGES } from "@/components/dashboard/code-playground-block";
+import { LEVELS } from "@/lib/network-lab/levels";
 
-type Tab = "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND";
+type Tab = "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB" | "BLOCKLY" | "SCRATCH";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "RICH_TEXT",       label: "Rich Text", icon: <FileText className="h-3.5 w-3.5" /> },
@@ -17,6 +18,9 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "EXTERNAL_VIDEO",  label: "Video URL", icon: <Video className="h-3.5 w-3.5" /> },
   { id: "DOCUMENT_LINK",   label: "Document",  icon: <LinkIcon className="h-3.5 w-3.5" /> },
   { id: "CODE_PLAYGROUND", label: "Code",      icon: <Code2 className="h-3.5 w-3.5" /> },
+  { id: "NETWORK_LAB",     label: "Network Lab", icon: <Network className="h-3.5 w-3.5" /> },
+  { id: "BLOCKLY",         label: "Blocks",    icon: <Blocks className="h-3.5 w-3.5" /> },
+  { id: "SCRATCH",         label: "Scratch",   icon: <Puzzle className="h-3.5 w-3.5" /> },
 ];
 
 const TAB_ICON: Record<Tab, React.ReactNode> = {
@@ -25,6 +29,9 @@ const TAB_ICON: Record<Tab, React.ReactNode> = {
   EXTERNAL_VIDEO:  <Video className="h-3.5 w-3.5" />,
   DOCUMENT_LINK:   <LinkIcon className="h-3.5 w-3.5" />,
   CODE_PLAYGROUND: <Code2 className="h-3.5 w-3.5" />,
+  NETWORK_LAB:     <Network className="h-3.5 w-3.5" />,
+  BLOCKLY:         <Blocks className="h-3.5 w-3.5" />,
+  SCRATCH:         <Puzzle className="h-3.5 w-3.5" />,
 };
 
 const TAB_LABEL: Record<Tab, string> = {
@@ -33,7 +40,12 @@ const TAB_LABEL: Record<Tab, string> = {
   EXTERNAL_VIDEO:  "Video URL",
   DOCUMENT_LINK:   "Document",
   CODE_PLAYGROUND: "Code",
+  NETWORK_LAB:     "Network Lab",
+  BLOCKLY:         "Blocks",
+  SCRATCH:         "Scratch",
 };
+
+const LAB_LEVELS = Object.entries(LEVELS).map(([key, level]) => ({ key, unit: level.unit }));
 
 const STARTER_CODE: Record<string, string> = {
   // Popular
@@ -104,8 +116,63 @@ export function ContentCreateForm({
   const [url, setUrl] = useState("");
   const [language, setLanguage] = useState<string>(SUPPORTED_LANGUAGES[0].value);
   const [starterCode, setStarterCode] = useState(STARTER_CODE[SUPPORTED_LANGUAGES[0].value] ?? "");
+  const [labLevel, setLabLevel] = useState<string>(LAB_LEVELS[0]?.key ?? "");
   const [queue, setQueue] = useState<QueuedBlock[]>([]);
   const [busy, setBusy] = useState(false);
+  const [imgBusy, setImgBusy] = useState(false);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  // Insert text into the body at the cursor (or append if the field is not focused), then restore
+  // the caret just after what we inserted so the author can keep typing.
+  const insertIntoBody = (snippet: string) => {
+    const ta = bodyRef.current;
+    if (!ta) { setBody((b) => b + snippet); return; }
+    const start = ta.selectionStart ?? body.length;
+    const end = ta.selectionEnd ?? body.length;
+    const next = body.slice(0, start) + snippet + body.slice(end);
+    setBody(next);
+    requestAnimationFrame(() => {
+      ta.focus();
+      const caret = start + snippet.length;
+      ta.setSelectionRange(caret, caret);
+    });
+  };
+
+  const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+  const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // raw ceiling; the server compresses down to WebP
+
+  // Send the raw file to the server, which compresses it to WebP (the same sharp path avatars/logos
+  // use) and stores it on R2, then drop an <img> at the cursor. We store the image ourselves so a note
+  // never depends on an outside host, and a big photo is shrunk rather than rejected.
+  const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // let the same file be re-picked later
+    if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) { toast.error("Use a PNG, JPEG, GIF, or WebP image."); return; }
+    if (file.size > MAX_IMAGE_SIZE) { toast.error("Image too large (max 20 MB)."); return; }
+
+    setImgBusy(true);
+    try {
+      const res = await fetch(`/api/curriculum/lessons/${lessonId}/note-image`, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        toast.error(data.error ?? "Could not upload the image.");
+        return;
+      }
+      const { url } = await res.json() as { url: string };
+      insertIntoBody(`\n<img src="${url}" alt="">\n`);
+      toast.success("Image inserted and compressed. Add alt text describing it for accessibility.");
+    } catch {
+      toast.error("Network error while uploading the image.");
+    } finally {
+      setImgBusy(false);
+    }
+  };
 
   const resetForm = () => {
     setTitle("");
@@ -113,6 +180,7 @@ export function ContentCreateForm({
     setUrl("");
     setLanguage(SUPPORTED_LANGUAGES[0].value);
     setStarterCode(STARTER_CODE[SUPPORTED_LANGUAGES[0].value] ?? "");
+    setLabLevel(LAB_LEVELS[0]?.key ?? "");
     setTab("RICH_TEXT");
   };
 
@@ -128,10 +196,13 @@ export function ContentCreateForm({
       toast.error("URL is required."); return;
     }
     if (tab === "CODE_PLAYGROUND" && !starterCode.trim()) { toast.error("Starter code is required."); return; }
+    if (tab === "NETWORK_LAB" && !labLevel) { toast.error("Choose a level."); return; }
 
+    // NETWORK_LAB stores the chosen level key in `body`, the same slot CODE_PLAYGROUND uses for code.
+    const blockBody = tab === "NETWORK_LAB" ? labLevel : body;
     setQueue((prev) => [
       ...prev,
-      { localId: `${Date.now()}-${Math.random()}`, type: tab, title: title.trim(), body, url: url.trim(), language, starterCode },
+      { localId: `${Date.now()}-${Math.random()}`, type: tab, title: title.trim(), body: blockBody, url: url.trim(), language, starterCode },
     ]);
     resetForm();
   };
@@ -148,6 +219,11 @@ export function ContentCreateForm({
         const payload: Record<string, unknown> = { type: block.type, title: block.title };
         if (block.type === "RICH_TEXT")         payload.body = block.body;
         else if (block.type === "CODE_PLAYGROUND") { payload.body = block.starterCode; payload.language = block.language; }
+        else if (block.type === "NETWORK_LAB")  payload.body = block.body;
+        // BLOCKLY config is optional: send body only when the author provided one (blank = default toolbox).
+        else if (block.type === "BLOCKLY")      { if (block.body.trim()) payload.body = block.body; }
+        // SCRATCH: the optional prompt rides body as JSON { prompt }. Blank = a bare editor, no prompt.
+        else if (block.type === "SCRATCH")      { if (block.body.trim()) payload.body = JSON.stringify({ prompt: block.body.trim() }); }
         else                                    payload.url = block.url;
 
         const res = await fetch(`/api/curriculum/lessons/${lessonId}/contents`, {
@@ -175,15 +251,15 @@ export function ContentCreateForm({
   return (
     <div className="space-y-4">
       {/* Type tabs */}
-      <div className="flex gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-1">
+      <div className="flex gap-1 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800 p-1">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
               tab === t.id
-                ? "bg-white dark:bg-slate-900 text-[#1E5FAF] shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                ? "bg-white dark:bg-stone-900 text-kat-clay shadow-sm"
+                : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300"
             }`}
           >
             {t.icon}
@@ -207,16 +283,41 @@ export function ContentCreateForm({
       {/* Body / URL / Code fields */}
       {tab === "RICH_TEXT" && (
         <div className="space-y-1.5">
-          <Label htmlFor="content-body" className="text-sm">Content (HTML or plain text)</Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="content-body" className="text-sm">Content (HTML or plain text)</Label>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/gif,image/webp"
+              className="hidden"
+              onChange={(e) => void onPickImage(e)}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={imgBusy}
+              className="h-7 gap-1.5 text-xs"
+            >
+              <ImagePlus className="h-3.5 w-3.5" />
+              {imgBusy ? "Uploading…" : "Insert image"}
+            </Button>
+          </div>
           <Textarea
             id="content-body"
+            ref={bodyRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder="Enter lesson content here. You can use HTML tags like <b>, <ul>, <li>, <p>, <h3>, etc."
             rows={8}
             className="font-mono text-sm"
           />
-          <p className="text-xs text-slate-400 dark:text-slate-500">Basic HTML is supported. Script tags will be stripped.</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500">
+            Basic HTML is supported. Inserted images are compressed and stored on KAT, and pupils can tap
+            one to zoom. Write math with TeX between dollar signs, e.g.{" "}
+            <code className="font-mono">$a^2 + b^2 = c^2$</code>. Script tags are stripped.
+          </p>
         </div>
       )}
 
@@ -230,7 +331,7 @@ export function ContentCreateForm({
             placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
             className="text-sm"
           />
-          <p className="text-xs text-slate-400 dark:text-slate-500">Paste any YouTube watch or share URL.</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500">Paste any YouTube watch or share URL.</p>
         </div>
       )}
 
@@ -244,7 +345,7 @@ export function ContentCreateForm({
             placeholder="https://example.com/video.mp4"
             className="text-sm"
           />
-          <p className="text-xs text-slate-400 dark:text-slate-500">Direct link to an .mp4 or other browser-supported video file.</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500">Direct link to an .mp4 or other browser-supported video file.</p>
         </div>
       )}
 
@@ -258,7 +359,7 @@ export function ContentCreateForm({
             placeholder="https://drive.google.com/... or https://docs.google.com/..."
             className="text-sm"
           />
-          <p className="text-xs text-slate-400 dark:text-slate-500">Link to a Google Doc, PDF, Notion page, or any public document URL.</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500">Link to a Google Doc, PDF, Notion page, or any public document URL.</p>
         </div>
       )}
 
@@ -270,7 +371,7 @@ export function ContentCreateForm({
               id="code-language"
               value={language}
               onChange={(e) => handleLanguageChange(e.target.value)}
-              className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:border-[#1E5FAF] focus:outline-none focus:ring-1 focus:ring-[#1E5FAF]"
+              className="w-full rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-kat-clay focus:outline-none focus:ring-1 focus:ring-kat-clay"
             >
               {SUPPORTED_LANGUAGES.map((l) => (
                 <option key={l.value} value={l.value}>{l.label}</option>
@@ -279,7 +380,7 @@ export function ContentCreateForm({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="starter-code" className="text-sm">
-              Starter Code <span className="font-normal text-slate-400 dark:text-slate-500">(learners will see this as their starting point)</span>
+              Starter Code <span className="font-normal text-stone-400 dark:text-stone-500">(learners will see this as their starting point)</span>
             </Label>
             <Textarea
               id="starter-code"
@@ -289,10 +390,74 @@ export function ContentCreateForm({
               className="font-mono text-sm"
               spellCheck={false}
             />
-            <p className="text-xs text-slate-400 dark:text-slate-500">
+            <p className="text-xs text-stone-400 dark:text-stone-500">
               Learners can edit this code freely in their Monaco editor and run it directly.
             </p>
           </div>
+        </div>
+      )}
+
+      {tab === "NETWORK_LAB" && (
+        <div className="space-y-1.5">
+          <Label htmlFor="lab-level" className="text-sm">Level</Label>
+          <select
+            id="lab-level"
+            value={labLevel}
+            onChange={(e) => setLabLevel(e.target.value)}
+            className="w-full rounded-md border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-sm text-stone-800 dark:text-stone-200 focus:border-kat-clay focus:outline-none focus:ring-1 focus:ring-kat-clay"
+          >
+            {LAB_LEVELS.map((l) => (
+              <option key={l.key} value={l.key}>{l.key} · {l.unit}</option>
+            ))}
+          </select>
+          <p className="text-xs text-stone-400 dark:text-stone-500">
+            Learners build and launch packets to complete this network level. Add a Rich Text block
+            for the instructions.
+          </p>
+        </div>
+      )}
+
+      {tab === "BLOCKLY" && (
+        <div className="space-y-1.5">
+          <Label htmlFor="blockly-config" className="text-sm">
+            Advanced config <span className="font-normal text-stone-400 dark:text-stone-500">(JSON, optional)</span>
+          </Label>
+          <Textarea
+            id="blockly-config"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={6}
+            placeholder={'Leave blank for the default block set. Optional: {"prompt":"Make the robot say hello 3 times","toolbox":{...},"startBlocks":{...},"allowCode":true}'}
+            className="font-mono text-sm"
+            spellCheck={false}
+          />
+          <p className="text-xs text-stone-400 dark:text-stone-500">
+            Learners drag Python blocks and run them, and can switch to a Python editor seeded from their
+            blocks. Blank uses the default toolbox, an empty canvas, and the Python switch on. Optional
+            keys: <code>prompt</code> (an instruction line), <code>toolbox</code> (a Blockly toolbox),
+            <code>startBlocks</code> (a saved workspace), <code>allowCode</code> (set <code>false</code> to
+            keep it blocks-only). Add a Rich Text block for full instructions.
+          </p>
+        </div>
+      )}
+
+      {tab === "SCRATCH" && (
+        <div className="space-y-1.5">
+          <Label htmlFor="scratch-prompt" className="text-sm">
+            Prompt <span className="font-normal text-stone-400 dark:text-stone-500">(optional)</span>
+          </Label>
+          <Textarea
+            id="scratch-prompt"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={3}
+            placeholder="e.g. Make the cat walk across the stage and say hello."
+            className="text-sm"
+          />
+          <p className="text-xs text-stone-400 dark:text-stone-500">
+            Learners build in the Scratch editor and save their project; their work resumes next time. Blank
+            shows the editor with no prompt. Add a Rich Text block for full instructions.
+          </p>
         </div>
       )}
 
@@ -312,28 +477,28 @@ export function ContentCreateForm({
 
       {/* Queued blocks */}
       {queue.length > 0 && (
-        <div className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3">
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+        <div className="space-y-2 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/60 p-3">
+          <p className="text-xs font-medium text-stone-500 dark:text-stone-400">
             {queue.length} block{queue.length > 1 ? "s" : ""} ready to submit
           </p>
           <div className="space-y-1.5">
             {queue.map((block, i) => (
               <div
                 key={block.localId}
-                className="flex items-center gap-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2"
+                className="flex items-center gap-2.5 rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2"
               >
-                <span className="flex size-5 shrink-0 items-center justify-center text-slate-400 dark:text-slate-500">
+                <span className="flex size-5 shrink-0 items-center justify-center text-stone-400 dark:text-stone-500">
                   {TAB_ICON[block.type]}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs font-medium text-slate-700 dark:text-slate-200">{block.title}</span>
-                  <span className="text-[11px] text-slate-400 dark:text-slate-500">{TAB_LABEL[block.type]}</span>
+                  <span className="block truncate text-xs font-medium text-stone-700 dark:text-stone-200">{block.title}</span>
+                  <span className="text-[11px] text-stone-400 dark:text-stone-500">{TAB_LABEL[block.type]}</span>
                 </span>
-                <span className="shrink-0 text-[11px] text-slate-300 dark:text-slate-600">#{i + 1}</span>
+                <span className="shrink-0 text-[11px] text-stone-300 dark:text-stone-600">#{i + 1}</span>
                 <button
                   type="button"
                   onClick={() => removeBlock(block.localId)}
-                  className="shrink-0 rounded p-0.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-rose-500"
+                  className="shrink-0 rounded p-0.5 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-700 hover:text-rose-500"
                   title="Remove block"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -345,7 +510,7 @@ export function ContentCreateForm({
             <Button
               onClick={() => void submitAll()}
               disabled={busy}
-              className="gap-1.5 bg-[#1E5FAF] text-sm hover:bg-[#1a4f8f]"
+              className="gap-1.5 bg-kat-clay text-sm hover:bg-kat-clay-deep"
             >
               <Send className="h-3.5 w-3.5" />
               {busy ? "Submitting…" : `Submit ${queue.length} Block${queue.length > 1 ? "s" : ""} for Review`}

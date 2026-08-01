@@ -47,7 +47,7 @@ type FoundUser = {
 
 const STATUS_CHIP: Record<InviteStatus, string> = {
   valid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
-  used: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
+  used: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400",
   expired: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
   revoked: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400",
 };
@@ -194,28 +194,14 @@ export function AdminAccessPanel() {
   return (
     <div className="space-y-4">
 
-      {/* Jitsi config info */}
-      <section className="kat-card">
-        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">
-          Jitsi Meetings
-        </h3>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          Configured via environment variables{" "}
-          <code className="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800">JITSI_DOMAIN</code>,{" "}
-          <code className="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800">JITSI_APP_ID</code>,{" "}
-          <code className="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800">JITSI_APP_SECRET</code>.
-          Contact your system administrator to update these settings.
-        </p>
-      </section>
-
       {/* Invite admin / instructor */}
       <section className="kat-card">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">
               Invite Admin or Instructor
             </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-stone-600 dark:text-stone-400">
               Send one-time registration links for admin and instructor onboarding.
             </p>
           </div>
@@ -229,7 +215,7 @@ export function AdminAccessPanel() {
             onChange={(e) => setEmail(e.target.value)}
           />
           <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "ADMIN" | "INSTRUCTOR")}>
-            <SelectTrigger className="h-10 rounded-xl border border-slate-300 bg-slate-50/70 px-3 text-sm text-slate-700 focus-visible:ring-2 focus-visible:ring-sky-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
+            <SelectTrigger className="h-10 rounded-lg border border-stone-300 bg-stone-50/70 px-3 text-sm text-stone-700 focus-visible:ring-2 focus-visible:ring-orange-200 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200">
               <SelectValue placeholder="Select role" />
             </SelectTrigger>
             <SelectContent className="max-h-56 overflow-y-auto" position="popper" side="bottom" align="start" sideOffset={6}>
@@ -259,9 +245,9 @@ export function AdminAccessPanel() {
         </div>
 
         {latestInviteUrl ? (
-          <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/30">
-            <p className="text-xs font-medium uppercase tracking-wide text-blue-700 dark:text-blue-400">Latest staff invite link</p>
-            <p className="mt-1 break-all text-sm text-blue-900 dark:text-blue-300">{latestInviteUrl}</p>
+          <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 p-3 dark:border-orange-800 dark:bg-orange-900/30">
+            <p className="text-xs font-medium uppercase tracking-wide text-orange-700 dark:text-orange-400">Latest staff invite link</p>
+            <p className="mt-1 break-all text-sm text-orange-900 dark:text-orange-300">{latestInviteUrl}</p>
             <Button variant="outline" className="mt-2 w-full sm:w-auto" onClick={() => void copyInviteUrl(latestInviteUrl)}>
               <Copy className="mr-1.5 size-4" />
               Copy Link
@@ -273,17 +259,17 @@ export function AdminAccessPanel() {
       {/* Promote existing user to Super Admin */}
       <section className="kat-card">
         <div>
-          <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">
+          <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">
             Promote to Super Admin
           </h3>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-stone-600 dark:text-stone-400">
             Find an existing user by email and grant them full super admin access.
           </p>
         </div>
 
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
             <Input
               className="pl-9"
               placeholder="user@email.com"
@@ -301,15 +287,15 @@ export function AdminAccessPanel() {
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800"
+            className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-800"
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
+                <p className="font-medium text-stone-900 dark:text-stone-100">
                   {foundUser.firstName} {foundUser.lastName}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{foundUser.email}</p>
-                <span className="mt-1 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                <p className="text-xs text-stone-500 dark:text-stone-400">{foundUser.email}</p>
+                <span className="mt-1 inline-block rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium uppercase text-stone-600 dark:bg-stone-700 dark:text-stone-300">
                   {foundUser.role.replace("_", " ")}
                 </span>
               </div>
@@ -334,7 +320,7 @@ export function AdminAccessPanel() {
 
       {/* Staff invite history */}
       <section className="kat-card">
-        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">
+        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">
           Staff Invite History
         </h3>
         <div className="mt-3 space-y-3">
@@ -344,7 +330,7 @@ export function AdminAccessPanel() {
               <Skeleton className="h-20 w-full" />
             </>
           ) : invites.length === 0 ? (
-            <p className="text-sm text-slate-600 dark:text-slate-400">No staff invites created yet.</p>
+            <p className="text-sm text-stone-600 dark:text-stone-400">No staff invites created yet.</p>
           ) : (
             invites.map((invite, index) => (
               <motion.div
@@ -352,20 +338,20 @@ export function AdminAccessPanel() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
-                className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+                className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-900 dark:text-slate-100">
+                    <p className="truncate font-medium text-stone-900 dark:text-stone-100">
                       {invite.email}
                     </p>
-                    <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <p className="text-[11px] uppercase tracking-wide text-stone-500 dark:text-stone-400">
                       {invite.role.replace("_", " ")}
                     </p>
-                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
                       By {invite.createdBy.firstName} {invite.createdBy.lastName} · {new Date(invite.createdAt).toLocaleDateString()}
                     </p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                    <p className="text-xs text-stone-400 dark:text-stone-500">
                       Expires {new Date(invite.expiresAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -374,7 +360,7 @@ export function AdminAccessPanel() {
                   </span>
                 </div>
                 {invite.usedBy ? (
-                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
                     Used by {invite.usedBy.firstName} {invite.usedBy.lastName}
                     {invite.usedAt ? ` · ${new Date(invite.usedAt).toLocaleDateString()}` : ""}
                   </p>
@@ -401,10 +387,10 @@ export function AdminAccessPanel() {
       <section className="kat-card">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">
               Staff Access Controls
             </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-stone-600 dark:text-stone-400">
               Place admin/instructor accounts on hold, reactivate them, or remove access.
             </p>
           </div>
@@ -418,7 +404,7 @@ export function AdminAccessPanel() {
               <Skeleton className="h-24 w-full" />
             </>
           ) : admins.length === 0 ? (
-            <p className="text-sm text-slate-600 dark:text-slate-400">No admin or instructor accounts found.</p>
+            <p className="text-sm text-stone-600 dark:text-stone-400">No admin or instructor accounts found.</p>
           ) : (
             admins.map((admin, index) => (
               <motion.div
@@ -426,18 +412,18 @@ export function AdminAccessPanel() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
-                className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+                className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-medium text-slate-900 dark:text-slate-100">
+                    <p className="font-medium text-stone-900 dark:text-stone-100">
                       {admin.firstName} {admin.lastName}
                     </p>
-                    <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <p className="text-[11px] uppercase tracking-wide text-stone-500 dark:text-stone-400">
                       {admin.role.replace("_", " ")}
                     </p>
-                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">{admin.email}</p>
-                    <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                    <p className="truncate text-xs text-stone-500 dark:text-stone-400">{admin.email}</p>
+                    <p className="mt-0.5 text-xs text-stone-400 dark:text-stone-500">
                       Joined {new Date(admin.createdAt).toLocaleDateString()}
                       {admin.invitedBy ? ` · Invited by ${admin.invitedBy.firstName} ${admin.invitedBy.lastName}` : ""}
                     </p>
@@ -446,7 +432,7 @@ export function AdminAccessPanel() {
                     <span className={`rounded-full px-2 py-1 text-xs font-medium ${admin.isActive ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"}`}>
                       {admin.isActive ? "Active" : "On Hold"}
                     </span>
-                    <span className={`rounded-full px-2 py-1 text-xs font-medium ${admin.canGrantRetakes ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400" : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"}`}>
+                    <span className={`rounded-full px-2 py-1 text-xs font-medium ${admin.canGrantRetakes ? "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400" : "bg-stone-100 text-stone-500 dark:bg-stone-700 dark:text-stone-400"}`}>
                       {admin.canGrantRetakes ? "Retakes ON" : "Retakes OFF"}
                     </span>
                   </div>

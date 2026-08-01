@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Check, Code2, Download, FileText, Printer, X } from "lucide-react";
+import { Check, Code2, Download, FileDown, FileText, Printer, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +15,7 @@ type UnitCoverage = {
   order: number;
   label: string;
   strand: "CODING" | "DIGLIT";
+  licensed: boolean;
   topicsInScheme: number | null;
   topicsOnPlatform: number;
   schemeCoveragePct: number | null;
@@ -28,7 +29,7 @@ type UnitCoverage = {
 
 type Section = {
   summary: {
-    class: { id: string; name: string; term: string };
+    class: { id: string; name: string; sessionLabel: string };
     course: { id: string; name: string } | null;
     studentCount: number;
     totalLessons: number;
@@ -62,7 +63,7 @@ type Section = {
 
 type Report = {
   school: { name: string };
-  term: string | null;
+  session: string | null;
   scope: "class" | "school";
   licence: { term: string; status: string; seatLimit: number; seatsUsed: number } | null;
   generatedAt: string;
@@ -89,16 +90,16 @@ function formatTeacherHistory(
     .join(", ");
 }
 
-export function ReportPanel({ terms, classes }: { terms: string[]; classes: Array<{ id: string; name: string; term: string }> }) {
-  const [term, setTerm] = useState(terms[0] ?? "");
+export function ReportPanel({ sessions, classes }: { sessions: string[]; classes: Array<{ id: string; name: string; sessionLabel: string }> }) {
+  const [session, setSession] = useState(sessions[0] ?? "");
   const [classId, setClassId] = useState("ALL");
   const [data, setData] = useState<Report | null>(null);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
-    if (!term) return;
+    if (!session) return;
     setLoading(true);
-    const q = new URLSearchParams({ term });
+    const q = new URLSearchParams({ session });
     if (classId !== "ALL") q.set("classId", classId);
     const res = await fetch(`/api/school/reports?${q.toString()}`);
     const payload = await res.json().catch(() => ({}));
@@ -108,7 +109,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
       return;
     }
     setData(payload as Report);
-  }, [term, classId]);
+  }, [session, classId]);
 
   useEffect(() => {
     void load();
@@ -132,7 +133,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
         ]);
       }
     }
-    downloadCsv(`kat-students-${data.term ?? "term"}.csv`, rows);
+    downloadCsv(`kat-students-${data.session ?? "session"}.csv`, rows);
   };
 
   const exportCoverage = () => {
@@ -151,6 +152,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
         "Attested by",
         "Taught by (if second-hand)",
         "Student engagement %",
+        "Term licensed",
       ],
     ];
     for (const s of data.classes) {
@@ -169,10 +171,11 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
           u.deliveredBy ?? "",
           u.taughtByName ?? "",
           u.engagementPct,
+          u.licensed ? "Yes" : "No",
         ]);
       }
     }
-    downloadCsv(`kat-nerdc-coverage-${data.term ?? "term"}.csv`, rows);
+    downloadCsv(`kat-nerdc-coverage-${data.session ?? "session"}.csv`, rows);
   };
 
   return (
@@ -180,15 +183,15 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
       {/* Controls, hidden when printing */}
       <div className="flex flex-wrap items-end gap-3 print:hidden">
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-stone-500">Term</label>
-          <Select value={term} onValueChange={setTerm}>
+          <label className="text-xs font-medium text-stone-500">Session</label>
+          <Select value={session} onValueChange={setSession}>
             <SelectTrigger className="h-9 w-48">
-              <SelectValue placeholder="Choose a term" />
+              <SelectValue placeholder="Choose a session" />
             </SelectTrigger>
             <SelectContent>
-              {terms.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t}
+              {sessions.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -204,7 +207,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
             <SelectContent>
               <SelectItem value="ALL">Whole school</SelectItem>
               {classes
-                .filter((c) => !term || c.term === term)
+                .filter((c) => !session || c.sessionLabel === session)
                 .map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
@@ -223,29 +226,44 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
             <Download className="size-4" />
             Coverage CSV
           </Button>
-          <Button
-            onClick={() => window.print()}
-            disabled={!data}
-            className="gap-1.5 bg-orange-600 text-white hover:bg-orange-700"
-          >
+          <Button variant="outline" onClick={() => window.print()} disabled={!data} className="gap-1.5">
             <Printer className="size-4" />
-            Print / Save PDF
+            Print
           </Button>
+          {session ? (
+            <Button asChild className="gap-1.5 bg-orange-700 text-white hover:bg-orange-800">
+              <a
+                href={`/api/school/reports/pdf?${new URLSearchParams(
+                  classId !== "ALL" ? { session, classId } : { session },
+                ).toString()}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <FileDown className="size-4" />
+                Download PDF
+              </a>
+            </Button>
+          ) : (
+            <Button disabled className="gap-1.5 bg-orange-700 text-white">
+              <FileDown className="size-4" />
+              Download PDF
+            </Button>
+          )}
         </div>
       </div>
 
-      {loading ? <Skeleton className="h-96 w-full rounded-xl" /> : null}
+      {loading ? <Skeleton className="h-96 w-full rounded-lg" /> : null}
       {!loading && !data ? null : null}
 
       {data ? (
         <article className="space-y-6">
           {/* Report header */}
-          <header className="border-b border-stone-200 pb-4 dark:border-stone-700">
+          <header className="border-b border-stone-200 pb-4 dark:border-stone-800">
             <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100">
               {data.school.name}
             </h1>
             <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-              Progress &amp; NERDC coverage report · {data.term} ·{" "}
+              Progress &amp; NERDC coverage report · {data.session} ·{" "}
               {data.scope === "school" ? "whole school" : "single class"} · generated{" "}
               {new Date(data.generatedAt).toLocaleDateString("en-GB", {
                 day: "numeric",
@@ -304,7 +322,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
           {data.classes.length === 0 ? (
             <Card className="kat-card">
               <CardContent className="py-8 text-center text-sm text-stone-500 dark:text-stone-400">
-                No classes for this term.
+                No classes for this session.
               </CardContent>
             </Card>
           ) : null}
@@ -378,6 +396,11 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
                           <tr key={u.moduleId}>
                             <td className="py-2 pr-3 text-stone-800 dark:text-stone-200">
                               {u.order}. {u.label}
+                              {u.licensed ? null : (
+                                <span className="ml-2 whitespace-nowrap rounded bg-stone-100 px-1.5 py-0.5 text-[11px] font-medium text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+                                  Term not licensed
+                                </span>
+                              )}
                             </td>
                             <td className="py-2 text-center">
                               <Badge
@@ -492,7 +515,7 @@ export function ReportPanel({ terms, classes }: { terms: string[]; classes: Arra
             </section>
           ))}
 
-          <footer className="border-t border-stone-200 pt-4 text-xs text-stone-400 dark:border-stone-700">
+          <footer className="border-t border-stone-200 pt-4 text-xs text-stone-400 dark:border-stone-800">
             &ldquo;Delivered&rdquo; figures are attested by the named class teacher. Where a class
             changed hands during the term, every teacher who held it is listed with the dates. Each
             unit remains attributed to the teacher who actually attested it, and attestations are
@@ -520,7 +543,7 @@ function Figure({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-stone-200 p-3 dark:border-stone-700">
+    <div className="rounded-lg border border-stone-200 p-3 dark:border-stone-800">
       <p className="text-xs font-medium uppercase tracking-wide text-stone-400">{label}</p>
       <p
         className={`mt-1 text-2xl font-bold ${

@@ -67,7 +67,7 @@ describe("developer docs match the code", () => {
   });
 
   it("quotes the real pagination limits", () => {
-    const api = read("src/lib/api-v1.ts");
+    const api = read("src/lib/pagination.ts");
     const def = /PAGE_DEFAULT = (\d+)/.exec(api)?.[1];
     const max = /PAGE_MAX = (\d+)/.exec(api)?.[1];
     expect(DOCS.includes(`default ${def}, max ${max}`)).toBe(true);
@@ -86,6 +86,19 @@ describe("developer docs match the code", () => {
     // access logs, browser history and Referer headers. If this sentence goes, the guidance is gone.
     expect(/after the <Code>#<\/Code>|#t=/.test(DOCS)).toBe(true);
     expect(DOCS.includes("never sent to a server")).toBe(true);
+  });
+
+  it("gives WordPress/PHP integrators a server-side recipe that keeps the key off the page", () => {
+    // The page names PHP contractors as its reader, so a concrete PHP recipe must exist. The two
+    // ways it could quietly go wrong are: mint from the browser (key exposed), or token in a query
+    // string (leaks to logs). Pin both to the server-side, fragment-only shape.
+    expect(DOCS.includes("wp_remote_post"), "no PHP/WordPress recipe on the page").toBe(true);
+    // The key is read from a server constant, never printed into markup or JavaScript.
+    expect(DOCS.includes("Bearer ' . KAT_API_KEY")).toBe(true);
+    // The launch token still rides in the fragment (#t=), url-encoded, in the PHP path too.
+    expect(DOCS.includes("#t=' . rawurlencode")).toBe(true);
+    // A roster sync from PHP still carries an Idempotency-Key.
+    expect(DOCS.includes("'Idempotency-Key'")).toBe(true);
   });
 
   it("still warns about the things that get people breached", () => {

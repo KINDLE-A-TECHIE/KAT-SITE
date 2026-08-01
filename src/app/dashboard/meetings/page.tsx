@@ -18,10 +18,10 @@ export default async function MeetingsPage() {
         title="Sessions & Meetings"
         subtitle={
           isAdmin
-            ? "Oversee all scheduled classes and mentorship calls. Monitor attendance and access recordings."
+            ? "All scheduled classes and calls, with their recordings."
             : isInstructor
-              ? "Host live classes, 1-on-1 reviews, and group sessions for your learners using Jitsi Meet."
-              : "Join your upcoming live classes and mentorship calls. Catch up on recordings you missed."
+              ? "Schedule and host live classes and one-on-one sessions."
+              : "Join upcoming classes and catch up on recordings you missed."
         }
       />
       <MeetingsPanel role={role} userId={session.user.id} />

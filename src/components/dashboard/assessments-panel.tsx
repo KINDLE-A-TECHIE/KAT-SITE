@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { PaginationControls } from "@/components/pagination-controls";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { ArrowDown, ArrowUp, CheckCircle2, ClipboardList, Eye, GripVertical, Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, ClipboardList, Eye, GripVertical, Loader2, Pencil, Play, PlusCircle, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,11 @@ import {
   type UserRoleValue,
 } from "@/lib/enums";
 import { ProjectAssessmentView } from "@/components/dashboard/project-assessment-view";
+import { BlocklyWorkspace } from "@/components/dashboard/blockly-workspace";
+import { GridWorldView } from "@/components/dashboard/grid-world-view";
+import { TurtleWorldView } from "@/components/dashboard/turtle-world-view";
+import { runCode } from "@/lib/pyodide-grader";
+import { wrapForWorld, wrapForWorldTrace, isWorldId, WORLD_META, DEFAULT_GRID_STDIN } from "@/lib/blockly-worlds";
 
 type Program = {
   id: string;
@@ -92,12 +98,40 @@ type QuestionDraftOption = {
   isCorrect: boolean;
 };
 
+type TestCaseDraft = {
+  id: string;
+  stdin: string;
+  expectedStdout: string;
+  points: string;
+  hidden: boolean;
+};
+
+type CriterionDraft = {
+  id: string;
+  label: string;
+  maxPoints: string;
+};
+
 type QuestionDraft = {
   id: string;
   prompt: string;
   type: QuestionTypeValue;
   points: string;
   options: QuestionDraftOption[];
+  // CODE questions
+  codeLanguage?: string;
+  starterCode?: string;
+  testCases?: TestCaseDraft[];
+  // CODE questions answered with blocks: the pupil builds Blockly that generates the graded Python.
+  useBlocks?: boolean;
+  blocklyConfig?: string;
+  // A block "world" (e.g. "turtle"): the blocks are graded on the picture/state they make, not a printout.
+  world?: string;
+  // Authoring-only: the reference solution the author builds to CAPTURE the expected state. Never saved
+  // to blocklyConfig (which reaches the pupil), so it cannot leak the answer.
+  worldReferenceCode?: string;
+  // RUBRIC questions
+  criteria?: CriterionDraft[];
 };
 
 type AssessmentsPanelProps = {
@@ -107,7 +141,7 @@ type AssessmentsPanelProps = {
 const CREATOR_ROLES: UserRoleValue[] = ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR"];
 const LEARNER_ROLES: UserRoleValue[] = ["STUDENT", "FELLOW"];
 const KAT_DROPDOWN_TRIGGER_CLASS =
-  "h-10 w-full rounded-xl border border-slate-300 bg-slate-50/70 px-3 text-sm text-slate-700 focus-visible:ring-2 focus-visible:ring-sky-200";
+  "h-10 w-full rounded-lg border border-stone-300 bg-stone-50/70 px-3 text-sm text-stone-700 focus-visible:ring-2 focus-visible:ring-orange-200";
 const KAT_DROPDOWN_CONTENT_CLASS = "max-h-56 overflow-y-auto";
 
 function createId(prefix: string) {
@@ -128,6 +162,35 @@ function createTrueFalseOptions(): QuestionDraftOption[] {
   ];
 }
 
+function createTestCase(): TestCaseDraft {
+  return { id: createId("tc"), stdin: "", expectedStdout: "", points: "1", hidden: true };
+}
+
+function createCriterion(): CriterionDraft {
+  return { id: createId("crit"), label: "", maxPoints: "3" };
+}
+
+/**
+ * The blocklyConfig string sent for a block-answered CODE question. A world question keys the take UI on
+ * its `world` id (the toolbox is derived from the world); any hand-authored config is carried through.
+ * The reference solution is NEVER included: blocklyConfig reaches the pupil, so it would leak the answer.
+ */
+function buildBlocklyConfig(question: QuestionDraft): string {
+  let base: Record<string, unknown> = {};
+  const raw = question.blocklyConfig?.trim();
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") base = parsed as Record<string, unknown>;
+    } catch {
+      /* a malformed hand-authored config falls back to the world/default toolbox */
+    }
+  }
+  if (question.world) base.world = question.world;
+  delete (base as { worldReferenceCode?: unknown }).worldReferenceCode;
+  return Object.keys(base).length > 0 ? JSON.stringify(base) : "{}";
+}
+
 function createQuestionDraft(type: QuestionTypeValue): QuestionDraft {
   return {
     id: createId("q"),
@@ -140,6 +203,10 @@ function createQuestionDraft(type: QuestionTypeValue): QuestionDraft {
         : type === "TRUE_FALSE"
           ? createTrueFalseOptions()
           : [],
+    codeLanguage: type === "CODE" ? "python" : undefined,
+    starterCode: type === "CODE" ? "" : undefined,
+    testCases: type === "CODE" ? [createTestCase()] : undefined,
+    criteria: type === "RUBRIC" ? [createCriterion()] : undefined,
   };
 }
 
@@ -148,6 +215,8 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [aMeta, setAMeta] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [sMeta, setSMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [answersDraft, setAnswersDraft] = useState<AnswersDraft>({});
   const [gradeDraft, setGradeDraft] = useState<GradeDraft>({});
   const [busy, setBusy] = useState(false);
@@ -176,14 +245,27 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
   const [draggingQuestionId, setDraggingQuestionId] = useState<string | null>(null);
   const [dragOverQuestionId, setDragOverQuestionId] = useState<string | null>(null);
 
+  const fetchAssessments = async (p: number) => {
+    const res = await fetch(`/api/assessments?page=${p}`);
+    if (res.ok) {
+      const payload = await res.json();
+      setAssessments(payload.assessments ?? []);
+      setAMeta({ page: payload.page ?? 1, totalPages: payload.totalPages ?? 1, total: payload.total ?? (payload.assessments?.length ?? 0) });
+    }
+  };
+
+  const fetchSubmissions = async (p: number) => {
+    const res = await fetch(`/api/assessments/submissions?page=${p}`);
+    if (res.ok) {
+      const payload = await res.json();
+      setSubmissions(payload.submissions ?? []);
+      setSMeta({ page: payload.page ?? 1, totalPages: payload.totalPages ?? 1, total: payload.total ?? (payload.submissions?.length ?? 0) });
+    }
+  };
+
   const load = async () => {
     setLoading(true);
-    const [programResponse, assessmentsResponse, submissionsResponse] = await Promise.all([
-      fetch("/api/programs"),
-      fetch("/api/assessments"),
-      fetch("/api/assessments/submissions"),
-    ]);
-
+    const programResponse = await fetch("/api/programs");
     if (programResponse.ok) {
       const payload = await programResponse.json();
       setPrograms((payload.programs ?? []).map((item: { id: string; name: string }) => ({ id: item.id, name: item.name })));
@@ -191,16 +273,8 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
         setProgramId(payload.programs[0].id);
       }
     }
-
-    if (assessmentsResponse.ok) {
-      const payload = await assessmentsResponse.json();
-      setAssessments(payload.assessments ?? []);
-    }
-
-    if (submissionsResponse.ok) {
-      const payload = await submissionsResponse.json();
-      setSubmissions(payload.submissions ?? []);
-    }
+    // Refresh both lists at their current page (initial mount + after any mutation).
+    await Promise.all([fetchAssessments(aMeta.page), fetchSubmissions(sMeta.page)]);
     setLoading(false);
   };
 
@@ -330,19 +404,148 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
         if (question.id !== questionId) {
           return question;
         }
-        if (nextType === "OPEN_ENDED") {
-          return { ...question, type: nextType, options: [] };
-        }
-        if (nextType === "TRUE_FALSE") {
-          return { ...question, type: nextType, options: createTrueFalseOptions() };
-        }
-        if (question.type === "MULTIPLE_CHOICE") {
-          return question;
-        }
-        return { ...question, type: nextType, options: createMultipleChoiceOptions() };
+        // Reset per-type fields on switch so a question only carries what its type needs.
+        const cleared = { options: [] as QuestionDraftOption[], codeLanguage: undefined, starterCode: undefined, testCases: undefined, criteria: undefined, useBlocks: undefined, blocklyConfig: undefined };
+        if (nextType === "MULTIPLE_CHOICE") return { ...question, ...cleared, type: nextType, options: createMultipleChoiceOptions() };
+        if (nextType === "TRUE_FALSE") return { ...question, ...cleared, type: nextType, options: createTrueFalseOptions() };
+        if (nextType === "CODE") return { ...question, ...cleared, type: nextType, codeLanguage: "python", starterCode: "", testCases: [createTestCase()] };
+        if (nextType === "RUBRIC") return { ...question, ...cleared, type: nextType, criteria: [createCriterion()] };
+        return { ...question, ...cleared, type: nextType }; // OPEN_ENDED
       }),
     );
   };
+
+  const patchQuestion = (questionId: string, update: Partial<QuestionDraft>) =>
+    setQuestionDrafts((prev) => prev.map((q) => (q.id === questionId ? { ...q, ...update } : q)));
+
+  // Which world questions are currently running their reference capture (per question id).
+  const [capturing, setCapturing] = useState<Record<string, boolean>>({});
+  // Reference-solution replays for the authoring preview (per question id): one trace per maze + a counter.
+  const [refReplay, setRefReplay] = useState<Record<string, { traces: string[]; runId: number }>>({});
+  const [previewing, setPreviewing] = useState<Record<string, boolean>>({});
+
+  // Pick a block world for a CODE question. A world question is graded on ONE hidden captured state, so
+  // switching to a world resets it to a single test case; switching back to "none" leaves the cases as-is.
+  // The grid world seeds that case's stdin with a starter maze (the maze IS the stdin the runtime reads).
+  const setQuestionWorld = (question: QuestionDraft, world: string) => {
+    if (world) {
+      const stdin = world === "grid" ? DEFAULT_GRID_STDIN : "";
+      patchQuestion(question.id, { world, testCases: [{ ...createTestCase(), stdin }] });
+    } else {
+      patchQuestion(question.id, { world: undefined });
+    }
+  };
+
+  // Add another maze (test case) to a grid question. One reference solution must solve them all, so more
+  // mazes push the pupil toward a general solution (sensors + loops) rather than fixed moves.
+  const addMaze = (question: QuestionDraft) => {
+    const marks = question.testCases?.[0]?.points ?? "1";
+    patchQuestion(question.id, {
+      testCases: [...(question.testCases ?? []), { ...createTestCase(), stdin: DEFAULT_GRID_STDIN, points: marks }],
+    });
+  };
+
+  // Every maze in a set is weighted equally: one "marks per maze" value writes to all cases; the question
+  // total is that value times the number of mazes (the existing CODE-total rule).
+  const setMarksPerMaze = (question: QuestionDraft, value: string) => {
+    patchQuestion(question.id, { testCases: (question.testCases ?? []).map((t) => ({ ...t, points: value })) });
+  };
+
+  // Run the author's reference blocks through the world runtime and store its output as the hidden
+  // expected state for this question's single test case. This is the only way to author the expected
+  // value: nobody can hand-write the canonical JSON a drawing produces.
+  const captureWorldExpected = async (question: QuestionDraft) => {
+    const world = question.world;
+    if (!isWorldId(world)) return;
+    setCapturing((prev) => ({ ...prev, [question.id]: true }));
+    try {
+      // Run the ONE reference against every maze (grid reads its maze from stdin; turtle has none), and
+      // store each maze's output as that case's hidden expected. A maze the reference cannot solve is
+      // left uncaptured, which the save-time "no expected output" guard turns into a hard error.
+      const cases = question.testCases ?? [];
+      const inputs = world === "grid" && cases.length > 0 ? cases.map((t, i) => ({ id: String(i), stdin: t.stdin })) : [{ id: "0", stdin: "" }];
+      const runs = await runCode(wrapForWorld(world, question.worldReferenceCode ?? ""), inputs);
+
+      let failed = 0;
+      let unreached = 0;
+      const updated = cases.map((t, i) => {
+        const out = runs.find((r) => r.id === String(i));
+        const stdout = out && !out.errored ? out.stdout.trim() : "";
+        if (!stdout) {
+          failed += 1;
+        } else if (world === "grid") {
+          try {
+            const state = JSON.parse(stdout);
+            if (state && state.goal_reached === false) unreached += 1;
+          } catch {
+            /* a non-JSON report counts as a failure below via the empty guard on the next capture */
+          }
+        }
+        return { ...t, expectedStdout: stdout, hidden: true };
+      });
+      patchQuestion(question.id, { testCases: updated });
+
+      if (failed > 0) {
+        toast.error(`Captured, but the reference crashed on ${failed} maze(s). Fix the reference or those mazes.`);
+      } else {
+        toast.success(cases.length > 1 ? `Captured the expected result for all ${cases.length} mazes.` : "Captured the expected result from your reference blocks.");
+      }
+      if (unreached > 0) {
+        toast(`Heads up: the reference did not reach the goal on ${unreached} maze(s).`);
+      }
+    } catch {
+      toast.error("Could not run the reference blocks. Check your connection and try again.");
+    } finally {
+      setCapturing((prev) => ({ ...prev, [question.id]: false }));
+    }
+  };
+
+  // Run the reference blocks for a visual preview (trace, not grading), so the author can confirm it does
+  // what they intend before capturing. Grid runs against the question's maze; turtle has no stdin.
+  const previewReference = async (question: QuestionDraft) => {
+    const world = question.world;
+    if (!isWorldId(world)) return;
+    setPreviewing((prev) => ({ ...prev, [question.id]: true }));
+    try {
+      const cases = question.testCases ?? [];
+      const inputs = world === "grid" && cases.length > 0 ? cases.map((t, i) => ({ id: String(i), stdin: t.stdin })) : [{ id: "0", stdin: "" }];
+      const runs = await runCode(wrapForWorldTrace(world, question.worldReferenceCode ?? ""), inputs);
+      const traces = inputs.map((_, i) => runs.find((r) => r.id === String(i))?.stdout?.trim() ?? "");
+      if (traces.some((t) => t.length > 0)) {
+        setRefReplay((prev) => ({ ...prev, [question.id]: { traces, runId: (prev[question.id]?.runId ?? 0) + 1 } }));
+      } else {
+        toast.error("The reference blocks did not run. Add some blocks and try again.");
+      }
+    } finally {
+      setPreviewing((prev) => ({ ...prev, [question.id]: false }));
+    }
+  };
+
+  const addTestCase = (questionId: string) =>
+    setQuestionDrafts((prev) => prev.map((q) => (q.id === questionId ? { ...q, testCases: [...(q.testCases ?? []), createTestCase()] } : q)));
+
+  const removeTestCase = (questionId: string, tcId: string) =>
+    setQuestionDrafts((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, testCases: (q.testCases ?? []).filter((t) => t.id !== tcId) } : q)),
+    );
+
+  const updateTestCase = (questionId: string, tcId: string, update: Partial<TestCaseDraft>) =>
+    setQuestionDrafts((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, testCases: (q.testCases ?? []).map((t) => (t.id === tcId ? { ...t, ...update } : t)) } : q)),
+    );
+
+  const addCriterion = (questionId: string) =>
+    setQuestionDrafts((prev) => prev.map((q) => (q.id === questionId ? { ...q, criteria: [...(q.criteria ?? []), createCriterion()] } : q)));
+
+  const removeCriterion = (questionId: string, critId: string) =>
+    setQuestionDrafts((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, criteria: (q.criteria ?? []).filter((c) => c.id !== critId) } : q)),
+    );
+
+  const updateCriterion = (questionId: string, critId: string, update: Partial<CriterionDraft>) =>
+    setQuestionDrafts((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, criteria: (q.criteria ?? []).map((c) => (c.id === critId ? { ...c, ...update } : c)) } : q)),
+    );
 
   const addOption = (questionId: string) => {
     setQuestionDrafts((prev) =>
@@ -437,6 +640,11 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
       points: number;
       options?: Array<{ label: string; value: string; isCorrect: boolean }>;
       answerKey?: string;
+      codeLanguage?: string;
+      starterCode?: string;
+      blocklyConfig?: string;
+      testCases?: Array<{ stdin: string; expectedStdout: string; points: number; hidden: boolean }>;
+      criteria?: Array<{ label: string; maxPoints: number }>;
     }> = [];
     for (let index = 0; index < questionDrafts.length; index += 1) {
       const question = questionDrafts[index];
@@ -457,6 +665,64 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
           prompt,
           type: question.type,
           points,
+        });
+        continue;
+      }
+
+      if (question.type === "CODE") {
+        const testCases = (question.testCases ?? []).map((tc) => ({
+          stdin: tc.stdin,
+          expectedStdout: tc.expectedStdout,
+          points: Number(tc.points),
+          hidden: tc.hidden,
+        }));
+        if (testCases.length === 0) {
+          toast.error(`Question ${index + 1} needs at least one test case.`);
+          return;
+        }
+        if (testCases.some((tc) => tc.expectedStdout.trim().length === 0)) {
+          toast.error(`Question ${index + 1} has a test case with no expected output.`);
+          return;
+        }
+        if (testCases.some((tc) => !Number.isInteger(tc.points) || tc.points < 1)) {
+          toast.error(`Question ${index + 1} has a test case with invalid points.`);
+          return;
+        }
+        // A CODE question's marks are the sum of its test-case points (what a pupil can actually earn).
+        questions.push({
+          prompt,
+          type: question.type,
+          points: testCases.reduce((sum, tc) => sum + tc.points, 0),
+          codeLanguage: (question.codeLanguage || "python").trim(),
+          starterCode: question.starterCode ?? "",
+          // Block-answered: send the config so the take UI shows Blockly. "{}" = default toolbox; a world
+          // question carries its world id. Never carries the reference solution (see buildBlocklyConfig).
+          blocklyConfig: question.useBlocks ? buildBlocklyConfig(question) : undefined,
+          testCases,
+        });
+        continue;
+      }
+
+      if (question.type === "RUBRIC") {
+        const criteria = (question.criteria ?? []).map((c) => ({ label: c.label.trim(), maxPoints: Number(c.maxPoints) }));
+        if (criteria.length === 0) {
+          toast.error(`Question ${index + 1} needs at least one rubric criterion.`);
+          return;
+        }
+        if (criteria.some((c) => c.label.length === 0)) {
+          toast.error(`Question ${index + 1} has a rubric criterion with no label.`);
+          return;
+        }
+        if (criteria.some((c) => !Number.isInteger(c.maxPoints) || c.maxPoints < 1)) {
+          toast.error(`Question ${index + 1} has a rubric criterion with invalid marks.`);
+          return;
+        }
+        // A RUBRIC question's marks are the sum of its criteria.
+        questions.push({
+          prompt,
+          type: question.type,
+          points: criteria.reduce((sum, c) => sum + c.maxPoints, 0),
+          criteria,
         });
         continue;
       }
@@ -721,24 +987,24 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
               value={dueDate}
               onChange={(event) => setDueDate(event.target.value)}
             />
-            <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <label className="inline-flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
               <input type="checkbox" checked={published} onChange={(event) => setPublished(event.target.checked)} />
               Publish now (visible to learners only after super-admin verification)
             </label>
             </div>
             {type === "PROJECT" && (
-              <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 dark:border-blue-900/30 dark:bg-blue-950/20">
-                <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">Project Assessment</p>
-                <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+              <div className="rounded-lg border border-orange-100 bg-orange-50 p-3 dark:border-orange-900/30 dark:bg-orange-950/20">
+                <p className="text-sm font-semibold text-orange-700 dark:text-orange-400">Project Assessment</p>
+                <p className="mt-1 text-xs text-orange-600 dark:text-orange-400">
                   No questions required. Use the description above to specify what students must build.
                   Students will submit their project (files, links, description) directly from the Assessments panel.
                 </p>
               </div>
             )}
             {type !== "PROJECT" && (
-            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-700 dark:bg-slate-800">
+            <div className="space-y-3 rounded-lg border border-stone-200 bg-stone-50/60 p-3 dark:border-stone-800 dark:bg-stone-800">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Question Builder</p>
+              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">Question Builder</p>
               <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                 <Button
                   type="button"
@@ -773,7 +1039,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                 </Button>
               </div>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400">
+            <p className="text-xs text-stone-600 dark:text-stone-400">
               {questionDrafts.length} question(s), {draftTotalPoints} total point(s).
             </p>
 
@@ -784,17 +1050,17 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     key={question.id}
                     onDragOver={(event) => onQuestionDragOver(event, question.id)}
                     onDrop={() => onQuestionDrop(question.id)}
-                    className={`rounded-lg border bg-white p-3 transition dark:bg-slate-900 ${
+                    className={`rounded-lg border bg-white p-3 transition dark:bg-stone-900 ${
                       dragOverQuestionId === question.id && draggingQuestionId !== question.id
-                        ? "border-cyan-300 shadow-sm"
-                        : "border-slate-200 dark:border-slate-700"
+                        ? "border-orange-300 shadow-sm"
+                        : "border-stone-200 dark:border-stone-800"
                     } ${draggingQuestionId === question.id ? "opacity-80" : ""}`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          className="inline-flex size-8 cursor-grab items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-500 active:cursor-grabbing dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                          className="inline-flex size-8 cursor-grab items-center justify-center rounded-md border border-stone-200 bg-stone-50 text-stone-500 active:cursor-grabbing dark:border-stone-800 dark:bg-stone-800 dark:text-stone-400"
                           draggable
                           onDragStart={() => onQuestionDragStart(question.id)}
                           onDragEnd={onQuestionDragEnd}
@@ -802,7 +1068,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                         >
                           <GripVertical className="size-4" />
                         </button>
-                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Question {index + 1}</p>
+                        <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">Question {index + 1}</p>
                       </div>
                       <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
                         <Button
@@ -850,21 +1116,33 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                           <SelectItem value="MULTIPLE_CHOICE">MULTIPLE_CHOICE</SelectItem>
                           <SelectItem value="TRUE_FALSE">TRUE_FALSE</SelectItem>
                           <SelectItem value="OPEN_ENDED">OPEN_ENDED</SelectItem>
+                          <SelectItem value="CODE">CODE (auto-graded)</SelectItem>
+                          <SelectItem value="RUBRIC">RUBRIC (practical)</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Input
-                        type="number"
-                        min={1}
-                        placeholder="Points"
-                        value={question.points}
-                        onChange={(event) =>
-                          updateQuestion(question.id, { points: event.target.value })
-                        }
-                      />
+                      {question.type === "CODE" || question.type === "RUBRIC" ? (
+                        <div className="flex h-10 items-center rounded-lg border border-stone-200 bg-stone-50 px-3 text-xs text-stone-500 dark:border-stone-800 dark:bg-stone-900">
+                          Marks:{" "}
+                          {question.type === "CODE"
+                            ? (question.testCases ?? []).reduce((s, t) => s + (Number(t.points) || 0), 0)
+                            : (question.criteria ?? []).reduce((s, c) => s + (Number(c.maxPoints) || 0), 0)}{" "}
+                          (from {question.type === "CODE" ? "test cases" : "criteria"})
+                        </div>
+                      ) : (
+                        <Input
+                          type="number"
+                          min={1}
+                          placeholder="Points"
+                          value={question.points}
+                          onChange={(event) =>
+                            updateQuestion(question.id, { points: event.target.value })
+                          }
+                        />
+                      )}
                     </div>
 
                     <textarea
-                      className="mt-3 min-h-[80px] w-full rounded-md border border-slate-200 bg-white p-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                      className="mt-3 min-h-[80px] w-full rounded-md border border-stone-200 bg-white p-2 text-sm dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200"
                       placeholder="Question prompt"
                       value={question.prompt}
                       onChange={(event) =>
@@ -873,18 +1151,214 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     />
 
                     {question.type === "OPEN_ENDED" ? (
-                      <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
-                        Open-ended questions are graded manually.
+                      <p className="mt-2 text-xs text-stone-600 dark:text-stone-400">
+                        Open-ended questions are graded manually by the teacher.
                       </p>
+                    ) : question.type === "CODE" ? (
+                      <div className="mt-3 space-y-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[10rem_1fr]">
+                          <Input
+                            placeholder="Language (e.g. python)"
+                            value={question.codeLanguage ?? "python"}
+                            onChange={(event) => patchQuestion(question.id, { codeLanguage: event.target.value })}
+                          />
+                          <p className="flex items-center text-xs text-stone-500 dark:text-stone-400">
+                            Auto-graded: the pupil&apos;s program is run against each hidden test case.
+                          </p>
+                        </div>
+                        <label className="flex items-center gap-2 text-xs text-stone-600 dark:text-stone-300">
+                          <input
+                            type="checkbox"
+                            checked={question.useBlocks ?? false}
+                            onChange={(e) => patchQuestion(question.id, { useBlocks: e.target.checked })}
+                          />
+                          Answer with blocks (Blockly). The pupil builds blocks that generate the Python graded
+                          below; they can still switch to text.
+                        </label>
+                        {question.useBlocks ? (
+                          <div className="space-y-2">
+                            <label className="flex flex-wrap items-center gap-2 text-xs text-stone-600 dark:text-stone-300">
+                              <span className="font-medium">Grade on</span>
+                              <select
+                                className="rounded-md border border-stone-300 bg-stone-50 px-2 py-1 text-xs dark:border-stone-700 dark:bg-stone-900"
+                                value={question.world ?? ""}
+                                onChange={(e) => setQuestionWorld(question, e.target.value)}
+                              >
+                                <option value="">Program output (print)</option>
+                                {WORLD_META.map((w) => (
+                                  <option key={w.id} value={w.id}>{w.label}</option>
+                                ))}
+                              </select>
+                              {question.world ? (
+                                <span className="text-stone-400">{WORLD_META.find((w) => w.id === question.world)?.description}</span>
+                              ) : null}
+                            </label>
+                            {question.world ? (
+                              <div className="space-y-2 rounded-md border border-stone-200 p-2 dark:border-stone-800">
+                                {question.world === "grid" ? (
+                                  <div className="space-y-2">
+                                    <p className="text-[11px] font-medium text-stone-500 dark:text-stone-400">
+                                      Mazes the robot must solve. Your one reference below must solve EVERY maze, so use the
+                                      sensors and loops, not fixed moves. Cells are [x, y] from the top-left; heading is
+                                      E/S/W/N; walls are cells the robot cannot enter.
+                                    </p>
+                                    {(question.testCases ?? []).map((tc, i) => (
+                                      <div key={tc.id} className="flex flex-col gap-2 rounded-md border border-stone-200 p-2 sm:flex-row sm:items-start dark:border-stone-800">
+                                        <div className="flex-1 space-y-1">
+                                          <div className="flex items-center justify-between gap-2">
+                                            <span className="text-[11px] font-medium text-stone-500 dark:text-stone-400">Maze {i + 1}</span>
+                                            <div className="flex items-center gap-2">
+                                              {tc.expectedStdout?.trim() ? (
+                                                <span className="text-[11px] text-emerald-600 dark:text-emerald-400">Captured &#10003;</span>
+                                              ) : (
+                                                <span className="text-[11px] text-stone-400">Not captured</span>
+                                              )}
+                                              <Button type="button" variant="outline" size="sm" disabled={(question.testCases ?? []).length <= 1} onClick={() => removeTestCase(question.id, tc.id)}>
+                                                <Trash2 className="size-4" />
+                                              </Button>
+                                            </div>
+                                          </div>
+                                          <textarea
+                                            className="w-full rounded-md border border-stone-200 bg-stone-950 p-2 font-mono text-[11px] text-stone-100"
+                                            rows={4}
+                                            spellCheck={false}
+                                            value={tc.stdin}
+                                            onChange={(e) => updateTestCase(question.id, tc.id, { stdin: e.target.value, expectedStdout: "" })}
+                                          />
+                                        </div>
+                                        <div className="shrink-0">
+                                          <GridWorldView config={tc.stdin} trace={refReplay[question.id]?.traces?.[i]} runId={refReplay[question.id]?.runId} />
+                                        </div>
+                                      </div>
+                                    ))}
+                                    <Button type="button" variant="outline" size="sm" onClick={() => addMaze(question)}>
+                                      <PlusCircle className="size-4" /> Add maze
+                                    </Button>
+                                  </div>
+                                ) : null}
+                                <p className="text-[11px] font-medium text-stone-500 dark:text-stone-400">
+                                  Reference solution: build the correct answer in blocks, then capture what it makes. This is
+                                  graded against the pupil&apos;s work and is never shown to them.
+                                </p>
+                                <BlocklyWorkspace
+                                  world={question.world}
+                                  onCodeChange={(c) => patchQuestion(question.id, { worldReferenceCode: c })}
+                                />
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <Button type="button" variant="outline" size="sm" disabled={previewing[question.id]} onClick={() => void previewReference(question)}>
+                                    {previewing[question.id] ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}
+                                    Preview run
+                                  </Button>
+                                  <Button type="button" variant="outline" size="sm" disabled={capturing[question.id]} onClick={() => void captureWorldExpected(question)}>
+                                    {capturing[question.id] ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                                    Capture expected result
+                                  </Button>
+                                  {(() => {
+                                    const cs = question.testCases ?? [];
+                                    const done = cs.filter((t) => t.expectedStdout?.trim()).length;
+                                    return done === cs.length && cs.length > 0 ? (
+                                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400">Captured {done}/{cs.length} &#10003;</span>
+                                    ) : (
+                                      <span className="text-[11px] text-stone-400">Captured {done}/{cs.length}</span>
+                                    );
+                                  })()}
+                                </div>
+                                {question.world === "turtle" && refReplay[question.id] ? (
+                                  // Turtle previews here; a grid preview animates in each maze row above.
+                                  <div className="pt-1">
+                                    <TurtleWorldView trace={refReplay[question.id]?.traces?.[0]} runId={refReplay[question.id]?.runId} />
+                                  </div>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <textarea
+                                className="w-full rounded-md border border-stone-200 bg-stone-950 p-2 font-mono text-xs text-stone-100"
+                                rows={3}
+                                spellCheck={false}
+                                placeholder={'Blockly config (JSON, optional): {"toolbox":{...},"startBlocks":{...},"allowCode":true}. Blank = default toolbox.'}
+                                value={question.blocklyConfig ?? ""}
+                                onChange={(event) => patchQuestion(question.id, { blocklyConfig: event.target.value })}
+                              />
+                            )}
+                          </div>
+                        ) : (
+                          <textarea
+                            className="w-full rounded-md border border-stone-200 bg-stone-950 p-2 font-mono text-xs text-stone-100"
+                            rows={4}
+                            spellCheck={false}
+                            placeholder="Starter code shown to the pupil (optional)"
+                            value={question.starterCode ?? ""}
+                            onChange={(event) => patchQuestion(question.id, { starterCode: event.target.value })}
+                          />
+                        )}
+                        {question.useBlocks && question.world ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                              {question.world === "grid" ? "Marks per maze" : "Marks"}
+                            </span>
+                            <Input
+                              type="number"
+                              min={1}
+                              className="w-24"
+                              value={question.testCases?.[0]?.points ?? "1"}
+                              onChange={(e) => setMarksPerMaze(question, e.target.value)}
+                            />
+                            <span className="text-[11px] text-stone-400">
+                              {question.world === "grid" && (question.testCases?.length ?? 0) > 1
+                                ? `Each maze is worth this. Total: ${(question.testCases?.length ?? 0) * (Number(question.testCases?.[0]?.points) || 0)} marks.`
+                                : "The whole task is one auto-marked check."}
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Test cases</p>
+                            {(question.testCases ?? []).map((tc) => (
+                              <div key={tc.id} className="grid grid-cols-1 gap-2 rounded-md border border-stone-200 p-2 sm:grid-cols-[1fr_1fr_5rem_auto_auto] dark:border-stone-800">
+                                <Input placeholder="Input (stdin)" value={tc.stdin} onChange={(e) => updateTestCase(question.id, tc.id, { stdin: e.target.value })} />
+                                <Input placeholder="Expected output" value={tc.expectedStdout} onChange={(e) => updateTestCase(question.id, tc.id, { expectedStdout: e.target.value })} />
+                                <Input type="number" min={1} placeholder="Marks" value={tc.points} onChange={(e) => updateTestCase(question.id, tc.id, { points: e.target.value })} />
+                                <label className="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400">
+                                  <input type="checkbox" checked={tc.hidden} onChange={(e) => updateTestCase(question.id, tc.id, { hidden: e.target.checked })} />
+                                  Hidden
+                                </label>
+                                <Button type="button" variant="outline" size="sm" disabled={(question.testCases ?? []).length <= 1} onClick={() => removeTestCase(question.id, tc.id)}>
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button type="button" variant="outline" size="sm" onClick={() => addTestCase(question.id)}>
+                              <PlusCircle className="size-4" /> Add test case
+                            </Button>
+                            <p className="text-[11px] text-stone-400">A hidden test case is not shown to the pupil; a visible one is shown as a worked example.</p>
+                          </>
+                        )}
+                      </div>
+                    ) : question.type === "RUBRIC" ? (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Rubric criteria</p>
+                        <p className="text-[11px] text-stone-400">The teacher scores each criterion while observing the pupil or their build (robotics, a creative project).</p>
+                        {(question.criteria ?? []).map((c) => (
+                          <div key={c.id} className="grid grid-cols-1 gap-2 rounded-md border border-stone-200 p-2 sm:grid-cols-[1fr_5rem_auto] dark:border-stone-800">
+                            <Input placeholder="Criterion (e.g. Robot follows the line)" value={c.label} onChange={(e) => updateCriterion(question.id, c.id, { label: e.target.value })} />
+                            <Input type="number" min={1} placeholder="Marks" value={c.maxPoints} onChange={(e) => updateCriterion(question.id, c.id, { maxPoints: e.target.value })} />
+                            <Button type="button" variant="outline" size="sm" disabled={(question.criteria ?? []).length <= 1} onClick={() => removeCriterion(question.id, c.id)}>
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button type="button" variant="outline" size="sm" onClick={() => addCriterion(question.id)}>
+                          <PlusCircle className="size-4" /> Add criterion
+                        </Button>
+                      </div>
                     ) : (
                       <div className="mt-3 space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Options</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Options</p>
                         {question.options.map((option) => (
                           <div
                             key={option.id}
-                            className="grid grid-cols-1 gap-2 rounded-md border border-slate-200 p-2 sm:grid-cols-[auto_1fr_1fr_auto] dark:border-slate-700"
+                            className="grid grid-cols-1 gap-2 rounded-md border border-stone-200 p-2 sm:grid-cols-[auto_1fr_1fr_auto] dark:border-stone-800"
                           >
-                            <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                            <label className="flex items-center gap-2 text-xs text-stone-600 dark:text-stone-400">
                               <input
                                 type="radio"
                                 name={`correct-${question.id}`}
@@ -941,30 +1415,30 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                 ))}
               </div>
             ) : (
-              <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                <p className="text-xs text-slate-600 dark:text-slate-400">
+              <div className="space-y-3 rounded-lg border border-stone-200 bg-white p-3 dark:border-stone-800 dark:bg-stone-900">
+                <p className="text-xs text-stone-600 dark:text-stone-400">
                   Preview uses your current draft settings and question order.
                 </p>
                 {questionDrafts.map((question, index) => (
-                  <div key={question.id} className="rounded-lg border border-slate-100 p-3 dark:border-slate-800">
+                  <div key={question.id} className="rounded-lg border border-stone-100 p-3 dark:border-stone-800">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
                         {index + 1}. {question.prompt.trim() || "Untitled question"}
                       </p>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                      <span className="text-xs text-stone-500 dark:text-stone-400">
                         {question.points || "0"} pt - {question.type}
                       </span>
                     </div>
                     {question.type === "OPEN_ENDED" ? (
                       <textarea
-                        className="mt-2 min-h-[80px] w-full rounded-md border border-slate-200 bg-slate-50 p-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                        className="mt-2 min-h-[80px] w-full rounded-md border border-stone-200 bg-stone-50 p-2 text-sm dark:border-stone-800 dark:bg-stone-800"
                         placeholder="Student response..."
                         disabled
                       />
                     ) : (
                       <div className="mt-2 space-y-1">
                         {question.options.map((option) => (
-                          <label key={option.id} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                          <label key={option.id} className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
                             <input type="radio" disabled />
                             {option.label || option.value || "Untitled option"}
                           </label>
@@ -978,7 +1452,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
             </div>
             )}
             <textarea
-              className="min-h-[80px] w-full rounded-md border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="min-h-[80px] w-full rounded-md border border-stone-200 bg-white p-3 text-sm dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200"
               placeholder="Description (optional)"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
@@ -1000,12 +1474,12 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
             </div>
           ) : assessments.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-              <div className="flex size-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
-                <ClipboardList className="size-6 text-slate-400 dark:text-slate-500" />
+              <div className="flex size-12 items-center justify-center rounded-lg bg-stone-100 dark:bg-stone-800">
+                <ClipboardList className="size-6 text-stone-400 dark:text-stone-500" />
               </div>
               <div>
-                <p className="font-medium text-slate-700 dark:text-slate-300">No assessments yet</p>
-                <p className="mt-0.5 text-sm text-slate-400 dark:text-slate-500">
+                <p className="font-medium text-stone-700 dark:text-stone-300">No assessments yet</p>
+                <p className="mt-0.5 text-sm text-stone-400 dark:text-stone-500">
                   {roleCanCreate ? "Create an assessment above to get started." : "Your instructor hasn't assigned any assessments yet."}
                 </p>
               </div>
@@ -1018,19 +1492,19 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.03 }}
-                  className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+                  className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"
                 >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-100">{assessment.title}</p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                    <p className="font-medium text-stone-900 dark:text-stone-100">{assessment.title}</p>
+                    <p className="text-xs text-stone-600 dark:text-stone-400">
                       {assessment.program?.name}
-                      {assessment.module && <span className="text-slate-400 dark:text-slate-500"> · {assessment.module.title}</span>}
+                      {assessment.module && <span className="text-stone-400 dark:text-stone-500"> · {assessment.module.title}</span>}
                       {" "},  Pass: {assessment.passScore}/{assessment.totalPoints}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                    <span className="rounded-full bg-stone-100 px-2 py-1 text-xs font-medium text-stone-700 dark:bg-stone-700 dark:text-stone-300">
                       {assessment.type}
                     </span>
                     <span
@@ -1040,7 +1514,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                     </span>
                     <span
                       className={`rounded-full px-2 py-1 text-xs font-medium ${
-                        assessment.published ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400" : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400"
+                        assessment.published ? "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400" : "bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-400"
                       }`}
                     >
                       {assessment.published ? "Published" : "Draft"}
@@ -1052,7 +1526,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                   // PROJECT-type assessments use the dedicated project submission UI
                   if (assessment.type === "PROJECT") {
                     return (
-                      <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+                      <div className="mt-3 border-t border-stone-100 pt-3 dark:border-stone-800">
                         <ProjectAssessmentView
                           assessment={{
                             id:          assessment.id,
@@ -1076,14 +1550,14 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                   if (isLocked) {
                     const passed = latestSub.totalScore >= assessment.passScore;
                     return (
-                      <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/40">
+                      <div className="mt-3 rounded-lg border border-stone-100 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-800/40">
                         <p className={`text-sm font-semibold ${passed ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
                           {passed ? "✓ Passed" : "✗ Not passed"}. Attempt #{latestSub.attemptNumber}
                         </p>
-                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
                           Score: {latestSub.totalScore}/{assessment.totalPoints} · {latestSub.status === "IN_REVIEW" ? "Awaiting manual review" : "Graded"}
                         </p>
-                        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                        <p className="mt-1 text-xs text-stone-400 dark:text-stone-500">
                           Contact your instructor if you need a retake.
                         </p>
                       </div>
@@ -1091,18 +1565,18 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                   }
 
                   return (
-                    <div className="mt-3 space-y-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+                    <div className="mt-3 space-y-3 border-t border-stone-100 pt-3 dark:border-stone-800">
                       {hasRetakeGrant && (
-                        <div className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+                        <div className="rounded-lg bg-orange-50 px-3 py-2 text-xs font-medium text-orange-700 dark:bg-orange-900/20 dark:text-orange-400">
                           Retake available. Attempt #{(latestSub?.attemptNumber ?? 0) + 1}
                         </div>
                       )}
                       {assessment.questions.map((question) => (
-                        <div key={question.id} className="rounded-lg border border-slate-100 p-3 dark:border-slate-800">
-                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{question.prompt}</p>
+                        <div key={question.id} className="rounded-lg border border-stone-100 p-3 dark:border-stone-800">
+                          <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{question.prompt}</p>
                           {question.type === "OPEN_ENDED" ? (
                             <textarea
-                              className="mt-2 min-h-[80px] w-full rounded-md border border-slate-200 p-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                              className="mt-2 min-h-[80px] w-full rounded-md border border-stone-200 p-2 text-sm dark:border-stone-800 dark:bg-stone-800 dark:text-stone-200"
                               onChange={(event) =>
                                 updateAnswerDraft(assessment.id, question.id, { responseText: event.target.value })
                               }
@@ -1110,7 +1584,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                           ) : (
                             <div className="mt-2 space-y-1">
                               {question.options.map((option) => (
-                                <label key={option.id} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                                <label key={option.id} className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
                                   <input
                                     type="radio"
                                     name={`${assessment.id}-${question.id}`}
@@ -1134,7 +1608,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                 })() : null}
 
                 {roleCanCreate ? (
-                  <div className="mt-2 space-y-1 text-xs text-slate-500 dark:text-slate-400">
+                  <div className="mt-2 space-y-1 text-xs text-stone-500 dark:text-stone-400">
                     <p>Submissions: {assessment.submissions?.length ?? 0}</p>
                     <p>
                       Verification: {assessment.verificationStatus}
@@ -1150,31 +1624,38 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
             </div>
           )}
         </div>
+        <PaginationControls
+          page={aMeta.page}
+          totalPages={aMeta.totalPages}
+          total={aMeta.total}
+          onPageChange={(p) => void fetchAssessments(p)}
+          disabled={loading}
+        />
       </section>
 
       {roleCanVerify ? (
         <section className="kat-card flex max-h-[70dvh] min-h-0 flex-col">
           <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Assessment Verification Queue</h3>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-stone-600 dark:text-stone-400">
             {verificationQueue.length} assessment(s) require super-admin review before learners can access them.
           </p>
           <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1">
             <div className="space-y-3">
               {verificationQueue.length === 0 ? (
-                <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+                <div className="rounded-lg border border-stone-200 bg-white p-4 text-sm text-stone-600 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400">
                   No pending verification tasks.
                 </div>
               ) : (
                 verificationQueue.map((assessment) => (
-                  <div key={assessment.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+                  <div key={assessment.id} className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <p className="font-medium text-slate-900 dark:text-slate-100">{assessment.title}</p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">
+                      <p className="font-medium text-stone-900 dark:text-stone-100">{assessment.title}</p>
+                      <p className="text-xs text-stone-600 dark:text-stone-400">
                         {assessment.program?.name} - {assessment.type} - {assessment.passScore}/{assessment.totalPoints}
                       </p>
                       {assessment.createdBy ? (
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                        <p className="text-xs text-stone-500 dark:text-stone-400">
                           Created by {assessment.createdBy.firstName} {assessment.createdBy.lastName} ({assessment.createdBy.role})
                         </p>
                       ) : null}
@@ -1243,7 +1724,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                 <DialogTitle className="text-lg">{previewAssessment.title}</DialogTitle>
                 <DialogDescription asChild>
                   <div className="space-y-1 text-sm">
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-500 dark:text-slate-400">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-stone-500 dark:text-stone-400">
                       <span>{previewAssessment.program?.name}</span>
                       {previewAssessment.module && <span>{previewAssessment.module.title}</span>}
                       <span>{previewAssessment.type}</span>
@@ -1253,12 +1734,12 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                       )}
                     </div>
                     {previewAssessment.createdBy && (
-                      <p className="text-xs text-slate-400 dark:text-slate-500">
+                      <p className="text-xs text-stone-400 dark:text-stone-500">
                         By {previewAssessment.createdBy.firstName} {previewAssessment.createdBy.lastName} · {previewAssessment.createdBy.role}
                       </p>
                     )}
                     {previewAssessment.description && (
-                      <p className="mt-2 text-slate-600 dark:text-slate-300">{previewAssessment.description}</p>
+                      <p className="mt-2 text-stone-600 dark:text-stone-300">{previewAssessment.description}</p>
                     )}
                   </div>
                 </DialogDescription>
@@ -1266,17 +1747,17 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
 
               <div className="mt-2 space-y-3">
                 {previewAssessment.questions.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-slate-200 py-6 text-center text-sm text-slate-400 dark:border-slate-700">
+                  <p className="rounded-lg border border-dashed border-stone-200 py-6 text-center text-sm text-stone-400 dark:border-stone-800">
                     No questions added yet.
                   </p>
                 ) : (
                   previewAssessment.questions.map((q, i) => (
-                    <div key={q.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
+                    <div key={q.id} className="rounded-lg border border-stone-200 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-800">
                       <div className="flex items-start justify-between gap-3">
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
                           {i + 1}. {q.prompt}
                         </p>
-                        <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                        <span className="shrink-0 rounded-full bg-stone-200 px-2 py-0.5 text-xs text-stone-600 dark:bg-stone-700 dark:text-stone-400">
                           {q.points} pt{q.points !== 1 ? "s" : ""}
                         </span>
                       </div>
@@ -1286,7 +1767,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                           <textarea
                             disabled
                             placeholder="Student writes their answer here…"
-                            className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-400 dark:border-slate-700 dark:bg-slate-900"
+                            className="w-full resize-none rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-400 dark:border-stone-800 dark:bg-stone-900"
                             rows={3}
                           />
                           {q.answerKey && (
@@ -1303,15 +1784,15 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                               className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm ${
                                 opt.isCorrect
                                   ? "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-900/30"
-                                  : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+                                  : "border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900"
                               }`}
                             >
                               <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
-                                opt.isCorrect ? "border-emerald-500 bg-emerald-500" : "border-slate-300 dark:border-slate-600"
+                                opt.isCorrect ? "border-emerald-500 bg-emerald-500" : "border-stone-300 dark:border-stone-600"
                               }`}>
                                 {opt.isCorrect && <CheckCircle2 className="h-3 w-3 text-white" />}
                               </div>
-                              <span className={opt.isCorrect ? "font-medium text-emerald-800 dark:text-emerald-300" : "text-slate-700 dark:text-slate-300"}>
+                              <span className={opt.isCorrect ? "font-medium text-emerald-800 dark:text-emerald-300" : "text-stone-700 dark:text-stone-300"}>
                                 {opt.label}
                               </span>
                               {opt.isCorrect && (
@@ -1333,12 +1814,12 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
       {roleCanCreate ? (
         <section className="kat-card flex max-h-[70dvh] min-h-0 flex-col">
           <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold">Manual Grading Queue</h3>
-          <p className="text-sm text-slate-600 dark:text-slate-400">{pendingManual.length} submission(s) awaiting manual review.</p>
+          <p className="text-sm text-stone-600 dark:text-stone-400">{pendingManual.length} submission(s) awaiting manual review.</p>
           <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1">
             <div className="space-y-3">
               {pendingManual.map((submission) => (
-                <div key={submission.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-                <p className="font-medium text-slate-900 dark:text-slate-100">
+                <div key={submission.id} className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
+                <p className="font-medium text-stone-900 dark:text-stone-100">
                   {submission.assessment.title}
                   {submission.student ? ` - ${submission.student.firstName} ${submission.student.lastName}` : ""}
                 </p>
@@ -1346,9 +1827,9 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                   {submission.answers
                     .filter((answer) => answer.question.type === "OPEN_ENDED")
                     .map((answer) => (
-                      <div key={answer.id} className="rounded-lg border border-slate-100 p-3 dark:border-slate-800">
-                        <p className="text-sm font-medium dark:text-slate-100">{answer.question.prompt}</p>
-                        <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{answer.responseText || "No response provided."}</p>
+                      <div key={answer.id} className="rounded-lg border border-stone-100 p-3 dark:border-stone-800">
+                        <p className="text-sm font-medium dark:text-stone-100">{answer.question.prompt}</p>
+                        <p className="mt-1 text-sm text-stone-700 dark:text-stone-300">{answer.responseText || "No response provided."}</p>
                         <Input
                           className="mt-2"
                           type="number"
@@ -1389,6 +1870,13 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
               ))}
             </div>
           </div>
+          <PaginationControls
+            page={sMeta.page}
+            totalPages={sMeta.totalPages}
+            total={sMeta.total}
+            onPageChange={(p) => void fetchSubmissions(p)}
+            disabled={loading}
+          />
         </section>
       ) : null}
     </div>

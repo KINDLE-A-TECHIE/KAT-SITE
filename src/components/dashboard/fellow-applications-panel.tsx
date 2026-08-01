@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PaginationControls } from "@/components/pagination-controls";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -29,21 +30,24 @@ export function FellowApplicationsPanel() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("PENDING");
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [expanded, setExpanded] = useState<string | null>(null);
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
-  const loadApplications = async (status: string) => {
+  const loadApplications = async (status: string, p: number = page) => {
     setLoading(true);
-    const res = await fetch(`/api/fellows/applications?status=${status}`);
+    const res = await fetch(`/api/fellows/applications?status=${status}&page=${p}`);
     if (res.ok) {
       const payload = await res.json();
       setApplications(payload.applications ?? []);
+      setMeta({ page: payload.page ?? 1, totalPages: payload.totalPages ?? 1, total: payload.total ?? (payload.applications?.length ?? 0) });
     }
     setLoading(false);
   };
 
-  useEffect(() => { void loadApplications(statusFilter); }, [statusFilter]);
+  useEffect(() => { void loadApplications(statusFilter, page); }, [statusFilter, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const review = async (applicationId: string, decision: "APPROVED" | "REJECTED") => {
     setBusy(applicationId);
@@ -72,9 +76,9 @@ export function FellowApplicationsPanel() {
     <div className="space-y-4">
       {/* Filter */}
       <div className="kat-card flex items-center gap-3">
-        <span className="text-sm text-slate-600 dark:text-slate-400">Filter by status:</span>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-9 w-40 rounded-xl border border-slate-300 dark:border-slate-600 text-sm">
+        <span className="text-sm text-stone-600 dark:text-stone-400">Filter by status:</span>
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+          <SelectTrigger className="h-9 w-40 rounded-lg border border-stone-300 dark:border-stone-600 text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -83,7 +87,7 @@ export function FellowApplicationsPanel() {
             <SelectItem value="REJECTED">Rejected</SelectItem>
           </SelectContent>
         </Select>
-        <span className="ml-auto text-xs text-slate-400 dark:text-slate-500">{applications.length} result{applications.length !== 1 ? "s" : ""}</span>
+        <span className="ml-auto text-xs text-stone-400 dark:text-stone-500">{applications.length} result{applications.length !== 1 ? "s" : ""}</span>
       </div>
 
       {/* List */}
@@ -95,7 +99,7 @@ export function FellowApplicationsPanel() {
             <Skeleton className="h-24 w-full" />
           </>
         ) : applications.length === 0 ? (
-          <p className="py-10 text-center text-sm text-slate-400 dark:text-slate-500">
+          <p className="py-10 text-center text-sm text-stone-400 dark:text-stone-500">
             No {statusFilter.toLowerCase()} applications.
           </p>
         ) : (
@@ -105,7 +109,7 @@ export function FellowApplicationsPanel() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
-              className="rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800"
+              className="rounded-lg border border-stone-100 dark:border-stone-800 bg-stone-50 dark:bg-stone-800"
             >
               {/* Summary row */}
               <button
@@ -113,37 +117,37 @@ export function FellowApplicationsPanel() {
                 onClick={() => setExpanded(expanded === app.id ? null : app.id)}
               >
                 <div>
-                  <p className="font-medium text-slate-800 dark:text-slate-200">
+                  <p className="font-medium text-stone-800 dark:text-stone-200">
                     {app.applicant.firstName} {app.applicant.lastName}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{app.applicant.email}</p>
+                  <p className="text-xs text-stone-500 dark:text-stone-400">{app.applicant.email}</p>
                   {app.cohort && (
-                    <p className="mt-0.5 text-xs text-blue-600">{app.cohort.name}</p>
+                    <p className="mt-0.5 text-xs text-orange-600">{app.cohort.name}</p>
                   )}
-                  <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                  <p className="mt-0.5 text-xs text-stone-400 dark:text-stone-500">
                     Submitted {new Date(app.submittedAt).toLocaleDateString()}
                   </p>
                 </div>
-                <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[app.status] ?? "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"}`}>
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[app.status] ?? "bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-400"}`}>
                   {app.status}
                 </span>
               </button>
 
               {/* Expanded detail + review */}
               {expanded === app.id && (
-                <div className="border-t border-slate-100 dark:border-slate-800 px-4 pb-4 pt-3 space-y-3">
+                <div className="border-t border-stone-100 dark:border-stone-800 px-4 pb-4 pt-3 space-y-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Motivation</p>
-                    <p className="mt-1 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{app.motivation}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Motivation</p>
+                    <p className="mt-1 text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{app.motivation}</p>
                   </div>
                   {app.experience && (
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Experience</p>
-                      <p className="mt-1 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{app.experience}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Experience</p>
+                      <p className="mt-1 text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{app.experience}</p>
                     </div>
                   )}
                   {app.reviewedBy && (
-                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                    <p className="text-xs text-stone-400 dark:text-stone-500">
                       Reviewed by {app.reviewedBy.firstName} {app.reviewedBy.lastName}
                       {app.reviewNotes ? ` · "${app.reviewNotes}"` : ""}
                     </p>
@@ -151,7 +155,7 @@ export function FellowApplicationsPanel() {
                   {app.status === "PENDING" && (
                     <>
                       <textarea
-                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 min-h-[70px]"
+                        className="w-full rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-200 min-h-[70px]"
                         placeholder="Optional reviewer note (visible to applicant if rejected)"
                         value={reviewNotes[app.id] ?? ""}
                         onChange={(e) => setReviewNotes((prev) => ({ ...prev, [app.id]: e.target.value }))}
@@ -182,6 +186,13 @@ export function FellowApplicationsPanel() {
           ))
         )}
       </div>
+      <PaginationControls
+        page={meta.page}
+        totalPages={meta.totalPages}
+        total={meta.total}
+        onPageChange={setPage}
+        disabled={loading}
+      />
     </div>
   );
 }

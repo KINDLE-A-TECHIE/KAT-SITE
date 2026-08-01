@@ -4,8 +4,10 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requireActiveSchool } from "@/lib/school";
 import { schoolInvoiceCreateSchema } from "@/lib/validators";
+import { parseTerm, formatTerm } from "@/lib/school-term";
 import { getPaymentGateway } from "@/lib/payments/provider";
 import { generateInvoiceReference } from "@/lib/payments/receipt";
+import { SCHOOL_HOST, isSchoolHost } from "@/lib/school-host";
 import { trackEvent } from "@/lib/analytics";
 import { captureError } from "@/lib/sentry";
 
@@ -44,7 +46,8 @@ export async function GET() {
         take: 100,
         select: {
           id: true,
-          term: true,
+          sessionLabel: true,
+          termNumber: true,
           seatCount: true,
           amount: true,
           status: true,
@@ -54,15 +57,16 @@ export async function GET() {
       }),
       prisma.schoolLicense.findMany({
         where: { schoolId },
-        orderBy: { createdAt: "desc" },
-        select: { term: true, status: true, seatLimit: true, seatsUsed: true },
+        orderBy: [{ sessionLabel: "desc" }, { termNumber: "desc" }],
+        select: { sessionLabel: true, termNumber: true, startsAt: true, status: true, seatLimit: true, seatsUsed: true },
       }),
     ]);
 
     return ok({
       school: { name: school?.name ?? "", pricePerSeat: Number(school?.pricePerSeat ?? 0) },
-      invoices: invoices.map((i) => ({ ...i, amount: Number(i.amount) })),
-      licenses,
+      // Compose a `term` label at the boundary so the billing UI keeps reading one field.
+      invoices: invoices.map((i) => ({ ...i, term: formatTerm(i.sessionLabel, i.termNumber), amount: Number(i.amount) })),
+      licenses: licenses.map((l) => ({ ...l, term: formatTerm(l.sessionLabel, l.termNumber) })),
     });
   } catch (error) {
     captureError(error);
@@ -92,7 +96,11 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return fail("Invalid invoice payload.", 400, parsed.error.flatten());
   }
-  const { term, seatCount } = parsed.data;
+  const { term: termInput, seatCount } = parsed.data;
+  // A term is entered as free text ("2025/2026 Term 1") and stored structured. `termLabel` is the
+  // canonical display form used in messages and the response.
+  const { sessionLabel, termNumber } = parseTerm(termInput);
+  const termLabel = formatTerm(sessionLabel, termNumber);
 
   try {
     const school = await prisma.school.findUnique({
@@ -112,12 +120,12 @@ export async function POST(request: Request) {
     // One open invoice per term, otherwise an admin could stack several and pay the
     // cheapest, or race two activations for the same term.
     const openInvoice = await prisma.schoolInvoice.findFirst({
-      where: { schoolId, term, status: SchoolInvoiceStatus.PENDING },
+      where: { schoolId, sessionLabel, termNumber, status: SchoolInvoiceStatus.PENDING },
       select: { id: true, paystackRef: true },
     });
     if (openInvoice) {
       return fail(
-        `There is already an unpaid invoice for ${term}. Pay or void it before raising another.`,
+        `There is already an unpaid invoice for ${termLabel}. Pay or void it before raising another.`,
         409,
       );
     }
@@ -125,12 +133,12 @@ export async function POST(request: Request) {
     // You cannot buy fewer seats than are already occupied this term, that would
     // instantly put the school OVER_SEATED and lock its own students out.
     const license = await prisma.schoolLicense.findUnique({
-      where: { schoolId_term: { schoolId, term } },
+      where: { schoolId_sessionLabel_termNumber: { schoolId, sessionLabel, termNumber } },
       select: { seatsUsed: true },
     });
     if (license && seatCount < license.seatsUsed) {
       return fail(
-        `${term} already has ${license.seatsUsed} seats in use, so you cannot buy only ${seatCount}.`,
+        `${termLabel} already has ${license.seatsUsed} seats in use, so you cannot buy only ${seatCount}.`,
         422,
       );
     }
@@ -142,14 +150,26 @@ export async function POST(request: Request) {
     const invoice = await prisma.schoolInvoice.create({
       data: {
         schoolId,
-        term,
+        sessionLabel,
+        termNumber,
         seatCount,
         amount,
         status: SchoolInvoiceStatus.PENDING,
         paystackRef,
       },
-      select: { id: true, term: true, seatCount: true, amount: true, status: true, paystackRef: true },
+      select: { id: true, sessionLabel: true, termNumber: true, seatCount: true, amount: true, status: true, paystackRef: true },
     });
+
+    // Return the admin to the SCHOOL host they paid from, NOT the B2C apex (NEXTAUTH_URL).
+    // Their school session cookie lives on the school host, so landing on the apex /admin
+    // finds no session and bounces them to the B2C /login. Prefer the request's own host,
+    // fall back to the configured SCHOOL_HOST if it is somehow not a school host.
+    const reqHost = request.headers.get("host");
+    const proto =
+      request.headers.get("x-forwarded-proto") ??
+      (process.env.NEXTAUTH_URL?.startsWith("https") ? "https" : "http");
+    const callbackHost = isSchoolHost(reqHost) ? reqHost! : SCHOOL_HOST;
+    const callbackUrl = `${proto}://${callbackHost}/admin/billing?reference=${paystackRef}`;
 
     // Reuse the existing gateway. The reference we generated is what the webhook will
     // look the invoice up by.
@@ -161,7 +181,7 @@ export async function POST(request: Request) {
         amount,
         currency: CURRENCY,
         reference: paystackRef,
-        callbackUrl: `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/admin/billing?reference=${paystackRef}`,
+        callbackUrl,
       });
       authorizationUrl = initialized.authorizationUrl;
     } catch (error) {
@@ -174,12 +194,12 @@ export async function POST(request: Request) {
       userId: session?.user?.id,
       eventType: "admin",
       eventName: "school_invoice_created",
-      payload: { schoolId, term, seatCount, amount },
+      payload: { schoolId, sessionLabel, termNumber, seatCount, amount },
     });
 
     return ok(
       {
-        invoice: { ...invoice, amount: Number(invoice.amount) },
+        invoice: { ...invoice, term: termLabel, amount: Number(invoice.amount) },
         authorizationUrl,
       },
       201,

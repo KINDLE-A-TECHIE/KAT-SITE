@@ -315,4 +315,6 @@ export type Build = {
   firstName: string;
   title: string;
   program?: string | null;
+  /** Real cover image of the shipped project (R2 URL). Null when the student uploaded none. */
+  imageUrl?: string | null;
 };

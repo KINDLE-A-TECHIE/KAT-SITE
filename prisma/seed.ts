@@ -9,7 +9,11 @@ import {
   PaymentProvider,
   PaymentStatus,
   MeetingStatus,
+  SchoolRole,
+  NerdcLevel,
+  SchoolLicenseStatus,
 } from "@prisma/client";
+import { seedNerdcCourses } from "./seed-nerdc";
 
 const prisma = new PrismaClient();
 
@@ -87,8 +91,8 @@ async function main() {
   // ── Programme → Cohort → Enrolment ─────────────────────────────────────────
   const program = await prisma.program.upsert({
     where: { slug: "full-stack-innovators" },
-    update: { name: "Full Stack Innovators", monthlyFee: 120000, durationWeeks: 16, level: ProgramLevel.ADVANCED, organizationId: org.id },
-    create: { name: "Full Stack Innovators", slug: "full-stack-innovators", description: "Advanced track focused on full-stack application development.", level: ProgramLevel.ADVANCED, durationWeeks: 16, monthlyFee: 120000, organizationId: org.id },
+    update: { name: "Full Stack Innovators", monthlyFee: 120000, durationWeeks: 16, level: ProgramLevel.ADVANCED, organizationId: org.id, isPublished: true },
+    create: { name: "Full Stack Innovators", slug: "full-stack-innovators", description: "Advanced track focused on full-stack application development.", level: ProgramLevel.ADVANCED, durationWeeks: 16, monthlyFee: 120000, organizationId: org.id, isPublished: true },
   });
 
   const cohortData = { name: "Innovators 2026 Cohort", startsAt: new Date("2026-01-10T08:00:00Z"), endsAt: new Date("2026-05-31T18:00:00Z"), programId: program.id, organizationId: org.id, applicationOpen: true, externalApplicationFee: 5000 };
@@ -134,10 +138,15 @@ async function main() {
 
   const existingVersion = await prisma.curriculumVersion.findFirst({
     where: { curriculumId: curriculum.id },
-    select: { id: true },
+    select: { id: true, publishedAt: true },
   });
   const curriculumVersion = existingVersion
-    ? await prisma.curriculumVersion.findUniqueOrThrow({ where: { id: existingVersion.id } })
+    // The publish lifecycle requires an ACTIVE, PUBLISHED version. A version created before publishedAt
+    // was seeded is active-but-unpublished, which blocks re-publishing the programme, so backfill it.
+    ? await prisma.curriculumVersion.update({
+        where: { id: existingVersion.id },
+        data: { isActive: true, ...(existingVersion.publishedAt ? {} : { publishedAt: new Date() }) },
+      })
     : await prisma.curriculumVersion.create({
       data: {
         curriculumId: curriculum.id,
@@ -146,6 +155,7 @@ async function main() {
         changelog: "Initial curriculum version.",
         createdById: superAdmin.id,
         isActive: true,
+        publishedAt: new Date(),
       },
     });
 
@@ -293,8 +303,8 @@ async function main() {
         cohortId: cohort.id,
         startTime: new Date("2026-03-08T16:00:00Z"),
         endTime: new Date("2026-03-08T16:45:00Z"),
-        dailyRoomName: "kat-mentorship-march-review",
-        dailyRoomUrl: "https://meet.zoho.com/kat-mentorship-march-review",
+        roomName: "kat-mentorship-march-review",
+        roomUrl: "https://meet.jit.si/kat-mentorship-march-review",
         status: MeetingStatus.UPCOMING,
       },
     });
@@ -307,13 +317,75 @@ async function main() {
     });
   }
 
+  // ── School (B2B) demo tenant ─────────────────────────────────────────────────
+  // Makes the school surface testable: a real school with an admin and a teacher, a class,
+  // and an ACTIVE licence. School authority is the SchoolMembership, NOT User.role: the staff
+  // users are UserRole.SCHOOL_STAFF (which grants nothing on B2C), scoped into the school by
+  // their membership. See CLAUDE.md "A role is a CAPABILITY, never a tenant".
+  const SCHOOL_SESSION = "2025/2026";
+  const SCHOOL_TERM_NUMBER = 1;
+  // A recent start so the term is inside its 15-week window when seeded (keeps the licence usable).
+  const SCHOOL_TERM_STARTS_AT = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000);
+
+  const school = await prisma.school.upsert({
+    where: { slug: "demo-academy" },
+    update: { name: "Demo Academy", pricePerSeat: 2500 },
+    create: { name: "Demo Academy", slug: "demo-academy", pricePerSeat: 2500 },
+  });
+
+  const schoolAdmin = await createUser({
+    email: "schooladmin@kindleatechie.com", firstName: "Ada", lastName: "Principal",
+    role: UserRole.SCHOOL_STAFF, organizationId: org.id, password: "Passw0rd!",
+  });
+  const schoolTeacher = await createUser({
+    email: "schoolteacher@kindleatechie.com", firstName: "Tunde", lastName: "Teacher",
+    role: UserRole.SCHOOL_STAFF, organizationId: org.id, password: "Passw0rd!",
+  });
+
+  for (const [userId, role] of [
+    [schoolAdmin.id, SchoolRole.SCHOOL_ADMIN],
+    [schoolTeacher.id, SchoolRole.TEACHER],
+  ] as const) {
+    await prisma.schoolMembership.upsert({
+      where: { schoolId_userId: { schoolId: school.id, userId } },
+      update: { role },
+      create: { schoolId: school.id, userId, role },
+    });
+  }
+
+  await prisma.schoolClass.upsert({
+    where: { id: "seed-demo-jss-class" },
+    update: { name: "JSS 1 Blue", nerdcLevel: NerdcLevel.JSS, sessionLabel: SCHOOL_SESSION, teacherId: schoolTeacher.id },
+    create: {
+      id: "seed-demo-jss-class", schoolId: school.id, name: "JSS 1 Blue",
+      nerdcLevel: NerdcLevel.JSS, sessionLabel: SCHOOL_SESSION, teacherId: schoolTeacher.id,
+    },
+  });
+
+  await prisma.schoolLicense.upsert({
+    where: { schoolId_sessionLabel_termNumber: { schoolId: school.id, sessionLabel: SCHOOL_SESSION, termNumber: SCHOOL_TERM_NUMBER } },
+    update: { status: SchoolLicenseStatus.ACTIVE, seatLimit: 50, pricePerSeat: 2500, startsAt: SCHOOL_TERM_STARTS_AT },
+    create: {
+      schoolId: school.id, sessionLabel: SCHOOL_SESSION, termNumber: SCHOOL_TERM_NUMBER, startsAt: SCHOOL_TERM_STARTS_AT,
+      seatLimit: 50, seatsUsed: 0, status: SchoolLicenseStatus.ACTIVE, pricePerSeat: 2500,
+    },
+  });
+
+  // NERDC school curriculum. Idempotent by design: re-running reconciles module
+  // and lesson titles in place against src/lib/nerdc-crosswalk.ts, so a wording
+  // fix in the crosswalk (like the em-dash scrub) propagates to existing rows.
+  // Without this call the reconciler is orphaned and stale titles live forever.
+  await seedNerdcCourses(prisma, { organizationId: org.id, createdById: superAdmin.id });
+
   console.log("✅ Seed complete. All accounts use password: Passw0rd!");
-  console.log("   superadmin@kindleatechie.com  →  SUPER_ADMIN");
-  console.log("   admin@kindleatechie.com       →  ADMIN");
-  console.log("   instructor@kindleatechie.com  →  INSTRUCTOR");
-  console.log("   fellow@kindleatechie.com      →  FELLOW");
-  console.log("   student@kindleatechie.com     →  STUDENT");
-  console.log("   parent@kindleatechie.com      →  PARENT");
+  console.log("   superadmin@kindleatechie.com    →  SUPER_ADMIN");
+  console.log("   admin@kindleatechie.com         →  ADMIN");
+  console.log("   instructor@kindleatechie.com    →  INSTRUCTOR");
+  console.log("   fellow@kindleatechie.com        →  FELLOW");
+  console.log("   student@kindleatechie.com       →  STUDENT");
+  console.log("   parent@kindleatechie.com        →  PARENT");
+  console.log("   schooladmin@kindleatechie.com   →  SCHOOL_STAFF + SchoolMembership(SCHOOL_ADMIN) @ Demo Academy");
+  console.log("   schoolteacher@kindleatechie.com →  SCHOOL_STAFF + SchoolMembership(TEACHER) @ Demo Academy");
 }
 
 main()

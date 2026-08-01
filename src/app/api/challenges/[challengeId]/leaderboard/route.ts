@@ -53,13 +53,16 @@ export async function GET(_req: Request, { params }: Params) {
     ) return fail("Forbidden", 403);
   }
 
-  // Only submissions with a score are ranked
+  // Only submissions with a score are ranked. Cap the payload to the top N; totalSubmissions
+  // below still reports the true count for display.
+  const LEADERBOARD_LIMIT = 100;
   const scoredSubmissions = await prisma.challengeSubmission.findMany({
     where: { challengeId, score: { not: null } },
     include: {
       student: { select: { id: true, firstName: true, lastName: true } },
     },
     orderBy: [{ score: "desc" }, { submittedAt: "asc" }],
+    take: LEADERBOARD_LIMIT,
   });
 
   const leaderboard = scoredSubmissions.map((sub, index) => ({
@@ -75,5 +78,37 @@ export async function GET(_req: Request, { params }: Params) {
   // Count total submissions (including ungraded) for display
   const totalSubmissions = await prisma.challengeSubmission.count({ where: { challengeId } });
 
-  return ok({ leaderboard, totalSubmissions, maxPoints: challenge.points });
+  // The current user's own rank, even when they fall outside the visible top-N. Rank their best
+  // scored submission among all scored submissions (this board ranks submissions, not students).
+  let currentUserEntry = leaderboard.find((e) => e.isCurrentUser) ?? null;
+  if (isLearner && !currentUserEntry) {
+    const mine = await prisma.challengeSubmission.findFirst({
+      where: { challengeId, studentId: session.user.id, score: { not: null } },
+      orderBy: [{ score: "desc" }, { submittedAt: "asc" }],
+      select: { score: true, submittedAt: true, student: { select: { firstName: true, lastName: true } } },
+    });
+    if (mine?.score != null) {
+      const better = await prisma.challengeSubmission.count({
+        where: {
+          challengeId,
+          score: { not: null },
+          OR: [
+            { score: { gt: mine.score } },
+            { score: mine.score, submittedAt: { lt: mine.submittedAt } },
+          ],
+        },
+      });
+      currentUserEntry = {
+        rank: better + 1,
+        studentId: session.user.id,
+        studentName: `${mine.student.firstName} ${mine.student.lastName}`,
+        score: mine.score,
+        maxPoints: challenge.points,
+        submittedAt: mine.submittedAt,
+        isCurrentUser: true,
+      };
+    }
+  }
+
+  return ok({ leaderboard, totalSubmissions, maxPoints: challenge.points, currentUserEntry });
 }

@@ -3,6 +3,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { CourseAudience, UserRole } from "@prisma/client";
 import { prisma } from "./prisma";
+import { PROGRAM_AVAILABLE } from "./program";
 import { splitName, syntheticStudentEmail } from "./roster";
 import { checkClassLicense } from "./school-license";
 import { reconcileSeats, reserveSeats } from "./school-seats";
@@ -32,6 +33,13 @@ export type RosterCandidate = {
   name: string;
   externalRef?: string;
   guardianEmail?: string;
+  /**
+   * The pupil's EXISTING account email, when the caller already holds the exact user (e.g. a session
+   * rollover moving pupils to next year's class). Overrides the name-derived synthetic email, so an
+   * existing child is matched EXACTLY rather than re-derived, a "Last, First" name would otherwise
+   * round-trip to a different synthetic email and create a duplicate child.
+   */
+  email?: string;
 };
 
 export type SyncError = { ref: string | number; reason: string };
@@ -60,11 +68,13 @@ export async function resolveClassProgram(schoolClass: {
   }
 
   // A NERDC level now has one course PER CLASS YEAR (Primary 4/5/6 all sit under PRIMARY_4_6).
-  // Picking "the first" would silently enrol a Primary 4 class into the Primary 6 course.
+  // Picking "the first" would silently enrol a Primary 4 class into the Primary 6 course. Only
+  // AVAILABLE (published, live) courses are auto-pickable, so a draft can never be silently chosen.
   const candidates = await prisma.program.findMany({
     where: {
       audience: CourseAudience.SCHOOL,
       nerdcLevel: schoolClass.nerdcLevel as never,
+      ...PROGRAM_AVAILABLE,
     },
     select: { id: true },
     take: 2,
@@ -106,7 +116,7 @@ export async function syncRoster(params: {
 
   const schoolClass = await prisma.schoolClass.findFirst({
     where: { id: schoolClassId, schoolId },
-    select: { id: true, nerdcLevel: true, programId: true, term: true },
+    select: { id: true, nerdcLevel: true, programId: true, sessionLabel: true },
   });
   if (!schoolClass) return { error: "Class not found.", status: 404 };
 
@@ -119,7 +129,9 @@ export async function syncRoster(params: {
   const seen = new Map<string, string | number>();
   const usable: Array<RosterCandidate & { email: string }> = [];
   for (const c of candidates) {
-    const email = syntheticStudentEmail(schoolId, c.name);
+    // A caller that already holds the exact pupil passes their account email; otherwise derive it
+    // deterministically from the name. Either way `usable` carries a stable email key.
+    const email = c.email ?? syntheticStudentEmail(schoolId, c.name);
     const first = seen.get(email);
     if (first !== undefined) {
       errors.push({ ref: c.ref, reason: `Duplicate of ${first} in this request.` });
@@ -174,9 +186,10 @@ export async function syncRoster(params: {
     }
   }
 
-  // Seats are bought PER TERM, so the licence that pays for these pupils is the one for THIS
-  // CLASS's term, not "whichever licence happens to be active".
-  const gate = await checkClassLicense(schoolId, schoolClass.term);
+  // Seats are bought PER TERM within a session; the gate resolves this class's session to its
+  // current term-licence, the one that pays for these pupils, not "whichever licence happens to be
+  // active".
+  const gate = await checkClassLicense(schoolId, schoolClass.sessionLabel);
   if (!gate.allowed) return { error: gate.reason, status: 422 };
   const licence = gate.license;
 
@@ -186,7 +199,7 @@ export async function syncRoster(params: {
   const seatsNeeded = toCreate.length + toReactivate.length;
   if (licence.seatsUsed + seatsNeeded > licence.seatLimit) {
     return {
-      error: `Not enough seats for ${schoolClass.term}: ${licence.seatsUsed} of ${licence.seatLimit} in use, and this needs ${seatsNeeded} more. Nothing was changed.`,
+      error: `Not enough seats for ${schoolClass.sessionLabel}: ${licence.seatsUsed} of ${licence.seatLimit} in use, and this needs ${seatsNeeded} more. Nothing was changed.`,
       status: 422,
     };
   }
@@ -337,7 +350,7 @@ export async function syncRoster(params: {
   // Deactivation frees the seat. reserveSeats only ever INCREMENTS (it is the atomic race guard), so
   // without this reconciliation licence.seatsUsed drifts upward forever and a school eventually
   // cannot enrol into seats it is paying for and not using.
-  const seatsUsed = await reconcileSeats(schoolId, schoolClass.term);
+  const seatsUsed = await reconcileSeats(schoolId, schoolClass.sessionLabel);
 
   return {
     created: toCreate.length,

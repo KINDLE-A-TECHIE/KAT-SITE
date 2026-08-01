@@ -16,7 +16,7 @@ export default async function PartnerInquiriesPage() {
       <PageHeader
         badge="Leads"
         title="Partner Inquiries"
-        subtitle="Incoming partnership and school pilot enquiries from the marketing site. Triage each lead and track its status."
+        subtitle="School pilot and partnership enquiries from the website."
       />
       {/* Provisioning a school is a SUPER_ADMIN action; ADMINs can still triage leads. */}
       <PartnerInquiriesPanel canProvision={session.user.role === UserRole.SUPER_ADMIN} />

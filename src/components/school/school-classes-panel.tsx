@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { AlertTriangle, ArrowRight, Loader2, Pencil, Plus } from "lucide-react";
+import { AlertTriangle, ArrowRight, GraduationCap, IdCard, Loader2, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatJoinCode } from "@/lib/join-code";
 import {
   Dialog,
   DialogContent,
@@ -45,15 +46,15 @@ type SchoolClass = {
   id: string;
   name: string;
   nerdcLevel: string;
-  term: string;
+  sessionLabel: string;
   teacherId: string | null;
   teacher: { id: string; firstName: string; lastName: string } | null;
   _count: { enrollments: number };
 };
 
-type Draft = { name: string; nerdcLevel: string; term: string; teacherId: string };
+type Draft = { name: string; nerdcLevel: string; sessionLabel: string; teacherId: string };
 
-const EMPTY_DRAFT: Draft = { name: "", nerdcLevel: "PRIMARY_4_6", term: "", teacherId: UNASSIGNED };
+const EMPTY_DRAFT: Draft = { name: "", nerdcLevel: "PRIMARY_4_6", sessionLabel: "", teacherId: UNASSIGNED };
 
 export function SchoolClassesPanel() {
   const [classes, setClasses] = useState<SchoolClass[]>([]);
@@ -65,18 +66,59 @@ export function SchoolClassesPanel() {
   const [editing, setEditing] = useState<{ id: string | null } | null>(null);
   const [handover, setHandover] = useState<Handover | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  const [cardsBusy, setCardsBusy] = useState<string | null>(null);
+
+  // Session rollover: promote a class's pupils into a new next-session class.
+  const [courses, setCourses] = useState<Array<{ id: string; name: string; nerdcLevel: string }>>([]);
+  const [rollover, setRollover] = useState<
+    { source: SchoolClass; name: string; sessionLabel: string; programId: string; teacherId: string } | null
+  >(null);
+  const [rollBusy, setRollBusy] = useState(false);
+
+  // Generates fresh PINs for a class and downloads printable sign-in cards. The server renders the
+  // PDF (PINs never leave that response) and returns it directly; we just save the blob. Regenerating
+  // invalidates any earlier cards, which is the intent when one is lost.
+  const makeCards = async (classId: string, className: string) => {
+    setCardsBusy(classId);
+    try {
+      const res = await fetch(`/api/school/classes/${classId}/login-cards`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data?.error ?? "Could not generate sign-in cards.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `sign-in-cards-${className.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "class"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      const joinCode = res.headers.get("X-Join-Code");
+      toast.success(joinCode ? `New PINs generated. Class code ${formatJoinCode(joinCode)}.` : "New PINs generated.");
+    } catch {
+      toast.error("Could not generate sign-in cards.");
+    } finally {
+      setCardsBusy(null);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [cRes, tRes] = await Promise.all([
+    const [cRes, tRes, pRes] = await Promise.all([
       fetch("/api/school/classes"),
       fetch("/api/school/teachers"),
+      fetch("/api/programs?audience=SCHOOL"),
     ]);
     const cPayload = await cRes.json().catch(() => ({}));
     const tPayload = await tRes.json().catch(() => ({}));
+    const pPayload = await pRes.json().catch(() => ({}));
     if (!cRes.ok) toast.error(cPayload?.error ?? "Could not load classes.");
     setClasses(cPayload.classes ?? []);
     setTeachers(tPayload.teachers ?? []);
+    setCourses(pPayload.programs ?? []);
     setLoading(false);
   }, []);
 
@@ -93,10 +135,48 @@ export function SchoolClassesPanel() {
     setDraft({
       name: c.name,
       nerdcLevel: c.nerdcLevel,
-      term: c.term,
+      sessionLabel: c.sessionLabel,
       teacherId: c.teacherId ?? UNASSIGNED,
     });
     setEditing({ id: c.id });
+  };
+
+  const openRollover = (c: SchoolClass) => {
+    // Carry the teacher over by default; the admin picks the next session, name, and course.
+    setRollover({ source: c, name: "", sessionLabel: "", programId: "", teacherId: c.teacherId ?? UNASSIGNED });
+  };
+
+  const submitRollover = async () => {
+    if (!rollover) return;
+    const course = courses.find((p) => p.id === rollover.programId);
+    if (!course) {
+      toast.error("Choose the course pupils are moving up to.");
+      return;
+    }
+    setRollBusy(true);
+    const res = await fetch("/api/school/rollover", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sourceClassId: rollover.source.id,
+        name: rollover.name,
+        sessionLabel: rollover.sessionLabel,
+        programId: rollover.programId,
+        nerdcLevel: course.nerdcLevel,
+        teacherId: rollover.teacherId === UNASSIGNED ? null : rollover.teacherId,
+      }),
+    });
+    const payload = await res.json().catch(() => ({}));
+    setRollBusy(false);
+    if (!res.ok) {
+      toast.error(payload?.error ?? "Could not roll over the class.");
+      return;
+    }
+    toast.success(
+      `Promoted ${payload.promoted} pupil${payload.promoted === 1 ? "" : "s"} into ${payload.targetClass?.name ?? "the new class"}.`,
+    );
+    setRollover(null);
+    await load();
   };
 
   const save = async (confirmHandover = false) => {
@@ -114,7 +194,7 @@ export function SchoolClassesPanel() {
         ...(isEdit ? { id: editing.id } : {}),
         name: draft.name,
         nerdcLevel: draft.nerdcLevel,
-        term: draft.term,
+        sessionLabel: draft.sessionLabel,
         teacherId, ...(confirmHandover ? { confirmHandover: true } : {}),
       }),
     });
@@ -152,7 +232,7 @@ export function SchoolClassesPanel() {
                 : `${classes.length} class${classes.length === 1 ? "" : "es"}.`}
           </CardDescription>
         </div>
-        <Button size="sm" onClick={openCreate} className="gap-1.5 bg-orange-600 text-white hover:bg-orange-700">
+        <Button size="sm" onClick={openCreate} className="gap-1.5 bg-orange-700 text-white hover:bg-orange-800">
           <Plus className="size-3.5" />
           New class
         </Button>
@@ -162,11 +242,11 @@ export function SchoolClassesPanel() {
         {loading ? (
           <div className="space-y-2">
             {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-12 w-full rounded-xl" />
+              <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}
           </div>
         ) : classes.length === 0 ? (
-          <p className="rounded-xl bg-stone-50 p-4 text-sm leading-relaxed text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
+          <p className="rounded-lg bg-stone-50 p-4 text-sm leading-relaxed text-stone-500 dark:bg-stone-800/50 dark:text-stone-400">
             Create your first class, then assign one of your teachers to it. Students you add to a
             class will show up here with their progress.
           </p>
@@ -180,7 +260,7 @@ export function SchoolClassesPanel() {
                 <div className="min-w-0">
                   <p className="font-medium text-stone-900 dark:text-stone-100">{c.name}</p>
                   <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
-                    {NERDC_LABELS[c.nerdcLevel] ?? c.nerdcLevel} · Term {c.term} ·{" "}
+                    {NERDC_LABELS[c.nerdcLevel] ?? c.nerdcLevel} · {c.sessionLabel} ·{" "}
                     {c.teacher ? (
                       `${c.teacher.firstName} ${c.teacher.lastName}`
                     ) : (
@@ -199,6 +279,27 @@ export function SchoolClassesPanel() {
                     Results
                     <ArrowRight className="size-3.5" />
                   </Link>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    disabled={cardsBusy === c.id || c._count.enrollments === 0}
+                    onClick={() => void makeCards(c.id, c.name)}
+                  >
+                    {cardsBusy === c.id ? <Loader2 className="size-3.5 animate-spin" /> : <IdCard className="size-3.5" />}
+                    Sign-in cards
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    disabled={c._count.enrollments === 0}
+                    onClick={() => openRollover(c)}
+                    title={c._count.enrollments === 0 ? "No pupils to promote" : "Promote pupils to next session"}
+                  >
+                    <GraduationCap className="size-3.5" />
+                    Roll over
+                  </Button>
                   <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openEdit(c)}>
                     <Pencil className="size-3.5" />
                     Edit
@@ -251,12 +352,12 @@ export function SchoolClassesPanel() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="term">Term</Label>
+              <Label htmlFor="sessionLabel">Session</Label>
               <Input
-                id="term"
-                placeholder="e.g. 2025/2026 T1"
-                value={draft.term}
-                onChange={(e) => setDraft((d) => ({ ...d, term: e.target.value }))}
+                id="sessionLabel"
+                placeholder="e.g. 2025/2026"
+                value={draft.sessionLabel}
+                onChange={(e) => setDraft((d) => ({ ...d, sessionLabel: e.target.value }))}
               />
             </div>
 
@@ -292,8 +393,8 @@ export function SchoolClassesPanel() {
             </Button>
             <Button
               onClick={() => save()}
-              disabled={busy || !draft.name.trim() || !draft.term.trim()}
-              className="bg-orange-600 text-white hover:bg-orange-700"
+              disabled={busy || !draft.name.trim() || !draft.sessionLabel.trim()}
+              className="bg-orange-700 text-white hover:bg-orange-800"
             >
               {busy ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : null}
               {busy ? "Saving…" : editing?.id ? "Save changes" : "Create class"}
@@ -349,6 +450,95 @@ export function SchoolClassesPanel() {
             <Button variant="destructive" onClick={() => save(true)} disabled={busy}>
               {busy ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : null}
               Hand over anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Session rollover: promote a class's pupils into a new next-session class. */}
+      <Dialog open={rollover !== null} onOpenChange={(o) => !o && setRollover(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Roll over to next session</DialogTitle>
+            <DialogDescription>
+              Promote {rollover?.source.name}&apos;s pupils into a new class for next session. They move
+              onto the next course; their current class is marked complete. The new session&apos;s term
+              must be licensed. Repeating the same course is not supported yet.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="ro-name">New class name</Label>
+              <Input
+                id="ro-name"
+                placeholder="e.g. JSS 2 Blue"
+                value={rollover?.name ?? ""}
+                onChange={(e) => setRollover((r) => (r ? { ...r, name: e.target.value } : r))}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="ro-session">New session</Label>
+              <Input
+                id="ro-session"
+                placeholder="e.g. 2026/2027"
+                value={rollover?.sessionLabel ?? ""}
+                onChange={(e) => setRollover((r) => (r ? { ...r, sessionLabel: e.target.value } : r))}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Next course</Label>
+              <Select
+                value={rollover?.programId ?? ""}
+                onValueChange={(v) => setRollover((r) => (r ? { ...r, programId: v } : r))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose the course pupils move up to" />
+                </SelectTrigger>
+                <SelectContent>
+                  {courses.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Teacher</Label>
+              <Select
+                value={rollover?.teacherId ?? UNASSIGNED}
+                onValueChange={(v) => setRollover((r) => (r ? { ...r, teacherId: v } : r))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
+                  {teachers.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.firstName} {t.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRollover(null)} disabled={rollBusy}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void submitRollover()}
+              disabled={rollBusy || !rollover?.name.trim() || !rollover?.sessionLabel.trim() || !rollover?.programId}
+              className="gap-1.5 bg-orange-700 text-white hover:bg-orange-800"
+            >
+              {rollBusy ? <Loader2 className="size-4 animate-spin" /> : <GraduationCap className="size-4" />}
+              Roll over
             </Button>
           </DialogFooter>
         </DialogContent>

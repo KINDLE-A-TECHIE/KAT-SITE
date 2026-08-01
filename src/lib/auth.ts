@@ -10,7 +10,29 @@ import { loginSchema } from "./validators";
 import { trackEvent } from "./analytics";
 import { loginLimiter } from "./ratelimit";
 import { verifyTurnstile } from "./turnstile";
+import { redeemStudentLaunch } from "./student-launch";
+import { authorizeStudentPin } from "./student-pin";
 import { cache } from "react";
+
+/** The user shape every provider's authorize() must return, so the jwt callback can read it. */
+function sessionUser(user: {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  organizationId: string | null;
+}) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: `${user.firstName} ${user.lastName}`.trim(),
+    role: user.role,
+    organizationId: user.organizationId ?? undefined,
+    firstName: user.firstName,
+    lastName: user.lastName,
+  };
+}
 
 /**
  * A user's school memberships. `cache()` dedupes this within a single request, so the session
@@ -92,6 +114,47 @@ export const authOptions: NextAuthOptions = {
           firstName: user.firstName,
           lastName: user.lastName,
         };
+      },
+    }),
+
+    // School pupils have no email/password. They sign in one of two ways, each a
+    // dedicated provider so the email/password path stays untouched.
+
+    // Option A: a teacher who owns the pupil's class minted a 60s single-use launch
+    // token; the pupil's device redeems it here. Authority was proved at mint time.
+    CredentialsProvider({
+      id: "student-launch",
+      name: "Student launch",
+      credentials: { token: { label: "Launch token", type: "text" } },
+      async authorize(credentials) {
+        const token = credentials?.token;
+        if (!token) return null;
+        const result = await redeemStudentLaunch(token);
+        if (!result.ok) throw new Error(result.reason);
+        const user = await prisma.user.findUnique({
+          where: { id: result.userId },
+          select: { id: true, email: true, firstName: true, lastName: true, role: true, organizationId: true, isActive: true },
+        });
+        // Only ever a SCHOOL_STUDENT: the token redeemer already checked the enrollment, but this
+        // is the line that guarantees this provider can never mint a session for a staff/B2C account.
+        if (!user || !user.isActive || user.role !== UserRole.SCHOOL_STUDENT) return null;
+        return sessionUser(user);
+      },
+    }),
+
+    // Option B: class code + pupil PIN, for schools with no system to launch from.
+    CredentialsProvider({
+      id: "student-pin",
+      name: "Student PIN",
+      credentials: {
+        classCode: { label: "Class code", type: "text" },
+        pupilRef: { label: "Pupil", type: "text" },
+        pin: { label: "PIN", type: "password" },
+      },
+      async authorize(credentials) {
+        const result = await authorizeStudentPin(credentials);
+        if (!result.ok) throw new Error(result.reason);
+        return sessionUser(result.user);
       },
     }),
   ],

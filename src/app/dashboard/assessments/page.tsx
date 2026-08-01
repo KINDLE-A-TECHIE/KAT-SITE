@@ -20,7 +20,7 @@ export default async function AssessmentsPage() {
         subtitle={
           isLearner
             ? "Complete your quizzes, assignments, and exams. Your scores and feedback appear on the Grades page."
-            : "Build objective tests and reviewed projects. Scores auto-apply for multiple choice; flag complex submissions for manual grading."
+            : "Build tests and project briefs. Multiple choice grades itself; the rest goes to manual grading."
         }
       />
       <AssessmentsPanel role={session.user.role} />

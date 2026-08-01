@@ -77,6 +77,11 @@ const PUBLIC_ALLOWLIST: Record<string, string> = {
     "school's CSP frame-ancestors from here. It discloses nothing, the value is emitted as a " +
     "response header on that school's own embed page, so anyone able to load the page can already " +
     "read it. Fails closed to 'none'.",
+  "school/student-login/roster/route.ts":
+    "Public by necessity: the pre-login 'pick your name' step of pupil PIN sign-in, before any " +
+    "session exists. Gated by a teacher-controlled join code that maps to exactly one class; returns " +
+    "only first name + last initial + an opaque enrollment ref (the PIN is the secret). Rate-limited " +
+    "per IP so a guessed code cannot be farmed for names. Fails closed with a generic 404.",
 };
 
 /**
@@ -278,11 +283,17 @@ function stripComments(source: string): string {
 describe("school accounts hold no B2C capability", () => {
   const provisioningFiles = ALL_ROUTE_FILES.filter((f) => {
     const rel = apiRelative(f);
-    return rel.includes("schools/provision") || rel.includes("school/roster/import");
+    return (
+      rel.includes("schools/provision") ||
+      rel.includes("school/roster/import") ||
+      // The teacher-invite endpoint also creates a school account (SCHOOL_STAFF + TEACHER
+      // membership); it must never grant a B2C role either.
+      rel.includes("school/teachers")
+    );
   });
 
   it("finds the account-provisioning routes (guards against a vacuous pass)", () => {
-    expect(provisioningFiles.length).toBeGreaterThanOrEqual(2);
+    expect(provisioningFiles.length).toBeGreaterThanOrEqual(3);
   });
 
   it.each(provisioningFiles.map((f) => [apiRelative(f), f] as const))(

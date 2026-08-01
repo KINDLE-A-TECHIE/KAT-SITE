@@ -129,10 +129,10 @@ export function SuperAdminInvitesPanel() {
       <section className="kat-card">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">
               Create Super Admin Invite
             </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-stone-600 dark:text-stone-400">
               Invite links are one-time, auditable, and revocable before use.
             </p>
           </div>
@@ -172,9 +172,9 @@ export function SuperAdminInvitesPanel() {
         </div>
 
         {latestInviteUrl ? (
-          <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/30">
-            <p className="text-xs font-medium uppercase tracking-wide text-blue-700 dark:text-blue-400">Latest invite link</p>
-            <p className="mt-1 break-all text-sm text-blue-900 dark:text-blue-300">{latestInviteUrl}</p>
+          <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 p-3 dark:border-orange-800 dark:bg-orange-900/30">
+            <p className="text-xs font-medium uppercase tracking-wide text-orange-700 dark:text-orange-400">Latest invite link</p>
+            <p className="mt-1 break-all text-sm text-orange-900 dark:text-orange-300">{latestInviteUrl}</p>
             <Button
               variant="outline"
               className="mt-2"
@@ -188,7 +188,7 @@ export function SuperAdminInvitesPanel() {
       </section>
 
       <section className="kat-card">
-        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-slate-900 dark:text-slate-100">
+        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">
           Invite History
         </h3>
         <div className="mt-3 space-y-3">
@@ -198,7 +198,7 @@ export function SuperAdminInvitesPanel() {
               <Skeleton className="h-20 w-full" />
             </>
           ) : invites.length === 0 ? (
-            <p className="text-sm text-slate-600 dark:text-slate-400">No invites created yet.</p>
+            <p className="text-sm text-stone-600 dark:text-stone-400">No invites created yet.</p>
           ) : (
             invites.map((invite, index) => (
               <motion.div
@@ -206,12 +206,12 @@ export function SuperAdminInvitesPanel() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
-                className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+                className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-100">{invite.email}</p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                    <p className="font-medium text-stone-900 dark:text-stone-100">{invite.email}</p>
+                    <p className="text-xs text-stone-600 dark:text-stone-400">
                       Created by {invite.createdBy.firstName} {invite.createdBy.lastName} on{" "}
                       {new Date(invite.createdAt).toLocaleString()}
                     </p>
@@ -221,7 +221,7 @@ export function SuperAdminInvitesPanel() {
                       invite.status === "valid"
                         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
                         : invite.status === "used"
-                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400"
+                          ? "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400"
                           : invite.status === "expired"
                             ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
                             : "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400"
@@ -230,14 +230,14 @@ export function SuperAdminInvitesPanel() {
                     {invite.status.toUpperCase()}
                   </span>
                 </div>
-                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
                   Expires: {new Date(invite.expiresAt).toLocaleString()}
                 </p>
                 {invite.note ? (
-                  <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{invite.note}</p>
+                  <p className="mt-1 text-sm text-stone-700 dark:text-stone-300">{invite.note}</p>
                 ) : null}
                 {invite.usedBy ? (
-                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                  <p className="mt-1 text-xs text-stone-600 dark:text-stone-400">
                     Used by {invite.usedBy.firstName} {invite.usedBy.lastName} at{" "}
                     {invite.usedAt ? new Date(invite.usedAt).toLocaleString() : "-"}
                   </p>

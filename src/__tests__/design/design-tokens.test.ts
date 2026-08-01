@@ -111,15 +111,50 @@ describe("KAT design tokens", () => {
     ).toEqual([]);
   });
 
-  it("loads the three brand faces via next/font, not a bare font-family string", () => {
-    // globals.css used to merely NAME "Manrope"/"Space Grotesk" in a font stack without
-    // ever fetching them, so the whole app silently fell back to Segoe/Arial. The faces
-    // must be imported in layout.tsx for the --font-* vars to resolve to anything.
+  it("keeps the ENTIRE app off trust-blue, decorative hues, and slate neutrals", () => {
+    // The master design retired trust-blue app-wide (dashboards, auth, email, everything),
+    // uses stone neutrals, and warm orange/clay accents. Semantic STATE colours are allowed
+    // and deliberately not forbidden here: emerald/green = success, amber = warning,
+    // rose/red = danger. This walks all of src (walk() already skips __tests__ and .bak) and
+    // fails the build on any regression, so "no blue anywhere" is enforced, not a convention.
+    const FORBIDDEN = [
+      { re: /#(1E5FAF|1A52A0|1A4F8F|132B5E|0D1F45|4DB3E6|1E3A8A)/gi, what: "trust-blue hex" },
+      { re: /\b(blue|sky|cyan|indigo|violet|purple|fuchsia|teal)-\d/g, what: "non-warm hue class" },
+      { re: /\bslate-\d|prose-slate\b/g, what: "slate neutral (use stone-*)" },
+    ];
+    const offenders: string[] = [];
+    for (const file of walk(SRC)) {
+      const text = readFileSync(file, "utf8");
+      for (const { re, what } of FORBIDDEN) {
+        const hits = [...text.matchAll(re)];
+        if (hits.length > 0) {
+          const rel = file.replace(process.cwd(), "").replace(/\\/g, "/");
+          offenders.push(`${rel}: ${what}: ${[...new Set(hits.map((h) => h[0]))].join(", ")}`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      "Trust-blue / non-warm hue / slate found outside the allowed semantic states. " +
+        "Brand accent is --kat-clay or orange-*; neutrals are stone-*; success/warning/danger " +
+        "may use emerald/amber/rose.",
+    ).toEqual([]);
+  });
+
+  it("loads the three brand faces via next/font (self-hosted), not a bare font-family string", () => {
+    // globals.css used to merely NAME "Manrope"/"Space Grotesk" in a font stack without ever
+    // fetching them, so the whole app silently fell back to Segoe/Arial. The faces must be loaded
+    // in layout.tsx for the --font-* vars to resolve. They are self-hosted via next/font/local
+    // (variable woff2 files in src/app/fonts), so there is no build-time Google Fonts fetch that
+    // could time out on a slow network and drop the app back to the fallback stack.
     const layout = readFileSync(join(SRC, "app", "layout.tsx"), "utf8");
 
-    expect(layout).toMatch(/from\s+["']next\/font\/google["']/);
-    for (const face of ["Bricolage_Grotesque", "Fraunces", "JetBrains_Mono"]) {
-      expect(layout, `${face} is not loaded via next/font in layout.tsx`).toContain(face);
+    expect(layout).toMatch(/from\s+["']next\/font\/local["']/);
+    for (const face of ["bricolage.woff2", "fraunces.woff2", "jetbrains.woff2"]) {
+      expect(layout, `${face} is not loaded via next/font/local in layout.tsx`).toContain(face);
+    }
+    for (const cssVar of ["--font-bricolage", "--font-fraunces", "--font-jetbrains"]) {
+      expect(layout, `${cssVar} is not emitted in layout.tsx`).toContain(cssVar);
     }
   });
 });

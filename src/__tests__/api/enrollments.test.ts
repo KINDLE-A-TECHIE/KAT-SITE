@@ -13,6 +13,8 @@ const mockPrisma = vi.hoisted(() => ({
   enrollment: {
     findUnique: vi.fn(),
     upsert: vi.fn(),
+    findMany: vi.fn(),
+    count: vi.fn(),
   },
   enrollmentPeriod: {
     updateMany: vi.fn(),
@@ -20,6 +22,9 @@ const mockPrisma = vi.hoisted(() => ({
   },
   parentStudent: {
     findUnique: vi.fn(),
+  },
+  program: {
+    findFirst: vi.fn(),
   },
   $transaction: vi.fn(),
 }));
@@ -68,6 +73,9 @@ describe("POST /api/enrollments", () => {
     mockPrisma.$transaction.mockImplementation(async (fn: (tx: typeof mockPrisma) => Promise<unknown>) =>
       fn(mockPrisma),
     );
+    // Default: the programme is available (published + active) so the first-time availability gate
+    // passes. Tests exercising the gate override this with a null resolve.
+    mockPrisma.program.findFirst.mockResolvedValue({ id: PROG_ID });
   });
 
   it("returns 401 when unauthenticated", async () => {
@@ -140,15 +148,16 @@ describe("GET /api/enrollments", () => {
 
   it("returns own enrollments for a STUDENT", async () => {
     vi.mocked(getServerAuthSession).mockResolvedValueOnce(studentSession as never);
-    (mockPrisma.enrollment as unknown as { findMany: ReturnType<typeof vi.fn> }).findMany =
-      vi.fn().mockResolvedValueOnce([mockEnrollment]);
+    // GET is paginated now: $transaction([findMany, count]) resolves to [rows, total].
+    mockPrisma.$transaction.mockResolvedValueOnce([[mockEnrollment], 1]);
 
     const req = new Request("http://localhost/api/enrollments");
     const res = await GET(req);
-    const data = await res.json() as { enrollments: unknown[] };
+    const data = await res.json() as { enrollments: unknown[]; total: number };
 
     expect(res.status).toBe(200);
     expect(data.enrollments).toHaveLength(1);
+    expect(data.total).toBe(1);
   });
 });
 

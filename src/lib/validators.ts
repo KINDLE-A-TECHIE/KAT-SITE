@@ -13,6 +13,31 @@ export const loginSchema = z.object({
   password: z.string().min(8),
 });
 
+/** School pupil sign-in by class code + PIN (Option B). pupilRef is the pupil's opaque enrollment id. */
+export const studentPinLoginSchema = z.object({
+  classCode: z.string().trim().min(4).max(16),
+  pupilRef: z.string().trim().min(1).max(64),
+  pin: z.string().regex(/^\d{4,8}$/),
+});
+
+/**
+ * Public partner / school-pilot enquiry intake (POST /api/partners). A school pilot lead is a
+ * PartnerInquiry with type = SCHOOL (see SCHOOL-BUILD-NOTES.md), not a separate model. `state`
+ * and `estimatedStudents` are the pilot-specific fields; both optional (corporate/government
+ * leads omit them). `programs` carries the NERDC levels the admin inbox expects.
+ */
+export const partnerInquiryCreateSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  organization: z.string().trim().min(2).max(160),
+  type: z.enum(["SCHOOL", "CORPORATE", "GOVERNMENT", "OTHER"]),
+  email: z.string().trim().email().toLowerCase().max(200),
+  phone: z.string().trim().max(40).optional().or(z.literal("")),
+  state: z.string().trim().max(80).optional().or(z.literal("")),
+  estimatedStudents: z.coerce.number().int().positive().max(1_000_000).optional(),
+  message: z.string().trim().min(1).max(4000),
+  programs: z.array(z.string().max(60)).max(20).optional(),
+});
+
 export const registerSchema = z.object({
   firstName: z.string().trim().min(2).max(100),
   lastName: z.string().trim().min(2).max(100),
@@ -210,7 +235,7 @@ export const messageDeleteSchema = z.object({
 export const assessmentQuestionSchema = z.object({
   prompt: z.string().trim().min(5).max(4000),
   type: z.enum(QUESTION_TYPES),
-  points: z.number().int().min(1).max(100),
+  points: z.number().int().min(1).max(1000),
   options: z
     .array(
       z.object({
@@ -221,6 +246,34 @@ export const assessmentQuestionSchema = z.object({
     )
     .optional(),
   answerKey: z.string().trim().max(200).optional(),
+  // CODE questions: the runtime + starter shown to the pupil, and hidden input/expected test cases.
+  codeLanguage: z.string().trim().max(40).optional(),
+  starterCode: z.string().max(20_000).optional(),
+  // CODE questions answered with blocks: optional Blockly config JSON (toolbox/startBlocks/allowCode).
+  blocklyConfig: z.string().max(40_000).optional(),
+  testCases: z
+    .array(
+      z.object({
+        name: z.string().trim().max(120).optional(),
+        stdin: z.string().max(20_000).optional(),
+        expectedStdout: z.string().max(20_000),
+        points: z.number().int().min(1).max(100),
+        hidden: z.boolean().optional(),
+      }),
+    )
+    .max(50)
+    .optional(),
+  // RUBRIC questions: teacher-scored criteria.
+  criteria: z
+    .array(
+      z.object({
+        label: z.string().trim().min(1).max(200),
+        description: z.string().trim().max(500).optional(),
+        maxPoints: z.number().int().min(1).max(100),
+      }),
+    )
+    .max(30)
+    .optional(),
 });
 
 export const createAssessmentSchema = z.object({
@@ -339,6 +392,10 @@ export const updateLessonSchema = z.object({
   title: z.string().trim().min(2).max(200).optional(),
   description: z.string().trim().max(4000).optional(),
   sortOrder: z.number().int().min(0).optional(),
+  /** Free taster: school staff may preview this lesson on an unlicensed term. */
+  isSample: z.boolean().optional(),
+  /** Author flag: feature this lesson's title on a school completion certificate. */
+  certHighlight: z.boolean().optional(),
 });
 
 export const createLessonContentSchema = z.object({
@@ -419,7 +476,8 @@ const NERDC_LEVELS = ["PRIMARY_1_3", "PRIMARY_4_6", "JSS", "SSS"] as const;
 export const schoolClassCreateSchema = z.object({
   name: z.string().trim().min(1).max(120),
   nerdcLevel: z.enum(NERDC_LEVELS),
-  term: z.string().trim().min(1).max(40),
+  // A class is a cohort for a SESSION (academic year), e.g. "2025/2026". Not a single term.
+  sessionLabel: z.string().trim().min(1).max(40),
   teacherId: z.string().trim().min(1).max(64).nullable().optional(),
 });
 
@@ -427,7 +485,7 @@ export const schoolClassUpdateSchema = z.object({
   id: z.string().trim().min(1).max(64),
   name: z.string().trim().min(1).max(120).optional(),
   nerdcLevel: z.enum(NERDC_LEVELS).optional(),
-  term: z.string().trim().min(1).max(40).optional(),
+  sessionLabel: z.string().trim().min(1).max(40).optional(),
   teacherId: z.string().trim().min(1).max(64).nullable().optional(),
   /** null unassigns the course. Locked once students are enrolled. */
   programId: z.string().trim().min(1).max(64).nullable().optional(),
@@ -446,6 +504,19 @@ export const schoolClassCourseSchema = z.object({
 });
 
 /**
+ * Rolling a class's pupils into a NEW next-session class (promotion). The target course must be the
+ * next year's programme, not the same one; the schoolId comes from the session, never the body.
+ */
+export const schoolRolloverSchema = z.object({
+  sourceClassId: z.string().trim().min(1).max(64),
+  name: z.string().trim().min(1).max(120),
+  sessionLabel: z.string().trim().min(1).max(40),
+  programId: z.string().trim().min(1).max(64),
+  nerdcLevel: z.enum(NERDC_LEVELS),
+  teacherId: z.string().trim().min(1).max(64).nullable().optional(),
+});
+
+/**
  * A school admin confirming seats for a term.
  *
  * NOTE the deliberate absence of `amount` and `pricePerSeat`: the amount is computed server-side as
@@ -459,6 +530,12 @@ export const schoolInvoiceCreateSchema = z.object({
 
 export const schoolInvoiceVerifySchema = z.object({
   reference: z.string().trim().min(1).max(120),
+});
+
+export const teacherInviteSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(200),
+  firstName: z.string().trim().min(1).max(80),
+  lastName: z.string().trim().min(1).max(80),
 });
 
 /**
@@ -477,6 +554,105 @@ export const schoolUnitDeliverySchema = z.object({
    * predecessor being credited is derived from the class's teacher history, never sent here.
    */
   basis: z.enum(["FIRST_HAND", "SUCCESSOR"]).optional(),
+});
+
+/**
+ * A teacher records that their class finished a DIGLIT (digital-literacy) lesson delivered from the
+ * front of the room, so it counts as complete for the pupils even though they did not each click
+ * through it on a device. Only classId + lessonId travel here; the pupils are the class's own roster,
+ * resolved server-side, never named in the request.
+ */
+export const schoolLessonClassCompleteSchema = z.object({
+  classId: z.string().trim().min(1).max(64),
+  lessonId: z.string().trim().min(1).max(64),
+});
+
+/**
+ * A teacher schedules a KAT-authored assessment (test/exam) to their class, optionally with an
+ * open/close window. `scheduled: false` un-schedules it. KAT authors the assessment; the teacher only
+ * chooses WHEN the class sits it, so nothing about the assessment's content travels here.
+ */
+export const schoolScheduleAssessmentSchema = z.object({
+  classId: z.string().trim().min(1).max(64),
+  assessmentId: z.string().trim().min(1).max(64),
+  scheduled: z.boolean(),
+  opensAt: z.string().datetime().nullish(),
+  closesAt: z.string().datetime().nullish(),
+});
+
+/**
+ * A teacher manages a module's project teams: forms teams, moves pupils in and out, and reviews the
+ * team's build. On "review" with status APPROVED the module's project gate passes for every member.
+ * A single action-tagged shape; the route enforces which fields each action needs.
+ */
+export const schoolProjectTeamSchema = z.object({
+  action: z.enum(["create", "addMember", "removeMember", "review", "delete"]),
+  classId: z.string().trim().max(64).optional(),
+  moduleId: z.string().trim().max(64).optional(),
+  teamId: z.string().trim().max(64).optional(),
+  name: z.string().trim().min(1).max(120).optional(),
+  userId: z.string().trim().max(64).optional(),
+  status: z.enum(["APPROVED", "NEEDS_WORK"]).optional(),
+  reviewNote: z.string().trim().max(2000).nullish(),
+  submissionNote: z.string().trim().max(2000).nullish(),
+  submissionUrl: z.string().trim().max(500).nullish(),
+});
+
+/**
+ * A teacher signs off (or retracts) the instructor gate for one pupil on one CODING module of
+ * their class. The pupil is addressed by an opaque userId in the body, never in the URL.
+ */
+export const schoolModuleSignoffSchema = z.object({
+  classId: z.string().trim().min(1).max(64),
+  moduleId: z.string().trim().min(1).max(64),
+  userId: z.string().trim().min(1).max(64),
+  passed: z.boolean(),
+});
+
+/**
+ * A teacher marks the human-graded answers of one school submission: OPEN_ENDED (theory text) and
+ * RUBRIC (observed practical). Each grade is a score for one answer; the server clamps it to that
+ * question's marks and finalizes the submission.
+ */
+export const schoolGradeSubmissionSchema = z.object({
+  submissionId: z.string().trim().min(1).max(64),
+  grades: z
+    .array(
+      z.object({
+        answerId: z.string().trim().min(1).max(64),
+        score: z.number().min(0).max(1000),
+        feedback: z.string().max(5000).nullish(),
+      }),
+    )
+    .max(200),
+});
+
+/**
+ * A school pupil submits an assessment. For a CODE question the client sends the code it ran plus the
+ * OUTPUT its run produced per test case (`codeRuns`); the server compares those to the hidden expected
+ * outputs, so nothing secret is sent to the browser. Objective answers are the selected option id.
+ */
+export const schoolSubmitAssessmentSchema = z.object({
+  assessmentId: z.string().trim().min(1).max(64),
+  answers: z
+    .array(
+      z.object({
+        questionId: z.string().trim().min(1).max(64),
+        selectedOptionId: z.string().trim().max(64).nullish(),
+        responseText: z.string().max(50_000).nullish(),
+        codeRuns: z
+          .array(
+            z.object({
+              testCaseId: z.string().trim().max(64),
+              stdout: z.string().max(100_000),
+              errored: z.boolean().optional(),
+            }),
+          )
+          .max(50)
+          .optional(),
+      }),
+    )
+    .max(200),
 });
 
 /** Max roster rows per import: bounds the transaction and the request body. */

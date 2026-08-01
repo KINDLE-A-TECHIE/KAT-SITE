@@ -1,8 +1,11 @@
-const RUNTIME_CACHE = "kat-runtime-v2";
+const RUNTIME_CACHE = "kat-runtime-v3";
+const API_CACHE = "kat-api-v1"; // cached lesson-content GETs, so a visited lesson reads offline
+const IMAGE_CACHE = "kat-img-v1"; // cross-origin lesson images (R2), so visuals show offline
 const RUNTIME_CACHE_LIMIT = 60;
+const API_CACHE_LIMIT = 80;
+const IMAGE_CACHE_LIMIT = 150;
 
-// Fix 11, derive static cache name from Next.js build ID so stale caches
-// are automatically evicted whenever a new build is deployed.
+// Derive static cache name from Next.js build ID so stale caches auto-evict on deploy.
 let _staticCachePromise = null;
 
 function getStaticCacheName() {
@@ -38,15 +41,75 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     getStaticCacheName().then(async (currentStatic) => {
+      const keep = new Set([currentStatic, RUNTIME_CACHE, API_CACHE, IMAGE_CACHE]);
       const keys = await caches.keys();
-      // Delete all stale kat-static-* caches and any other unknown caches
-      await Promise.all(
-        keys
-          .filter((key) => key !== currentStatic && key !== RUNTIME_CACHE)
-          .map((key) => caches.delete(key)),
-      );
+      await Promise.all(keys.filter((key) => !keep.has(key)).map((key) => caches.delete(key)));
       await self.clients.claim();
     }),
+  );
+});
+
+// Pull image URLs out of a cached lesson-content API response so a saved unit shows its pictures
+// offline. The lesson GET returns { lesson: { contents: [{ type, body }] } }; RICH_TEXT bodies hold
+// the <img> tags. Only http(s) URLs (R2/absolute) are collected; data: URIs are already inline.
+async function imageUrlsFromLessonResponse(res) {
+  try {
+    const data = await res.clone().json();
+    const urls = new Set();
+    for (const c of data?.lesson?.contents || []) {
+      if (c.type === "RICH_TEXT" && typeof c.body === "string") {
+        const re = /<img[^>]+src=["']([^"']+)["']/gi;
+        let m;
+        while ((m = re.exec(c.body))) {
+          if (/^https?:\/\//i.test(m[1])) urls.add(m[1]);
+        }
+      }
+    }
+    return [...urls];
+  } catch {
+    return [];
+  }
+}
+
+// The app can ask the SW to pre-download content for a unit so it reads offline later. The page posts
+// { type: "PRECACHE", unitId, apiUrls: [...] }; the SW fetches each lesson API (warming the API cache),
+// discovers the images inside those lessons, and warms the image cache too. Doing the work here, not
+// in the page, keeps a single code path and means a slow/cold route never strands the page mid-loop.
+self.addEventListener("message", (event) => {
+  const data = event.data;
+  if (!data || data.type !== "PRECACHE") return;
+  event.waitUntil(
+    (async () => {
+      const apiCache = await caches.open(API_CACHE);
+      const imgCache = await caches.open(IMAGE_CACHE);
+
+      // Fetch + cache each lesson API, collecting the images referenced inside.
+      const imageUrls = new Set();
+      await Promise.all(
+        (data.apiUrls || []).map(async (u) => {
+          try {
+            const res = await fetch(u, { credentials: "include" });
+            if (!res.ok) return;
+            await apiCache.put(u, res.clone());
+            for (const img of await imageUrlsFromLessonResponse(res)) imageUrls.add(img);
+          } catch { /* one lesson failing must not fail the whole save */ }
+        }),
+      );
+
+      // Warm the image cache (cross-origin R2 images come back opaque under no-cors, still cacheable).
+      await Promise.all(
+        [...imageUrls].map((u) =>
+          fetch(u, { mode: "no-cors" })
+            .then((res) => (res.ok || res.type === "opaque" ? imgCache.put(u, res.clone()) : null))
+            .catch(() => null),
+        ),
+      );
+
+      await trimCache(API_CACHE, API_CACHE_LIMIT);
+      await trimCache(IMAGE_CACHE, IMAGE_CACHE_LIMIT);
+      // Tell the requesting client we are done, so it can flip its "saved" state.
+      if (event.source) event.source.postMessage({ type: "PRECACHE_DONE", unitId: data.unitId });
+    })(),
   );
 });
 
@@ -57,17 +120,71 @@ function isStaticAssetRequest(request, url) {
   );
 }
 
+// Read-only lesson CONTENT endpoints worth caching for offline reading. Deliberately narrow: only GETs
+// that serve curriculum content, never auth, never anything a mutation touches. The lesson-content GET
+// is `/api/curriculum/lessons/<id>` exactly (no trailing /complete, /contents, /run segments).
+function isCacheableApiRead(url) {
+  return (
+    url.pathname === "/api/school/learn" ||
+    /^\/api\/curriculum\/lessons\/[^/]+$/.test(url.pathname)
+  );
+}
+
+// Serve cache immediately, refresh in the background. Best for lesson content: instant + offline-safe,
+// and self-heals to the latest version the next time the pupil is online.
+async function staleWhileRevalidate(request, cacheName, limit) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  const network = fetch(request)
+    .then((res) => {
+      if (res.ok) {
+        cache.put(request, res.clone());
+        trimCache(cacheName, limit);
+      }
+      return res;
+    })
+    .catch(() => null);
+  return cached || (await network) || Response.error();
+}
+
+async function cacheFirst(request, cacheName, limit) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  try {
+    const res = await fetch(request);
+    // Cache successful same-origin responses and opaque cross-origin ones (images fetched no-cors).
+    if (res.ok || res.type === "opaque") {
+      cache.put(request, res.clone());
+      trimCache(cacheName, limit);
+    }
+    return res;
+  } catch {
+    return cached || Response.error();
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
-  if (request.method !== "GET") {
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+
+  // Cross-origin: only cache IMAGES (R2 lesson images, logos), so lesson visuals survive offline.
+  // Everything else cross-origin (analytics, CDNs we do not control) stays network-only.
+  if (url.origin !== self.location.origin) {
+    if (request.destination === "image") {
+      event.respondWith(cacheFirst(request, IMAGE_CACHE, IMAGE_CACHE_LIMIT));
+    }
     return;
   }
 
-  const url = new URL(request.url);
-  if (url.origin !== self.location.origin) {
-    return;
-  }
+  // Same-origin API: cache the read-only content endpoints, leave everything else (mutations, auth,
+  // per-user data) network-only so we never serve stale writes or another user's actions.
   if (url.pathname.startsWith("/api/")) {
+    if (isCacheableApiRead(url)) {
+      event.respondWith(staleWhileRevalidate(request, API_CACHE, API_CACHE_LIMIT));
+    }
     return;
   }
 
@@ -81,12 +198,15 @@ self.addEventListener("fetch", (event) => {
           trimCache(RUNTIME_CACHE, RUNTIME_CACHE_LIMIT);
           return networkResponse;
         } catch {
+          // Offline: serve THIS page from cache if we have it (a lesson visited before now reads
+          // offline), and only fall back to the generic offline page when we do not.
+          const runtimeCache = await caches.open(RUNTIME_CACHE);
+          const cachedPage = await runtimeCache.match(request);
+          if (cachedPage) return cachedPage;
           const staticCacheName = await getStaticCacheName();
           const staticCache = await caches.open(staticCacheName);
           const offlinePage = await staticCache.match("/offline");
-          if (offlinePage) {
-            return offlinePage;
-          }
+          if (offlinePage) return offlinePage;
           const homepage = await staticCache.match("/");
           return homepage || Response.error();
         }
@@ -95,21 +215,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Fix 10, cache-first for static assets (/_next/static/* are content-addressed
-  // and never change, so serving from cache immediately is safe and faster).
+  // Static assets (/_next/static/* are content-addressed and never change): cache-first.
   if (isStaticAssetRequest(request, url)) {
     event.respondWith(
       (async () => {
         const runtimeCache = await caches.open(RUNTIME_CACHE);
-        // Serve from cache immediately if available
         const cached = await runtimeCache.match(request);
         if (cached) return cached;
-        // Also check app-shell cache (covers logo, manifest, etc.)
         const staticCacheName = await getStaticCacheName();
         const staticCache = await caches.open(staticCacheName);
         const shellCached = await staticCache.match(request);
         if (shellCached) return shellCached;
-        // Cache miss, fetch from network, store, then return
         try {
           const networkResponse = await fetch(request);
           if (networkResponse.ok) {

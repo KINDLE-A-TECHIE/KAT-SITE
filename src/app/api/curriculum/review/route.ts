@@ -2,6 +2,7 @@ import { ContentReviewStatus, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { readPageOffset, pageMeta } from "@/lib/pagination";
 
 export async function GET(request: Request) {
   const session = await getServerAuthSession();
@@ -18,18 +19,23 @@ export async function GET(request: Request) {
         ? ContentReviewStatus.REJECTED
         : ContentReviewStatus.PENDING_REVIEW;
 
-  const items = await prisma.lessonContent.findMany({
-    where: {
-      reviewStatus,
-      ...(programId && {
-        lesson: {
-          module: {
-            version: { curriculum: { programId } },
-          },
+  const where = {
+    reviewStatus,
+    ...(programId && {
+      lesson: {
+        module: {
+          version: { curriculum: { programId } },
         },
-      }),
-    },
+      },
+    }),
+  };
+  const { limit, page, skip } = readPageOffset(request);
+
+  const items = await prisma.lessonContent.findMany({
+    where,
     orderBy: { createdAt: "asc" },
+    skip,
+    take: limit,
     include: {
       createdBy: { select: { firstName: true, lastName: true } },
       lesson: {
@@ -58,6 +64,7 @@ export async function GET(request: Request) {
       },
     },
   });
+  const total = await prisma.lessonContent.count({ where });
 
-  return ok({ items, total: items.length });
+  return ok({ items, ...pageMeta(total, page, limit) });
 }

@@ -1,36 +1,38 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import Script from "next/script";
-import { Bricolage_Grotesque, Fraunces, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { Providers } from "./providers";
 import "./globals.css";
 
 /*
- * The type system, actually loaded. Previously globals.css merely NAMED "Manrope" /
- * "Space Grotesk" in a font stack without ever fetching them, so every page silently
- * fell back to Segoe/Arial. next/font self-hosts these and emits the --font-* vars
+ * The type system, self-hosted. These are the variable woff2 files in ./fonts, loaded via
+ * next/font/local so there is NO build-time fetch to Google Fonts (it was timing out on slow
+ * networks and silently falling back to Segoe/Arial). next/font still emits the --font-* vars
  * that globals.css and tailwind.config.js consume.
  *
- * display=swap on all three: text paints immediately in the fallback rather than
- * blocking on the webfont.
+ * display=swap on all three: text paints immediately in the fallback rather than blocking on
+ * the webfont. To refresh a face, re-download its variable woff2 (latin subset) into ./fonts.
  */
-const bricolage = Bricolage_Grotesque({
-  subsets: ["latin"],
+const bricolage = localFont({
+  src: "./fonts/bricolage.woff2",
   display: "swap",
   variable: "--font-bricolage",
+  weight: "200 800",
 });
 
-const fraunces = Fraunces({
-  subsets: ["latin"],
+const fraunces = localFont({
+  src: "./fonts/fraunces.woff2",
   display: "swap",
   variable: "--font-fraunces",
-  axes: ["SOFT", "WONK"],
+  weight: "100 900",
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
+const jetbrainsMono = localFont({
+  src: "./fonts/jetbrains.woff2",
   display: "swap",
   variable: "--font-jetbrains",
+  weight: "100 800",
 });
 
 export const metadata: Metadata = {
@@ -76,6 +78,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
       className={`${bricolage.variable} ${fraunces.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-sans antialiased">
