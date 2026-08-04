@@ -1,11 +1,11 @@
 /**
  * Scratch / TurboWarp integration contract (Phase 3a).
  *
- * KAT never iframes the public turbowarp.org. It embeds a SELF-HOSTED, custom TurboWarp build on a
- * KAT-controlled origin (see scripts/turbowarp/). This module is the shared contract between the two
- * halves: the KAT page (parent) and that editor iframe (child) talk over `postMessage`, and the same
- * message names + shapes live here so both sides agree. The editor-side copy lives in
- * scripts/turbowarp/bridge.js and MUST match these strings.
+ * KAT never iframes a public Scratch site. It embeds a SELF-HOSTED scratch-gui (vanilla, which embeds
+ * without patching, unlike TurboWarp) on a KAT-controlled origin (see scripts/scratch-editor/). This
+ * module is the shared contract between the two halves: the KAT page (parent) and that editor iframe
+ * (child) talk over `postMessage`, and the same message names + shapes live here so both sides agree. The
+ * editor-side copy lives in scripts/scratch-editor/bridge.js and MUST match these strings.
  *
  * Enabled only when NEXT_PUBLIC_SCRATCH_EDITOR_URL is set (absent = Scratch off, the same
  * feature-flag-by-env pattern as NEXT_PUBLIC_PYODIDE_INDEX_URL / EMBED_TOKEN_SECRET). Nothing here reaches
@@ -19,6 +19,11 @@ export const SCRATCH_MSG = {
   DIRTY: "kat:scratch:dirty",
   SAVED: "kat:scratch:saved",
   SAVE_FAILED: "kat:scratch:save-failed",
+  // editor -> parent: the pupil chose File -> Save / Open, so the editor asks the parent for a fresh
+  // presigned URL. The parent replies with SAVE / LOAD below. No payload: the parent knows the content
+  // block and the session user, and mints URLs scoped to them.
+  REQUEST_SAVE: "kat:scratch:request-save",
+  REQUEST_LOAD: "kat:scratch:request-load",
   // parent -> editor
   LOAD: "kat:scratch:load",
   SAVE: "kat:scratch:save",
@@ -29,7 +34,9 @@ export type ScratchInbound =
   | { type: typeof SCRATCH_MSG.READY }
   | { type: typeof SCRATCH_MSG.DIRTY }
   | { type: typeof SCRATCH_MSG.SAVED; key: string }
-  | { type: typeof SCRATCH_MSG.SAVE_FAILED; message: string };
+  | { type: typeof SCRATCH_MSG.SAVE_FAILED; message: string }
+  | { type: typeof SCRATCH_MSG.REQUEST_SAVE }
+  | { type: typeof SCRATCH_MSG.REQUEST_LOAD };
 
 /** Messages the KAT page sends DOWN to the editor. */
 export type ScratchOutbound =
@@ -91,6 +98,10 @@ export function parseScratchInbound(data: unknown): ScratchInbound | null {
       const message = (data as { message?: unknown }).message;
       return { type: SCRATCH_MSG.SAVE_FAILED, message: typeof message === "string" ? message : "Save failed." };
     }
+    case SCRATCH_MSG.REQUEST_SAVE:
+      return { type: SCRATCH_MSG.REQUEST_SAVE };
+    case SCRATCH_MSG.REQUEST_LOAD:
+      return { type: SCRATCH_MSG.REQUEST_LOAD };
     default:
       return null;
   }

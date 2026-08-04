@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Maximize2, Minimize2, Save } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Maximize2, Minimize2 } from "lucide-react";
 import { getDraft, putDraft } from "@/lib/lesson-block-draft";
 import { useFullscreen, FULLSCREEN_PANEL_CLASS, FULLSCREEN_BACKDROP_CLASS } from "@/components/dashboard/use-fullscreen";
 import {
@@ -103,7 +102,6 @@ export function ScratchBlock({
       setSaving(false);
       setHasSaved(true);
       await putDraft(contentId, { sb3Key: key });
-      toast.success("Project saved.");
       if (!completedRef.current) {
         completedRef.current = true;
         onComplete?.();
@@ -111,6 +109,43 @@ export function ScratchBlock({
     },
     [contentId, onComplete],
   );
+
+  // Send the pupil's saved project (or a blank one) into the editor. Used to auto-resume on open, and
+  // when the pupil chooses File -> Open my project (revert to the last save).
+  const sendLoad = useCallback(async () => {
+    const key = savedKeyRef.current;
+    if (!key) {
+      post(loadMessage(null)); // blank project
+      return;
+    }
+    try {
+      const res = await fetch(`/api/curriculum/contents/${contentId}/scratch/download-url`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key }),
+      });
+      const data = res.ok ? ((await res.json()) as { projectUrl?: string }) : {};
+      post(loadMessage(data.projectUrl ?? null));
+    } catch {
+      post(loadMessage(null));
+    }
+  }, [contentId, post]);
+
+  // Mint a presigned upload URL and hand it to the editor, which serializes the project and PUTs it to R2,
+  // then replies SAVED{key} or SAVE_FAILED. Triggered by the editor's File -> Save.
+  const sendSave = useCallback(async () => {
+    if (!ready || saving) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/curriculum/contents/${contentId}/scratch/upload-url`, { method: "POST" });
+      if (!res.ok) throw new Error("upload-url failed");
+      const { uploadUrl, key } = (await res.json()) as { uploadUrl: string; key: string };
+      post(saveMessage(uploadUrl, key));
+    } catch {
+      setSaving(false);
+      toast.error("Could not start the save. Please try again.");
+    }
+  }, [ready, saving, contentId, post]);
 
   // Editor -> parent messages. Origin-pinned; a stray message from any other frame is ignored.
   useEffect(() => {
@@ -132,40 +167,25 @@ export function ScratchBlock({
           setSaving(false);
           toast.error(msg.message || "Could not save your project.");
           break;
+        case SCRATCH_MSG.REQUEST_SAVE: // pupil chose File -> Save
+          void sendSave();
+          break;
+        case SCRATCH_MSG.REQUEST_LOAD: // pupil chose File -> Open my project
+          void sendLoad();
+          break;
       }
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [editorOrigin, handleSaved]);
+  }, [editorOrigin, handleSaved, sendSave, sendLoad]);
 
-  // Once the editor is ready AND we know whether there is a saved project, load it exactly once. Ordering
-  // this on both flags avoids a race where READY arrives before the draft has been read.
+  // Auto-resume: once the editor is ready AND we know whether there is a saved project, load it exactly
+  // once. Ordering on both flags avoids a race where READY arrives before the draft has been read.
   useEffect(() => {
     if (!ready || !draftLoaded || loadedOnceRef.current) return;
     loadedOnceRef.current = true;
-    void (async () => {
-      const key = savedKeyRef.current;
-      if (!key) {
-        post(loadMessage(null)); // blank project
-        return;
-      }
-      try {
-        const res = await fetch(`/api/curriculum/contents/${contentId}/scratch/download-url`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key }),
-        });
-        if (res.ok) {
-          const data = (await res.json()) as { projectUrl?: string };
-          post(loadMessage(data.projectUrl ?? null));
-        } else {
-          post(loadMessage(null));
-        }
-      } catch {
-        post(loadMessage(null));
-      }
-    })();
-  }, [ready, draftLoaded, contentId, post]);
+    void sendLoad();
+  }, [ready, draftLoaded, sendLoad]);
 
   // Warn before leaving with unsaved changes.
   useEffect(() => {
@@ -177,21 +197,6 @@ export function ScratchBlock({
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty]);
-
-  const save = useCallback(async () => {
-    if (!ready || saving) return;
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/curriculum/contents/${contentId}/scratch/upload-url`, { method: "POST" });
-      if (!res.ok) throw new Error("upload-url failed");
-      const { uploadUrl, key } = (await res.json()) as { uploadUrl: string; key: string };
-      // The editor serializes the project and PUTs it to R2, then replies SAVED{key} or SAVE_FAILED.
-      post(saveMessage(uploadUrl, key));
-    } catch {
-      setSaving(false);
-      toast.error("Could not start the save. Please try again.");
-    }
-  }, [ready, saving, contentId, post]);
 
   if (!isScratchEnabled()) {
     return (
@@ -230,10 +235,6 @@ export function ScratchBlock({
         )}
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={() => void save()} disabled={!ready || saving} className="gap-1.5">
-            {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            Save project
-          </Button>
           <button
             type="button"
             onClick={() => setFullscreen((v) => !v)}
@@ -246,7 +247,11 @@ export function ScratchBlock({
           <span className="text-xs text-stone-500 dark:text-stone-400">{status}</span>
         </div>
 
-        {!fullscreen ? <p className="text-[11px] text-stone-400 dark:text-stone-500">{DISCLAIMER}</p> : null}
+        {!fullscreen ? (
+          <p className="text-[11px] text-stone-400 dark:text-stone-500">
+            Save and reopen your work from the <span className="font-medium text-stone-500 dark:text-stone-400">File</span> menu in the editor. {DISCLAIMER}
+          </p>
+        ) : null}
       </div>
     </>
   );
