@@ -140,20 +140,19 @@ save, so it works in full screen too.
 Pupils can record the STAGE to a `.webm` video with the project's own sounds and (optionally) mic narration,
 then download it. Self-contained like the bridge/exposer, so it touches no vendored component.
 
-**Add `src/playground/kat-recorder.jsx`** (a connected component that reads the VM from the store and renders
-its own floating "Record video" control), and **mount it in `render-gui.jsx`** next to `KatVmExposer`:
+**Add `src/playground/kat-recorder.jsx`** (a connected component that reads the VM from the store), and
+mount its inline "Record video" button in the STAGE CONTROLS row, next to Stop, by editing
+`src/components/controls/controls.jsx`:
 
 ```jsx
-import KatRecorder from './kat-recorder.jsx';
-// ...
-const GuiWithBridge = props => (
-    <React.Fragment>
-        <GUI {...props} />
-        <KatVmExposer />
-        <KatRecorder />
-    </React.Fragment>
-);
+import KatRecorder from '../../playground/kat-recorder.jsx';
+// ... inside the controls container, after <StopAll ... /> and the turbo block:
+<KatRecorder />
 ```
+
+The trigger is a compact round button that flows in the controls row (a record dot, becoming a red stop
+square + a timer while recording); the setup panel and the preview modal are portaled to `document.body`
+(`ReactDOM.createPortal`) so no ancestor's overflow/transform clips them.
 
 How it works: `vm.renderer.canvas.captureStream(30)` for video; taps `vm.runtime.audioEngine.inputNode` into
 a `MediaStreamDestination` (WITHOUT muting playback, the inputNode stays connected to the speakers) for the
