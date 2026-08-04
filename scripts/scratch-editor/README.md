@@ -1,54 +1,48 @@
-# Self-hosted Scratch / TurboWarp editor (Phase 3a)
+# Self-hosted Scratch editor (Phase 3a)
 
-KAT embeds a **self-hosted, custom TurboWarp build** on a KAT-controlled origin, never the public
-turbowarp.org (a page with minors on it must be first-party, framable under our CSP, and not dependent on
-a third party). This directory is the recipe to stand that editor up and the bridge that lets the KAT app
-load and save projects through it.
+KAT embeds a **self-hosted Scratch editor** on a KAT-controlled origin, never a public one (a page with
+minors on it must be first-party, framable under our CSP, and not dependent on a third party). This
+directory is the recipe to stand that editor up and the bridge that lets the KAT app load and save
+projects through it.
+
+**Base: vanilla `scratchfoundation/scratch-gui`, NOT TurboWarp.** Verified 2026-07-30 by reading both:
+TurboWarp deliberately refuses to run in an iframe (`render-interface.jsx` bails to an `<InvalidEmbed/>`
+screen when `window.parent !== window`), so it fights embedding and would need patching every upstream
+release, plus a trademark rebrand. Vanilla scratch-gui has **no embed guard** and is built to be reused, so
+it embeds cleanly. It only lacks TurboWarp's JS compiler, which a school editor does not need.
 
 What ships in the KAT repo (done, verified):
 
-- `src/lib/scratch.ts`: the parent-side contract, the feature flag, the editor origin, and the
-  `postMessage` protocol (`SCRATCH_MSG`, `parseScratchInbound`, `loadMessage`, `saveMessage`,
-  `isTrustedScratchMessage`). Unit-tested in `src/__tests__/lib/scratch.test.ts`.
-- `NEXT_PUBLIC_SCRATCH_EDITOR_URL` in `.env.example`. Unset means Scratch blocks are off.
+- `src/lib/scratch.ts`: the parent-side contract, the `NEXT_PUBLIC_SCRATCH_EDITOR_URL` feature flag, the
+  editor origin, and the `postMessage` protocol (`SCRATCH_MSG`, `parseScratchInbound`, `loadMessage`,
+  `saveMessage`, `isTrustedScratchMessage`). Unit-tested in `src/__tests__/lib/scratch.test.ts`.
 - `bridge.js`, `_headers`, `_redirects`: the editor-side artifacts you deploy (below).
 
-Building and deploying the editor itself runs in **your** infra (a large Node build + a Cloudflare
-account), so it is not run from the app. The steps:
+Building and deploying the editor runs in **your** infra (a large Node build + a Cloudflare account). The
+beginner-friendly path is to let Cloudflare Pages build from a GitHub fork (steps 1-4), so you never build
+locally.
 
-## 1. Get the GUI source
+## 1. Fork the GUI
 
-```bash
-git clone https://github.com/TurboWarp/scratch-gui
-cd scratch-gui
-npm ci
-```
+Fork `https://github.com/scratchfoundation/scratch-gui` to your GitHub, then clone your fork. (The
+save/load API this bridge uses is confirmed against scratch-gui 5.3.0 / scratch-vm 5.0.300:
+`vm.saveProjectSb3()` resolves to a `.sb3` Blob, and `vm.loadProject(arrayBuffer)` opens one.)
 
-## 2. Patch the fork (verified against TurboWarp/scratch-gui, 2026-07-30)
+> NOTE: this standalone `scratch-gui` repo is ARCHIVED (read-only). It still forks, builds, and embeds
+> exactly as described, so it is a fine **prototype** base to validate whether Scratch is worth it. It will
+> not get upstream fixes, so it is NOT a permanent foundation. Once Scratch proves its worth, migrate to the
+> maintained monorepo `@scratch/scratch-gui` (from `scratchfoundation/scratch-editor`), which is a LIBRARY,
+> not a standalone app: you would write a thin host that creates the VM and mounts `<GUI vm={vm}>`, then add
+> the same `KatVmExposer` + `bridge.js`. The bridge, the postMessage contract, and the VM save/load API are
+> identical on both, so only this build step changes.
 
-Two changes are required; both are in `src/playground/render-interface.jsx`.
+## 2. Add the bridge + expose the VM (no embed patch needed)
 
-**(a) Allow embedding.** TurboWarp deliberately refuses to run in an iframe. Near the top:
+Vanilla scratch-gui embeds as-is, so there is no anti-embed guard to remove. Two small additions, both
+touching `src/playground/render-gui.jsx` (the file whose default export mounts the editor):
 
-```js
-const isInvalidEmbed = window.parent !== window;
-```
-and in `render()`:
-```js
-if (isInvalidEmbed) {
-    return <InvalidEmbed />;
-}
-```
-Un-block it for our own parent only, so it still blocks strangers. Replace the constant with a check that
-allows the KAT origin we pass in `?parent=`:
-
-```js
-const embedParent = new URLSearchParams(window.location.search).get('parent');
-const isInvalidEmbed = window.parent !== window && !embedParent;
-```
-
-**(b) Expose the VM (it lives in the Redux store, not a global).** Add a tiny connected component
-`src/playground/kat-vm-exposer.jsx`:
+**(a)** Add `src/playground/kat-vm-exposer.jsx` (the VM lives in the Redux store, so a tiny connected
+component surfaces it):
 
 ```jsx
 import {Component} from 'react';
@@ -61,34 +55,98 @@ class KatVmExposer extends Component {
 export default connect(state => ({vm: state.scratchGui.vm}))(KatVmExposer);
 ```
 
-Then in `render-interface.jsx`, import it, render `<KatVmExposer />` inside the returned tree (it is inside
-`AppStateHOC`, so it has the store), and `import './bridge.js';` once at the top of the file.
+**(b)** In `render-gui.jsx`, import the bridge and the exposer, and render the exposer INSIDE the GUI
+composition so it sits within `AppStateHOC`'s store `Provider`:
 
-`bridge.js` reads the KAT origin from `?parent=<origin>` and only obeys messages from it. It handles `LOAD`
-(fetch a `.sb3` and `vm.loadProject`) and `SAVE` (`vm.saveProjectSb3()` -> `PUT` the bytes straight to the
-presigned R2 URL the KAT page hands it), and reports `READY`/`DIRTY`/`SAVED`/`SAVE_FAILED` back up. The
-message strings mirror `src/lib/scratch.ts` exactly, keep them in sync.
-
-**Licence + name.** scratch-gui is GPLv3, so a public fork is fine. "TurboWarp" and its logo are
-TRADEMARKED (see the fork's TRADEMARK file): rebrand for a school product (change `APP_NAME` in
-`src/lib/brand.js` and the icons), do not ship it as "TurboWarp".
-
-## 3. Build
-
-```bash
-npm run build           # produces build/ (a static SPA)
+```jsx
+import KatVmExposer from './kat-vm-exposer.jsx';
+import './bridge.js';
+// ...
+// wrap GUI + the exposer together, then compose as the file already does:
+const GuiWithBridge = props => (
+    <React.Fragment>
+        <GUI {...props} />
+        <KatVmExposer />
+    </React.Fragment>
+);
+const WrappedGui = compose(AppStateHOC, HashParserHOC)(GuiWithBridge);
 ```
 
-## 4. Deploy to Cloudflare Pages on a KAT custom domain
+Optionally drop the `window.onbeforeunload = () => true` line in that file so the iframe does not trigger a
+"leave site?" prompt.
 
-Deploy `build/` to Cloudflare Pages and put `_headers` and `_redirects` (from this directory) in the
-output so headers + SPA routing are correct. Point a first-party custom domain at it, e.g.
-`scratch.kindleatechie.com`. Do **not** set `X-Frame-Options` on the editor. KAT frames it, and framing
-is gated by the KAT app's CSP `frame-src` allow-list, not by the editor.
+`bridge.js` reads the KAT origin from `?parent=<origin>` and only obeys messages from it. It handles `LOAD`
+(fetch a `.sb3` and `vm.loadProject`) and `SAVE` (`vm.saveProjectSb3()` then `PUT` the bytes straight to
+the presigned R2 URL the KAT page hands it), and reports `READY`/`DIRTY`/`SAVED`/`SAVE_FAILED` back up. It
+also exposes `window.__katBridge.save() / .open()` and sends `REQUEST_SAVE` / `REQUEST_LOAD` up (the File
+menu calls these; see 2b). The message strings mirror `src/lib/scratch.ts` exactly, keep them in sync.
 
-`COOP`/`COEP` are optional and off by default (see `_headers`): they are only needed for TurboWarp's
-compiler / SharedArrayBuffer, and they make cross-origin subresources need CORP/CORS. Enable them only if
-you want the compiler.
+**Branding.** scratch-gui is BSD-licensed, but the Scratch name and cat logo are trademarks with usage
+guidelines (https://scratch.mit.edu/trademark). Follow them for anything a pupil sees.
+
+## 2b. Wire the editor's File menu to KAT storage
+
+So pupils save/open through the editor's OWN File menu (the place they already know) instead of a button on
+the KAT page, patch `src/components/menu-bar/menu-bar.jsx`. `bridge.js` already exposes
+`window.__katBridge.save() / .open()`; the menu just calls them.
+
+**(a)** Add two bound handlers. In the `bindAll(this, [ ... ])` list, add `'handleKatSave'` and
+`'handleKatOpen'`, then add the methods (next to `handleClickSave`):
+
+```jsx
+handleKatSave () {
+    if (window.__katBridge) window.__katBridge.save(); // -> REQUEST_SAVE -> KAT mints a presigned URL
+    this.props.onRequestCloseFile();
+}
+handleKatOpen () {
+    if (window.__katBridge) window.__katBridge.open(); // -> REQUEST_LOAD (reload last save, with a confirm)
+    this.props.onRequestCloseFile();
+}
+```
+
+**(b)** Replace the File dropdown's "Load from your computer" + "Save to your computer" `<MenuSection>`
+with two sections: KAT Save/Open first, the real file download/upload kept as a secondary export/import
+(so nothing is lost, and `sharedMessages` + `SB3Downloader` stay used):
+
+```jsx
+{/* KAT: primary Save / Open go to the pupil's KAT storage via the bridge. */}
+<MenuSection>
+    <MenuItem onClick={this.handleKatSave}>{'Save'}</MenuItem>
+    <MenuItem onClick={this.handleKatOpen}>{'Open my project'}</MenuItem>
+</MenuSection>
+{/* KAT: the real offline file download/upload, kept as a secondary export/import. */}
+<MenuSection>
+    <MenuItem onClick={this.props.onStartSelectingFileUpload}>
+        {this.props.intl.formatMessage(sharedMessages.loadFromComputerTitle)}
+    </MenuItem>
+    <SB3Downloader>{(className, downloadProjectCallback) => (
+        <MenuItem
+            className={className}
+            onClick={this.getSaveToComputerHandler(downloadProjectCallback)}
+        >
+            {'Download a copy'}
+        </MenuItem>
+    )}</SB3Downloader>
+</MenuSection>
+```
+
+Result File menu: New / **Save** / **Open my project**, then a divider, then Load from your computer / Download a copy.
+The KAT side (Phase 3b) answers `REQUEST_SAVE` / `REQUEST_LOAD` by minting a presigned URL scoped to that
+pupil's own content, then replies with the existing `SAVE` / `LOAD`. `bridge.js` shows an in-editor toast on
+save, so it works in full screen too.
+
+## 3. Connect the fork to Cloudflare Pages (it builds for you)
+
+In the Cloudflare dashboard: Workers & Pages, Create, Pages, Connect to Git, pick your fork. Build command
+`npm run build`, output directory `build`. Pages runs the build in its own environment, so you do not build
+locally. Put `_headers` and `_redirects` (from this directory) in the fork's `static/` folder (or the build
+output) so headers + SPA routing apply.
+
+## 4. Custom domain
+
+In the Pages project, Custom domains, add e.g. `scratch.kindleatechie.com`. Cloudflare wires the DNS
+because the domain is already on Cloudflare. Do not set `X-Frame-Options` on the editor; KAT frames it, and
+framing is gated by the KAT app's CSP `frame-src` allow-list (step 6).
 
 ## 5. Allow the editor origin to write to R2 (for direct saves)
 
@@ -97,19 +155,19 @@ CORS allow-list for `PUT` (and `GET`, so it can load saved projects back). Exact
 
 ## 6. Turn it on in the KAT app
 
-Set `NEXT_PUBLIC_SCRATCH_EDITOR_URL=https://scratch.kindleatechie.com` and add that exact origin to the
-KAT app's CSP `frame-src`/`child-src` in `next.config.ts`. Absent = Scratch stays off.
+Set `NEXT_PUBLIC_SCRATCH_EDITOR_URL=https://scratch.kindleatechie.com` and add that exact origin to the KAT
+app's CSP `frame-src`/`child-src` in `next.config.ts`. Absent = Scratch stays off.
 
 ## 7. Round-trip smoke test
 
 With the flag set, the KAT app can frame the editor at
 `${NEXT_PUBLIC_SCRATCH_EDITOR_URL}/?parent=<KAT-origin>`, wait for a `READY` message, send `LOAD` (blank or
-a starter `.sb3` URL), then `SAVE` with a presigned URL + key, and expect a `SAVED{key}` back with the
-object present in R2. The KAT-side block that does this ships in **Phase 3b**; the presigned-PUT route it
-calls is also 3b.
+a starter `.sb3` URL), then `SAVE` with a presigned URL + key, and expect `SAVED{key}` back with the object
+present in R2. The KAT-side block that does this ships in **Phase 3b**; the presigned-PUT route it calls is
+also 3b.
 
 ## Maintenance
 
-This is a custom build tracking upstream TurboWarp. Re-pull, re-apply the two wiring lines, rebuild, and
-redeploy when you take an upstream update. The bridge and headers here are version-independent; only the
-`getVM()` wiring depends on the GUI's entry.
+A fork tracking upstream scratch-gui. Re-pull, re-apply the two additions in step 2 (no embed patch to
+maintain), rebuild (Pages does this on push), redeploy. `COOP`/`COEP` in `_headers` stay off unless you
+later want a feature that needs SharedArrayBuffer.
