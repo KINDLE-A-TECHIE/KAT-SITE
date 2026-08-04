@@ -200,3 +200,32 @@ also 3b.
 A fork tracking upstream scratch-gui. Re-pull, re-apply the two additions in step 2 (no embed patch to
 maintain), rebuild (Pages does this on push), redeploy. `COOP`/`COEP` in `_headers` stay off unless you
 later want a feature that needs SharedArrayBuffer.
+
+## Offline behaviour (Phase 3d)
+
+Scratch is **online-only by design**. Blockly is the offline-capable block; if a lesson has to work with no
+connection, author it with Blockly, not Scratch. Three things make Scratch need a connection, and none is a
+bug to fix in KAT:
+
+1. **Cross-origin iframe vs service-worker scope.** The editor is served from a separate origin
+   (`scratch.kindleatechie.com`). A service worker can only cache and serve its own origin, so KAT's
+   `public/sw.js` cannot cache the iframe's document or assets. Even a fully cached KAT shell shows nothing
+   in the frame while offline.
+2. **The bundle is large.** scratch-gui plus its costume/sound/backdrop libraries is tens to hundreds of MB
+   per device, versus Blockly's couple of MB. It is not a mirror-and-forget asset like Pyodide.
+3. **Cloud save/open needs the network.** "Save my project" is browser to a presigned R2 PUT, and minting
+   that URL hits a KAT API route. The editor's own File menu **Save/Load to your computer** (a local `.sb3`
+   file) still works with no connection; only the R2-backed "my project" save does not.
+
+**What the KAT app does about it.** The two Scratch surfaces, `src/components/dashboard/scratch-block.tsx`
+(lesson) and `src/components/school/scratch-answer.tsx` (assessment), use `useOnline()` and, when offline
+before the editor has loaded, render `ScratchOfflinePanel` instead of a dead frame ("Scratch needs an
+internet connection... this will load on its own when you are back online"). An already-loaded editor is
+never torn down on a later disconnect, so going offline mid-session cannot destroy unsaved work; the status
+line just switches to "You are offline. Saving needs a connection." The app-wide `ConnectivityBanner` still
+shows the global offline pill underneath.
+
+**What true offline Scratch would take** (a separate fork/infra project, not a KAT change): give this
+scratch-gui build its own service worker so it becomes a PWA on its own origin and caches its bundle;
+self-host (not CDN) the default asset library; and add a local-only save mode for when R2 is unreachable.
+Out of scope until there is demand.

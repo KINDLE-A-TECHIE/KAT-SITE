@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useFullscreen, FULLSCREEN_PANEL_CLASS, FULLSCREEN_BACKDROP_CLASS } from "@/components/dashboard/use-fullscreen";
+import { useOnline } from "@/components/dashboard/use-online";
+import { ScratchOfflinePanel } from "@/components/dashboard/scratch-offline";
 import {
   SCRATCH_MSG,
   getScratchEditorUrl,
@@ -34,6 +36,7 @@ export function ScratchAnswer({
   onSavedKey: (key: string) => void;
 }) {
   const editorOrigin = scratchEditorOrigin();
+  const online = useOnline();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const savedKeyRef = useRef<string | null>(savedKey);
   const loadedOnceRef = useRef(false);
@@ -54,10 +57,13 @@ export function ScratchAnswer({
     [editorOrigin],
   );
 
+  // Only mount the cross-origin editor once online (loading it offline just fails); set it once and never
+  // tear it down on a later disconnect, so going offline mid-attempt never destroys unsaved work.
   useEffect(() => {
+    if (!online || src) return;
     const url = getScratchEditorUrl();
     if (url) setSrc(`${url}?parent=${encodeURIComponent(window.location.origin)}`);
-  }, []);
+  }, [online, src]);
 
   const sendLoad = useCallback(async () => {
     const key = savedKeyRef.current;
@@ -153,13 +159,15 @@ export function ScratchAnswer({
     );
   }
 
-  const status = !ready
-    ? "Loading the editor…"
-    : dirty
-      ? "Unsaved changes. Use File then Save."
-      : savedOnce
-        ? "Answer saved."
-        : "Build it, then save with File then Save.";
+  const status = !online
+    ? "You are offline. Saving your answer needs a connection."
+    : !ready
+      ? "Loading the editor…"
+      : dirty
+        ? "Unsaved changes. Use File then Save."
+        : savedOnce
+          ? "Answer saved."
+          : "Build it, then save with File then Save.";
 
   return (
     <>
@@ -173,6 +181,8 @@ export function ScratchAnswer({
             allow="fullscreen; autoplay"
             className={`w-full rounded-xl border border-stone-200 bg-white dark:border-stone-800 ${fullscreen ? "min-h-0 flex-1" : "h-[32rem]"}`}
           />
+        ) : !online ? (
+          <ScratchOfflinePanel heightClass={fullscreen ? "flex-1" : "h-[32rem]"} />
         ) : (
           <div className={`w-full animate-pulse rounded-xl bg-stone-100 dark:bg-stone-900 ${fullscreen ? "flex-1" : "h-[32rem]"}`} />
         )}

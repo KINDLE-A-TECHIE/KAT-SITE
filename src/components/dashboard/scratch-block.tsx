@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { getDraft, putDraft } from "@/lib/lesson-block-draft";
 import { useFullscreen, FULLSCREEN_PANEL_CLASS, FULLSCREEN_BACKDROP_CLASS } from "@/components/dashboard/use-fullscreen";
+import { useOnline } from "@/components/dashboard/use-online";
+import { ScratchOfflinePanel } from "@/components/dashboard/scratch-offline";
 import {
   SCRATCH_MSG,
   getScratchEditorUrl,
@@ -52,6 +54,7 @@ export function ScratchBlock({
 }) {
   const config = parseConfig(body);
   const editorOrigin = scratchEditorOrigin();
+  const online = useOnline();
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const savedKeyRef = useRef<string | null>(null);
@@ -78,10 +81,14 @@ export function ScratchBlock({
   );
 
   // Build the iframe src on the client (needs window.origin for the ?parent handshake the bridge checks).
+  // Only mount the iframe once we are online: loading a cross-origin editor offline just fails. We set it
+  // exactly once and never tear it down on a later disconnect, so going offline mid-session never destroys
+  // the pupil's unsaved work.
   useEffect(() => {
+    if (!online || src) return;
     const url = getScratchEditorUrl();
     if (url) setSrc(`${url}?parent=${encodeURIComponent(window.location.origin)}`);
-  }, []);
+  }, [online, src]);
 
   // Load this user's saved project key (if any) from the shared draft store.
   useEffect(() => {
@@ -206,13 +213,15 @@ export function ScratchBlock({
     );
   }
 
-  const status = !ready
-    ? "Loading the editor…"
-    : dirty
-      ? "You have unsaved changes."
-      : hasSaved
-        ? "Your work is saved."
-        : "Ready. Build something, then save.";
+  const status = !online
+    ? "You are offline. Saving needs a connection."
+    : !ready
+      ? "Loading the editor…"
+      : dirty
+        ? "You have unsaved changes."
+        : hasSaved
+          ? "Your work is saved."
+          : "Ready. Build something, then save.";
 
   return (
     <>
@@ -230,6 +239,8 @@ export function ScratchBlock({
             allow="fullscreen; autoplay"
             className={`w-full rounded-xl border border-stone-200 bg-white dark:border-stone-800 ${fullscreen ? "min-h-0 flex-1" : "h-[34rem]"}`}
           />
+        ) : !online ? (
+          <ScratchOfflinePanel heightClass={fullscreen ? "flex-1" : "h-[34rem]"} />
         ) : (
           <div className={`w-full animate-pulse rounded-xl bg-stone-100 dark:bg-stone-900 ${fullscreen ? "flex-1" : "h-[34rem]"}`} />
         )}
