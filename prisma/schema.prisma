@@ -463,6 +463,9 @@ model AssessmentQuestion {
   // is graded), not a text editor. Optional JSON { toolbox?, startBlocks?, allowCode? }; "{}" = defaults.
   // Grading is unchanged: the generated Python runs against the same hidden test cases.
   blocklyConfig String?
+  // SCRATCH questions only: the checklist (JSON array of ScratchCheck from src/lib/scratch-analysis.ts)
+  // the pupil's saved .sb3 is graded against. The question's marks are the sum of the checks' points.
+  scratchChecks String?
   answers      AssessmentAnswer[]
   options      AssessmentOption[]
   testCases    AssessmentTestCase[]
@@ -1695,6 +1698,9 @@ enum QuestionType {
   CODE
   // A teacher-graded practical (robotics, a creative build, an observed skill) scored against a rubric.
   RUBRIC
+  // A Scratch project, auto-graded by static analysis of the pupil's saved .sb3 (its blocks, sprites,
+  // backdrops, sounds) against a checklist. See src/lib/scratch-analysis.ts.
+  SCRATCH
 }
 
 enum AttemptStatus {

@@ -251,6 +251,8 @@ export const assessmentQuestionSchema = z.object({
   starterCode: z.string().max(20_000).optional(),
   // CODE questions answered with blocks: optional Blockly config JSON (toolbox/startBlocks/allowCode).
   blocklyConfig: z.string().max(40_000).optional(),
+  // SCRATCH questions: the checklist JSON (array of ScratchCheck) the pupil's .sb3 is graded against.
+  scratchChecks: z.string().max(40_000).optional(),
   testCases: z
     .array(
       z.object({

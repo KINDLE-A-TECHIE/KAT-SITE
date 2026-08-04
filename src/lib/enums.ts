@@ -17,7 +17,7 @@ export type AssessmentTypeValue = (typeof ASSESSMENT_TYPES)[number];
 export const ASSESSMENT_VERIFICATION_STATUSES = ["PENDING", "APPROVED", "REJECTED"] as const;
 export type AssessmentVerificationStatusValue = (typeof ASSESSMENT_VERIFICATION_STATUSES)[number];
 
-export const QUESTION_TYPES = ["MULTIPLE_CHOICE", "TRUE_FALSE", "OPEN_ENDED", "CODE", "RUBRIC"] as const;
+export const QUESTION_TYPES = ["MULTIPLE_CHOICE", "TRUE_FALSE", "OPEN_ENDED", "CODE", "RUBRIC", "SCRATCH"] as const;
 export type QuestionTypeValue = (typeof QUESTION_TYPES)[number];
 
 export const PAYMENT_PROVIDERS = ["PAYSTACK", "STRIPE"] as const;

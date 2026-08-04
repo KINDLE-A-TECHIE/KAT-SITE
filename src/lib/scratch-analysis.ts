@@ -262,6 +262,39 @@ export function scoreScratchProject(
   return { results, earned, total, passedCount };
 }
 
+const COUNT_METRICS: CountMetric[] = ["sprites", "backdrops", "sounds", "blocks", "variables", "customBlocks"];
+const CONCEPTS: Concept[] = ["loop", "conditional", "greenFlag", "broadcast", "usesVariable", "usesSound", "usesMotion", "usesLooks"];
+
+function isValidCheck(v: unknown): v is ScratchCheck {
+  if (!v || typeof v !== "object") return false;
+  const c = v as Record<string, unknown>;
+  if (typeof c.id !== "string" || typeof c.label !== "string" || typeof c.points !== "number") return false;
+  switch (c.kind) {
+    case "count":
+      return COUNT_METRICS.includes(c.metric as CountMetric) && typeof c.min === "number";
+    case "concept":
+      return CONCEPTS.includes(c.concept as Concept);
+    case "spriteNamed":
+      return typeof c.name === "string" && c.name.length > 0;
+    case "opcode":
+      return typeof c.opcode === "string" && c.opcode.length > 0;
+    default:
+      return false;
+  }
+}
+
+/** Parse the stored `scratchChecks` JSON string into a validated checklist, dropping malformed entries. */
+export function parseScratchChecks(raw: string | null | undefined): ScratchCheck[] {
+  if (!raw || !raw.trim()) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  return Array.isArray(parsed) ? parsed.filter(isValidCheck) : [];
+}
+
 /** Ready-made check templates for the authoring picker (id/points filled in by the caller). */
 export const SCRATCH_CHECK_TEMPLATES: Array<ScratchCheckSpec & { label: string }> = [
   { kind: "count", metric: "sprites", min: 2, label: "At least 2 sprites" },

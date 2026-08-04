@@ -45,6 +45,13 @@ export async function generatePresignedDownloadUrl(key: string, expiresInSeconds
   );
 }
 
+/** Fetch an object's bytes server-side (used by the grader to read a pupil's saved .sb3 from R2). */
+export async function getR2Object(key: string): Promise<Uint8Array> {
+  const res = await r2Client.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }));
+  if (!res.Body) throw new Error("Object has no body.");
+  return (res.Body as { transformToByteArray: () => Promise<Uint8Array> }).transformToByteArray();
+}
+
 export async function uploadToR2(key: string, body: Buffer, contentType: string): Promise<void> {
   await r2Client.send(
     new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: body, ContentType: contentType }),

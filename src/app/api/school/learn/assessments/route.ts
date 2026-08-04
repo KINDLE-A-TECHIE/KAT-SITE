@@ -12,6 +12,9 @@ import { ensureSchoolStudent } from "@/lib/school";
 import { checkModuleLicenseForEnrollment, getLicensedTermNumbers } from "@/lib/school-license";
 import { termNumberForModule } from "@/lib/school-term";
 import { scoreCodeAnswer, type CodeTestRun } from "@/lib/practical-grading";
+import { analyzeSb3, scoreScratchProject, parseScratchChecks, describeCheck } from "@/lib/scratch-analysis";
+import { isOwnScratchAnswerKey } from "@/lib/scratch-storage";
+import { getR2Object } from "@/lib/r2";
 import { trySchoolAssessmentGate } from "@/lib/school-grading";
 import { schoolSubmitAssessmentSchema } from "@/lib/validators";
 import { captureError } from "@/lib/sentry";
@@ -61,6 +64,7 @@ async function resolveContext(userId: string, schoolId: string, assessmentId: st
           codeLanguage: true,
           starterCode: true,
           blocklyConfig: true,
+          scratchChecks: true,
           options: { select: { id: true, label: true, value: true, isCorrect: true } },
           testCases: {
             orderBy: { sortOrder: "asc" },
@@ -143,6 +147,13 @@ export async function GET(request: Request) {
         }
         if (q.type === QuestionType.RUBRIC) {
           return { ...base, rubric: q.rubricCriteria.map((c) => ({ label: c.label, description: c.description, maxPoints: c.maxPoints })) };
+        }
+        if (q.type === QuestionType.SCRATCH) {
+          // The checklist IS the requirements, not a hidden key, so it is fine (helpful) to show the pupil.
+          return {
+            ...base,
+            scratchChecks: parseScratchChecks(q.scratchChecks).map((c) => ({ label: c.label || describeCheck(c), points: c.points })),
+          };
         }
         return base; // OPEN_ENDED
       });
@@ -277,6 +288,27 @@ export async function POST(request: Request) {
           responseText: incoming?.responseText ?? null, // the pupil's code, stored for teacher re-run
           isCorrect: scored.total > 0 ? scored.earned === scored.total : null,
           autoScore: scored.earned,
+        });
+      } else if (q.type === QuestionType.SCRATCH) {
+        // The pupil's answer is the R2 key of their saved .sb3 (sent as responseText). Fetch it, analyze
+        // its project.json, and score against the checklist. An unreadable/missing project earns 0.
+        const key = incoming?.responseText ?? "";
+        const checks = parseScratchChecks(q.scratchChecks);
+        const total = checks.reduce((sum, c) => sum + Math.max(0, c.points), 0);
+        let earned = 0;
+        if (isOwnScratchAnswerKey(key, userId)) {
+          try {
+            earned = scoreScratchProject(analyzeSb3(await getR2Object(key)), checks).earned;
+          } catch {
+            earned = 0;
+          }
+        }
+        autoScore += earned;
+        answerRows.push({
+          questionId: q.id,
+          responseText: typeof key === "string" ? key : null, // the .sb3 key, stored for teacher review
+          isCorrect: total > 0 ? earned === total : null,
+          autoScore: earned,
         });
       } else {
         // OPEN_ENDED (theory) and RUBRIC (observed) are graded by the teacher later.
