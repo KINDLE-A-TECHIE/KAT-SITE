@@ -135,6 +135,36 @@ The KAT side (Phase 3b) answers `REQUEST_SAVE` / `REQUEST_LOAD` by minting a pre
 pupil's own content, then replies with the existing `SAVE` / `LOAD`. `bridge.js` shows an in-editor toast on
 save, so it works in full screen too.
 
+## 2c. Stage video recorder
+
+Pupils can record the STAGE to a `.webm` video with the project's own sounds and (optionally) mic narration,
+then download it. Self-contained like the bridge/exposer, so it touches no vendored component.
+
+**Add `src/playground/kat-recorder.jsx`** (a connected component that reads the VM from the store and renders
+its own floating "Record video" control), and **mount it in `render-gui.jsx`** next to `KatVmExposer`:
+
+```jsx
+import KatRecorder from './kat-recorder.jsx';
+// ...
+const GuiWithBridge = props => (
+    <React.Fragment>
+        <GUI {...props} />
+        <KatVmExposer />
+        <KatRecorder />
+    </React.Fragment>
+);
+```
+
+How it works: `vm.renderer.canvas.captureStream(30)` for video; taps `vm.runtime.audioEngine.inputNode` into
+a `MediaStreamDestination` (WITHOUT muting playback, the inputNode stays connected to the speakers) for the
+project's sounds, plus an optional `getUserMedia` mic source, all merged into one `MediaStream` ->
+`MediaRecorder`. On stop it shows a preview + Download. Caps at 3 minutes. Output is `.webm` (VP8/9 + Opus),
+the only format `MediaRecorder` emits reliably; transcode to MP4 later if needed. Needs a secure context
+(https / localhost), which the editor already is. It DOWNLOADS the file; saving a recording to R2 like the
+`.sb3` is a later step. If the stage ever records blank frames on a given browser (a WebGL
+`preserveDrawingBuffer` quirk), the fallback is copying the stage onto a 2D canvas per frame and capturing
+that instead.
+
 ## 3. Connect the fork to Cloudflare Pages (it builds for you)
 
 In the Cloudflare dashboard: Workers & Pages, Create, Pages, Connect to Git, pick your fork. Build command
