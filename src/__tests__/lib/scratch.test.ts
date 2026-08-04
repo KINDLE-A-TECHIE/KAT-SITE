@@ -85,6 +85,11 @@ describe("parseScratchInbound", () => {
     });
   });
 
+  it("parses REQUEST_SAVE and REQUEST_LOAD (the editor's File -> Save / Open)", () => {
+    expect(parseScratchInbound({ type: SCRATCH_MSG.REQUEST_SAVE })).toEqual({ type: SCRATCH_MSG.REQUEST_SAVE });
+    expect(parseScratchInbound({ type: SCRATCH_MSG.REQUEST_LOAD })).toEqual({ type: SCRATCH_MSG.REQUEST_LOAD });
+  });
+
   it("returns null for unknown or non-object payloads", () => {
     expect(parseScratchInbound({ type: "kat:scratch:load" })).toBeNull(); // an outbound type, not inbound
     expect(parseScratchInbound({ type: "something-else" })).toBeNull();
