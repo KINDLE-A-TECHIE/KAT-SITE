@@ -33,6 +33,12 @@ const { config: loadEnv } = await import("dotenv");
 const realEnv = loadEnv({ path: ".env.local", processEnv: {} as Record<string, string> }).parsed ?? {};
 for (const [k, v] of Object.entries(realEnv)) if (k.startsWith("R2_")) process.env[k] = v;
 
+// This is a LIVE test against real R2. Locally, .env.local supplies the creds (restored above); CI has no
+// .env.local and setup.ts stubs R2 with fake creds ("test-account"), so there is no real bucket to hit,
+// uploading would fail the TLS handshake to a fake endpoint. Skip there instead of failing the build; the
+// grading path is also covered by the pure unit tests in scratch-analysis.test.ts.
+const hasRealR2 = Boolean(realEnv.R2_ACCOUNT_ID) && realEnv.R2_ACCOUNT_ID !== "test-account";
+
 const { prisma } = await import("@/lib/prisma");
 const { syncRoster } = await import("@/lib/roster-sync");
 const { scratchAnswerKey, SCRATCH_SB3_CONTENT_TYPE } = await import("@/lib/scratch-storage");
@@ -65,7 +71,7 @@ let questionId = "";
 let answerKey = "";
 let pupilUserId = "";
 
-describe("SCRATCH auto-grading via the school submit route (live)", () => {
+describe.skipIf(!hasRealR2)("SCRATCH auto-grading via the school submit route (live)", () => {
   beforeAll(async () => {
     // Provision a pupil the canonical way (same as the A3 test): ensure the class has a programme,
     // then syncRoster one child. Idempotent across runs.
