@@ -9,11 +9,27 @@ import { randomUUID } from "crypto";
  */
 
 export const SCRATCH_KEY_PREFIX = "scratch-projects";
+export const SCRATCH_ANSWER_PREFIX = "scratch-answers";
 export const SCRATCH_SB3_CONTENT_TYPE = "application/x.scratch.sb3";
 
-/** A fresh key for a save: scratch-projects/<userId>/<contentId>/<uuid>.sb3. */
+/** A fresh key for a lesson-block save: scratch-projects/<userId>/<contentId>/<uuid>.sb3. */
 export function scratchProjectKey(userId: string, contentId: string): string {
   return `${SCRATCH_KEY_PREFIX}/${userId}/${contentId}/${randomUUID()}.sb3`;
+}
+
+/** A fresh key for an assessment answer: scratch-answers/<userId>/<questionId>/<uuid>.sb3. */
+export function scratchAnswerKey(userId: string, questionId: string): string {
+  return `${SCRATCH_ANSWER_PREFIX}/${userId}/${questionId}/${randomUUID()}.sb3`;
+}
+
+/** True only if `key` is one of THIS user's assessment-answer projects. Same guards as isOwnScratchKey. */
+export function isOwnScratchAnswerKey(key: unknown, userId: string): key is string {
+  return (
+    typeof key === "string" &&
+    key.startsWith(`${SCRATCH_ANSWER_PREFIX}/${userId}/`) &&
+    !key.includes("..") &&
+    key.endsWith(".sb3")
+  );
 }
 
 /**

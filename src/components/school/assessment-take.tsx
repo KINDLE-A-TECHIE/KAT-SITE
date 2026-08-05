@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BlocklyWorkspace } from "@/components/dashboard/blockly-workspace";
 import { GridWorldView } from "@/components/dashboard/grid-world-view";
 import { TurtleWorldView } from "@/components/dashboard/turtle-world-view";
+import { ScratchAnswer } from "@/components/school/scratch-answer";
 import { runCode } from "@/lib/pyodide-grader";
 import { matchOutput } from "@/lib/practical-grading";
 import { wrapForWorld, wrapForWorldTrace, isWorldId, type WorldId } from "@/lib/blockly-worlds";
@@ -25,7 +26,7 @@ type Criterion = { label: string; description: string | null; maxPoints: number 
 type Question = {
   id: string;
   prompt: string;
-  type: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "OPEN_ENDED" | "CODE" | "RUBRIC";
+  type: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "OPEN_ENDED" | "CODE" | "RUBRIC" | "SCRATCH";
   points: number;
   options?: Option[];
   codeLanguage?: string;
@@ -34,6 +35,8 @@ type Question = {
   blocklyConfig?: string | null;
   testCases?: TestCase[];
   rubric?: Criterion[];
+  /** SCRATCH questions: the checklist the pupil's project is graded against (labels + points, shown). */
+  scratchChecks?: { label: string; points: number }[];
 };
 
 /** A Blockly question's config JSON (toolbox/startBlocks/allowCode/world); a bad value falls back to defaults. */
@@ -58,7 +61,7 @@ function runnableCode(q: Question, code: string): string {
   const world = questionWorld(q);
   return world ? wrapForWorld(world, code) : code;
 }
-type Answer = { selectedOptionId?: string; responseText?: string; code?: string };
+type Answer = { selectedOptionId?: string; responseText?: string; code?: string; sb3Key?: string };
 type Result = { status: string; autoScore: number; totalScore: number };
 
 /**
@@ -155,6 +158,9 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
             responseText: code,
             codeRuns: runs.map((r) => ({ testCaseId: r.id ?? "", stdout: r.stdout, errored: r.errored })),
           });
+        } else if (q.type === "SCRATCH") {
+          // The answer is the R2 key of the pupil's saved .sb3; the server fetches and grades it.
+          payload.push({ questionId: q.id, responseText: a.sb3Key ?? "" });
         } else {
           payload.push({ questionId: q.id, responseText: a.responseText ?? "" });
         }
@@ -382,6 +388,28 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {q.type === "SCRATCH" && (
+              <div className="space-y-2">
+                {(q.scratchChecks ?? []).length > 0 && (
+                  <div className="rounded-lg bg-stone-50 p-2.5 text-xs dark:bg-stone-800/40">
+                    <p className="mb-1 font-semibold text-stone-600 dark:text-stone-300">What gets checked:</p>
+                    <ul className="list-disc space-y-0.5 pl-5 text-stone-600 dark:text-stone-300">
+                      {(q.scratchChecks ?? []).map((c, k) => (
+                        <li key={k}>
+                          {c.label} <span className="text-stone-400">({c.points} marks)</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <ScratchAnswer
+                  questionId={q.id}
+                  savedKey={answers[q.id]?.sb3Key ?? null}
+                  onSavedKey={(key) => setAnswer(q.id, { sb3Key: key })}
+                />
               </div>
             )}
           </div>

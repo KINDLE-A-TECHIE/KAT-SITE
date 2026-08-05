@@ -135,6 +135,59 @@ The KAT side (Phase 3b) answers `REQUEST_SAVE` / `REQUEST_LOAD` by minting a pre
 pupil's own content, then replies with the existing `SAVE` / `LOAD`. `bridge.js` shows an in-editor toast on
 save, so it works in full screen too.
 
+## 2c. Stage video recorder
+
+Pupils can record the STAGE to a `.webm` video with the project's own sounds and (optionally) mic narration,
+then download it. Self-contained like the bridge/exposer, so it touches no vendored component.
+
+**Add `src/playground/kat-recorder.jsx`** (a connected component that reads the VM from the store), and
+mount its inline "Record video" button in the STAGE CONTROLS row, next to Stop, by editing
+`src/components/controls/controls.jsx`:
+
+```jsx
+import KatRecorder from '../../playground/kat-recorder.jsx';
+// ... inside the controls container, after <StopAll ... /> and the turbo block:
+<KatRecorder />
+```
+
+The trigger is a compact round button that flows in the controls row (a record dot, becoming a red stop
+square + a timer while recording); the setup panel and the preview modal are portaled to `document.body`
+(`ReactDOM.createPortal`) so no ancestor's overflow/transform clips them.
+
+How it works: `vm.renderer.canvas.captureStream(30)` for video; taps `vm.runtime.audioEngine.inputNode` into
+a `MediaStreamDestination` (WITHOUT muting playback, the inputNode stays connected to the speakers) for the
+project's sounds, plus an optional `getUserMedia` mic source, all merged into one `MediaStream` ->
+`MediaRecorder`. On stop it shows a preview + Download. Caps at 3 minutes. Output is `.webm` (VP8/9 + Opus),
+the only format `MediaRecorder` emits reliably; transcode to MP4 later if needed. Needs a secure context
+(https / localhost), which the editor already is. If the stage ever records blank frames on a given browser
+(a WebGL `preserveDrawingBuffer` quirk), the fallback is copying the stage onto a 2D canvas per frame and
+capturing that instead.
+
+### Save a recording to the pupil's KAT account (R2)
+
+The recording is stored as-is (the `.webm` `MediaRecorder` already produces; no extra compression). In the
+recorder's "done" state, alongside **Download**, add a **Save to my account** button that hands the recorded
+Blob to the bridge:
+
+```jsx
+// in kat-recorder.jsx, where `blob` is the recorded Blob and `durationMs` the elapsed time:
+const canSave = typeof window !== 'undefined' && window.__katBridge && window.__katBridge.saveVideo;
+// ...
+{canSave && (
+  <button onClick={() => window.__katBridge.saveVideo(blob, durationMs)}>Save to my account</button>
+)}
+```
+
+`bridge.js` does the rest: it posts `REQUEST_VIDEO_UPLOAD { sizeBytes, durationMs }` to the KAT page, which
+**rate-limits** (12 per hour per user) and **size-caps** (80 MB) the request, mints a presigned R2 PUT, and
+replies `VIDEO_UPLOAD_URL { uploadUrl, key }` (or `VIDEO_UPLOAD_DENIED { message }`, shown as a toast). The
+bridge PUTs the bytes straight to R2 (`Content-Type: video/webm`, never through the parent) and reports
+`VIDEO_SAVED { key, sizeBytes, durationMs }`; the KAT page then records it. The saved clip appears in the
+pupil's **Recordings** page (`/dashboard/recordings`) and under the Scratch block where it was made.
+
+Gate the button on `window.__katBridge.saveVideo` so the standalone editor (opened outside a KAT iframe,
+no parent) still just downloads. Keep **Download** too: it is the offline / no-account path.
+
 ## 3. Connect the fork to Cloudflare Pages (it builds for you)
 
 In the Cloudflare dashboard: Workers & Pages, Create, Pages, Connect to Git, pick your fork. Build command
@@ -171,3 +224,32 @@ also 3b.
 A fork tracking upstream scratch-gui. Re-pull, re-apply the two additions in step 2 (no embed patch to
 maintain), rebuild (Pages does this on push), redeploy. `COOP`/`COEP` in `_headers` stay off unless you
 later want a feature that needs SharedArrayBuffer.
+
+## Offline behaviour (Phase 3d)
+
+Scratch is **online-only by design**. Blockly is the offline-capable block; if a lesson has to work with no
+connection, author it with Blockly, not Scratch. Three things make Scratch need a connection, and none is a
+bug to fix in KAT:
+
+1. **Cross-origin iframe vs service-worker scope.** The editor is served from a separate origin
+   (`scratch.kindleatechie.com`). A service worker can only cache and serve its own origin, so KAT's
+   `public/sw.js` cannot cache the iframe's document or assets. Even a fully cached KAT shell shows nothing
+   in the frame while offline.
+2. **The bundle is large.** scratch-gui plus its costume/sound/backdrop libraries is tens to hundreds of MB
+   per device, versus Blockly's couple of MB. It is not a mirror-and-forget asset like Pyodide.
+3. **Cloud save/open needs the network.** "Save my project" is browser to a presigned R2 PUT, and minting
+   that URL hits a KAT API route. The editor's own File menu **Save/Load to your computer** (a local `.sb3`
+   file) still works with no connection; only the R2-backed "my project" save does not.
+
+**What the KAT app does about it.** The two Scratch surfaces, `src/components/dashboard/scratch-block.tsx`
+(lesson) and `src/components/school/scratch-answer.tsx` (assessment), use `useOnline()` and, when offline
+before the editor has loaded, render `ScratchOfflinePanel` instead of a dead frame ("Scratch needs an
+internet connection... this will load on its own when you are back online"). An already-loaded editor is
+never torn down on a later disconnect, so going offline mid-session cannot destroy unsaved work; the status
+line just switches to "You are offline. Saving needs a connection." The app-wide `ConnectivityBanner` still
+shows the global offline pill underneath.
+
+**What true offline Scratch would take** (a separate fork/infra project, not a KAT change): give this
+scratch-gui build its own service worker so it becomes a PWA on its own origin and caches its bundle;
+self-host (not CDN) the default asset library; and add a local-only save mode for when R2 is unreachable.
+Out of scope until there is demand.

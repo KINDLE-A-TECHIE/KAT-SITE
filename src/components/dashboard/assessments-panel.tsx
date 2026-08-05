@@ -30,6 +30,7 @@ import { GridWorldView } from "@/components/dashboard/grid-world-view";
 import { TurtleWorldView } from "@/components/dashboard/turtle-world-view";
 import { runCode } from "@/lib/pyodide-grader";
 import { wrapForWorld, wrapForWorldTrace, isWorldId, WORLD_META, DEFAULT_GRID_STDIN } from "@/lib/blockly-worlds";
+import { SCRATCH_CHECK_TEMPLATES, type ScratchCheck, type ScratchCheckSpec, type CountMetric, type Concept } from "@/lib/scratch-analysis";
 
 type Program = {
   id: string;
@@ -112,6 +113,19 @@ type CriterionDraft = {
   maxPoints: string;
 };
 
+// A SCRATCH check being authored. Flat (params as strings for inputs); built into a ScratchCheck on save.
+type ScratchCheckDraft = {
+  id: string;
+  label: string;
+  points: string;
+  kind: ScratchCheckSpec["kind"];
+  metric?: string; // count
+  min?: string; // count
+  concept?: string; // concept
+  name?: string; // spriteNamed
+  opcode?: string; // opcode
+};
+
 type QuestionDraft = {
   id: string;
   prompt: string;
@@ -132,6 +146,8 @@ type QuestionDraft = {
   worldReferenceCode?: string;
   // RUBRIC questions
   criteria?: CriterionDraft[];
+  // SCRATCH questions: the checklist the pupil's saved .sb3 is graded against.
+  scratchChecks?: ScratchCheckDraft[];
 };
 
 type AssessmentsPanelProps = {
@@ -170,6 +186,45 @@ function createCriterion(): CriterionDraft {
   return { id: createId("crit"), label: "", maxPoints: "3" };
 }
 
+function createScratchCheck(spec: ScratchCheckSpec, label: string): ScratchCheckDraft {
+  return {
+    id: createId("chk"),
+    label,
+    points: "1",
+    kind: spec.kind,
+    metric: spec.kind === "count" ? spec.metric : undefined,
+    min: spec.kind === "count" ? String(spec.min) : undefined,
+    concept: spec.kind === "concept" ? spec.concept : undefined,
+    name: spec.kind === "spriteNamed" ? spec.name : undefined,
+    opcode: spec.kind === "opcode" ? spec.opcode : undefined,
+  };
+}
+
+/** Build a SCRATCH question's checklist JSON + its total marks (which become the question's points). */
+function buildScratchChecks(checks: ScratchCheckDraft[]): { json: string; total: number } {
+  const built: ScratchCheck[] = checks.map((c) => {
+    const base = { id: c.id, label: c.label.trim(), points: Math.max(0, Math.trunc(Number(c.points) || 0)) };
+    switch (c.kind) {
+      case "count":
+        return { ...base, kind: "count", metric: (c.metric ?? "sprites") as CountMetric, min: Math.max(0, Math.trunc(Number(c.min) || 0)) };
+      case "concept":
+        return { ...base, kind: "concept", concept: (c.concept ?? "loop") as Concept };
+      case "spriteNamed":
+        return { ...base, kind: "spriteNamed", name: (c.name ?? "").trim() };
+      default:
+        return { ...base, kind: "opcode", opcode: (c.opcode ?? "").trim() };
+    }
+  });
+  return { json: JSON.stringify(built), total: built.reduce((sum, c) => sum + c.points, 0) };
+}
+
+/** The "+ Add a check" menu: the common presets, plus the two parameterized checks (name / block). */
+const SCRATCH_ADD_OPTIONS: Array<{ spec: ScratchCheckSpec; label: string }> = [
+  ...SCRATCH_CHECK_TEMPLATES.map((t) => ({ spec: t as ScratchCheckSpec, label: t.label })),
+  { spec: { kind: "spriteNamed", name: "" }, label: "Has a sprite named..." },
+  { spec: { kind: "opcode", opcode: "" }, label: "Uses a specific block..." },
+];
+
 /**
  * The blocklyConfig string sent for a block-answered CODE question. A world question keys the take UI on
  * its `world` id (the toolbox is derived from the world); any hand-authored config is carried through.
@@ -207,6 +262,13 @@ function createQuestionDraft(type: QuestionTypeValue): QuestionDraft {
     starterCode: type === "CODE" ? "" : undefined,
     testCases: type === "CODE" ? [createTestCase()] : undefined,
     criteria: type === "RUBRIC" ? [createCriterion()] : undefined,
+    scratchChecks:
+      type === "SCRATCH"
+        ? [
+            createScratchCheck(SCRATCH_CHECK_TEMPLATES[0], SCRATCH_CHECK_TEMPLATES[0].label), // 2 sprites
+            createScratchCheck(SCRATCH_CHECK_TEMPLATES[5], SCRATCH_CHECK_TEMPLATES[5].label), // a loop
+          ]
+        : undefined,
   };
 }
 
@@ -405,11 +467,12 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
           return question;
         }
         // Reset per-type fields on switch so a question only carries what its type needs.
-        const cleared = { options: [] as QuestionDraftOption[], codeLanguage: undefined, starterCode: undefined, testCases: undefined, criteria: undefined, useBlocks: undefined, blocklyConfig: undefined };
+        const cleared = { options: [] as QuestionDraftOption[], codeLanguage: undefined, starterCode: undefined, testCases: undefined, criteria: undefined, useBlocks: undefined, blocklyConfig: undefined, scratchChecks: undefined };
         if (nextType === "MULTIPLE_CHOICE") return { ...question, ...cleared, type: nextType, options: createMultipleChoiceOptions() };
         if (nextType === "TRUE_FALSE") return { ...question, ...cleared, type: nextType, options: createTrueFalseOptions() };
         if (nextType === "CODE") return { ...question, ...cleared, type: nextType, codeLanguage: "python", starterCode: "", testCases: [createTestCase()] };
         if (nextType === "RUBRIC") return { ...question, ...cleared, type: nextType, criteria: [createCriterion()] };
+        if (nextType === "SCRATCH") return { ...question, ...cleared, type: nextType, scratchChecks: [createScratchCheck(SCRATCH_CHECK_TEMPLATES[0], SCRATCH_CHECK_TEMPLATES[0].label), createScratchCheck(SCRATCH_CHECK_TEMPLATES[5], SCRATCH_CHECK_TEMPLATES[5].label)] };
         return { ...question, ...cleared, type: nextType }; // OPEN_ENDED
       }),
     );
@@ -417,6 +480,21 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
 
   const patchQuestion = (questionId: string, update: Partial<QuestionDraft>) =>
     setQuestionDrafts((prev) => prev.map((q) => (q.id === questionId ? { ...q, ...update } : q)));
+
+  const addScratchCheck = (questionId: string, spec: ScratchCheckSpec, label: string) =>
+    setQuestionDrafts((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, scratchChecks: [...(q.scratchChecks ?? []), createScratchCheck(spec, label)] } : q)),
+    );
+  const updateScratchCheck = (questionId: string, checkId: string, update: Partial<ScratchCheckDraft>) =>
+    setQuestionDrafts((prev) =>
+      prev.map((q) =>
+        q.id === questionId ? { ...q, scratchChecks: (q.scratchChecks ?? []).map((c) => (c.id === checkId ? { ...c, ...update } : c)) } : q,
+      ),
+    );
+  const removeScratchCheck = (questionId: string, checkId: string) =>
+    setQuestionDrafts((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, scratchChecks: (q.scratchChecks ?? []).filter((c) => c.id !== checkId) } : q)),
+    );
 
   // Which world questions are currently running their reference capture (per question id).
   const [capturing, setCapturing] = useState<Record<string, boolean>>({});
@@ -643,6 +721,7 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
       codeLanguage?: string;
       starterCode?: string;
       blocklyConfig?: string;
+      scratchChecks?: string;
       testCases?: Array<{ stdin: string; expectedStdout: string; points: number; hidden: boolean }>;
       criteria?: Array<{ label: string; maxPoints: number }>;
     }> = [];
@@ -724,6 +803,34 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
           points: criteria.reduce((sum, c) => sum + c.maxPoints, 0),
           criteria,
         });
+        continue;
+      }
+
+      if (question.type === "SCRATCH") {
+        const checks = question.scratchChecks ?? [];
+        if (checks.length === 0) {
+          toast.error(`Question ${index + 1} needs at least one Scratch check.`);
+          return;
+        }
+        if (checks.some((c) => c.label.trim().length === 0)) {
+          toast.error(`Question ${index + 1} has a check with no label.`);
+          return;
+        }
+        if (checks.some((c) => !Number.isInteger(Number(c.points)) || Number(c.points) < 1)) {
+          toast.error(`Question ${index + 1} has a check with invalid marks.`);
+          return;
+        }
+        if (checks.some((c) => c.kind === "spriteNamed" && !(c.name ?? "").trim())) {
+          toast.error(`Question ${index + 1} has a "sprite named" check with no name.`);
+          return;
+        }
+        if (checks.some((c) => c.kind === "opcode" && !(c.opcode ?? "").trim())) {
+          toast.error(`Question ${index + 1} has a "uses block" check with no block id.`);
+          return;
+        }
+        // A SCRATCH question's marks are the sum of its checks' points.
+        const { json, total } = buildScratchChecks(checks);
+        questions.push({ prompt, type: question.type, points: total, scratchChecks: json });
         continue;
       }
 
@@ -1118,15 +1225,18 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                           <SelectItem value="OPEN_ENDED">OPEN_ENDED</SelectItem>
                           <SelectItem value="CODE">CODE (auto-graded)</SelectItem>
                           <SelectItem value="RUBRIC">RUBRIC (practical)</SelectItem>
+                          <SelectItem value="SCRATCH">SCRATCH (auto-graded)</SelectItem>
                         </SelectContent>
                       </Select>
-                      {question.type === "CODE" || question.type === "RUBRIC" ? (
+                      {question.type === "CODE" || question.type === "RUBRIC" || question.type === "SCRATCH" ? (
                         <div className="flex h-10 items-center rounded-lg border border-stone-200 bg-stone-50 px-3 text-xs text-stone-500 dark:border-stone-800 dark:bg-stone-900">
                           Marks:{" "}
                           {question.type === "CODE"
                             ? (question.testCases ?? []).reduce((s, t) => s + (Number(t.points) || 0), 0)
-                            : (question.criteria ?? []).reduce((s, c) => s + (Number(c.maxPoints) || 0), 0)}{" "}
-                          (from {question.type === "CODE" ? "test cases" : "criteria"})
+                            : question.type === "RUBRIC"
+                              ? (question.criteria ?? []).reduce((s, c) => s + (Number(c.maxPoints) || 0), 0)
+                              : (question.scratchChecks ?? []).reduce((s, c) => s + (Number(c.points) || 0), 0)}{" "}
+                          (from {question.type === "CODE" ? "test cases" : question.type === "RUBRIC" ? "criteria" : "checks"})
                         </div>
                       ) : (
                         <Input
@@ -1349,6 +1459,46 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                         <Button type="button" variant="outline" size="sm" onClick={() => addCriterion(question.id)}>
                           <PlusCircle className="size-4" /> Add criterion
                         </Button>
+                      </div>
+                    ) : question.type === "SCRATCH" ? (
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">Checks</p>
+                        <p className="text-[11px] text-stone-400">
+                          The pupil builds a Scratch project and saves it; each check auto-marks their .sb3 by its
+                          blocks, sprites, backdrops and sounds. No behaviour is run, only what the project contains.
+                        </p>
+                        {(question.scratchChecks ?? []).map((c) => (
+                          <div key={c.id} className="grid grid-cols-1 gap-2 rounded-md border border-stone-200 p-2 sm:grid-cols-[1fr_10rem_5rem_auto] dark:border-stone-800">
+                            <Input placeholder="Label shown to the pupil" value={c.label} onChange={(e) => updateScratchCheck(question.id, c.id, { label: e.target.value })} />
+                            {c.kind === "count" ? (
+                              <Input type="number" min={0} placeholder="Minimum" value={c.min ?? ""} onChange={(e) => updateScratchCheck(question.id, c.id, { min: e.target.value })} title="Minimum required" />
+                            ) : c.kind === "spriteNamed" ? (
+                              <Input placeholder="Sprite name" value={c.name ?? ""} onChange={(e) => updateScratchCheck(question.id, c.id, { name: e.target.value })} />
+                            ) : c.kind === "opcode" ? (
+                              <Input placeholder="Block id, e.g. sound_play" value={c.opcode ?? ""} onChange={(e) => updateScratchCheck(question.id, c.id, { opcode: e.target.value })} />
+                            ) : (
+                              <span className="flex items-center px-1 text-[11px] text-stone-400">is used</span>
+                            )}
+                            <Input type="number" min={1} placeholder="Marks" value={c.points} onChange={(e) => updateScratchCheck(question.id, c.id, { points: e.target.value })} />
+                            <Button type="button" variant="outline" size="sm" disabled={(question.scratchChecks ?? []).length <= 1} onClick={() => removeScratchCheck(question.id, c.id)}>
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <select
+                          className="rounded-md border border-stone-300 bg-stone-50 px-2 py-1.5 text-xs dark:border-stone-700 dark:bg-stone-900"
+                          value=""
+                          onChange={(e) => {
+                            const opt = SCRATCH_ADD_OPTIONS[Number(e.target.value)];
+                            if (opt) addScratchCheck(question.id, opt.spec, opt.label);
+                            e.currentTarget.value = "";
+                          }}
+                        >
+                          <option value="">+ Add a check...</option>
+                          {SCRATCH_ADD_OPTIONS.map((o, i) => (
+                            <option key={i} value={i}>{o.label}</option>
+                          ))}
+                        </select>
                       </div>
                     ) : (
                       <div className="mt-3 space-y-2">
