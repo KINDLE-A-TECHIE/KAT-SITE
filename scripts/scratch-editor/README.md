@@ -159,10 +159,34 @@ a `MediaStreamDestination` (WITHOUT muting playback, the inputNode stays connect
 project's sounds, plus an optional `getUserMedia` mic source, all merged into one `MediaStream` ->
 `MediaRecorder`. On stop it shows a preview + Download. Caps at 3 minutes. Output is `.webm` (VP8/9 + Opus),
 the only format `MediaRecorder` emits reliably; transcode to MP4 later if needed. Needs a secure context
-(https / localhost), which the editor already is. It DOWNLOADS the file; saving a recording to R2 like the
-`.sb3` is a later step. If the stage ever records blank frames on a given browser (a WebGL
-`preserveDrawingBuffer` quirk), the fallback is copying the stage onto a 2D canvas per frame and capturing
-that instead.
+(https / localhost), which the editor already is. If the stage ever records blank frames on a given browser
+(a WebGL `preserveDrawingBuffer` quirk), the fallback is copying the stage onto a 2D canvas per frame and
+capturing that instead.
+
+### Save a recording to the pupil's KAT account (R2)
+
+The recording is stored as-is (the `.webm` `MediaRecorder` already produces; no extra compression). In the
+recorder's "done" state, alongside **Download**, add a **Save to my account** button that hands the recorded
+Blob to the bridge:
+
+```jsx
+// in kat-recorder.jsx, where `blob` is the recorded Blob and `durationMs` the elapsed time:
+const canSave = typeof window !== 'undefined' && window.__katBridge && window.__katBridge.saveVideo;
+// ...
+{canSave && (
+  <button onClick={() => window.__katBridge.saveVideo(blob, durationMs)}>Save to my account</button>
+)}
+```
+
+`bridge.js` does the rest: it posts `REQUEST_VIDEO_UPLOAD { sizeBytes, durationMs }` to the KAT page, which
+**rate-limits** (12 per hour per user) and **size-caps** (80 MB) the request, mints a presigned R2 PUT, and
+replies `VIDEO_UPLOAD_URL { uploadUrl, key }` (or `VIDEO_UPLOAD_DENIED { message }`, shown as a toast). The
+bridge PUTs the bytes straight to R2 (`Content-Type: video/webm`, never through the parent) and reports
+`VIDEO_SAVED { key, sizeBytes, durationMs }`; the KAT page then records it. The saved clip appears in the
+pupil's **Recordings** page (`/dashboard/recordings`) and under the Scratch block where it was made.
+
+Gate the button on `window.__katBridge.saveVideo` so the standalone editor (opened outside a KAT iframe,
+no parent) still just downloads. Keep **Download** too: it is the offline / no-account path.
 
 ## 3. Connect the fork to Cloudflare Pages (it builds for you)
 

@@ -6,6 +6,7 @@ import { Maximize2, Minimize2 } from "lucide-react";
 import { useFullscreen, FULLSCREEN_PANEL_CLASS, FULLSCREEN_BACKDROP_CLASS } from "@/components/dashboard/use-fullscreen";
 import { useOnline } from "@/components/dashboard/use-online";
 import { ScratchOfflinePanel } from "@/components/dashboard/scratch-offline";
+import { mintVideoUploadUrl, confirmVideoSaved } from "@/lib/scratch-video-client";
 import {
   SCRATCH_MSG,
   getScratchEditorUrl,
@@ -15,6 +16,8 @@ import {
   parseScratchInbound,
   loadMessage,
   saveMessage,
+  videoUploadUrlMessage,
+  videoUploadDeniedMessage,
 } from "@/lib/scratch";
 
 /**
@@ -113,6 +116,24 @@ export function ScratchAnswer({
     [onSavedKey],
   );
 
+  // Stage recordings save to the pupil's own library (tagged with this questionId), same rate-limited flow
+  // as the lesson block. The recording is not the answer (the .sb3 is), so there is no list shown here.
+  const handleVideoUpload = useCallback(
+    async (sizeBytes: number) => {
+      const res = await mintVideoUploadUrl(sizeBytes);
+      if ("error" in res) post(videoUploadDeniedMessage(res.error));
+      else post(videoUploadUrlMessage(res.uploadUrl, res.key));
+    },
+    [post],
+  );
+  const handleVideoSaved = useCallback(
+    async (key: string, sizeBytes: number, durationMs: number | null) => {
+      const saved = await confirmVideoSaved({ key, contentId: questionId, sizeBytes, durationMs });
+      toast[saved ? "success" : "error"](saved ? "Recording saved to your account." : "Could not save the recording.");
+    },
+    [questionId],
+  );
+
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (!isTrustedScratchMessage(event, editorOrigin)) return;
@@ -138,11 +159,20 @@ export function ScratchAnswer({
         case SCRATCH_MSG.REQUEST_LOAD:
           void sendLoad();
           break;
+        case SCRATCH_MSG.REQUEST_VIDEO_UPLOAD:
+          void handleVideoUpload(msg.sizeBytes);
+          break;
+        case SCRATCH_MSG.VIDEO_SAVED:
+          void handleVideoSaved(msg.key, msg.sizeBytes, msg.durationMs);
+          break;
+        case SCRATCH_MSG.VIDEO_SAVE_FAILED:
+          toast.error(msg.message || "Could not save the recording.");
+          break;
       }
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [editorOrigin, handleSaved, sendSave, sendLoad]);
+  }, [editorOrigin, handleSaved, sendSave, sendLoad, handleVideoUpload, handleVideoSaved]);
 
   // Auto-resume any already-saved answer once the editor is ready.
   useEffect(() => {

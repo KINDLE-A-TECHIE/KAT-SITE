@@ -127,6 +127,7 @@ model User {
   organization                                             Organization?            @relation(fields: [organizationId], references: [id])
   badgesEarned                                             UserBadge[]
   sessions                                                 UserSession[]
+  stageRecordings                                          StageRecording[]
 }
 
 model SuperAdminInvite {
@@ -195,6 +196,25 @@ model UserSession {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// A user's saved stage-video recording (a .webm captured from the Scratch stage). The bytes live in R2
+// under videos/<userId>/...; only the opaque key + light metadata are stored here. contentId is the
+// OPTIONAL lesson-content / assessment-question it was recorded in, so the same clip surfaces both in the
+// user's library (userId) and where it was made (contentId). Owner-only access; cascade-deletes with the user.
+model StageRecording {
+  id         String   @id @default(cuid())
+  userId     String
+  r2Key      String   @unique
+  contentId  String?
+  title      String?
+  sizeBytes  Int
+  durationMs Int?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([contentId])
 }
 
 model Profile {

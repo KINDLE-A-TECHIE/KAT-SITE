@@ -13,6 +13,7 @@ import {
   Calendar,
   CreditCard,
   FileText,
+  Film,
   FolderOpen,
   GraduationCap,
   Handshake,
@@ -119,6 +120,7 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
         { href: "/dashboard/badges", label: "Badges", icon: BadgeCheck },
         { href: "/dashboard/grades", label: "My Grades", icon: Award },
         { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
+        { href: "/dashboard/recordings", label: "Recordings", icon: Film },
         { href: "/dashboard/transcript", label: "Transcript", icon: ScrollText },
         { href: "/dashboard/fellows/apply", label: "Fellowship", icon: FileText },
       ];
@@ -130,6 +132,7 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
         { href: "/dashboard/badges", label: "Badges", icon: BadgeCheck },
         { href: "/dashboard/grades", label: "My Grades", icon: Award },
         { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
+        { href: "/dashboard/recordings", label: "Recordings", icon: Film },
         { href: "/dashboard/transcript", label: "Transcript", icon: ScrollText },
       ];
     case "INSTRUCTOR":

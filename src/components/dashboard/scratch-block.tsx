@@ -7,6 +7,8 @@ import { getDraft, putDraft } from "@/lib/lesson-block-draft";
 import { useFullscreen, FULLSCREEN_PANEL_CLASS, FULLSCREEN_BACKDROP_CLASS } from "@/components/dashboard/use-fullscreen";
 import { useOnline } from "@/components/dashboard/use-online";
 import { ScratchOfflinePanel } from "@/components/dashboard/scratch-offline";
+import { StageRecordingsPanel } from "@/components/dashboard/stage-recordings-panel";
+import { mintVideoUploadUrl, confirmVideoSaved } from "@/lib/scratch-video-client";
 import {
   SCRATCH_MSG,
   getScratchEditorUrl,
@@ -16,6 +18,8 @@ import {
   parseScratchInbound,
   loadMessage,
   saveMessage,
+  videoUploadUrlMessage,
+  videoUploadDeniedMessage,
 } from "@/lib/scratch";
 
 /**
@@ -69,6 +73,8 @@ export function ScratchBlock({
   // Whether a project has ever been saved (from a prior session or this one), so the status line can tell
   // "no changes yet" apart from "saved".
   const [hasSaved, setHasSaved] = useState(false);
+  // Bumped after a stage recording is saved, to refresh the recordings list below the editor.
+  const [recordingsReload, setRecordingsReload] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
   const exitFullscreen = useCallback(() => setFullscreen(false), []);
   useFullscreen(fullscreen, exitFullscreen);
@@ -154,6 +160,29 @@ export function ScratchBlock({
     }
   }, [ready, saving, contentId, post]);
 
+  // A stage recording: mint a rate-limited presigned URL for the recorder to PUT its .webm to, then
+  // confirm the upload so the recording is stored and listed. contentId tags where it was made.
+  const handleVideoUpload = useCallback(
+    async (sizeBytes: number) => {
+      const res = await mintVideoUploadUrl(sizeBytes);
+      if ("error" in res) post(videoUploadDeniedMessage(res.error));
+      else post(videoUploadUrlMessage(res.uploadUrl, res.key));
+    },
+    [post],
+  );
+  const handleVideoSaved = useCallback(
+    async (key: string, sizeBytes: number, durationMs: number | null) => {
+      const saved = await confirmVideoSaved({ key, contentId, sizeBytes, durationMs });
+      if (saved) {
+        toast.success("Recording saved to your account.");
+        setRecordingsReload((n) => n + 1);
+      } else {
+        toast.error("Could not save the recording.");
+      }
+    },
+    [contentId],
+  );
+
   // Editor -> parent messages. Origin-pinned; a stray message from any other frame is ignored.
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -180,11 +209,20 @@ export function ScratchBlock({
         case SCRATCH_MSG.REQUEST_LOAD: // pupil chose File -> Open my project
           void sendLoad();
           break;
+        case SCRATCH_MSG.REQUEST_VIDEO_UPLOAD: // recorder wants to save a clip to the account
+          void handleVideoUpload(msg.sizeBytes);
+          break;
+        case SCRATCH_MSG.VIDEO_SAVED:
+          void handleVideoSaved(msg.key, msg.sizeBytes, msg.durationMs);
+          break;
+        case SCRATCH_MSG.VIDEO_SAVE_FAILED:
+          toast.error(msg.message || "Could not save the recording.");
+          break;
       }
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [editorOrigin, handleSaved, sendSave, sendLoad]);
+  }, [editorOrigin, handleSaved, sendSave, sendLoad, handleVideoUpload, handleVideoSaved]);
 
   // Auto-resume: once the editor is ready AND we know whether there is a saved project, load it exactly
   // once. Ordering on both flags avoids a race where READY arrives before the draft has been read.
@@ -262,6 +300,10 @@ export function ScratchBlock({
           <p className="text-[11px] text-stone-400 dark:text-stone-500">
             Save and reopen your work from the <span className="font-medium text-stone-500 dark:text-stone-400">File</span> menu in the editor. {DISCLAIMER}
           </p>
+        ) : null}
+
+        {!fullscreen ? (
+          <StageRecordingsPanel contentId={contentId} reloadSignal={recordingsReload} heading="Your recordings for this activity" />
         ) : null}
       </div>
     </>
