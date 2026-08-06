@@ -33,13 +33,19 @@ export function ScratchAnswer({
   questionId,
   savedKey,
   onSavedKey,
+  embed = false,
 }: {
   questionId: string;
   savedKey: string | null;
   onSavedKey: (key: string) => void;
+  // Inside the school iframe embed there is no NextAuth session, so save/open use the embed-authed answer
+  // routes. The .sb3 still goes to OUR private R2 (presigned, key-only), exactly as in-app.
+  embed?: boolean;
 }) {
   const editorOrigin = scratchEditorOrigin();
   const online = useOnline();
+  const uploadUrlEndpoint = embed ? "/api/school/embed/scratch/answer/upload-url" : "/api/assessments/scratch/upload-url";
+  const downloadUrlEndpoint = embed ? "/api/school/embed/scratch/answer/download-url" : "/api/assessments/scratch/download-url";
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const savedKeyRef = useRef<string | null>(savedKey);
   const loadedOnceRef = useRef(false);
@@ -75,7 +81,7 @@ export function ScratchAnswer({
       return;
     }
     try {
-      const res = await fetch(`/api/assessments/scratch/download-url`, {
+      const res = await fetch(downloadUrlEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key }),
@@ -85,13 +91,13 @@ export function ScratchAnswer({
     } catch {
       post(loadMessage(null));
     }
-  }, [post]);
+  }, [downloadUrlEndpoint, post]);
 
   const sendSave = useCallback(async () => {
     if (!ready || saving) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/assessments/scratch/upload-url`, {
+      const res = await fetch(uploadUrlEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ questionId }),
@@ -103,7 +109,7 @@ export function ScratchAnswer({
       setSaving(false);
       toast.error("Could not start the save. Please try again.");
     }
-  }, [ready, saving, questionId, post]);
+  }, [ready, saving, questionId, uploadUrlEndpoint, post]);
 
   const handleSaved = useCallback(
     (key: string) => {

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { CodePlaygroundBlock } from "@/components/dashboard/code-playground-block";
 import { BlocklyBlock } from "@/components/dashboard/blockly-block";
 import { NetworkLabBlock } from "@/components/network-lab/network-lab-block";
+import { ScratchBlock } from "@/components/dashboard/scratch-block";
 import { setDraftEmbedMode } from "@/lib/lesson-block-draft";
 
 type Content = {
@@ -132,12 +133,13 @@ export function EmbedLessonBody({
               </div>
             ) : null}
 
-            {/* Scratch is deliberately NOT run in the embed: it is a cross-origin editor iframe and a
-                child's Scratch work should not be saved through a page we do not control. */}
+            {/* Scratch runs in the frame too. The editor is a cross-origin iframe, but the pupil's .sb3
+                still saves to OUR private R2 (presigned, key-only) via the embed-authed routes, exactly as
+                in-app; it is never saved into the page we do not control. */}
             {c.type === "SCRATCH" ? (
-              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                This Scratch activity is not available in the embedded view. Open it from your school&apos;s learning app.
-              </p>
+              <div className="mt-2">
+                <ScratchBlock contentId={c.id} body={c.body} embed />
+              </div>
             ) : null}
           </section>
         ))}

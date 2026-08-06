@@ -30,6 +30,7 @@ export default async function EmbedAssessmentTakePage({
         assessmentId={assessmentId}
         apiPath="/api/school/embed/assessments"
         backHref={`${base}/assessments`}
+        embed
       />
     </main>
   );

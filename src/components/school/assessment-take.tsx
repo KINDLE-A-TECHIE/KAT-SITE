@@ -73,10 +73,13 @@ export function AssessmentTake({
   assessmentId,
   apiPath = "/api/school/learn/assessments",
   backHref = "/learn/assessments",
+  embed = false,
 }: {
   assessmentId: string;
   apiPath?: string;
   backHref?: string;
+  // In the embed, a SCRATCH answer saves via the embed-authed scratch routes (passed down to ScratchAnswer).
+  embed?: boolean;
 }) {
   const [phase, setPhase] = useState<"loading" | "error" | "taking" | "submitting" | "done">("loading");
   const [errorMsg, setErrorMsg] = useState("");
@@ -417,6 +420,7 @@ export function AssessmentTake({
                   questionId={q.id}
                   savedKey={answers[q.id]?.sb3Key ?? null}
                   onSavedKey={(key) => setAnswer(q.id, { sb3Key: key })}
+                  embed={embed}
                 />
               </div>
             )}
