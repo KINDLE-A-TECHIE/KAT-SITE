@@ -91,10 +91,15 @@ questions. Fabricated quiz questions would gate real children's progress on fict
 titled-but-empty until real content is authored in the existing builder. That is honest, not
 broken.
 
-### Scratch is not on the platform
-The schemes specify Scratch/Blockly for the block-coding units. There is no Scratch runtime.
-Those units use the **Python** playground (which ships turtle/pygame shims). Scratch stays
-off-platform.
+### Scratch is on the platform (self-hosted)
+The schemes specify Scratch/Blockly for the block-coding units, and both now run on the platform.
+**Blockly** is an in-app block that generates Python on the existing Pyodide runtime. **Scratch** is a
+SELF-HOSTED vanilla scratch-gui on `scratch.kindleatechie.com` (Cloudflare Pages), embedded by iframe
+with a postMessage bridge: pupils build in the familiar editor, save/open their `.sb3` from its File
+menu (bytes go browser -> R2, only the key is stored), and can record the stage to a `.webm` saved to
+their account. `SCRATCH` questions are AUTO-graded by static analysis of the saved `.sb3` against an
+authored checklist. So block-coding units can be authored as `BLOCKLY` or `SCRATCH` content, not only
+the Python playground. The Python playground (turtle/pygame shims) still covers text coding at SSS.
 
 ---
 

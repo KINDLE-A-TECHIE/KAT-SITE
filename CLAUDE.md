@@ -229,6 +229,16 @@ After running `npm run prisma:seed`, the following demo accounts exist (password
 
 - **Jitsi + Jibri**: setup scripts in `scripts/jitsi-jibri/`
 - **Judge0 CE**: Docker-based, setup in `scripts/judge0/`
+- **Scratch editor**: self-hosted vanilla scratch-gui (a fork) on `scratch.kindleatechie.com` via Cloudflare Pages; recipe + bridge in `scripts/scratch-editor/`.
+
+## Block coding (Blockly + Scratch)
+
+Two block-coding activities on the existing lesson/assessment engine (content types `BLOCKLY` and `SCRATCH`):
+- **Blockly** is in-app (self-hosted `blockly` npm); it generates Python that runs on the existing Pyodide worker, with a Blocks/Python toggle. A CODE question can be answered with blocks (`AssessmentQuestion.blocklyConfig`), graded via the normal `scoreCodeAnswer`.
+- **Scratch** embeds the self-hosted editor (above) by iframe over the `src/lib/scratch.ts` postMessage contract (mirror in `scripts/scratch-editor/bridge.js`). Pupils save/open their `.sb3` from the editor's File menu straight to R2 (only the key is stored). `SCRATCH` questions AUTO-grade by static analysis of the saved `.sb3` (`src/lib/scratch-analysis.ts`) against an authored checklist. Scratch is online-only by design (Blockly is the offline block).
+- **Stage recordings**: the editor can record the stage (+ audio, optional mic) to `.webm` and save it to the learner's account in R2 (`StageRecording`, `/api/videos/*`, rate-limited); library at `/dashboard/recordings`.
+
+Full history in the memory files `blockly-scratch-integration-plan` and `stage-recordings-r2`.
 
 ## Network Lab (module)
 
