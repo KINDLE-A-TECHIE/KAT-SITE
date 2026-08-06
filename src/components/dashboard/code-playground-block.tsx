@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { captureError } from "@/lib/sentry";
 import { pythonErrorHint } from "@/lib/python-errors";
 import { getDraft, putDraft, deleteDraft } from "@/lib/lesson-block-draft";
+import { monacoLangFromFilename, detectEntryFile, uint8ToBase64 } from "@/lib/playground-files";
 
 // Monaco is large, load only on client, never on server
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -1008,52 +1009,10 @@ const LANG_EXT: Record<string, string> = {
 };
 
 // File extension → Monaco language (for multi-file syntax highlighting)
-const EXT_TO_MONACO: Record<string, string> = {
-  py: "python", js: "javascript", ts: "typescript", jsx: "javascript",
-  tsx: "typescript", java: "java", c: "c", cpp: "cpp", cc: "cpp",
-  cs: "csharp", go: "go", rs: "rust", kt: "kotlin", swift: "swift",
-  php: "php", rb: "ruby", scala: "scala", r: "r", sh: "shell",
-  bash: "shell", sql: "sql", lua: "lua", pl: "perl", hs: "haskell",
-  ml: "plaintext", ex: "elixir", exs: "elixir", html: "html",
-  css: "css", json: "json", md: "markdown", txt: "plaintext",
-};
-
-// Likely entry-point filenames by language, in priority order
-const ENTRY_CANDIDATES: Record<string, string[]> = {
-  python:     ["main.py", "app.py", "index.py", "solution.py", "run.py"],
-  javascript: ["index.js", "main.js", "app.js", "solution.js"],
-  typescript: ["index.ts", "main.ts", "app.ts", "solution.ts"],
-  java:       ["Main.java", "Solution.java", "App.java"],
-  c:          ["main.c", "solution.c"],
-  cpp:        ["main.cpp", "solution.cpp", "main.cc"],
-  csharp:     ["Program.cs", "Main.cs", "Solution.cs"],
-  go:         ["main.go"],
-  rust:       ["main.rs"],
-  html:       ["index.html", "main.html"],
-};
-
 // ── Pure helpers ──────────────────────────────────────────────────────────────
-
-function monacoLangFromFilename(filename: string): string {
-  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
-  return EXT_TO_MONACO[ext] ?? "plaintext";
-}
-
-function detectEntryFile(files: Record<string, string>, lang: string): string | null {
-  for (const candidate of ENTRY_CANDIDATES[lang] ?? []) {
-    if (files[candidate] !== undefined) return candidate;
-  }
-  return null;
-}
-
-function uint8ToBase64(arr: Uint8Array): string {
-  let binary = "";
-  const chunk = 8192;
-  for (let i = 0; i < arr.length; i += chunk) {
-    binary += String.fromCharCode(...arr.subarray(i, i + chunk));
-  }
-  return btoa(binary);
-}
+// monacoLangFromFilename / detectEntryFile / uint8ToBase64 (+ the EXT_TO_MONACO / ENTRY_CANDIDATES maps)
+// live in @/lib/playground-files so they can be unit-tested without React/DOM. triggerDownload stays here
+// because it touches the DOM.
 
 function triggerDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
