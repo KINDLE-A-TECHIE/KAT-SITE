@@ -37,25 +37,29 @@ export function StageRecordingsPanel({
   contentId,
   reloadSignal = 0,
   heading = "Your recordings",
+  embed = false,
 }: {
   contentId?: string;
   reloadSignal?: number;
   heading?: string;
+  // In the school iframe embed, list/delete go to the embed-session-authed routes instead of NextAuth.
+  embed?: boolean;
 }) {
   const [recordings, setRecordings] = useState<Recording[] | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const base = embed ? "/api/school/embed/videos" : "/api/videos";
 
   const load = useCallback(async () => {
     try {
       const qs = contentId ? `?contentId=${encodeURIComponent(contentId)}` : "";
-      const res = await fetch(`/api/videos${qs}`);
+      const res = await fetch(`${base}${qs}`);
       if (!res.ok) throw new Error("load failed");
       const data = (await res.json()) as { recordings: Recording[] };
       setRecordings(data.recordings);
     } catch {
       setRecordings([]);
     }
-  }, [contentId]);
+  }, [contentId, base]);
 
   useEffect(() => {
     void load();
@@ -64,7 +68,7 @@ export function StageRecordingsPanel({
   const remove = useCallback(async (id: string) => {
     setDeleting(id);
     try {
-      const res = await fetch(`/api/videos/${id}`, { method: "DELETE" });
+      const res = await fetch(`${base}/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("delete failed");
       setRecordings((prev) => (prev ? prev.filter((r) => r.id !== id) : prev));
     } catch {
@@ -72,7 +76,7 @@ export function StageRecordingsPanel({
     } finally {
       setDeleting(null);
     }
-  }, []);
+  }, [base]);
 
   if (recordings === null) {
     return <div className="h-20 w-full animate-pulse rounded-xl bg-stone-100 dark:bg-stone-900" />;

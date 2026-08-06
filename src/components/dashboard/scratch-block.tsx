@@ -175,15 +175,15 @@ export function ScratchBlock({
   // confirm the upload so the recording is stored and listed. contentId tags where it was made.
   const handleVideoUpload = useCallback(
     async (sizeBytes: number) => {
-      const res = await mintVideoUploadUrl(sizeBytes);
+      const res = await mintVideoUploadUrl(sizeBytes, embed);
       if ("error" in res) post(videoUploadDeniedMessage(res.error));
       else post(videoUploadUrlMessage(res.uploadUrl, res.key));
     },
-    [post],
+    [post, embed],
   );
   const handleVideoSaved = useCallback(
     async (key: string, sizeBytes: number, durationMs: number | null) => {
-      const saved = await confirmVideoSaved({ key, contentId, sizeBytes, durationMs });
+      const saved = await confirmVideoSaved({ key, contentId, sizeBytes, durationMs }, embed);
       if (saved) {
         toast.success("Recording saved to your account.");
         setRecordingsReload((n) => n + 1);
@@ -191,7 +191,7 @@ export function ScratchBlock({
         toast.error("Could not save the recording.");
       }
     },
-    [contentId],
+    [contentId, embed],
   );
 
   // Editor -> parent messages. Origin-pinned; a stray message from any other frame is ignored.
@@ -314,7 +314,7 @@ export function ScratchBlock({
         ) : null}
 
         {!fullscreen ? (
-          <StageRecordingsPanel contentId={contentId} reloadSignal={recordingsReload} heading="Your recordings for this activity" />
+          <StageRecordingsPanel contentId={contentId} reloadSignal={recordingsReload} heading="Your recordings for this activity" embed={embed} />
         ) : null}
       </div>
     </>
