@@ -99,6 +99,7 @@ export default async function EmbedLessonPage({
         lessonId={lesson.id}
         contents={lesson.contents}
         completed={Boolean(done)}
+        userId={session.userId}
       />
     </main>
   );

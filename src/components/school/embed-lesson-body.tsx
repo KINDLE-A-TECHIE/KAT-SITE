@@ -4,6 +4,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Check, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CodePlaygroundBlock } from "@/components/dashboard/code-playground-block";
+import { BlocklyBlock } from "@/components/dashboard/blockly-block";
+import { NetworkLabBlock } from "@/components/network-lab/network-lab-block";
 
 type Content = {
   id: string;
@@ -26,11 +29,13 @@ export function EmbedLessonBody({
   lessonId,
   contents,
   completed,
+  userId,
 }: {
   schoolSlug: string;
   lessonId: string;
   contents: Content[];
   completed: boolean;
+  userId: string;
 }) {
   const [done, setDone] = useState(completed);
   const [busy, setBusy] = useState(false);
@@ -99,18 +104,32 @@ export function EmbedLessonBody({
               </a>
             ) : null}
 
-            {c.type === "CODE_PLAYGROUND" || c.type === "NETWORK_LAB" || c.type === "BLOCKLY" || c.type === "SCRATCH" ? (
+            {/* Interactive blocks run INSIDE the frame now (no dead "open the full editor" loop). They run
+                in run-only mode: the pupil edits and runs, and the whole-lesson "Mark as complete" below is
+                the one mutation the embed allows. Drafts persist locally in the frame. */}
+            {c.type === "CODE_PLAYGROUND" ? (
+              <div className="mt-2">
+                <CodePlaygroundBlock contentId={c.id} starterCode={c.body ?? ""} language={c.language ?? "python"} userId={userId} embed />
+              </div>
+            ) : null}
+
+            {c.type === "NETWORK_LAB" && c.body ? (
+              <div className="mt-2">
+                <NetworkLabBlock levelKey={c.body} contentId={c.id} />
+              </div>
+            ) : null}
+
+            {c.type === "BLOCKLY" ? (
+              <div className="mt-2">
+                <BlocklyBlock contentId={c.id} body={c.body} />
+              </div>
+            ) : null}
+
+            {/* Scratch is deliberately NOT run in the embed: it is a cross-origin editor iframe and a
+                child's Scratch work should not be saved through a page we do not control. */}
+            {c.type === "SCRATCH" ? (
               <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                This activity needs the full editor.{" "}
-                <a
-                  href={`/embed/${encodeURIComponent(schoolSlug)}/lessons/${lessonId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-orange-600 hover:underline"
-                >
-                  Open it in a new tab
-                </a>
-                .
+                This Scratch activity is not available in the embedded view. Open it from your school&apos;s learning app.
               </p>
             ) : null}
           </section>

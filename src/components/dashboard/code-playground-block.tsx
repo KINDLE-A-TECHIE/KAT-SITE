@@ -1097,6 +1097,7 @@ export function CodePlaygroundBlock({
   programId,
   moduleId,
   onComplete,
+  embed = false,
 }: {
   contentId: string;
   starterCode: string;
@@ -1106,6 +1107,11 @@ export function CodePlaygroundBlock({
   programId?: string;
   moduleId?: string;
   onComplete?: () => void;
+  // Run-only mode for the school iframe embed: the pupil can edit + run + keep a local draft, but every
+  // server-coupled feature that needs the NextAuth session (peer sessions, playground invites, submit to
+  // instructor) is turned off. The embed authenticates with its own cookie, not NextAuth, so those calls
+  // would 401; hiding them keeps a clean surface on a school's own page.
+  embed?: boolean;
 }) {
   // ── Legacy localStorage keys (read once to migrate an existing draft to the server store) ─────
   const KEY_CODE    = `kat:pg:${contentId}:code`;
@@ -1389,14 +1395,14 @@ ${code}
 
   // ── Student: fetch pending invite for this playground on mount ────────────
   useEffect(() => {
-    if (isCreator) return;
+    if (isCreator || embed) return;
     fetch(`/api/playground-invites?contentId=${contentId}`)
       .then((r) => r.ok ? r.json() : null)
       .then((data: { invite: PlaygroundInvite | null } | null) => {
         if (data?.invite) setPendingInvite(data.invite);
       })
       .catch(() => { /* ignore */ });
-  }, [contentId, isCreator]);
+  }, [contentId, isCreator, embed]);
 
   // ── Instructor: search enrolled students (debounced 300 ms) ───────────────
   useEffect(() => {
@@ -1779,6 +1785,14 @@ ${code}
       return;
     }
 
+    // Server-side execution via Judge0 is unavailable in the embed (no NextAuth session to authenticate
+    // the run route). Python and web activities already ran client-side above; for anything else, tell the
+    // pupil plainly rather than firing a request that would 401.
+    if (embed) {
+      setError("This activity runs on the server, which is not available in the embedded lesson. Open it from your school's app.");
+      return;
+    }
+
     // Server-side execution via Judge0
     setRunning(true);
     setResult(null);
@@ -1963,7 +1977,7 @@ ${code}
 
   // ── Student: check for available session every 5 s ─────────────────────────
   useEffect(() => {
-    if (isCreator) return;
+    if (isCreator || embed) return;
     const check = async () => {
       if (inPeerSessionRef.current) return;
       try {
@@ -1976,7 +1990,7 @@ ${code}
     void check();
     checkInterval.current = setInterval(() => void check(), 5000);
     return () => { if (checkInterval.current) clearInterval(checkInterval.current); };
-  }, [contentId, isCreator]);
+  }, [contentId, isCreator, embed]);
 
   // ── Submit code as project ─────────────────────────────────────────────────
 
@@ -2382,7 +2396,7 @@ ${code}
       )}
 
       {/* ── Student join banner (open peer session) ──────────────────────────── */}
-      {!isCreator && availableSessionId && !inPeerSession && (
+      {!isCreator && !embed && availableSessionId && !inPeerSession && (
         <div className="flex items-center justify-between gap-3 border-b border-emerald-500/30 bg-emerald-950/40 px-4 py-2.5">
           <span className="flex items-center gap-1.5 text-xs text-emerald-400">
             <Wifi className="h-3.5 w-3.5" />
@@ -2395,7 +2409,7 @@ ${code}
       )}
 
       {/* ── Student invite banner (from instructor) ───────────────────────────── */}
-      {!isCreator && pendingInvite && !inPeerSession && (
+      {!isCreator && !embed && pendingInvite && !inPeerSession && (
         <div className="flex items-center justify-between gap-3 border-b border-orange-500/30 bg-orange-950/40 px-4 py-2.5">
           <div className="min-w-0">
             <span className="flex items-center gap-1.5 text-xs font-medium text-orange-300">
@@ -2802,8 +2816,8 @@ ${code}
         </div>
       )}
 
-      {/* ── Submit section (students only) ────────────────────────────────────── */}
-      {!isCreator && (
+      {/* ── Submit section (students only; off in the embed, which has no NextAuth session) ── */}
+      {!isCreator && !embed && (
         <div className="border-t border-stone-200 dark:border-stone-800">
 
           {linkedProject && !showSubmitForm && (
