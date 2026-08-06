@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Code2, FileText, Lock } from "lucide-react";
+import { BookOpen, ClipboardCheck, Code2, FileText, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { prisma } from "@/lib/prisma";
 import { termNumberForModule } from "@/lib/school-term";
@@ -19,12 +19,14 @@ export async function EmbedLessons({
   firstName,
   schoolName,
   licensedTerms,
+  schoolSlug,
 }: {
   programId: string;
   firstName: string;
   schoolName: string;
   /** Term numbers the school has unlocked. Modules of other terms render locked. */
   licensedTerms: number[];
+  schoolSlug: string;
 }) {
   const curriculum = await prisma.curriculum.findUnique({
     where: { programId },
@@ -57,11 +59,20 @@ export async function EmbedLessons({
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-6 font-body">
-      <header className="border-b border-stone-200 pb-4 dark:border-stone-800">
-        <p className="text-xs uppercase tracking-wide text-stone-400">{schoolName}</p>
-        <h1 className="mt-1 font-display text-xl font-semibold text-stone-900 dark:text-stone-100">
-          Hello {firstName}
-        </h1>
+      <header className="flex items-start justify-between gap-3 border-b border-stone-200 pb-4 dark:border-stone-800">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-stone-400">{schoolName}</p>
+          <h1 className="mt-1 font-display text-xl font-semibold text-stone-900 dark:text-stone-100">
+            Hello {firstName}
+          </h1>
+        </div>
+        <Link
+          href={`/embed/${encodeURIComponent(schoolSlug)}/assessments`}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:bg-stone-50 dark:border-stone-800 dark:text-stone-300 dark:hover:bg-stone-800/40"
+        >
+          <ClipboardCheck className="size-3.5" />
+          Tests &amp; exams
+        </Link>
       </header>
 
       {modules.length === 0 ? (

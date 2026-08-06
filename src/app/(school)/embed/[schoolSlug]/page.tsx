@@ -84,6 +84,7 @@ export default async function EmbedPage({
       firstName={enrollment.user.firstName}
       schoolName={school.name}
       licensedTerms={licensedTerms}
+      schoolSlug={schoolSlug}
     />
   );
 }

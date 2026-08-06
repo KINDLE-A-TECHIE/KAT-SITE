@@ -1,27 +1,22 @@
 import { fail, ok } from "@/lib/http";
-import { getServerAuthSession } from "@/lib/auth";
-import { ensureSchoolStudent } from "@/lib/school";
+import { resolveEmbedPupil } from "@/lib/school-embed-pupil";
 import { getAssessmentForTake, listOpenAssessments, submitAssessment } from "@/lib/school-assessments";
 import { schoolSubmitAssessmentSchema } from "@/lib/validators";
 import { captureError } from "@/lib/sentry";
 
+export const dynamic = "force-dynamic";
+
 /**
- * A school pupil's tests and exams: list the ones open now, fetch one to take, submit it. NextAuth path;
- * the embed serves the SAME actions at /api/school/embed/assessments with the embed session. Both share
- * the engine in src/lib/school-assessments.ts, so context resolution + key-stripping + grading are
- * identical, and the integrity rules cannot drift between the two entry points.
+ * A school pupil's tests and exams from INSIDE the embed. Same engine as /api/school/learn/assessments
+ * (same context resolution, key-stripping, and grading), authenticated by the embed session instead of
+ * NextAuth. userId + schoolId come from the SIGNED cookie via resolveEmbedPupil, never the request.
  */
 export async function GET(request: Request) {
-  let schoolId: string;
-  try {
-    ({ schoolId } = await ensureSchoolStudent());
-  } catch {
-    return fail("Forbidden", 403);
-  }
-  const session = await getServerAuthSession();
-  const userId = session!.user.id;
-  const assessmentId = new URL(request.url).searchParams.get("assessmentId");
+  const auth = await resolveEmbedPupil(request, { mutation: false });
+  if (!auth.ok) return fail(auth.error, auth.status);
+  const { userId, schoolId } = auth.pupil;
 
+  const assessmentId = new URL(request.url).searchParams.get("assessmentId");
   try {
     if (assessmentId) {
       const r = await getAssessmentForTake(userId, schoolId, assessmentId);
@@ -35,14 +30,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  let schoolId: string;
-  try {
-    ({ schoolId } = await ensureSchoolStudent());
-  } catch {
-    return fail("Forbidden", 403);
-  }
-  const session = await getServerAuthSession();
-  const userId = session!.user.id;
+  const auth = await resolveEmbedPupil(request, { mutation: true });
+  if (!auth.ok) return fail(auth.error, auth.status);
+  const { userId, schoolId } = auth.pupil;
 
   let body: unknown;
   try {

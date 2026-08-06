@@ -69,7 +69,15 @@ type Result = { status: string; autoScore: number; totalScore: number };
  * pupil's code is run in-browser against the test inputs (via runCode) and only the OUTPUTS are sent; the
  * server compares them to the hidden expected outputs, so no answer key is ever in the page.
  */
-export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
+export function AssessmentTake({
+  assessmentId,
+  apiPath = "/api/school/learn/assessments",
+  backHref = "/learn/assessments",
+}: {
+  assessmentId: string;
+  apiPath?: string;
+  backHref?: string;
+}) {
   const [phase, setPhase] = useState<"loading" | "error" | "taking" | "submitting" | "done">("loading");
   const [errorMsg, setErrorMsg] = useState("");
   const [title, setTitle] = useState("");
@@ -84,7 +92,7 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
 
   useEffect(() => {
     void (async () => {
-      const res = await fetch(`/api/school/learn/assessments?assessmentId=${assessmentId}`, { cache: "no-store" });
+      const res = await fetch(`${apiPath}?assessmentId=${assessmentId}`, { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setErrorMsg(data?.error ?? "This assessment is not available.");
@@ -98,7 +106,7 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
       setAnswers(init);
       setPhase("taking");
     })();
-  }, [assessmentId]);
+  }, [assessmentId, apiPath]);
 
   const setAnswer = (qid: string, patch: Answer) =>
     setAnswers((prev) => ({ ...prev, [qid]: { ...prev[qid], ...patch } }));
@@ -165,7 +173,7 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
           payload.push({ questionId: q.id, responseText: a.responseText ?? "" });
         }
       }
-      const res = await fetch("/api/school/learn/assessments", {
+      const res = await fetch(apiPath, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ assessmentId, answers: payload }),
@@ -191,7 +199,7 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
       <div className="rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
         <ClipboardCheck className="mx-auto mb-3 size-10 text-stone-300 dark:text-stone-600" />
         <p className="font-medium text-stone-600 dark:text-stone-300">{errorMsg}</p>
-        <Link href="/learn/assessments" className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-kat-clay hover:underline">
+        <Link href={backHref} className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-kat-clay hover:underline">
           <ArrowLeft className="size-3.5" /> Back to tests
         </Link>
       </div>
@@ -211,7 +219,7 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
             ? `You scored ${result?.autoScore} on the auto-marked questions.`
             : "Your teacher will mark the written and practical parts, then your result is ready."}
         </p>
-        <Link href="/learn/assessments" className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[var(--kat-pine)] transition hover:bg-white/90">
+        <Link href={backHref} className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[var(--kat-pine)] transition hover:bg-white/90">
           Back to tests
         </Link>
       </div>
@@ -223,7 +231,7 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <div>
-        <Link href="/learn/assessments" className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 transition hover:text-kat-clay dark:text-stone-400">
+        <Link href={backHref} className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 transition hover:text-kat-clay dark:text-stone-400">
           <ArrowLeft className="size-3.5" /> Tests
         </Link>
         <h1 className="mt-1 font-display text-2xl font-bold text-stone-900 dark:text-stone-100">{title}</h1>
