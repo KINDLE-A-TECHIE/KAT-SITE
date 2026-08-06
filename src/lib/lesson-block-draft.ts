@@ -36,8 +36,19 @@ export async function pendingDraftCount(): Promise<number> {
   return (await allLocalDrafts()).filter((d) => d.dirty).length;
 }
 
+// When the interactive blocks run inside the school iframe embed there is no NextAuth session, so draft
+// sync must go to the embed endpoints (same LessonBlockDraft row, embed-session auth). EmbedLessonBody
+// turns this on once on mount. It is a module singleton, which is safe because the embed runs in its own
+// browsing context (iframe/route), separate from the in-app app.
+let embedMode = false;
+export function setDraftEmbedMode(on: boolean): void {
+  embedMode = on;
+}
+
 function draftUrl(contentId: string): string {
-  return `/api/curriculum/contents/${contentId}/draft`;
+  return embedMode
+    ? `/api/school/embed/draft/${encodeURIComponent(contentId)}`
+    : `/api/curriculum/contents/${contentId}/draft`;
 }
 
 // A 4xx that will never succeed on retry (bad/oversized/absent), so stop holding it dirty forever. 401

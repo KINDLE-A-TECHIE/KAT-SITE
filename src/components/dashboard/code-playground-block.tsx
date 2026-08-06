@@ -1785,15 +1785,11 @@ ${code}
       return;
     }
 
-    // Server-side execution via Judge0 is unavailable in the embed (no NextAuth session to authenticate
-    // the run route). Python and web activities already ran client-side above; for anything else, tell the
-    // pupil plainly rather than firing a request that would 401.
-    if (embed) {
-      setError("This activity runs on the server, which is not available in the embedded lesson. Open it from your school's app.");
-      return;
-    }
-
-    // Server-side execution via Judge0
+    // Server-side execution via Judge0. In the embed there is no NextAuth session, so use the
+    // embed-authed run route (same engine, embed-session auth) instead of the in-app one.
+    const runUrl = embed
+      ? `/api/school/embed/run/${encodeURIComponent(contentId)}`
+      : `/api/curriculum/contents/${contentId}/run`;
     setRunning(true);
     setResult(null);
     setError(null);
@@ -1815,7 +1811,7 @@ ${code}
         requestBody = { code, stdin };
       }
 
-      const res  = await fetch(`/api/curriculum/contents/${contentId}/run`, {
+      const res  = await fetch(runUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),

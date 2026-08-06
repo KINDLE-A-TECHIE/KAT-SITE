@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Check, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CodePlaygroundBlock } from "@/components/dashboard/code-playground-block";
 import { BlocklyBlock } from "@/components/dashboard/blockly-block";
 import { NetworkLabBlock } from "@/components/network-lab/network-lab-block";
+import { setDraftEmbedMode } from "@/lib/lesson-block-draft";
 
 type Content = {
   id: string;
@@ -39,6 +40,12 @@ export function EmbedLessonBody({
 }) {
   const [done, setDone] = useState(completed);
   const [busy, setBusy] = useState(false);
+
+  // Route interactive-block draft sync to the embed endpoints for the life of this frame.
+  useEffect(() => {
+    setDraftEmbedMode(true);
+    return () => setDraftEmbedMode(false);
+  }, []);
 
   const complete = async () => {
     setBusy(true);
