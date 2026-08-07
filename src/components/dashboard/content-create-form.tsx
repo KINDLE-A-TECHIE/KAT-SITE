@@ -427,7 +427,7 @@ export function ContentCreateForm({
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={6}
-            placeholder={'Leave blank for the default block set. Optional: {"prompt":"Make the robot say hello 3 times","toolbox":{...},"startBlocks":{...},"allowCode":true}'}
+            placeholder={'Leave blank for the default block set. Optional: {"prompt":"Draw a square","world":"turtle"} or {"world":"grid","grid":{"cols":6,"rows":6,"start":[0,0],"heading":"E","goal":[5,5],"walls":[[2,2]]}}'}
             className="font-mono text-sm"
             spellCheck={false}
           />
@@ -436,7 +436,10 @@ export function ContentCreateForm({
             blocks. Blank uses the default toolbox, an empty canvas, and the Python switch on. Optional
             keys: <code>prompt</code> (an instruction line), <code>toolbox</code> (a Blockly toolbox),
             <code>startBlocks</code> (a saved workspace), <code>allowCode</code> (set <code>false</code> to
-            keep it blocks-only). Add a Rich Text block for full instructions.
+            keep it blocks-only). For a VISUAL practice block set <code>world</code> to <code>&quot;turtle&quot;</code>
+            (drawing) or <code>&quot;grid&quot;</code> (a maze robot); Run animates it instead of printing. A grid
+            world takes an optional <code>grid</code> maze (<code>cols/rows/start/heading/goal/walls</code>);
+            omit it for a default maze. World practice blocks are not graded. Add a Rich Text block for full instructions.
           </p>
         </div>
       )}

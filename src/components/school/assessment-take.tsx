@@ -39,8 +39,8 @@ type Question = {
   scratchChecks?: { label: string; points: number }[];
 };
 
-/** A Blockly question's config JSON (toolbox/startBlocks/allowCode/world); a bad value falls back to defaults. */
-function parseBlockly(raw: string | null | undefined): { toolbox?: unknown; startBlocks?: unknown; allowCode?: boolean; world?: string } {
+/** A Blockly question's config JSON (toolbox/startBlocks/allowCode/world/strict); a bad value falls back to defaults. */
+function parseBlockly(raw: string | null | undefined): { toolbox?: unknown; startBlocks?: unknown; allowCode?: boolean; world?: string; strict?: boolean } {
   if (!raw || !raw.trim()) return {};
   try {
     const parsed = JSON.parse(raw);
@@ -56,10 +56,14 @@ function questionWorld(q: Question): WorldId | undefined {
   return isWorldId(w) ? w : undefined;
 }
 
-/** The program to actually run for a CODE answer: wrapped in the world runtime when it is a world question. */
+/**
+ * The program to actually run for a CODE answer: wrapped in the world runtime when it is a world question.
+ * `strict` (from the config) grades on the exact stroke/step order, matching how the reference was captured.
+ */
 function runnableCode(q: Question, code: string): string {
   const world = questionWorld(q);
-  return world ? wrapForWorld(world, code) : code;
+  if (!world) return code;
+  return wrapForWorld(world, code, { strict: parseBlockly(q.blocklyConfig).strict === true });
 }
 type Answer = { selectedOptionId?: string; responseText?: string; code?: string; sb3Key?: string };
 type Result = { status: string; autoScore: number; totalScore: number };
