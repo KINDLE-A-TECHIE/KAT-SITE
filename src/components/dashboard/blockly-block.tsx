@@ -34,7 +34,7 @@ type BlocklyConfig = {
   startBlocks?: unknown;
   allowCode?: boolean;
   world?: string;
-  /** For a grid world: the maze the runtime reads (a GridConfig object). A default maze is used if absent. */
+  /** For a grid world: the maze the runtime reads, as a JSON string OR a GridConfig object. Default if absent. */
   grid?: unknown;
 };
 
@@ -64,9 +64,11 @@ export function BlocklyBlock({
   // alone still works.
   const gridStdin =
     world === "grid"
-      ? config.grid && typeof config.grid === "object"
-        ? JSON.stringify(config.grid)
-        : DEFAULT_GRID_STDIN
+      ? typeof config.grid === "string" && config.grid.trim()
+        ? config.grid // the maze as a JSON string (from the authoring picker)
+        : config.grid && typeof config.grid === "object"
+          ? JSON.stringify(config.grid) // a hand-authored GridConfig object
+          : DEFAULT_GRID_STDIN
       : "";
 
   const codeRef = useRef("");

@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SUPPORTED_LANGUAGES } from "@/components/dashboard/code-playground-block";
+import { GridWorldView } from "@/components/dashboard/grid-world-view";
 import { LEVELS } from "@/lib/network-lab/levels";
+import { WORLD_META, DEFAULT_GRID_STDIN } from "@/lib/blockly-worlds";
 
 type Tab = "RICH_TEXT" | "YOUTUBE_EMBED" | "EXTERNAL_VIDEO" | "DOCUMENT_LINK" | "CODE_PLAYGROUND" | "NETWORK_LAB" | "BLOCKLY" | "SCRATCH";
 
@@ -102,6 +104,17 @@ type QueuedBlock = {
   language: string;
   starterCode: string;
 };
+
+/** Parse the BLOCKLY config JSON body into an object (empty on blank/malformed). */
+function parseBlocklyBody(body: string): Record<string, unknown> {
+  if (!body.trim()) return {};
+  try {
+    const p = JSON.parse(body);
+    return p && typeof p === "object" ? (p as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
 
 export function ContentCreateForm({
   lessonId,
@@ -417,8 +430,69 @@ export function ContentCreateForm({
         </div>
       )}
 
-      {tab === "BLOCKLY" && (
-        <div className="space-y-1.5">
+      {tab === "BLOCKLY" && (() => {
+        const cfg = parseBlocklyBody(body);
+        // The structured controls below and the advanced JSON textarea are two views of the SAME config.
+        const patchBlockly = (patch: Record<string, unknown>) => {
+          const next: Record<string, unknown> = { ...parseBlocklyBody(body), ...patch };
+          for (const k of Object.keys(patch)) if (patch[k] === undefined) delete next[k];
+          setBody(Object.keys(next).length ? JSON.stringify(next, null, 2) : "");
+        };
+        const world = typeof cfg.world === "string" ? cfg.world : "";
+        const mazeText = typeof cfg.grid === "string" ? cfg.grid : cfg.grid ? JSON.stringify(cfg.grid) : DEFAULT_GRID_STDIN;
+        return (
+        <div className="space-y-3">
+          {/* Visual-practice picker: writes `world` (+ `grid`) into the config below. */}
+          <div className="space-y-2 rounded-lg border border-stone-200 p-3 dark:border-stone-800">
+            <label className="flex flex-wrap items-center gap-2 text-sm text-stone-700 dark:text-stone-200">
+              <span className="font-medium">Activity</span>
+              <select
+                className="rounded-md border border-stone-300 bg-stone-50 px-2 py-1 text-sm dark:border-stone-700 dark:bg-stone-900"
+                value={world}
+                onChange={(e) => {
+                  const w = e.target.value;
+                  if (w === "grid") patchBlockly({ world: "grid", grid: typeof cfg.grid === "string" && cfg.grid.trim() ? cfg.grid : DEFAULT_GRID_STDIN });
+                  else if (w === "turtle") patchBlockly({ world: "turtle", grid: undefined });
+                  else patchBlockly({ world: undefined, grid: undefined });
+                }}
+              >
+                <option value="">Free coding (blocks + Python)</option>
+                {WORLD_META.map((w) => (
+                  <option key={w.id} value={w.id}>{w.label}</option>
+                ))}
+              </select>
+              {world ? (
+                <span className="text-xs text-stone-400">{WORLD_META.find((w) => w.id === world)?.description} Practice only, not graded.</span>
+              ) : null}
+            </label>
+
+            {world === "grid" ? (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                <div className="flex-1 space-y-1">
+                  <p className="text-[11px] font-medium text-stone-500 dark:text-stone-400">
+                    Maze the robot practices in. Cells are [x, y] from the top-left; heading is E/S/W/N; walls are cells the robot cannot enter.
+                  </p>
+                  <Textarea
+                    value={mazeText}
+                    onChange={(e) => patchBlockly({ grid: e.target.value })}
+                    rows={5}
+                    className="font-mono text-[11px]"
+                    spellCheck={false}
+                  />
+                </div>
+                <div className="shrink-0">
+                  <GridWorldView config={mazeText} />
+                </div>
+              </div>
+            ) : null}
+
+            {world === "turtle" ? (
+              <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                The pupil draws with turtle blocks (forward, turn, pen up/down); Run animates the drawing.
+              </p>
+            ) : null}
+          </div>
+
           <Label htmlFor="blockly-config" className="text-sm">
             Advanced config <span className="font-normal text-stone-400 dark:text-stone-500">(JSON, optional)</span>
           </Label>
@@ -427,7 +501,7 @@ export function ContentCreateForm({
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={6}
-            placeholder={'Leave blank for the default block set. Optional: {"prompt":"Draw a square","world":"turtle"} or {"world":"grid","grid":{"cols":6,"rows":6,"start":[0,0],"heading":"E","goal":[5,5],"walls":[[2,2]]}}'}
+            placeholder={'Leave blank for the default block set. Optional keys: prompt, toolbox, startBlocks, allowCode (the Activity picker above manages world + grid).'}
             className="font-mono text-sm"
             spellCheck={false}
           />
@@ -436,13 +510,11 @@ export function ContentCreateForm({
             blocks. Blank uses the default toolbox, an empty canvas, and the Python switch on. Optional
             keys: <code>prompt</code> (an instruction line), <code>toolbox</code> (a Blockly toolbox),
             <code>startBlocks</code> (a saved workspace), <code>allowCode</code> (set <code>false</code> to
-            keep it blocks-only). For a VISUAL practice block set <code>world</code> to <code>&quot;turtle&quot;</code>
-            (drawing) or <code>&quot;grid&quot;</code> (a maze robot); Run animates it instead of printing. A grid
-            world takes an optional <code>grid</code> maze (<code>cols/rows/start/heading/goal/walls</code>);
-            omit it for a default maze. World practice blocks are not graded. Add a Rich Text block for full instructions.
+            keep it blocks-only). Use the Activity picker above for turtle/grid practice. Add a Rich Text block for full instructions.
           </p>
         </div>
-      )}
+        );
+      })()}
 
       {tab === "SCRATCH" && (
         <div className="space-y-1.5">
