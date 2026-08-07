@@ -281,6 +281,9 @@ engine, auth, R2, payment utils, and the warm design system.
     Framing is per-school CSP frame-ancestors from SchoolAllowedOrigin (X-Frame-Options CANNOT
     express an allow-list, so next.config.ts omits it for /embed). Exact origins, no wildcards.
     No teacher embed, it would put a roster of minors on a page we do not control.
+    OPS: that frame-ancestors header is set in src/middleware.ts, which (edge, no Prisma) fetches the value
+    from /api/school/embed/frame-ancestors and FAILS CLOSED to 'none' (a 2s timeout also fails closed). So
+    "embeds stopped framing for a school" = check that route / Sentry, not the embed page itself.
 
 ### Roles & authorization (match the existing pattern)
 - Two school-scoped roles in a SchoolMembership table (NOT on global User.role): SCHOOL_ADMIN, TEACHER.

@@ -30,7 +30,11 @@ async function embedFrameAncestors(req: NextRequestWithAuth): Promise<string> {
   const slug = req.nextUrl.pathname.split("/")[2] ?? "";
   if (!slug) return "'none'";
   try {
-    const res = await fetch(new URL(`/api/school/embed/frame-ancestors?slug=${encodeURIComponent(slug)}`, req.url));
+    // Bounded: a hung lookup must not stall the embed response. A timeout throws and, like any other
+    // failure below, fails CLOSED to 'none'. 2s is generous for one indexed query.
+    const res = await fetch(new URL(`/api/school/embed/frame-ancestors?slug=${encodeURIComponent(slug)}`, req.url), {
+      signal: AbortSignal.timeout(2000),
+    });
     if (!res.ok) return "'none'";
     const data = (await res.json()) as { frameAncestors?: string };
     return data.frameAncestors?.trim() ? data.frameAncestors : "'none'";
