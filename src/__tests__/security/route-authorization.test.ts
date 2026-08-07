@@ -630,6 +630,17 @@ describe("B2C queries are tenant-scoped", () => {
     ).toBe(true);
   });
 
+  it("middleware sets a per-school frame-ancestors CSP on /embed, failing closed", () => {
+    // Dropping X-Frame-Options (above) is only safe if SOMETHING restricts framing. That something is the
+    // middleware: it must run on every /embed document and emit a `frame-ancestors` header from the
+    // school's allow-list, or the embed is framable by anyone. This gap was real once.
+    const mw = stripComments(readFileSync(path.join(process.cwd(), "src", "middleware.ts"), "utf8"));
+    expect(/matcher:\s*\[[^\]]*["'`]\/embed\/:path\*["'`]/.test(mw), "middleware matcher must include /embed/:path*").toBe(true);
+    expect(/Content-Security-Policy/.test(mw) && /frame-ancestors/.test(mw), "middleware must set a frame-ancestors CSP").toBe(true);
+    expect(/["']'none'["']/.test(mw), "the frame-ancestors builder must fail CLOSED to 'none'").toBe(true);
+    expect(/frame-ancestors\b/.test(mw) && /pathname\.startsWith\(\s*["'`]\/embed\//.test(mw), "the CSP must be applied to /embed paths").toBe(true);
+  });
+
   it("learner-notification fan-out excludes school enrollments", () => {
     const source = stripComments(readFileSync(path.join(process.cwd(), "src", "lib", "challenges.ts"), "utf8"));
     const enrollmentQueries = source.match(/enrollment[s]?:?\s*\{[^}]*status:\s*"ACTIVE"[^}]*\}/gi) ?? [];
