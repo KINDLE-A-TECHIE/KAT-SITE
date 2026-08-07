@@ -3,6 +3,7 @@ import { BookOpen, ClipboardCheck, Code2, FileText, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { prisma } from "@/lib/prisma";
 import { termNumberForModule } from "@/lib/school-term";
+import { MyCertificates } from "@/components/school/my-certificates";
 
 /**
  * The framed learner view: this pupil's units and lessons.
@@ -74,6 +75,10 @@ export async function EmbedLessons({
           Tests &amp; exams
         </Link>
       </header>
+
+      <div className="mt-6">
+        <MyCertificates apiPath="/api/school/embed/certificates" />
+      </div>
 
       {modules.length === 0 ? (
         <p className="mt-6 text-sm text-stone-500 dark:text-stone-400">
