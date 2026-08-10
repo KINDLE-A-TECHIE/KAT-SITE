@@ -721,3 +721,12 @@ export const schoolProvisionSchema = z
     (d) => d.adminMode !== "create" || (d.adminFirstName && d.adminLastName),
     { message: "First and last name are required when creating the account." },
   );
+
+/**
+ * Super-admin updates a school's negotiated per-seat price after provisioning. Bounds match
+ * `schoolProvisionSchema.pricePerSeat`. 0 is allowed and deliberately SUSPENDS invoicing (the billing
+ * route 422s until a price is set), so a school can be paused without deleting anything.
+ */
+export const schoolSeatPriceUpdateSchema = z.object({
+  pricePerSeat: z.coerce.number().min(0).max(1_000_000),
+});
