@@ -227,6 +227,7 @@ export async function POST(request: Request) {
             codeLanguage: question.codeLanguage,
             starterCode: question.starterCode,
             blocklyConfig: question.blocklyConfig,
+            scratchChecks: question.scratchChecks,
             options: question.options
               ? {
                   create: question.options.map((option) => ({

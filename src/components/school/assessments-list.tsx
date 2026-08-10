@@ -25,13 +25,23 @@ function windowLabel(opensAt: string | null, closesAt: string | null): string {
   return "Open now";
 }
 
-/** A pupil's list of tests and exams that are open to them right now. */
-export function AssessmentsList() {
+/**
+ * A pupil's list of tests and exams that are open to them right now. `apiPath` + `basePath` let the SAME
+ * component serve the in-app shell and the iframe embed, which hit different endpoints and route to
+ * different take pages.
+ */
+export function AssessmentsList({
+  apiPath = "/api/school/learn/assessments",
+  basePath = "/learn/assessments",
+}: {
+  apiPath?: string;
+  basePath?: string;
+} = {}) {
   const [items, setItems] = useState<Item[] | null>(null);
 
   useEffect(() => {
     void (async () => {
-      const res = await fetch("/api/school/learn/assessments", { cache: "no-store" });
+      const res = await fetch(apiPath, { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data?.error ?? "Could not load your tests.");
@@ -40,7 +50,7 @@ export function AssessmentsList() {
       }
       setItems(data.assessments ?? []);
     })();
-  }, []);
+  }, [apiPath]);
 
   if (!items) return <Skeleton className="h-48 w-full rounded-lg" />;
 
@@ -81,7 +91,7 @@ export function AssessmentsList() {
                 </span>
               ) : (
                 <Link
-                  href={`/learn/assessments/${item.id}`}
+                  href={`${basePath}/${item.id}`}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-kat-clay px-4 py-2 text-sm font-semibold text-white transition hover:bg-kat-clay-deep"
                 >
                   Start <ArrowRight className="size-4" />

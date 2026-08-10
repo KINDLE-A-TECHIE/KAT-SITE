@@ -37,6 +37,12 @@ export const projectUploadLimiter = makeLimiter(30, "1 h", "kat:projects:upload"
 /** Lesson note image upload presigned URL: 40 per hour per author */
 export const contentUploadLimiter = makeLimiter(40, "1 h", "kat:content:upload");
 
+/** Stage video recording upload presigned URL: 12 per hour per user (recordings are heavy). */
+export const stageVideoUploadLimiter = makeLimiter(12, "1 h", "kat:videos:upload");
+
+/** Code execution from inside the school embed: 20 runs per minute per pupil (matches the in-app /run). */
+export const embedRunLimiter = makeLimiter(20, "1 m", "kat:embed:run");
+
 /** Feedback submission: 60 per hour per user */
 export const projectFeedbackLimiter = makeLimiter(60, "1 h", "kat:projects:feedback");
 

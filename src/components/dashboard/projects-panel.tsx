@@ -71,6 +71,7 @@ type Project = {
   status: "DRAFT" | "SUBMITTED" | "APPROVED" | "NEEDS_WORK" | "REJECTED";
   deployedUrl: string | null;
   coverImageUrl: string | null;
+  showcaseConsent: boolean;
   assessmentId: string | null;
   assessment?: { id: string; title: string } | null;
   createdAt: string;
@@ -664,6 +665,26 @@ function ProjectCard({
     }
   };
 
+  const [consentSaving, setConsentSaving] = useState(false);
+
+  const handleToggleConsent = async (next: boolean) => {
+    setConsentSaving(true);
+    const res = await fetch(`/api/projects/${p.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ showcaseConsent: next }),
+    });
+    if (res.ok) {
+      const merged = { ...p, showcaseConsent: next };
+      setP(merged);
+      onUpdate(merged);
+      toast.success(next ? "Photo will be shown when this build is featured." : "Photo consent turned off.");
+    } else {
+      toast.error("Could not update consent.");
+    }
+    setConsentSaving(false);
+  };
+
   const handleDelete = async () => {
     if (!confirm("Delete this project? This cannot be undone.")) return;
     setDeleting(true);
@@ -1141,6 +1162,30 @@ function ProjectCard({
                     />
                   )}
                 </div>
+              )}
+
+              {/* Public-showcase photo consent (owner only). Gates whether the builder's PHOTO
+                  appears if this build is featured on the public landing. The work/title can be
+                  featured on mentor approval; the face needs this explicit opt-in. */}
+              {!isReviewer && !editing && (
+                <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-800/50">
+                  <input
+                    type="checkbox"
+                    checked={p.showcaseConsent}
+                    disabled={consentSaving}
+                    onChange={(e) => void handleToggleConsent(e.target.checked)}
+                    className="mt-0.5 size-4 shrink-0 accent-orange-500"
+                  />
+                  <span className="text-xs leading-relaxed text-stone-600 dark:text-stone-400">
+                    <span className="font-medium text-stone-700 dark:text-stone-300">
+                      Show my photo if this build is featured
+                    </span>
+                    <br />
+                    KAT may show your profile photo next to your first name if this project appears on the
+                    public site. Leave this off and only your work is shown, never your photo.
+                    {consentSaving && <Loader2 className="ml-1.5 inline size-3 animate-spin" />}
+                  </span>
+                </label>
               )}
 
               {/* Student actions */}

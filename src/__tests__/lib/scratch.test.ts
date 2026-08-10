@@ -8,6 +8,8 @@ import {
   parseScratchInbound,
   saveMessage,
   scratchEditorOrigin,
+  videoUploadUrlMessage,
+  videoUploadDeniedMessage,
 } from "@/lib/scratch";
 
 const ENV_KEY = "NEXT_PUBLIC_SCRATCH_EDITOR_URL";
@@ -90,6 +92,45 @@ describe("parseScratchInbound", () => {
     expect(parseScratchInbound({ type: SCRATCH_MSG.REQUEST_LOAD })).toEqual({ type: SCRATCH_MSG.REQUEST_LOAD });
   });
 
+  it("parses REQUEST_VIDEO_UPLOAD only with a positive numeric size", () => {
+    expect(parseScratchInbound({ type: SCRATCH_MSG.REQUEST_VIDEO_UPLOAD, sizeBytes: 1024, durationMs: 4200 })).toEqual({
+      type: SCRATCH_MSG.REQUEST_VIDEO_UPLOAD,
+      sizeBytes: 1024,
+      durationMs: 4200,
+    });
+    // durationMs is optional: absent or invalid becomes null.
+    expect(parseScratchInbound({ type: SCRATCH_MSG.REQUEST_VIDEO_UPLOAD, sizeBytes: 5 })).toEqual({
+      type: SCRATCH_MSG.REQUEST_VIDEO_UPLOAD,
+      sizeBytes: 5,
+      durationMs: null,
+    });
+    expect(parseScratchInbound({ type: SCRATCH_MSG.REQUEST_VIDEO_UPLOAD, sizeBytes: 0 })).toBeNull();
+    expect(parseScratchInbound({ type: SCRATCH_MSG.REQUEST_VIDEO_UPLOAD, sizeBytes: -3 })).toBeNull();
+    expect(parseScratchInbound({ type: SCRATCH_MSG.REQUEST_VIDEO_UPLOAD })).toBeNull();
+  });
+
+  it("parses VIDEO_SAVED only with a non-empty key AND a positive size", () => {
+    expect(parseScratchInbound({ type: SCRATCH_MSG.VIDEO_SAVED, key: "videos/u/x.webm", sizeBytes: 900, durationMs: 3000 })).toEqual({
+      type: SCRATCH_MSG.VIDEO_SAVED,
+      key: "videos/u/x.webm",
+      sizeBytes: 900,
+      durationMs: 3000,
+    });
+    expect(parseScratchInbound({ type: SCRATCH_MSG.VIDEO_SAVED, key: "", sizeBytes: 900 })).toBeNull();
+    expect(parseScratchInbound({ type: SCRATCH_MSG.VIDEO_SAVED, key: "videos/u/x.webm", sizeBytes: 0 })).toBeNull();
+  });
+
+  it("parses VIDEO_SAVE_FAILED with a fallback message", () => {
+    expect(parseScratchInbound({ type: SCRATCH_MSG.VIDEO_SAVE_FAILED, message: "429" })).toEqual({
+      type: SCRATCH_MSG.VIDEO_SAVE_FAILED,
+      message: "429",
+    });
+    expect(parseScratchInbound({ type: SCRATCH_MSG.VIDEO_SAVE_FAILED })).toEqual({
+      type: SCRATCH_MSG.VIDEO_SAVE_FAILED,
+      message: "Recording save failed.",
+    });
+  });
+
   it("returns null for unknown or non-object payloads", () => {
     expect(parseScratchInbound({ type: "kat:scratch:load" })).toBeNull(); // an outbound type, not inbound
     expect(parseScratchInbound({ type: "something-else" })).toBeNull();
@@ -112,6 +153,18 @@ describe("outbound builders", () => {
       type: SCRATCH_MSG.SAVE,
       uploadUrl: "https://r2.example/put?sig=1",
       key: "school/x/proj.sb3",
+    });
+  });
+
+  it("builds VIDEO_UPLOAD_URL and VIDEO_UPLOAD_DENIED", () => {
+    expect(videoUploadUrlMessage("https://r2.example/put?sig=2", "videos/u/x.webm")).toEqual({
+      type: SCRATCH_MSG.VIDEO_UPLOAD_URL,
+      uploadUrl: "https://r2.example/put?sig=2",
+      key: "videos/u/x.webm",
+    });
+    expect(videoUploadDeniedMessage("Too many recordings")).toEqual({
+      type: SCRATCH_MSG.VIDEO_UPLOAD_DENIED,
+      message: "Too many recordings",
     });
   });
 });

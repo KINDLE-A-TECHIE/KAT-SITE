@@ -1,18 +1,26 @@
-# KAT. VPS Setup Scripts
+# KAT. Scripts
 
-Each service runs on its own dedicated VPS and has its own subfolder.
+Two kinds of scripts live here: VPS setup scripts (each self-hosted service runs on its own
+dedicated VPS and has its own subfolder) and one-off Node maintenance scripts you run by hand
+against the deployed app. See [Node maintenance scripts](#node-maintenance-scripts) at the bottom
+for the latter.
 
 ```
 scripts/
-├── jitsi-jibri/          ← Video conferencing + recording (already deployed)
+├── jitsi-jibri/               ← Video conferencing + recording (already deployed)
 │   ├── jitsi-setup.sh
 │   ├── jibri-finalize.sh
 │   ├── jibri-env.sh
 │   └── deploy-to-vps.sh
 │
-└── judge0/               ← Code execution engine (separate VPS)
-    ├── judge0-setup.sh
-    └── deploy-to-vps.sh
+├── judge0/                    ← Code execution engine (separate VPS)
+│   ├── judge0-setup.sh
+│   └── deploy-to-vps.sh
+│
+├── scratch-editor/            ← Self-hosted Scratch editor fork (recipe + postMessage bridge)
+│
+├── qstash-webhook-drain.mjs   ← Schedules frequent draining of the school webhook outbox
+└── mirror-pyodide-to-r2.mjs   ← Mirrors the Pyodide runtime core onto R2
 ```
 
 ---
@@ -288,3 +296,79 @@ VPS is OpenVZ/LXC, migrate to KVM (Hetzner Cloud is KVM).
 dig +short code.kindleatechie.com   # must resolve to this VPS IP
 certbot certificates
 ```
+
+---
+
+## Node maintenance scripts
+
+Plain Node scripts (`.mjs`) you run by hand, not part of any VPS. They target the **deployed** app
+and your live Upstash / R2 accounts, so run them deliberately with real production values, never dev
+ones.
+
+### `qstash-webhook-drain.mjs`. Drain the school webhook outbox on time
+
+When something happens in a school (a pupil finishes a lesson, say), the app queues a "tell the
+school's system" message in a webhook outbox. A cron endpoint, `GET /api/cron/webhook-drain`
+(guarded by `CRON_SECRET`), actually sends those. This script registers an **Upstash QStash**
+schedule that calls that endpoint every few minutes so the outbox drains promptly.
+
+**When you need it:** only when the deployment's own cron is too infrequent. Vercel **Hobby** caps
+native crons at once per day, which would delay every school webhook by up to 24 hours. On a plan
+with sub-daily crons, use the platform cron and skip this script.
+
+It is **idempotent**: each run deletes any existing schedule pointing at the endpoint, then creates a
+fresh one, so re-running never stacks duplicates.
+
+**What you need:**
+
+| Value | Where to get it |
+|---|---|
+| `QSTASH_TOKEN` | Upstash console → **QStash** → "REST Token" (not the Redis token) |
+| `CRON_SECRET` | The exact value the deployed app uses (Vercel → Project → Settings → Environment Variables). QStash forwards it as `Authorization`, which the route checks. |
+| `APP_URL` | The deployed **apex** URL, same as `NEXTAUTH_URL` (e.g. `https://kindleatechie.com`). Must be public https. QStash cannot reach `localhost`. Falls back to `NEXTAUTH_URL` if unset. |
+
+Use the apex domain, **not** the `schools.` subdomain: it is one deployment with one shared outbox,
+and the drain route is not tenant-scoped, so the hostname makes no difference.
+
+**Run once, against the deployed app.** PowerShell:
+
+```powershell
+$env:QSTASH_TOKEN = "<upstash-qstash-rest-token>"
+$env:CRON_SECRET  = "<deployed CRON_SECRET>"
+$env:APP_URL      = "https://kindleatechie.com"
+node scripts/qstash-webhook-drain.mjs
+```
+
+Or bash:
+
+```bash
+QSTASH_TOKEN=<token> CRON_SECRET=<secret> APP_URL=https://kindleatechie.com node scripts/qstash-webhook-drain.mjs
+```
+
+Override the cadence with `DRAIN_CRON` (default `*/5 * * * *`, every 5 minutes). On success it prints
+the scheduled destination and the `scheduleId`. View, edit, or delete the schedule in the Upstash
+console → **QStash** → **Schedules**; delete it there to turn draining off.
+
+### `mirror-pyodide-to-r2.mjs`. Self-host the Pyodide runtime core
+
+Copies the Pyodide core (~13 MB: `pyodide.js`, `pyodide.asm.js`, `pyodide.asm.wasm`,
+`python_stdlib.zip`, `pyodide-lock.json`) onto your R2 bucket so the in-browser Python playground
+loads its runtime from your own domain instead of a third-party CDN. On-demand packages (numpy, etc.)
+stay on the CDN: the lockfile's package URLs are rewritten to absolute CDN URLs so `import numpy`
+still resolves without mirroring hundreds of MB of wheels.
+
+Reads R2 credentials from `.env.local`, so run it with `--env-file`:
+
+```bash
+node --env-file=.env.local scripts/mirror-pyodide-to-r2.mjs
+```
+
+It uploads to `pyodide/v<VERSION>/` (VERSION is pinned near the top of the script, currently
+`0.26.4`). When it finishes, point the app at the mirror:
+
+```
+NEXT_PUBLIC_PYODIDE_INDEX_URL=<R2_PUBLIC_URL>/pyodide/v0.26.4/
+```
+
+When upgrading Pyodide, bump `VERSION` in the script, re-run it, then update the pinned version in
+`src/components/dashboard/code-playground-block.tsx` and `NEXT_PUBLIC_PYODIDE_INDEX_URL` together.

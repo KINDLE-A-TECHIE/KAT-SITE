@@ -14,6 +14,9 @@ const updateSchema = z.object({
   deployedUrl: z.string().url().optional().or(z.literal("")),
   howToUse: z.string().max(2000).optional(),
   status: z.enum(["DRAFT", "SUBMITTED"]).optional(), // students can only submit/retract
+  // Public-showcase photo consent. Handled separately below so it can be toggled in ANY status,
+  // including APPROVED (the state where a build is actually featured), not just editable ones.
+  showcaseConsent: z.boolean().optional(),
 });
 
 export async function GET(_req: Request, { params }: Params) {
@@ -90,7 +93,7 @@ export async function PATCH(request: Request, { params }: Params) {
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) return fail("Invalid input.", 400, parsed.error.flatten());
 
-  const { status: newStatus, ...fields } = parsed.data;
+  const { status: newStatus, showcaseConsent, ...fields } = parsed.data;
   const hasFieldEdits = Object.keys(fields).length > 0;
   const isRetract = newStatus === "DRAFT" && project.status === "SUBMITTED";
   const isSubmit = newStatus === "SUBMITTED" && (
@@ -115,6 +118,7 @@ export async function PATCH(request: Request, { params }: Params) {
       ...(parsed.data.deployedUrl !== undefined && { deployedUrl: parsed.data.deployedUrl || null }),
       ...(parsed.data.howToUse !== undefined && { howToUse: parsed.data.howToUse || null }),
       ...(parsed.data.status !== undefined && { status: parsed.data.status }),
+      ...(showcaseConsent !== undefined && { showcaseConsent }),
     },
     include: {
       program: { select: { id: true, name: true } },

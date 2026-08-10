@@ -62,7 +62,18 @@ function BuildArtifact({ build }: { build: Build | undefined }) {
                 <dt className="font-mono text-[0.7rem] uppercase tracking-[0.22em] text-[var(--kat-muted)]">
                   Builder
                 </dt>
-                <dd className="mt-1 font-display text-lg font-semibold text-[var(--kat-clay)]">
+                <dd className="mt-1 flex items-center gap-2 font-display text-lg font-semibold text-[var(--kat-clay)]">
+                  {/* The builder's photo appears only with recorded consent (see getRealBuilds).
+                      No photo = just the first name, never a placeholder face. */}
+                  {build.builderPhotoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={build.builderPhotoUrl}
+                      alt={build.firstName}
+                      className="size-7 shrink-0 rounded-full object-cover ring-1 ring-[var(--kat-ink)]/15"
+                      loading="lazy"
+                    />
+                  ) : null}
                   {build.firstName}
                 </dd>
               </div>
@@ -155,14 +166,6 @@ export function HeroSection({ enrollments, passRate, builds }: HeroSectionProps)
               </dt>
               <dd className="mt-0.5 font-display text-2xl font-bold text-[var(--kat-ink)]">
                 {passRate}%
-              </dd>
-            </div>
-            <div>
-              <dt className="font-mono text-[0.7rem] uppercase tracking-[0.22em] text-[var(--kat-muted)]">
-                Class size
-              </dt>
-              <dd className="mt-0.5 font-display text-2xl font-bold text-[var(--kat-ink)]">
-                1-on-1
               </dd>
             </div>
           </dl>

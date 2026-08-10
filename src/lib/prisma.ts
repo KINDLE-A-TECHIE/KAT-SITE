@@ -2,7 +2,15 @@ import { PrismaClient } from "@prisma/client";
 
 // Connection-reset messages that appear before our retry logic kicks in.
 // These are expected with Neon's idle-suspension and are not real errors.
-const CONN_NOISE = ["kind: Closed", "kind: Io", "ConnectionReset", "Can't reach database server"];
+// "Server has closed the connection" is Prisma P1017: Neon (or pgbouncer) dropped a stale pooled
+// connection a warm serverless container had cached. It is transient and the retry below recovers.
+const CONN_NOISE = [
+  "kind: Closed",
+  "kind: Io",
+  "ConnectionReset",
+  "Can't reach database server",
+  "Server has closed the connection",
+];
 
 function makePrismaClient() {
   const client = new PrismaClient({
@@ -42,11 +50,14 @@ function makePrismaClient() {
               msg.includes("ConnectionReset") ||
               msg.includes("Timed out fetching a new connection") ||
               msg.includes("kind: Closed") ||
+              msg.includes("Server has closed the connection") ||
               raw.includes("kind: Closed") ||
               raw.includes("kind: Io") ||
               raw.includes("ConnectionReset") ||
+              raw.includes("Server has closed the connection") ||
               code === "P1001" ||
               code === "P1002" ||
+              code === "P1017" || // server closed the connection (Neon idle-drop of a stale pooled conn)
               code === "P2024"; // connection pool exhausted, wait for in-flight queries to finish
             if (!isConnError || attempt === delays.length) break;
             await new Promise((r) => setTimeout(r, delays[attempt]));

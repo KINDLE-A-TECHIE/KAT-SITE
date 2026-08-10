@@ -2,9 +2,13 @@
 
 import { useCallback, useRef, useState } from "react";
 import { Loader2, Play } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { BlocklyWorkspace } from "@/components/dashboard/blockly-workspace";
-import { runPythonForOutput } from "@/lib/pyodide-grader";
+import { GridWorldView } from "@/components/dashboard/grid-world-view";
+import { TurtleWorldView } from "@/components/dashboard/turtle-world-view";
+import { runPythonForOutput, runCode } from "@/lib/pyodide-grader";
+import { wrapForWorldTrace, isWorldId, DEFAULT_GRID_STDIN, type WorldId } from "@/lib/blockly-worlds";
 
 /**
  * BLOCKLY lesson block: the shared BlocklyWorkspace (self-hosted Blockly that generates Python, with an
@@ -16,8 +20,12 @@ import { runPythonForOutput } from "@/lib/pyodide-grader";
  * completion, like the other interactive blocks). The workspace is debounce-saved to the shared
  * LessonBlockDraft store (keyed by contentId); typed Python is session-only (blocks are what persist).
  *
- * Config rides LessonContent.body as optional JSON: { prompt?, toolbox?, startBlocks?, allowCode? }. Blank
- * body = the default toolbox, an empty canvas, and the Python switch on.
+ * Config rides LessonContent.body as optional JSON: { prompt?, toolbox?, startBlocks?, allowCode?, world?,
+ * grid? }. Blank body = the default toolbox, an empty canvas, and the Python switch on. A `world`
+ * ("turtle" | "grid") turns this into a VISUAL practice block: the blocks drive the world runtime and Run
+ * ANIMATES the result (turtle draws; a grid robot moves through the maze) instead of printing text. Lessons
+ * are practice, so a world block is never graded; grid reads its maze from `grid` (a maze config; a default
+ * maze is used if omitted).
  */
 
 type BlocklyConfig = {
@@ -25,6 +33,9 @@ type BlocklyConfig = {
   toolbox?: unknown;
   startBlocks?: unknown;
   allowCode?: boolean;
+  world?: string;
+  /** For a grid world: the maze the runtime reads, as a JSON string OR a GridConfig object. Default if absent. */
+  grid?: unknown;
 };
 
 function parseConfig(body: string | null): BlocklyConfig {
@@ -48,27 +59,61 @@ export function BlocklyBlock({
   onComplete?: () => void;
 }) {
   const config = parseConfig(body);
+  const world: WorldId | undefined = isWorldId(config.world) ? config.world : undefined;
+  // The grid runtime reads its maze from stdin. Use the authored maze, or a default so `{"world":"grid"}`
+  // alone still works.
+  const gridStdin =
+    world === "grid"
+      ? typeof config.grid === "string" && config.grid.trim()
+        ? config.grid // the maze as a JSON string (from the authoring picker)
+        : config.grid && typeof config.grid === "object"
+          ? JSON.stringify(config.grid) // a hand-authored GridConfig object
+          : DEFAULT_GRID_STDIN
+      : "";
 
   const codeRef = useRef("");
   const completedRef = useRef(false);
   const [running, setRunning] = useState(false);
-  const [output, setOutput] = useState<string | null>(null);
+  const [output, setOutput] = useState<string | null>(null); // non-world: text output
   const [outputError, setOutputError] = useState(false);
+  const [replay, setReplay] = useState<{ trace: string; runId: number } | null>(null); // world: animated trace
 
-  const run = useCallback(async () => {
-    setRunning(true);
-    setOutput(null);
-    const result = await runPythonForOutput(codeRef.current);
-    setRunning(false);
-    setOutput(result.stdout + (result.stderr ? (result.stdout ? "\n" : "") + result.stderr : ""));
-    setOutputError(result.errored);
-    // Participation completion: they built/wrote and ran something. A runtime that could not load is not a run.
-    const loadFailed = result.stderr.startsWith("The Python runtime could not load");
-    if (!completedRef.current && !loadFailed) {
+  const complete = useCallback(() => {
+    if (!completedRef.current) {
       completedRef.current = true;
       onComplete?.();
     }
   }, [onComplete]);
+
+  const run = useCallback(async () => {
+    setRunning(true);
+    try {
+      // ── World: run the trace wrapper and animate it. Never graded (a lesson is practice). ──
+      if (world) {
+        const runs = await runCode(wrapForWorldTrace(world, codeRef.current), [{ id: "0", stdin: gridStdin }]);
+        const trace = runs[0]?.stdout?.trim() ?? "";
+        if (trace.length > 0) {
+          setReplay((p) => ({ trace, runId: (p?.runId ?? 0) + 1 }));
+          complete(); // they built and ran something
+        } else {
+          toast.error("Could not run your blocks. Add some blocks and try again.");
+        }
+        return;
+      }
+
+      // ── Program output: run and show stdout/stderr. ──
+      setOutput(null);
+      const result = await runPythonForOutput(codeRef.current);
+      setOutput(result.stdout + (result.stderr ? (result.stdout ? "\n" : "") + result.stderr : ""));
+      setOutputError(result.errored);
+      // A runtime that could not load is not a run.
+      if (!result.stderr.startsWith("The Python runtime could not load")) complete();
+    } catch {
+      toast.error("Could not run. Please try again.");
+    } finally {
+      setRunning(false); // never leave the button stuck, even if a run rejects
+    }
+  }, [world, gridStdin, complete]);
 
   return (
     <div className="space-y-3">
@@ -76,7 +121,16 @@ export function BlocklyBlock({
         <p className="text-sm text-stone-600 dark:text-stone-300">{config.prompt}</p>
       ) : null}
 
+      {/* Grid: show the maze (and animate the robot along it after a Run) above the blocks. */}
+      {world === "grid" ? (
+        <div className="rounded-lg border border-stone-200 p-2 dark:border-stone-800">
+          <p className="mb-1.5 text-xs font-medium text-stone-500 dark:text-stone-400">Your maze</p>
+          <GridWorldView config={gridStdin} trace={replay?.trace} runId={replay?.runId} />
+        </div>
+      ) : null}
+
       <BlocklyWorkspace
+        world={world}
         toolbox={config.toolbox}
         startBlocks={config.startBlocks}
         allowCode={config.allowCode !== false}
@@ -93,7 +147,13 @@ export function BlocklyBlock({
         </Button>
       </div>
 
-      {output !== null ? (
+      {/* Turtle: the drawing animates below the blocks after a Run. */}
+      {world === "turtle" ? (
+        <TurtleWorldView trace={replay?.trace} runId={replay?.runId} />
+      ) : null}
+
+      {/* Program-output blocks show text; world blocks show the animation above/below instead. */}
+      {!world && output !== null ? (
         <div>
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-400">Output</p>
           <pre

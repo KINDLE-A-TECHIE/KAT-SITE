@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { captureError } from "@/lib/sentry";
 import { pythonErrorHint } from "@/lib/python-errors";
 import { getDraft, putDraft, deleteDraft } from "@/lib/lesson-block-draft";
+import { monacoLangFromFilename, detectEntryFile, uint8ToBase64 } from "@/lib/playground-files";
 
 // Monaco is large, load only on client, never on server
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -1008,52 +1009,10 @@ const LANG_EXT: Record<string, string> = {
 };
 
 // File extension → Monaco language (for multi-file syntax highlighting)
-const EXT_TO_MONACO: Record<string, string> = {
-  py: "python", js: "javascript", ts: "typescript", jsx: "javascript",
-  tsx: "typescript", java: "java", c: "c", cpp: "cpp", cc: "cpp",
-  cs: "csharp", go: "go", rs: "rust", kt: "kotlin", swift: "swift",
-  php: "php", rb: "ruby", scala: "scala", r: "r", sh: "shell",
-  bash: "shell", sql: "sql", lua: "lua", pl: "perl", hs: "haskell",
-  ml: "plaintext", ex: "elixir", exs: "elixir", html: "html",
-  css: "css", json: "json", md: "markdown", txt: "plaintext",
-};
-
-// Likely entry-point filenames by language, in priority order
-const ENTRY_CANDIDATES: Record<string, string[]> = {
-  python:     ["main.py", "app.py", "index.py", "solution.py", "run.py"],
-  javascript: ["index.js", "main.js", "app.js", "solution.js"],
-  typescript: ["index.ts", "main.ts", "app.ts", "solution.ts"],
-  java:       ["Main.java", "Solution.java", "App.java"],
-  c:          ["main.c", "solution.c"],
-  cpp:        ["main.cpp", "solution.cpp", "main.cc"],
-  csharp:     ["Program.cs", "Main.cs", "Solution.cs"],
-  go:         ["main.go"],
-  rust:       ["main.rs"],
-  html:       ["index.html", "main.html"],
-};
-
 // ── Pure helpers ──────────────────────────────────────────────────────────────
-
-function monacoLangFromFilename(filename: string): string {
-  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
-  return EXT_TO_MONACO[ext] ?? "plaintext";
-}
-
-function detectEntryFile(files: Record<string, string>, lang: string): string | null {
-  for (const candidate of ENTRY_CANDIDATES[lang] ?? []) {
-    if (files[candidate] !== undefined) return candidate;
-  }
-  return null;
-}
-
-function uint8ToBase64(arr: Uint8Array): string {
-  let binary = "";
-  const chunk = 8192;
-  for (let i = 0; i < arr.length; i += chunk) {
-    binary += String.fromCharCode(...arr.subarray(i, i + chunk));
-  }
-  return btoa(binary);
-}
+// monacoLangFromFilename / detectEntryFile / uint8ToBase64 (+ the EXT_TO_MONACO / ENTRY_CANDIDATES maps)
+// live in @/lib/playground-files so they can be unit-tested without React/DOM. triggerDownload stays here
+// because it touches the DOM.
 
 function triggerDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -1138,6 +1097,7 @@ export function CodePlaygroundBlock({
   programId,
   moduleId,
   onComplete,
+  embed = false,
 }: {
   contentId: string;
   starterCode: string;
@@ -1147,6 +1107,11 @@ export function CodePlaygroundBlock({
   programId?: string;
   moduleId?: string;
   onComplete?: () => void;
+  // Run-only mode for the school iframe embed: the pupil can edit + run + keep a local draft, but every
+  // server-coupled feature that needs the NextAuth session (peer sessions, playground invites, submit to
+  // instructor) is turned off. The embed authenticates with its own cookie, not NextAuth, so those calls
+  // would 401; hiding them keeps a clean surface on a school's own page.
+  embed?: boolean;
 }) {
   // ── Legacy localStorage keys (read once to migrate an existing draft to the server store) ─────
   const KEY_CODE    = `kat:pg:${contentId}:code`;
@@ -1430,14 +1395,14 @@ ${code}
 
   // ── Student: fetch pending invite for this playground on mount ────────────
   useEffect(() => {
-    if (isCreator) return;
+    if (isCreator || embed) return;
     fetch(`/api/playground-invites?contentId=${contentId}`)
       .then((r) => r.ok ? r.json() : null)
       .then((data: { invite: PlaygroundInvite | null } | null) => {
         if (data?.invite) setPendingInvite(data.invite);
       })
       .catch(() => { /* ignore */ });
-  }, [contentId, isCreator]);
+  }, [contentId, isCreator, embed]);
 
   // ── Instructor: search enrolled students (debounced 300 ms) ───────────────
   useEffect(() => {
@@ -1820,7 +1785,11 @@ ${code}
       return;
     }
 
-    // Server-side execution via Judge0
+    // Server-side execution via Judge0. In the embed there is no NextAuth session, so use the
+    // embed-authed run route (same engine, embed-session auth) instead of the in-app one.
+    const runUrl = embed
+      ? `/api/school/embed/run/${encodeURIComponent(contentId)}`
+      : `/api/curriculum/contents/${contentId}/run`;
     setRunning(true);
     setResult(null);
     setError(null);
@@ -1842,7 +1811,7 @@ ${code}
         requestBody = { code, stdin };
       }
 
-      const res  = await fetch(`/api/curriculum/contents/${contentId}/run`, {
+      const res  = await fetch(runUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
@@ -2004,7 +1973,7 @@ ${code}
 
   // ── Student: check for available session every 5 s ─────────────────────────
   useEffect(() => {
-    if (isCreator) return;
+    if (isCreator || embed) return;
     const check = async () => {
       if (inPeerSessionRef.current) return;
       try {
@@ -2017,7 +1986,7 @@ ${code}
     void check();
     checkInterval.current = setInterval(() => void check(), 5000);
     return () => { if (checkInterval.current) clearInterval(checkInterval.current); };
-  }, [contentId, isCreator]);
+  }, [contentId, isCreator, embed]);
 
   // ── Submit code as project ─────────────────────────────────────────────────
 
@@ -2423,7 +2392,7 @@ ${code}
       )}
 
       {/* ── Student join banner (open peer session) ──────────────────────────── */}
-      {!isCreator && availableSessionId && !inPeerSession && (
+      {!isCreator && !embed && availableSessionId && !inPeerSession && (
         <div className="flex items-center justify-between gap-3 border-b border-emerald-500/30 bg-emerald-950/40 px-4 py-2.5">
           <span className="flex items-center gap-1.5 text-xs text-emerald-400">
             <Wifi className="h-3.5 w-3.5" />
@@ -2436,7 +2405,7 @@ ${code}
       )}
 
       {/* ── Student invite banner (from instructor) ───────────────────────────── */}
-      {!isCreator && pendingInvite && !inPeerSession && (
+      {!isCreator && !embed && pendingInvite && !inPeerSession && (
         <div className="flex items-center justify-between gap-3 border-b border-orange-500/30 bg-orange-950/40 px-4 py-2.5">
           <div className="min-w-0">
             <span className="flex items-center gap-1.5 text-xs font-medium text-orange-300">
@@ -2843,8 +2812,8 @@ ${code}
         </div>
       )}
 
-      {/* ── Submit section (students only) ────────────────────────────────────── */}
-      {!isCreator && (
+      {/* ── Submit section (students only; off in the embed, which has no NextAuth session) ── */}
+      {!isCreator && !embed && (
         <div className="border-t border-stone-200 dark:border-stone-800">
 
           {linkedProject && !showSubmitForm && (

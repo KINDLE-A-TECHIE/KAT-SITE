@@ -28,6 +28,8 @@ type WorldDef = {
   prelude: string;
   /** Python expression printed AFTER the pupil's code: the canonical final-state JSON (for GRADING). */
   reportExpr: string;
+  /** Same, but ORDER-sensitive (exact stroke/step sequence). Used when a question opts into strict mode. */
+  reportStrictExpr: string;
   /** Python expression printed for a REPLAY run: a step trace + optional error, for animation only. */
   traceExpr: string;
 };
@@ -79,6 +81,11 @@ class _KatTurtle:
     def _report(self):
         segs = sorted([a[0], a[1], b[0], b[1]] for (a, b) in self._segments)
         return _json.dumps({"segments": segs}, separators=(",", ":"))
+
+    def _report_strict(self):
+        # Ordered, DIRECTIONAL pen-down strokes: stroke order, direction, and retracing all matter now.
+        strokes = [[e["x1"], e["y1"], e["x2"], e["y2"]] for e in self._events if e["pen"]]
+        return _json.dumps({"strokes": strokes}, separators=(",", ":"))
 
     def _trace(self, error=None):
         return _json.dumps({"steps": self._events, "error": error}, separators=(",", ":"))
@@ -153,6 +160,12 @@ class _KatActor:
             separators=(",", ":"),
         )
 
+    def _report_strict(self):
+        # The exact ORDERED path (position, heading, paint-flag per event): the precise move/turn/paint
+        # sequence must match the reference, not just the final position.
+        path = [[e["x"], e["y"], e["h"], e["p"]] for e in self._events]
+        return _gjson.dumps({"path": path}, separators=(",", ":"))
+
     def _trace(self, error=None):
         return _gjson.dumps({"steps": self._events, "error": error}, separators=(",", ":"))
 
@@ -164,6 +177,7 @@ const WORLDS: Record<WorldId, WorldDef> = {
     description: "The blocks move a pen that draws lines. Graded on the final picture.",
     prelude: TURTLE_PRELUDE,
     reportExpr: "kat._report()",
+    reportStrictExpr: "kat._report_strict()",
     traceExpr: "kat._trace(_kat_error)",
   },
   grid: {
@@ -171,6 +185,7 @@ const WORLDS: Record<WorldId, WorldDef> = {
     description: "The blocks steer a robot on a grid. Graded on where it ends and what it paints.",
     prelude: GRID_PRELUDE,
     reportExpr: "kat._report()",
+    reportStrictExpr: "kat._report_strict()",
     traceExpr: "kat._trace(_kat_error)",
   },
 };
@@ -242,8 +257,11 @@ export const WORLD_META: ReadonlyArray<{ id: WorldId; label: string; description
  * indented (it runs at top level), so a multi-line string or def in their code is untouched. If their
  * code raises, the report line never runs and the case fails, which is the correct outcome for a crash.
  */
-export function wrapForWorld(world: WorldId, pupilCode: string): string {
+export function wrapForWorld(world: WorldId, pupilCode: string, opts?: { strict?: boolean }): string {
   const def = WORLDS[world];
+  // Strict mode grades the exact stroke/step ORDER (reportStrictExpr); the default grades final state.
+  // The reference is captured with the SAME flag the pupil is graded with, so the two always agree.
+  const report = opts?.strict ? def.reportStrictExpr : def.reportExpr;
   return [
     def.prelude,
     "",
@@ -252,7 +270,7 @@ export function wrapForWorld(world: WorldId, pupilCode: string): string {
     "_sys.stdout = _io.StringIO()",
     pupilCode,
     "_sys.stdout = _kat_real_stdout",
-    `print(${def.reportExpr})`,
+    `print(${report})`,
     "",
   ].join("\n");
 }

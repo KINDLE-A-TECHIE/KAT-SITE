@@ -8,8 +8,9 @@ import { ArrowRight, Check, GraduationCap, ShieldCheck, Users } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/site-footer";
 import { STAMP_CTA, STAMP_CTA_SM } from "../landing-tokens";
+import { PartnerLogos } from "./partner-logos";
 import {
-  COMPLIANCE_POINTS,
+  CURRICULUM_POINTS,
   CROSSWALK,
   PILOT_STEPS,
   STRAND_LABELS,
@@ -129,20 +130,20 @@ export function SchoolsLanding() {
             // coding &amp; robotics curriculum-in-a-box
           </p>
           <h1 className="mt-4 font-display text-[2.4rem] font-bold leading-[1.06] tracking-tight text-[var(--kat-ink)] sm:text-[3.1rem] lg:text-[3.6rem]">
-            NERDC-aligned coding &amp; robotics{" "}
-            <span className="text-[var(--kat-clay)]">your own teachers can deliver.</span>
+            Coding &amp; robotics your own teachers can deliver,{" "}
+            <span className="text-[var(--kat-clay)]">on the devices you already have.</span>
           </h1>
           <p className="mt-6 max-w-2xl font-serif text-lg leading-relaxed text-[var(--kat-text-2)]">
-            No specialist to hire, and it runs on the computers you already have. KAT licenses
-            a complete, NERDC-mapped Digital Technologies curriculum to your school: lesson plans
-            and worksheets for the digital-literacy strand, and a live coding platform for the
-            part that&apos;s hard. Your teachers deliver it; your students build real projects.
+            KAT is a teaching platform, not another textbook. It gives your teachers ready-made
+            lessons for the coding and digital-literacy topics in the national curriculum, plus a
+            live coding environment where students actually build. It runs on the low-cost laptops
+            and phones you already have, so there is no lab to equip and no specialist to hire.
           </p>
         </Reveal>
 
         <Reveal className="mt-8" delay={0.08}>
           <ul className="grid max-w-2xl gap-2.5">
-            {COMPLIANCE_POINTS.map((point) => (
+            {CURRICULUM_POINTS.map((point) => (
               <li key={point} className="flex items-start gap-2.5">
                 <Check className="mt-0.5 size-4 shrink-0 text-[var(--kat-pine)]" />
                 <span className="font-serif text-[0.95rem] leading-relaxed text-[var(--kat-ink)]">
@@ -165,31 +166,35 @@ export function SchoolsLanding() {
             </Link>
           </Button>
           <Link
-            href="#compliance"
+            href="#coverage"
             className="kat-focus-ring font-mono text-sm font-medium text-[var(--kat-ink)] underline decoration-[var(--kat-clay)] decoration-2 underline-offset-4 hover:text-[var(--kat-clay)]"
           >
-            See the NERDC crosswalk →
+            See what we cover, level by level →
           </Link>
         </Reveal>
       </section>
 
-      {/* ── NERDC compliance / crosswalk ───────────────────────────────────── */}
+      {/* Real pilot-school logos. Renders nothing until permissioned logos are committed. */}
+      <PartnerLogos />
+
+      {/* ── Curriculum coverage table ──────────────────────────────────────── */}
       <section
-        id="compliance"
+        id="coverage"
         className="kat-defer scroll-mt-20 border-y border-[var(--kat-line)] bg-white/40 py-16 sm:py-20"
       >
         <div className="kat-page">
           <Reveal className="max-w-2xl">
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-[var(--kat-clay)]">
-              // nerdc compliance
+              // curriculum coverage
             </p>
             <h2 className="mt-3 font-display text-3xl font-bold text-[var(--kat-ink)] sm:text-4xl">
-              One curriculum, compliant from Primary 1 to SS3
+              What we cover, from Primary 1 to SS3
             </h2>
             <p className="mt-4 font-serif text-base leading-relaxed text-[var(--kat-text-2)]">
-              The computing strand runs across the whole primary-and-secondary journey under
-              three subject names, and at senior secondary, Digital Technologies is one of the
-              compulsory core subjects. Here&apos;s how KAT maps onto each level.
+              Computing runs across the whole primary and secondary journey under a few subject
+              names, and at senior secondary it is a compulsory core subject. KAT is a teaching
+              platform for those topics, not an exam board or an accreditation. Here is what we
+              cover at each level, and how your own teachers deliver it.
             </p>
           </Reveal>
 
@@ -212,10 +217,10 @@ export function SchoolsLanding() {
                       Level
                     </th>
                     <th className="px-5 py-3 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[var(--kat-text-2)]">
-                      NERDC subject
+                      Subject
                     </th>
                     <th className="px-5 py-3 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[var(--kat-text-2)]">
-                      Status
+                      In the curriculum
                     </th>
                     <th className="px-5 py-3 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[var(--kat-text-2)]">
                       What KAT delivers
@@ -315,11 +320,11 @@ export function SchoolsLanding() {
                 // ready when you are
               </p>
               <h2 className="mt-4 font-display text-3xl font-bold leading-tight text-[var(--kat-ink)] sm:text-4xl">
-                Make your school NERDC-compliant, with the teachers you already have.
+                Teach the coding curriculum with the teachers you already have.
               </h2>
               <p className="mt-4 font-serif text-base leading-relaxed text-[var(--kat-text-2)]">
-                Tell us your levels and student numbers, and we&apos;ll map your classes onto the
-                crosswalk and set up a pilot term. No specialist hire, no lab to equip, no long contract.
+                Tell us your levels and student numbers, and we&apos;ll set up a pilot term matched to
+                what each class should be learning. No specialist to hire, no lab to equip, no long contract.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
                 <Button asChild size="lg" className={`gap-2 px-8 ${STAMP_CTA}`}>

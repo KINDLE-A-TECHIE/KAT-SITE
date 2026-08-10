@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BlocklyWorkspace } from "@/components/dashboard/blockly-workspace";
 import { GridWorldView } from "@/components/dashboard/grid-world-view";
 import { TurtleWorldView } from "@/components/dashboard/turtle-world-view";
+import { ScratchAnswer } from "@/components/school/scratch-answer";
 import { runCode } from "@/lib/pyodide-grader";
 import { matchOutput } from "@/lib/practical-grading";
 import { wrapForWorld, wrapForWorldTrace, isWorldId, type WorldId } from "@/lib/blockly-worlds";
@@ -25,7 +26,7 @@ type Criterion = { label: string; description: string | null; maxPoints: number 
 type Question = {
   id: string;
   prompt: string;
-  type: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "OPEN_ENDED" | "CODE" | "RUBRIC";
+  type: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "OPEN_ENDED" | "CODE" | "RUBRIC" | "SCRATCH";
   points: number;
   options?: Option[];
   codeLanguage?: string;
@@ -34,10 +35,12 @@ type Question = {
   blocklyConfig?: string | null;
   testCases?: TestCase[];
   rubric?: Criterion[];
+  /** SCRATCH questions: the checklist the pupil's project is graded against (labels + points, shown). */
+  scratchChecks?: { label: string; points: number }[];
 };
 
-/** A Blockly question's config JSON (toolbox/startBlocks/allowCode/world); a bad value falls back to defaults. */
-function parseBlockly(raw: string | null | undefined): { toolbox?: unknown; startBlocks?: unknown; allowCode?: boolean; world?: string } {
+/** A Blockly question's config JSON (toolbox/startBlocks/allowCode/world/strict); a bad value falls back to defaults. */
+function parseBlockly(raw: string | null | undefined): { toolbox?: unknown; startBlocks?: unknown; allowCode?: boolean; world?: string; strict?: boolean } {
   if (!raw || !raw.trim()) return {};
   try {
     const parsed = JSON.parse(raw);
@@ -53,12 +56,16 @@ function questionWorld(q: Question): WorldId | undefined {
   return isWorldId(w) ? w : undefined;
 }
 
-/** The program to actually run for a CODE answer: wrapped in the world runtime when it is a world question. */
+/**
+ * The program to actually run for a CODE answer: wrapped in the world runtime when it is a world question.
+ * `strict` (from the config) grades on the exact stroke/step order, matching how the reference was captured.
+ */
 function runnableCode(q: Question, code: string): string {
   const world = questionWorld(q);
-  return world ? wrapForWorld(world, code) : code;
+  if (!world) return code;
+  return wrapForWorld(world, code, { strict: parseBlockly(q.blocklyConfig).strict === true });
 }
-type Answer = { selectedOptionId?: string; responseText?: string; code?: string };
+type Answer = { selectedOptionId?: string; responseText?: string; code?: string; sb3Key?: string };
 type Result = { status: string; autoScore: number; totalScore: number };
 
 /**
@@ -66,7 +73,18 @@ type Result = { status: string; autoScore: number; totalScore: number };
  * pupil's code is run in-browser against the test inputs (via runCode) and only the OUTPUTS are sent; the
  * server compares them to the hidden expected outputs, so no answer key is ever in the page.
  */
-export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
+export function AssessmentTake({
+  assessmentId,
+  apiPath = "/api/school/learn/assessments",
+  backHref = "/learn/assessments",
+  embed = false,
+}: {
+  assessmentId: string;
+  apiPath?: string;
+  backHref?: string;
+  // In the embed, a SCRATCH answer saves via the embed-authed scratch routes (passed down to ScratchAnswer).
+  embed?: boolean;
+}) {
   const [phase, setPhase] = useState<"loading" | "error" | "taking" | "submitting" | "done">("loading");
   const [errorMsg, setErrorMsg] = useState("");
   const [title, setTitle] = useState("");
@@ -81,7 +99,7 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
 
   useEffect(() => {
     void (async () => {
-      const res = await fetch(`/api/school/learn/assessments?assessmentId=${assessmentId}`, { cache: "no-store" });
+      const res = await fetch(`${apiPath}?assessmentId=${assessmentId}`, { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setErrorMsg(data?.error ?? "This assessment is not available.");
@@ -95,7 +113,7 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
       setAnswers(init);
       setPhase("taking");
     })();
-  }, [assessmentId]);
+  }, [assessmentId, apiPath]);
 
   const setAnswer = (qid: string, patch: Answer) =>
     setAnswers((prev) => ({ ...prev, [qid]: { ...prev[qid], ...patch } }));
@@ -155,11 +173,14 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
             responseText: code,
             codeRuns: runs.map((r) => ({ testCaseId: r.id ?? "", stdout: r.stdout, errored: r.errored })),
           });
+        } else if (q.type === "SCRATCH") {
+          // The answer is the R2 key of the pupil's saved .sb3; the server fetches and grades it.
+          payload.push({ questionId: q.id, responseText: a.sb3Key ?? "" });
         } else {
           payload.push({ questionId: q.id, responseText: a.responseText ?? "" });
         }
       }
-      const res = await fetch("/api/school/learn/assessments", {
+      const res = await fetch(apiPath, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ assessmentId, answers: payload }),
@@ -185,7 +206,7 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
       <div className="rounded-lg border border-dashed border-stone-200 py-16 text-center dark:border-stone-800">
         <ClipboardCheck className="mx-auto mb-3 size-10 text-stone-300 dark:text-stone-600" />
         <p className="font-medium text-stone-600 dark:text-stone-300">{errorMsg}</p>
-        <Link href="/learn/assessments" className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-kat-clay hover:underline">
+        <Link href={backHref} className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-kat-clay hover:underline">
           <ArrowLeft className="size-3.5" /> Back to tests
         </Link>
       </div>
@@ -205,7 +226,7 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
             ? `You scored ${result?.autoScore} on the auto-marked questions.`
             : "Your teacher will mark the written and practical parts, then your result is ready."}
         </p>
-        <Link href="/learn/assessments" className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[var(--kat-pine)] transition hover:bg-white/90">
+        <Link href={backHref} className="mt-6 inline-flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-[var(--kat-pine)] transition hover:bg-white/90">
           Back to tests
         </Link>
       </div>
@@ -217,7 +238,7 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <div>
-        <Link href="/learn/assessments" className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 transition hover:text-kat-clay dark:text-stone-400">
+        <Link href={backHref} className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 transition hover:text-kat-clay dark:text-stone-400">
           <ArrowLeft className="size-3.5" /> Tests
         </Link>
         <h1 className="mt-1 font-display text-2xl font-bold text-stone-900 dark:text-stone-100">{title}</h1>
@@ -382,6 +403,29 @@ export function AssessmentTake({ assessmentId }: { assessmentId: string }) {
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {q.type === "SCRATCH" && (
+              <div className="space-y-2">
+                {(q.scratchChecks ?? []).length > 0 && (
+                  <div className="rounded-lg bg-stone-50 p-2.5 text-xs dark:bg-stone-800/40">
+                    <p className="mb-1 font-semibold text-stone-600 dark:text-stone-300">What gets checked:</p>
+                    <ul className="list-disc space-y-0.5 pl-5 text-stone-600 dark:text-stone-300">
+                      {(q.scratchChecks ?? []).map((c, k) => (
+                        <li key={k}>
+                          {c.label} <span className="text-stone-400">({c.points} marks)</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <ScratchAnswer
+                  questionId={q.id}
+                  savedKey={answers[q.id]?.sb3Key ?? null}
+                  onSavedKey={(key) => setAnswer(q.id, { sb3Key: key })}
+                  embed={embed}
+                />
               </div>
             )}
           </div>
