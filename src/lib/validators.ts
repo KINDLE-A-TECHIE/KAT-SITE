@@ -723,10 +723,16 @@ export const schoolProvisionSchema = z
   );
 
 /**
- * Super-admin updates a school's negotiated per-seat price after provisioning. Bounds match
- * `schoolProvisionSchema.pricePerSeat`. 0 is allowed and deliberately SUSPENDS invoicing (the billing
- * route 422s until a price is set), so a school can be paused without deleting anything.
+ * Super-admin updates a school after provisioning: its negotiated per-seat price and/or its billing
+ * suspension. Both optional; at least one must be present. Price bounds match
+ * `schoolProvisionSchema.pricePerSeat`. `suspended: true` pauses NEW invoicing (a commercial pause,
+ * not a mid-term access cut); false resumes. Setting price to 0 also blocks invoicing until repriced.
  */
-export const schoolSeatPriceUpdateSchema = z.object({
-  pricePerSeat: z.coerce.number().min(0).max(1_000_000),
-});
+export const schoolAdminUpdateSchema = z
+  .object({
+    pricePerSeat: z.coerce.number().min(0).max(1_000_000).optional(),
+    suspended: z.boolean().optional(),
+  })
+  .refine((d) => d.pricePerSeat !== undefined || d.suspended !== undefined, {
+    message: "Provide a price and/or a suspension state to update.",
+  });

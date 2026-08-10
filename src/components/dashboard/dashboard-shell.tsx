@@ -10,6 +10,7 @@ import {
   Award,
   BadgeCheck,
   BookOpen,
+  Building2,
   Calendar,
   CreditCard,
   FileText,
@@ -89,6 +90,7 @@ function getNavItems(role: UserRoleValue, isEnrolled = true) {
         { href: "/dashboard/fellows/applications", label: "Applications", icon: FileText },
         { href: "/dashboard/cohorts", label: "Cohorts", icon: UsersRound },
         { href: "/dashboard/partner-inquiries", label: "Partner Inquiries", icon: Handshake },
+        { href: "/dashboard/schools", label: "Schools", icon: Building2 },
         { href: "/dashboard/super-admin-invites", label: "Access", icon: ShieldAlert },
         { href: "/dashboard/testimonials", label: "Testimonials", icon: Quote },
       ];

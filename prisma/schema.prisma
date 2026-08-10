@@ -1374,6 +1374,10 @@ model School {
   createdAt           DateTime              @default(now())
   updatedAt           DateTime @updatedAt
   pricePerSeat        Decimal               @default(0) @db.Decimal(10, 2)
+  // Super-admin billing suspension. When set, the school cannot raise NEW invoices/buy seats. It is a
+  // COMMERCIAL pause, not a mid-term access cut: pupils already inside a paid, in-window licence keep
+  // access until that window expires (the "don't strand pupils" rule). Reversible: clear to resume.
+  suspendedAt         DateTime?
   enrollments          Enrollment[]
   inquiries      PartnerInquiry[]
   origins SchoolAllowedOrigin[]

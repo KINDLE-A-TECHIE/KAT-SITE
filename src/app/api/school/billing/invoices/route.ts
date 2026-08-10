@@ -105,9 +105,15 @@ export async function POST(request: Request) {
   try {
     const school = await prisma.school.findUnique({
       where: { id: schoolId },
-      select: { name: true, pricePerSeat: true },
+      select: { name: true, pricePerSeat: true, suspendedAt: true },
     });
     if (!school) return fail("School not found.", 404);
+
+    // Billing suspension (super-admin). A commercial pause: no new invoices or seat purchases while
+    // suspended. Existing paid, in-window licences are untouched, pupils are not cut off mid-term.
+    if (school.suspendedAt) {
+      return fail("This school's billing is suspended. Please contact KAT to resume.", 403);
+    }
 
     const pricePerSeat = Number(school.pricePerSeat);
     if (pricePerSeat <= 0) {
