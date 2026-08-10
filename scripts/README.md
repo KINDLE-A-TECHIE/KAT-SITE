@@ -301,9 +301,40 @@ certbot certificates
 
 ## Node maintenance scripts
 
-Plain Node scripts (`.mjs`) you run by hand, not part of any VPS. They target the **deployed** app
-and your live Upstash / R2 accounts, so run them deliberately with real production values, never dev
-ones.
+Scripts you run by hand, not part of any VPS. They target the **deployed** app and your live
+Upstash / R2 / database, so run them deliberately with real production values, never dev ones.
+
+### `bootstrap-prod.ts`. Populate a fresh production database
+
+The **first** thing to run on a new prod database, right after `npx prisma migrate deploy`. Unlike the
+dev seed (`prisma/seed.ts`), it creates **no demo accounts and no fake data**. It is idempotent, safe
+to re-run, and does exactly three things:
+
+1. Upserts the default Organisation (from `DEFAULT_ORGANIZATION_*`, the same record the app auto-creates
+   at runtime).
+2. Creates (or promotes) **one super-admin** from `SUPERADMIN_EMAIL` + `SUPERADMIN_PASSWORD`. This breaks
+   the chicken-and-egg: public signup only makes parents/students, and invites/promote both need an
+   existing super-admin. The password is set only when the account is **created**; on an existing account
+   it promotes the role and leaves the password alone (pass `--reset-password` to change it).
+3. With `--nerdc`, seeds the NERDC school curriculum (real KAT-authored courses/terms/lessons, no demo
+   schools or pupils). Omit it if you are not running the B2B school product.
+
+Runs via `tsx` (a dev dependency) so it can reuse the app's NERDC seeder. Set the same
+`DATABASE_URL` / `DIRECT_URL` the app uses:
+
+```bash
+SUPERADMIN_EMAIL=you@kindleatechie.com \
+SUPERADMIN_PASSWORD='a-long-strong-secret' \
+  npx tsx scripts/bootstrap-prod.ts --nerdc
+```
+
+Locally you can load an env file instead of prefixing:
+`npx tsx --env-file=.env.local scripts/bootstrap-prod.ts`. Requirements: `SUPERADMIN_PASSWORD` must be at
+least 12 characters (and it refuses the dev seed password). After it runs, sign in as that super-admin and
+build everything else from the dashboard: invite admins, author real programmes, provision schools.
+
+**Do NOT run `npm run prisma:seed` on production.** That is the dev seed, and it creates six demo accounts
+(including a super-admin) all with the password `Passw0rd!`, plus fake programmes, payments, and meetings.
 
 ### `qstash-webhook-drain.mjs`. Drain the school webhook outbox on time
 
