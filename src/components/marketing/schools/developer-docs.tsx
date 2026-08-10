@@ -270,17 +270,20 @@ export function DeveloperDocs() {
             </p>
             <CopyBlock
               label="POST /v1/roster · scope: ROSTER_WRITE"
-              code={`curl -X POST https://schools.kindleatechie.com/api/v1/roster \\
+              code={`BODY='{
+  "class_id": "cls_abc123",
+  "students": [
+    { "student_id": "STU-0417", "name": "Chidi Okafor", "guardian_email": "parent@example.com" },
+    { "student_id": "STU-0418", "name": "Ada Balogun" }
+  ]
+}'
+
+# Key derived from the body: a retry of the same list replays, a changed list applies.
+curl -X POST https://schools.kindleatechie.com/api/v1/roster \\
   -H "Authorization: Bearer $KAT_API_KEY" \\
   -H "Content-Type: application/json" \\
-  -H "Idempotency-Key: 2026-09-01-primary5a" \\
-  -d '{
-    "class_id": "cls_abc123",
-    "students": [
-      { "student_id": "STU-0417", "name": "Chidi Okafor", "guardian_email": "parent@example.com" },
-      { "student_id": "STU-0418", "name": "Ada Balogun" }
-    ]
-  }'`}
+  -H "Idempotency-Key: roster-$(printf '%s' "$BODY" | sha256sum | cut -d' ' -f1)" \\
+  -d "$BODY"`}
             />
             <CopyBlock
               label="response"
@@ -305,24 +308,28 @@ export function DeveloperDocs() {
               label="a nightly sync · PHP"
               language="php"
               code={`<?php
+// Build the body ONCE, then key off its hash: a retry of the same roster replays,
+// a changed roster is a new key and applies. Never key on the date, same-day changes would collide.
+$body = wp_json_encode( array(
+  'class_id' => 'cls_abc123',
+  'students' => array(
+    array( 'student_id' => 'STU-0417', 'name' => 'Chidi Okafor', 'guardian_email' => 'parent@example.com' ),
+    array( 'student_id' => 'STU-0418', 'name' => 'Ada Balogun' ),
+  ),
+) );
+
 $res = wp_remote_post( 'https://schools.kindleatechie.com/api/v1/roster', array(
   'headers' => array(
     'Authorization'   => 'Bearer ' . KAT_API_KEY,
     'Content-Type'    => 'application/json',
-    'Idempotency-Key' => wp_date( 'Y-m-d' ) . '-primary5a', // stable per sync. a retry replays.
+    'Idempotency-Key' => 'roster-' . hash( 'sha256', $body ),
   ),
-  'body'    => wp_json_encode( array(
-    'class_id' => 'cls_abc123',
-    'students' => array(
-      array( 'student_id' => 'STU-0417', 'name' => 'Chidi Okafor', 'guardian_email' => 'parent@example.com' ),
-      array( 'student_id' => 'STU-0418', 'name' => 'Ada Balogun' ),
-    ),
-  ) ),
+  'body'    => $body,
   'timeout' => 20,
 ) );
 
-$body = is_wp_error( $res ) ? null : json_decode( wp_remote_retrieve_body( $res ), true );
-// $body['created'], $body['seats']['used'] … then remember the mapping for the lesson window:
+$data = is_wp_error( $res ) ? null : json_decode( wp_remote_retrieve_body( $res ), true );
+// $data['created'], $data['seats']['used'] … then remember the mapping for the lesson window:
 //   update_user_meta( $wp_user_id, 'kat_external_ref', 'STU-0417' );`}
             />
 
@@ -330,12 +337,16 @@ $body = is_wp_error( $res ) ? null : json_decode( wp_remote_retrieve_body( $res 
             <p>
               A sync of 400 pupils over a flaky line <em>will</em> get retried. With an{" "}
               <Code>Idempotency-Key</Code>, the retry replays the original response instead of
-              creating every child a second time. Use anything stable and unique per sync. A date
-              plus the class works well.
+              creating every child a second time. <strong>Derive the key from the roster you are
+              sending</strong> (a hash of the body, as above): a retry of the same list replays, and a
+              changed list is a new key that applies on its own.
             </p>
             <p className="text-sm text-[var(--kat-text-2)]">
-              The same key with a <em>different</em> body is a <Code>422</Code>. That is deliberate:
-              silently replaying an unrelated response would be worse than either honest answer.
+              Do <em>not</em> key it on the date. The same key with a <em>different</em> body is a{" "}
+              <Code>422</Code> (<Code>idempotency_key_reuse</Code>), so a date-based key makes a
+              same-day correction, a pupil added, a name fixed, fail silently. Hashing the body means
+              you never hit that by accident; the <Code>422</Code> stays as a guard against sending the
+              wrong key.
             </p>
 
             <h3 className="mt-8 font-display text-base font-semibold tracking-tight">Removing pupils</h3>
@@ -475,17 +486,23 @@ function verify(req, secret) {
   const id  = req.headers["webhook-id"];
   const ts  = req.headers["webhook-timestamp"];
   const sig = req.headers["webhook-signature"];
+  if (!id || !ts || !sig) return false;
 
-  // Reject anything older than 5 minutes, or a captured delivery
-  // can be replayed against you forever.
-  if (Math.abs(Date.now() / 1000 - Number(ts)) > 300) return false;
+  // Reject a missing, blank, or stale timestamp (older than 5 minutes), or a captured
+  // delivery can be replayed against you forever.
+  const age = Math.abs(Date.now() / 1000 - Number(ts));
+  if (!Number.isFinite(age) || age > 300) return false;
 
   const expected = "v1," + crypto
     .createHmac("sha256", secret.replace(/^whsec_/, ""))
     .update(\`\${id}.\${ts}.\${req.rawBody}\`)   // the RAW body, before JSON.parse
     .digest("base64");
 
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig));
+  const a = Buffer.from(expected);
+  const b = Buffer.from(sig);
+  // timingSafeEqual THROWS on a length mismatch, so a forged header would 500 (and be retried
+  // forever) instead of being cleanly rejected. Compare lengths first.
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }`}
             />
             <Danger title="An unverified endpoint believes anybody">

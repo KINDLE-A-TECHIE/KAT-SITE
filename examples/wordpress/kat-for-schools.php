@@ -192,17 +192,22 @@ add_shortcode( 'kat_classroom', 'kat_classroom_shortcode' );
  * @return array|WP_Error    { created, reactivated, skipped, deactivated, errors, seats:{used,limit} }
  */
 function kat_sync_roster( $class_id, array $students, $deactivate_missing = false, $force = false ) {
-	$idempotency_key = 'roster-' . $class_id . '-' . wp_date( 'Y-m-d' );
+	$payload = array(
+		'class_id'           => $class_id,
+		'students'           => array_values( $students ),
+		'deactivate_missing' => (bool) $deactivate_missing,
+		'force'              => (bool) $force,
+	);
+
+	// Key derived from the payload, NOT the date: a retry of the same roster replays; a changed
+	// roster (a pupil added, a name fixed) is a new key that applies on its own. A date-based key
+	// would collide on a same-day change and 422 (idempotency_key_reuse), failing the sync silently.
+	$idempotency_key = 'roster-' . hash( 'sha256', wp_json_encode( $payload ) );
 
 	$res = kat_api_request(
 		'POST',
 		'/api/v1/roster',
-		array(
-			'class_id'           => $class_id,
-			'students'           => array_values( $students ),
-			'deactivate_missing' => (bool) $deactivate_missing,
-			'force'              => (bool) $force,
-		),
+		$payload,
 		array( 'Idempotency-Key' => $idempotency_key )
 	);
 

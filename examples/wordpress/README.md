@@ -31,6 +31,7 @@ The shortcodes read that meta to know which pupil is asking. Never take the ref 
 
 ## Notes
 
+- **Roster sync is retry-safe.** `kat_sync_roster()` sends an `Idempotency-Key` derived from a hash of the roster you pass, so a retry after a dropped connection replays the first response instead of creating every pupil a second time, and a changed roster (a pupil added, a name fixed) is a new key that applies on its own. Do not key it on the date: two different rosters for one class on the same day would collide and the endpoint returns `422 idempotency_key_reuse`.
 - **Learner-only.** There is no teacher embed by design: a teacher screen shows a roster of minors, so it is never framed on a page KAT does not control. Teachers use the KAT dashboard directly.
 - **Do not cache** a page carrying `[kat_classroom]`. The launch token is minted per render and lives 60 seconds.
 - **Safari / strict privacy settings** may block the frame's cookie. When that happens the frame shows an "Open my lessons" button that opens the same lesson in a first-party tab.
