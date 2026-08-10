@@ -1177,6 +1177,10 @@ model Project {
   updatedAt     DateTime          @updatedAt
   howToUse      String?
   assessmentId  String?
+  // Recorded parental/guardian consent to feature this build publicly on the landing WITH the
+  // builder's first name and photo. Default false: an APPROVED project still surfaces its title
+  // (mentor-approved work), but the builder's PHOTO only appears when this is explicitly true.
+  showcaseConsent Boolean         @default(false)
   moduleGate    ModuleGateStatus? @relation("GateProject")
   assessment    Assessment?       @relation(fields: [assessmentId], references: [id])
   program       Program?          @relation(fields: [programId], references: [id])

@@ -94,7 +94,7 @@ function FellowshipApplyContent() {
             </span>
           </Link>
           <Link
-            href="/#fellowship"
+            href="/fellowship"
             className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-700"
           >
             <ArrowLeft className="size-4" />
@@ -156,7 +156,7 @@ function FellowshipApplyContent() {
                 <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm">
                   <p className="text-stone-500">No cohort selected or cohort not found.</p>
                   <Button
-                    onClick={() => router.push("/#fellowship")}
+                    onClick={() => router.push("/fellowship")}
                     variant="outline"
                     className="mt-4 rounded-xl"
                   >
