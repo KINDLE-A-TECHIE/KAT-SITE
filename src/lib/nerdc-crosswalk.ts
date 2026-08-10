@@ -6,7 +6,7 @@
  *
  *   1. prisma/seed-nerdc.ts, seeds the SCHOOL-audience courses, their terms
  *      (as Modules, carrying the strand) and their topics (as Lessons).
- *   2. the /schools compliance table, so the marketing claim and the actual
+ *   2. the /schools coverage table, so the marketing claim and the actual
  *      seeded curriculum can never drift apart.
  *
  * Keep it dependency-free (no prisma, no "server-only"): it is imported by both a
@@ -52,12 +52,16 @@ export type NerdcCourse = {
   units: NerdcUnit[];
 };
 
-/** Level metadata, drives the /schools compliance table (crosswalk §1). */
+/** Level metadata, drives the /schools coverage table (crosswalk §1). */
 export type NerdcLevelInfo = {
   level: NerdcLevel;
   label: string;
   subject: string;
-  badge: "Compliant" | "Compulsory core";
+  /**
+   * The subject's standing IN THE CURRICULUM at this level (a fact about the curriculum, not a claim
+   * about KAT). It tells a school "you have to teach this", never that KAT is accredited or endorsed.
+   */
+  badge: "Embedded strand" | "Core subject" | "Compulsory core";
   /** Public, coverage-only description. No internal build backlog. */
   covers: string;
 };
@@ -67,15 +71,15 @@ export const NERDC_LEVEL_INFO: NerdcLevelInfo[] = [
     level: "PRIMARY_1_3",
     label: "Primary 1–3",
     subject: "Basic Science. ICT strand (embedded)",
-    badge: "Compliant",
+    badge: "Embedded strand",
     covers:
-      "The NERDC ICT strand embedded in Basic Science, parts of a computer, common ICT devices and safe use, delivered as a light insert a Basic Science teacher slots straight into the existing lesson.",
+      "The ICT strand embedded in Basic Science, parts of a computer, common ICT devices and safe use, delivered as a light insert a Basic Science teacher slots straight into the existing lesson.",
   },
   {
     level: "PRIMARY_4_6",
     label: "Primary 4–6",
     subject: "Basic Digital Literacy (core subject)",
-    badge: "Compliant",
+    badge: "Core subject",
     covers:
       "Files, documents, the internet, online safety and spreadsheets, plus block coding entering from Primary 5, ending in a capstone showcase.",
   },
@@ -83,7 +87,7 @@ export const NERDC_LEVEL_INFO: NerdcLevelInfo[] = [
     level: "JSS",
     label: "JSS 1–3",
     subject: "Digital Technologies (core subject)",
-    badge: "Compliant",
+    badge: "Core subject",
     covers:
       "Hardware, operating systems, networks, the web, cloud and digital ethics, plus visual coding (Scratch/Blockly) in JSS 3, into the BECE capstone.",
   },
