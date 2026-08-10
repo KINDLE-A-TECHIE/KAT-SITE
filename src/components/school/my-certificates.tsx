@@ -18,18 +18,18 @@ type MyCertificate = {
  * least one is earned, so it never adds empty chrome. Each links out to the shareable, printable
  * verification page.
  */
-export function MyCertificates() {
+export function MyCertificates({ apiPath = "/api/school/certificates/mine" }: { apiPath?: string } = {}) {
   const [certificates, setCertificates] = useState<MyCertificate[]>([]);
 
   useEffect(() => {
     void (async () => {
-      const res = await fetch("/api/school/certificates/mine");
+      const res = await fetch(apiPath);
       if (res.ok) {
         const data = (await res.json()) as { certificates: MyCertificate[] };
         setCertificates(data.certificates);
       }
     })();
-  }, []);
+  }, [apiPath]);
 
   if (certificates.length === 0) return null;
 

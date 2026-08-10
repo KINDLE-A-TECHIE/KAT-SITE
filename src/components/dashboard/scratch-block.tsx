@@ -51,14 +51,25 @@ export function ScratchBlock({
   contentId,
   body,
   onComplete,
+  embed = false,
 }: {
   contentId: string;
   body: string | null;
   onComplete?: () => void;
+  // Inside the school iframe embed there is no NextAuth session, so save/open must use the embed-authed
+  // scratch routes instead of the in-app ones. The .sb3 still goes to OUR private R2 (presigned, key-only),
+  // exactly as in-app; the embed only changes which endpoint mints the URL.
+  embed?: boolean;
 }) {
   const config = parseConfig(body);
   const editorOrigin = scratchEditorOrigin();
   const online = useOnline();
+  const uploadUrlEndpoint = embed
+    ? `/api/school/embed/scratch/lesson/upload-url/${encodeURIComponent(contentId)}`
+    : `/api/curriculum/contents/${contentId}/scratch/upload-url`;
+  const downloadUrlEndpoint = embed
+    ? `/api/school/embed/scratch/lesson/download-url/${encodeURIComponent(contentId)}`
+    : `/api/curriculum/contents/${contentId}/scratch/download-url`;
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const savedKeyRef = useRef<string | null>(null);
@@ -132,7 +143,7 @@ export function ScratchBlock({
       return;
     }
     try {
-      const res = await fetch(`/api/curriculum/contents/${contentId}/scratch/download-url`, {
+      const res = await fetch(downloadUrlEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key }),
@@ -142,7 +153,7 @@ export function ScratchBlock({
     } catch {
       post(loadMessage(null));
     }
-  }, [contentId, post]);
+  }, [downloadUrlEndpoint, post]);
 
   // Mint a presigned upload URL and hand it to the editor, which serializes the project and PUTs it to R2,
   // then replies SAVED{key} or SAVE_FAILED. Triggered by the editor's File -> Save.
@@ -150,7 +161,7 @@ export function ScratchBlock({
     if (!ready || saving) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/curriculum/contents/${contentId}/scratch/upload-url`, { method: "POST" });
+      const res = await fetch(uploadUrlEndpoint, { method: "POST" });
       if (!res.ok) throw new Error("upload-url failed");
       const { uploadUrl, key } = (await res.json()) as { uploadUrl: string; key: string };
       post(saveMessage(uploadUrl, key));
@@ -158,21 +169,21 @@ export function ScratchBlock({
       setSaving(false);
       toast.error("Could not start the save. Please try again.");
     }
-  }, [ready, saving, contentId, post]);
+  }, [ready, saving, uploadUrlEndpoint, post]);
 
   // A stage recording: mint a rate-limited presigned URL for the recorder to PUT its .webm to, then
   // confirm the upload so the recording is stored and listed. contentId tags where it was made.
   const handleVideoUpload = useCallback(
     async (sizeBytes: number) => {
-      const res = await mintVideoUploadUrl(sizeBytes);
+      const res = await mintVideoUploadUrl(sizeBytes, embed);
       if ("error" in res) post(videoUploadDeniedMessage(res.error));
       else post(videoUploadUrlMessage(res.uploadUrl, res.key));
     },
-    [post],
+    [post, embed],
   );
   const handleVideoSaved = useCallback(
     async (key: string, sizeBytes: number, durationMs: number | null) => {
-      const saved = await confirmVideoSaved({ key, contentId, sizeBytes, durationMs });
+      const saved = await confirmVideoSaved({ key, contentId, sizeBytes, durationMs }, embed);
       if (saved) {
         toast.success("Recording saved to your account.");
         setRecordingsReload((n) => n + 1);
@@ -180,7 +191,7 @@ export function ScratchBlock({
         toast.error("Could not save the recording.");
       }
     },
-    [contentId],
+    [contentId, embed],
   );
 
   // Editor -> parent messages. Origin-pinned; a stray message from any other frame is ignored.
@@ -303,7 +314,7 @@ export function ScratchBlock({
         ) : null}
 
         {!fullscreen ? (
-          <StageRecordingsPanel contentId={contentId} reloadSignal={recordingsReload} heading="Your recordings for this activity" />
+          <StageRecordingsPanel contentId={contentId} reloadSignal={recordingsReload} heading="Your recordings for this activity" embed={embed} />
         ) : null}
       </div>
     </>

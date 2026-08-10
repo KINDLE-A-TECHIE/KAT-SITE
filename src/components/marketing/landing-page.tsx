@@ -2,29 +2,15 @@ import type { Build } from "./landing-tokens";
 import { LandingHeader } from "./sections/landing-header";
 import { HeroSection } from "./sections/hero-section";
 import { BuildLogMarquee } from "./sections/build-log-marquee";
-import { FeaturesSection } from "./sections/features-section";
-import { HowItWorksSection } from "./sections/how-it-works-section";
+import { ProductBand } from "./sections/product-band";
 import { TracksSection } from "./sections/tracks-section";
-import { FellowshipSection } from "./sections/fellowship-section";
-import { EventsSection } from "./sections/events-section";
+import { WhyKatSection } from "./sections/why-kat-section";
 import { TestimonialsSection } from "./sections/testimonials-section";
 import { PricingSection } from "./sections/pricing-section";
 import { FaqSection } from "./sections/faq-section";
 import { CtaSection } from "./sections/cta-section";
 import { SiteFooter } from "@/components/site-footer";
 import { EnrollmentChat } from "./enrollment-chat";
-
-type OpenCohort = {
-  id: string;
-  name: string;
-  startsAt: string;
-  endsAt: string;
-  applicationClosesAt: string | null;
-  externalApplicationFee: number | null;
-  capacity: number | null;
-  applicationCount: number;
-  program: { id: string; name: string; level: string; description: string | null };
-};
 
 type DbTestimonial = {
   id: string;
@@ -37,25 +23,24 @@ type DbTestimonial = {
 type LandingPageProps = {
   enrollments: number;
   passRate: number;
-  openCohorts: OpenCohort[];
   testimonials?: DbTestimonial[];
   builds: Build[];
 };
 
+/*
+ * The B2C landing, restructured to a tighter funnel. It used to say "what your child gets" across
+ * four sections (Features, How It Works, product band, Tracks); now it shows it once (marquee +
+ * product band), explains it once (Why KAT, which merged Features and How It Works), and details it
+ * once (Tracks). Fellowship and Events moved to their own pages (/fellowship, /events), off the main
+ * enroll scroll. The palette, type, and marquee, the page's signature, are untouched.
+ */
 export function LandingPage({
   enrollments,
   passRate,
-  openCohorts,
   testimonials,
   builds,
 }: LandingPageProps) {
   return (
-    /*
-     * No inline token object and no gradient blobs. The palette comes from :root
-     * (globals.css) and the page sits on warm paper with a faint blueprint grid,
-     * a workbench, not a SaaS landing. The blobs were the other half of the
-     * template look; they are gone, not restyled.
-     */
     <main className="kat-blueprint relative overflow-x-clip">
       <LandingHeader />
       <HeroSection enrollments={enrollments} passRate={passRate} builds={builds} />
@@ -63,11 +48,11 @@ export function LandingPage({
       {/* The signature element. Renders nothing when no real build has been approved. */}
       <BuildLogMarquee builds={builds} />
 
-      <FeaturesSection />
-      <HowItWorksSection />
+      {/* Show it (real screenshots), then detail it (tracks), then explain it (why + how). */}
+      <ProductBand />
       <TracksSection />
-      <FellowshipSection cohorts={openCohorts} />
-      <EventsSection />
+      <WhyKatSection />
+
       <TestimonialsSection testimonials={testimonials} />
       <PricingSection />
       <FaqSection />

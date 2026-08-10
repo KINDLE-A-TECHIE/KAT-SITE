@@ -65,45 +65,6 @@ const courseSchemas = [
 // Revalidate stats every hour
 export const revalidate = 3600;
 
-async function getOpenCohorts() {
-  try {
-    const now = new Date();
-    const cohorts = await prisma.cohort.findMany({
-      where: {
-        applicationOpen: true,
-        OR: [{ applicationClosesAt: null }, { applicationClosesAt: { gt: now } }],
-      },
-      select: {
-        id: true,
-        name: true,
-        startsAt: true,
-        endsAt: true,
-        applicationClosesAt: true,
-        externalApplicationFee: true,
-        capacity: true,
-        program: { select: { id: true, name: true, level: true, description: true } },
-        _count: { select: { fellowApplications: true } },
-      },
-      orderBy: { startsAt: "asc" },
-    });
-    return cohorts
-      .filter((c) => c.program !== null)
-      .map((c) => ({
-        ...c,
-        program: c.program!,
-        startsAt: c.startsAt.toISOString(),
-        endsAt: c.endsAt.toISOString(),
-        applicationClosesAt: c.applicationClosesAt?.toISOString() ?? null,
-        externalApplicationFee: c.externalApplicationFee
-          ? Number(c.externalApplicationFee)
-          : null,
-        applicationCount: c._count.fellowApplications,
-      }));
-  } catch {
-    return [];
-  }
-}
-
 async function getApprovedTestimonials() {
   try {
     return await prisma.testimonial.findMany({
@@ -149,7 +110,8 @@ async function getRealBuilds(): Promise<Build[]> {
         id: true,
         title: true,
         coverImageUrl: true,
-        student: { select: { firstName: true } },
+        showcaseConsent: true,
+        student: { select: { firstName: true, profile: { select: { avatarUrl: true } } } },
         program: { select: { name: true } },
       },
       orderBy: { updatedAt: "desc" },
@@ -162,6 +124,9 @@ async function getRealBuilds(): Promise<Build[]> {
       title: p.title,
       program: p.program?.name ?? null,
       imageUrl: p.coverImageUrl,
+      // The face is gated on a SECOND consent flag, not on approval. No consent = no photo,
+      // even for an approved build whose title and first name are shown.
+      builderPhotoUrl: p.showcaseConsent ? (p.student.profile?.avatarUrl ?? null) : null,
     }));
   } catch {
     return [];
@@ -201,9 +166,8 @@ async function getLiveStats() {
 }
 
 export default async function HomePage() {
-  const [stats, openCohorts, testimonials, builds] = await Promise.all([
+  const [stats, testimonials, builds] = await Promise.all([
     getLiveStats(),
-    getOpenCohorts(),
     getApprovedTestimonials(),
     getRealBuilds(),
   ]);
@@ -223,7 +187,6 @@ export default async function HomePage() {
       <LandingPage
         enrollments={stats.enrollments}
         passRate={stats.passRate}
-        openCohorts={openCohorts}
         testimonials={testimonials}
         builds={builds}
       />

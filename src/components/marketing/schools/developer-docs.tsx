@@ -504,6 +504,38 @@ function verify(req, secret) {
             <p className="text-sm text-[var(--kat-text-2)]">
               Return <Code>2xx</Code> quickly and do your work afterwards.
             </p>
+
+            <h3 className="mt-8 font-display text-base font-semibold tracking-tight">Duplicates</h3>
+            <p>
+              Delivery is <strong>at least once</strong>. The same event can reach you more than once:
+              a retry after we sent it but failed to record the success, or two attempts overlapping on
+              a slow endpoint. Every delivery of one event carries the same{" "}
+              <Code>webhook-id</Code>, so treat it as an idempotency key. Record the ids you have
+              handled and ignore one you have seen before.
+            </p>
+            <CopyBlock
+              label="node.js"
+              language="javascript"
+              code={`async function handle(req, res) {
+  if (!verify(req, SECRET)) return res.sendStatus(400);
+
+  const id = req.headers["webhook-id"];
+
+  // Dedupe: a unique column on webhook_id makes this a one-liner.
+  //   INSERT INTO processed_webhooks (id) VALUES ($1) ON CONFLICT DO NOTHING
+  // If the row already existed, we have handled this event, ack and stop.
+  const isNew = await recordIfNew(id);
+  if (!isNew) return res.sendStatus(200);
+
+  // ... your work: mark the lesson complete, update the record, etc.
+  return res.sendStatus(200);
+}`}
+            />
+            <Note>
+              Skip this and a retried <Code>lesson.completed</Code> is counted twice. Dedupe on{" "}
+              <Code>webhook-id</Code>, not on the payload, the body is re-serialised per attempt (a
+              fresh <Code>createdAt</Code> and signature), but the <Code>webhook-id</Code> is stable.
+            </Note>
           </Section>
 
           {/* ── SSO ──────────────────────────────────────────────────────── */}

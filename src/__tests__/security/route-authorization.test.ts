@@ -56,6 +56,9 @@ const GUARD_PATTERN = new RegExp(
     "\\bschoolIdForApiKey\\s*\\(",
     "\\breadEmbedSession\\s*\\(",
     "\\bredeemLaunchToken\\s*\\(",
+    // resolveEmbedPupil wraps readEmbedSession + assertEmbedOrigin + a session-scoped enrollment lookup
+    // for the embed PUPIL-ACTION routes; the delegate-scoping test below verifies it really scopes.
+    "\\bresolveEmbedPupil\\s*\\(",
     // The public v1 API. authorizeV1 authenticates a hashed school API key AND checks the required
     // scope AND rate-limits, in one chokepoint, four separate route files each remembering four
     // steps is four chances to forget one, and the thing forgotten guards children's records.
@@ -92,7 +95,7 @@ const PUBLIC_ALLOWLIST: Record<string, string> = {
  * and every claim re-read from the DB). Rather than weaken the rule, we name the delegates, and a
  * test below asserts those libraries really do the scoping, so this cannot become a loophole.
  */
-const SCHOOL_SCOPE_DELEGATES = ["redeemLaunchToken", "readEmbedSession", "schoolIdForApiKey"];
+const SCHOOL_SCOPE_DELEGATES = ["redeemLaunchToken", "readEmbedSession", "schoolIdForApiKey", "resolveEmbedPupil"];
 
 /**
  * Routes that legitimately authorize WITHOUT a role gate. Each entry is verified
@@ -556,6 +559,19 @@ describe("B2C queries are tenant-scoped", () => {
     // ...and it must re-read the pupil's enrollment rather than trust the token's claims.
     expect(/enrollment\.findFirst/.test(embedLib)).toBe(true);
 
+    // resolveEmbedPupil (the embed pupil-action delegate) must derive identity from the SIGNED cookie and
+    // scope the enrollment lookup by the SESSION's schoolId + userId, never from the request.
+    const embedPupilLib = readFileSync(path.join(process.cwd(), "src", "lib", "school-embed-pupil.ts"), "utf8");
+    expect(/readEmbedSession\s*\(/.test(embedPupilLib), "resolveEmbedPupil must read the embed session").toBe(true);
+    expect(
+      /enrollment\.findFirst/.test(embedPupilLib) &&
+        /schoolId:\s*session\.schoolId/.test(embedPupilLib) &&
+        /userId:\s*session\.userId/.test(embedPupilLib),
+      "resolveEmbedPupil must scope the pupil's enrollment by the session's schoolId AND userId.",
+    ).toBe(true);
+    // For a mutation it must also assert the calling Origin (the embed cookie is SameSite=None = CSRF-able).
+    expect(/assertEmbedOrigin\s*\(/.test(embedPupilLib), "resolveEmbedPupil must assert the embed origin for mutations").toBe(true);
+
     const keyLib = readFileSync(path.join(process.cwd(), "src", "lib", "school-api-key.ts"), "utf8");
     expect(/hashedKey/.test(keyLib) && /timingSafeEqual/.test(keyLib)).toBe(true);
 
@@ -612,6 +628,17 @@ describe("B2C queries are tenant-scoped", () => {
       "X-Frame-Options must be excluded for /embed. XFO takes no origin list (ALLOW-FROM is dead), " +
         "so a per-school allow-list is impossible with it. CSP frame-ancestors does the job instead.",
     ).toBe(true);
+  });
+
+  it("middleware sets a per-school frame-ancestors CSP on /embed, failing closed", () => {
+    // Dropping X-Frame-Options (above) is only safe if SOMETHING restricts framing. That something is the
+    // middleware: it must run on every /embed document and emit a `frame-ancestors` header from the
+    // school's allow-list, or the embed is framable by anyone. This gap was real once.
+    const mw = stripComments(readFileSync(path.join(process.cwd(), "src", "middleware.ts"), "utf8"));
+    expect(/matcher:\s*\[[^\]]*["'`]\/embed\/:path\*["'`]/.test(mw), "middleware matcher must include /embed/:path*").toBe(true);
+    expect(/Content-Security-Policy/.test(mw) && /frame-ancestors/.test(mw), "middleware must set a frame-ancestors CSP").toBe(true);
+    expect(/["']'none'["']/.test(mw), "the frame-ancestors builder must fail CLOSED to 'none'").toBe(true);
+    expect(/frame-ancestors\b/.test(mw) && /pathname\.startsWith\(\s*["'`]\/embed\//.test(mw), "the CSP must be applied to /embed paths").toBe(true);
   });
 
   it("learner-notification fan-out excludes school enrollments", () => {

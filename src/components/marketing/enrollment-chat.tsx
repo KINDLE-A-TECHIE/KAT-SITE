@@ -2,7 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import DOMPurify from "dompurify";
 import { MessageCircle, Send, X, Loader2, Bot } from "lucide-react";
+import { markdownToHtml } from "@/lib/chat-markdown";
+
+// Kemi answers in Markdown. Render the small subset it uses (bold, lists, links) as HTML, then
+// sanitize: DOMPurify strips anything not in this allow-list, and chat-markdown already escaped the
+// raw text and restricted link hrefs. DOMPurify needs the DOM, so callers guard on a mounted flag.
+function renderKemi(markdown: string): string {
+  return DOMPurify.sanitize(markdownToHtml(markdown), {
+    ALLOWED_TAGS: ["p", "br", "strong", "em", "code", "ol", "ul", "li", "a"],
+    ALLOWED_ATTR: ["href", "target", "rel"],
+  });
+}
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "";
 const WHATSAPP_HREF = WHATSAPP_NUMBER
@@ -42,8 +54,12 @@ export function EnrollmentChat() {
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  // DOMPurify runs in the browser only; before mount, model messages fall back to plain text.
+  const [mounted, setMounted] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -207,7 +223,15 @@ export function EnrollmentChat() {
                     }`}
                   >
                     {msg.content ? (
-                      <span className="whitespace-pre-line">{msg.content}</span>
+                      msg.role === "model" && mounted ? (
+                        // Rendered Markdown (bold, lists, clickable links). Sanitized in renderKemi.
+                        <div
+                          className="space-y-2 [&_a]:font-semibold [&_a]:text-[var(--kat-clay)] [&_a]:underline [&_a]:underline-offset-2 [&_code]:rounded [&_code]:bg-black/5 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_li]:mt-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5"
+                          dangerouslySetInnerHTML={{ __html: renderKemi(msg.content) }}
+                        />
+                      ) : (
+                        <span className="whitespace-pre-line">{msg.content}</span>
+                      )
                     ) : (
                       <span className="flex items-center gap-1.5 text-[var(--kat-muted)]">
                         <Loader2 className="size-3.5 animate-spin" />

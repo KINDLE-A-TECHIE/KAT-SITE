@@ -141,6 +141,8 @@ type QuestionDraft = {
   blocklyConfig?: string;
   // A block "world" (e.g. "turtle"): the blocks are graded on the picture/state they make, not a printout.
   world?: string;
+  // Strict: grade on the exact stroke/step ORDER, not just the final picture/state. Off by default.
+  strict?: boolean;
   // Authoring-only: the reference solution the author builds to CAPTURE the expected state. Never saved
   // to blocklyConfig (which reaches the pupil), so it cannot leak the answer.
   worldReferenceCode?: string;
@@ -242,6 +244,7 @@ function buildBlocklyConfig(question: QuestionDraft): string {
     }
   }
   if (question.world) base.world = question.world;
+  if (question.world && question.strict) base.strict = true;
   delete (base as { worldReferenceCode?: unknown }).worldReferenceCode;
   return Object.keys(base).length > 0 ? JSON.stringify(base) : "{}";
 }
@@ -514,6 +517,15 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
     }
   };
 
+  // Strict vs final-state changes the report SHAPE, so any previously captured expected is now stale.
+  // Clear each case's expected so the author must re-capture; no mazes/cases are lost.
+  const setQuestionStrict = (question: QuestionDraft, strict: boolean) => {
+    patchQuestion(question.id, {
+      strict,
+      testCases: (question.testCases ?? []).map((t) => ({ ...t, expectedStdout: "" })),
+    });
+  };
+
   // Add another maze (test case) to a grid question. One reference solution must solve them all, so more
   // mazes push the pupil toward a general solution (sensors + loops) rather than fixed moves.
   const addMaze = (question: QuestionDraft) => {
@@ -542,7 +554,8 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
       // left uncaptured, which the save-time "no expected output" guard turns into a hard error.
       const cases = question.testCases ?? [];
       const inputs = world === "grid" && cases.length > 0 ? cases.map((t, i) => ({ id: String(i), stdin: t.stdin })) : [{ id: "0", stdin: "" }];
-      const runs = await runCode(wrapForWorld(world, question.worldReferenceCode ?? ""), inputs);
+      // Capture with the SAME strict flag the pupil is graded with, or the expected would never match.
+      const runs = await runCode(wrapForWorld(world, question.worldReferenceCode ?? "", { strict: question.strict }), inputs);
 
       let failed = 0;
       let unreached = 0;
@@ -1305,6 +1318,23 @@ export function AssessmentsPanel({ role }: AssessmentsPanelProps) {
                             </label>
                             {question.world ? (
                               <div className="space-y-2 rounded-md border border-stone-200 p-2 dark:border-stone-800">
+                                <label className="flex items-start gap-2 text-xs text-stone-600 dark:text-stone-300">
+                                  <input
+                                    type="checkbox"
+                                    className="mt-0.5"
+                                    checked={question.strict === true}
+                                    onChange={(e) => setQuestionStrict(question, e.target.checked)}
+                                  />
+                                  <span>
+                                    <span className="font-medium">Strict order</span> grades the exact{" "}
+                                    {question.world === "grid" ? "move/turn sequence" : "stroke order and direction"}, not just the final{" "}
+                                    {question.world === "grid" ? "position" : "picture"}. Off, any{" "}
+                                    {question.world === "grid" ? "route that ends correct" : "way that draws the same picture"} passes.
+                                    {question.strict ? (
+                                      <span className="text-amber-600 dark:text-amber-400"> Re-capture the expected result after changing this.</span>
+                                    ) : null}
+                                  </span>
+                                </label>
                                 {question.world === "grid" ? (
                                   <div className="space-y-2">
                                     <p className="text-[11px] font-medium text-stone-500 dark:text-stone-400">

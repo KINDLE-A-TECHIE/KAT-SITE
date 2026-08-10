@@ -62,6 +62,27 @@ describe("wrapForWorld", () => {
   });
 });
 
+describe("wrapForWorld strict mode", () => {
+  it("grades on the final state by default (order-independent)", () => {
+    expect(wrapForWorld("turtle", "kat.forward(50)")).toContain("print(kat._report())");
+    expect(wrapForWorld("grid", "kat.move()")).toContain("print(kat._report())");
+    // strict:false is the explicit default.
+    expect(wrapForWorld("turtle", "kat.forward(50)", { strict: false })).toContain("print(kat._report())");
+  });
+
+  it("grades on the exact ordered strokes/path when strict", () => {
+    const t = wrapForWorld("turtle", "kat.forward(50)", { strict: true });
+    expect(t).toContain("print(kat._report_strict())");
+    expect(t).not.toContain("print(kat._report())"); // the graded print switched; the method still exists in the prelude
+    expect(t).toContain("def _report_strict"); // the ordered report is defined in the runtime
+
+    const g = wrapForWorld("grid", "kat.move()", { strict: true });
+    expect(g).toContain("print(kat._report_strict())");
+    expect(g).not.toContain("print(kat._report())");
+    expect(g).toContain("def _report_strict");
+  });
+});
+
 describe("wrapForWorldTrace", () => {
   it("runs the pupil code under try/except (indented) and prints the trace, not the graded report", () => {
     const wrapped = wrapForWorldTrace("turtle", "kat.forward(50)\nkat.right(90)");

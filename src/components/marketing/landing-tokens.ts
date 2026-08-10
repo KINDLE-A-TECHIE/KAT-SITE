@@ -40,11 +40,10 @@ export const STAMP_CTA_SM =
   `${STAMP_BASE} shadow-[3px_3px_0_0_var(--kat-ink)] hover:shadow-[1px_1px_0_0_var(--kat-ink)]`;
 
 export const NAV_ITEMS = [
-  { href: "#features", label: "Features" },
   { href: "#tracks", label: "Tracks" },
-  { href: "#fellowship", label: "Fellowship" },
   { href: "#pricing", label: "Pricing" },
-  { href: "#faq", label: "FAQ" },
+  { href: "/fellowship", label: "Fellowship" },
+  { href: "/events", label: "Events" },
   { href: "/schools", label: "For Schools" },
   { href: "/partners", label: "Partner with Us" },
 ];
@@ -100,40 +99,26 @@ export const PROGRAM_TRACKS: ProgramTrack[] = [
 ];
 
 /*
- * No per-card `color`. The six-hue icon-chip grid was the most template-like thing on
- * the page; the grid is now flat and monochrome, and the palette's energy is spent in
- * one place (the build-log marquee).
+ * WHY_KAT: the three real differentiators, shown in the merged "Why KAT" section alongside the
+ * 3-step "how it works". Trimmed from an old six-card grid: "Build Real Projects" is now SHOWN
+ * (marquee + product band), "Weekly Challenges" was minor, and "Path to Fellowship" has its own
+ * page. What's left is what actually sets KAT apart from a video course or a crowded class.
  */
-export const FEATURES = [
+export const WHY_KAT = [
   {
-    title: "Live Tech Classes",
-    description: "1-on-1 live sessions with a dedicated mentor in coding, robotics, AI, UI/UX design, and game development. No recorded videos. Your child builds something in every session.",
+    title: "Live, and 1-on-1",
+    description: "Two live sessions a week, one child and one mentor. Not a video library, not a room of thirty. Your child builds something in every session.",
     iconName: "Code2" as const,
   },
   {
-    title: "Parent Visibility",
-    description: "See your child's attendance, current project, and mentor feedback, without having to ask them. It is all on one dashboard.",
+    title: "You can see the work",
+    description: "Attendance, the current project, and mentor feedback, on your own dashboard. You watch the work, not just pay the bill.",
     iconName: "Shield" as const,
   },
   {
-    title: "Build Real Projects",
-    description: "No textbook exercises. Students build games, apps, websites, robots, and UI designs, Real work they can show anyone.",
-    iconName: "Layers3" as const,
-  },
-  {
-    title: "Mastery-Based Learning",
-    description: "Students advance by demonstrating real understanding through assessments, projects and instructor reviews. Attendance alone does not advance them.",
+    title: "Mastery, not attendance",
+    description: "They advance by showing real understanding through projects and assessments. Turning up is not the same as moving up.",
     iconName: "Brain" as const,
-  },
-  {
-    title: "Weekly Challenges",
-    description: "Coding missions, friendly leaderboards, and peer shoutouts give students something to aim for each week.",
-    iconName: "Flame" as const,
-  },
-  {
-    title: "Path to Fellowship",
-    description: "The best learners go on to become KAT Fellows. They mentor juniors, lead impact projects and build something of their own.",
-    iconName: "Compass" as const,
   },
 ];
 
@@ -254,29 +239,9 @@ export const FAQ_ITEMS = [
       "Enrollment is billed monthly per track. A parent registers, selects the right track, and pays to activate their child's access. Exact pricing is shown at registration. Scholarship spots are available every cohort, apply and mention financial support needs.",
   },
   {
-    question: "How many kids are in each class?",
-    answer:
-      "Every session is 1-on-1, your child and their dedicated mentor, no one else. That means full attention, real-time feedback on their work, and a pace that's matched entirely to them.",
-  },
-  {
     question: "Can I see what my child is learning?",
     answer:
       "Yes, every parent account includes a full dashboard: class attendance, project submissions, assessment scores, and what their mentor said. You'll always know exactly how your child is progressing.",
-  },
-  {
-    question: "What device does my child need?",
-    answer:
-      "Any laptop or desktop with a modern browser (Chrome, Firefox, Edge, or Safari) works great. A stable internet connection is required for live classes. Tablets can be used for viewing, but a physical keyboard is strongly recommended for writing code.",
-  },
-  {
-    question: "What happens when they finish a track?",
-    answer:
-      "Younger students move up to the next track when they're ready. Students who complete Future Innovators are eligible for the KAT Fellowship, transitioning from learner to mentor, leading real community-impact projects.",
-  },
-  {
-    question: "Does KAT run any physical or in-person events?",
-    answer:
-      "Yes. While the core learning programme is online, KAT also runs bootcamps, hackathons, and school partnership programmes that can be delivered physically, virtually, or in a hybrid format depending on the partner and location. These events complement the online curriculum with hands-on, real-world experiences.",
   },
 ];
 
@@ -317,4 +282,10 @@ export type Build = {
   program?: string | null;
   /** Real cover image of the shipped project (R2 URL). Null when the student uploaded none. */
   imageUrl?: string | null;
+  /**
+   * The builder's own photo, shown ONLY when parental consent was recorded for this build
+   * (Project.showcaseConsent). Null otherwise, a minor's face is never shown on consent alone
+   * being absent. Approval gates the work; this second flag gates the face.
+   */
+  builderPhotoUrl?: string | null;
 };

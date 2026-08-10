@@ -136,13 +136,15 @@ All seed accounts use the password `Passw0rd!`
 
 ### Curriculum
 - Versioned curriculum builder: Programs → Versions → Modules → Lessons → Content Blocks
-- Content types: rich text, YouTube/external video, document links, code playground
+- Content types: rich text, YouTube/external video, document links, code playground, network lab, Blockly blocks, Scratch (self-hosted editor)
 - Multi-block content queue, stage multiple blocks before submitting for review
 - Content review workflow, instructors submit, admins/Super Admin approve or reject
 - Lesson progress tracking: completion recorded per learner, module badge auto-awarded when all lessons done
 - Prev/Next lesson navigation across module boundaries with a floating bottom nav pill
 - Scroll-aware progress dots in the lesson header track the active content block
 - Code playground powered by self-hosted Judge0 CE: Monaco editor with syntax highlighting, Ctrl+Enter to run, custom stdin input, live stdout/stderr/compiler output, execution time and memory display
+- Block coding: Blockly blocks (in-app, generate Python run on the Pyodide worker, with a Blocks/Python toggle) and Scratch (self-hosted scratch-gui editor embedded by iframe; pupils save/open their .sb3 from the File menu straight to R2). Scratch questions auto-grade by static analysis of the saved project against a checklist
+- Stage video recorder in the Scratch editor: records the stage with project audio and optional mic narration to .webm, saved to the learner's account in R2 (rate-limited), with a My Recordings library
 - DOMPurify HTML sanitization on all rich-text content blocks
 - Curriculum tree shows overall completion percentage, per-module lesson counts, and per-lesson check marks for learners
 
