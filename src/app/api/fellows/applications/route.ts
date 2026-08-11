@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { z } from "zod";
 import { ApplicationStatus, UserRole } from "@prisma/client";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -157,7 +157,7 @@ export async function POST(request: Request) {
 
     return ok({ application, requiresPayment: isExternalApplicant }, 201);
   } catch (error) {
-    return fail("Could not submit application.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not submit application.");
   }
 }
 
@@ -352,6 +352,6 @@ export async function PATCH(request: Request) {
 
     return ok({ status: "APPROVED" });
   } catch (error) {
-    return fail("Could not review application.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not review application.");
   }
 }

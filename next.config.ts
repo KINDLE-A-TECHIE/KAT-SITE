@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -82,4 +83,28 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/*
+ * Wrap in withSentryConfig ONLY when Sentry is enabled (a DSN is set, and we are not in plain local
+ * dev), mirroring src/instrumentation.ts. This is what makes captured errors USEFUL: the Sentry
+ * build plugin uploads source maps (given SENTRY_ORG/PROJECT/AUTH_TOKEN in CI), so production stack
+ * traces are de-minified. Without it, errors still reach Sentry but point at unreadable bundled code.
+ * Gating on enablement keeps the plugin (and the OTel/source-map work it does) out of the dev build,
+ * preserving the fast dev start the serverExternalPackages note above is protecting.
+ */
+const sentryEnabled =
+  Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN) &&
+  (process.env.NODE_ENV !== "development" || process.env.SENTRY_DEV === "true");
+
+export default sentryEnabled
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      // Quiet during normal builds; the plugin logs upload details only in CI.
+      silent: !process.env.CI,
+      // Upload a wider set of client bundles so client stack traces resolve too.
+      widenClientFileUpload: true,
+      // No usage telemetry to Sentry about the build itself.
+      telemetry: false,
+    })
+  : nextConfig;

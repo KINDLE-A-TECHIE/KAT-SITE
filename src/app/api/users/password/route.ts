@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -64,6 +64,6 @@ export async function PUT(request: Request) {
 
     return ok({ message: "Password updated. You will be signed out of all devices." });
   } catch (error) {
-    return fail("Could not update password.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not update password.");
   }
 }

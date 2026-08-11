@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, buildExternalFellowApplicationEmail } from "@/lib/email";
 
@@ -133,6 +133,6 @@ export async function POST(request: Request) {
       201,
     );
   } catch (error) {
-    return fail("Could not submit application.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not submit application.");
   }
 }

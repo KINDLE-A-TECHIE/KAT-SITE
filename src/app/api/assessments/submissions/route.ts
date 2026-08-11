@@ -1,5 +1,5 @@
 import { CourseAudience, AssessmentVerificationStatus, AttemptStatus, NotificationType, QuestionType, UserRole } from "@prisma/client";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -274,7 +274,7 @@ export async function POST(request: Request) {
 
     return ok({ submission }, 201);
   } catch (error) {
-    return fail("Could not submit assessment.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not submit assessment.");
   }
 }
 
@@ -401,6 +401,6 @@ export async function PATCH(request: Request) {
 
     return ok({ submission: updated });
   } catch (error) {
-    return fail("Could not apply manual grade.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not apply manual grade.");
   }
 }

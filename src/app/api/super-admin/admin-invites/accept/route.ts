@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { UserRole } from "@prisma/client";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { ALL_CAPABILITY_KEYS } from "@/lib/capabilities";
 import {
@@ -165,6 +165,6 @@ export async function POST(request: Request) {
 
     return ok({ user: result }, 201);
   } catch (error) {
-    return fail("Could not accept invite.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not accept invite.");
   }
 }

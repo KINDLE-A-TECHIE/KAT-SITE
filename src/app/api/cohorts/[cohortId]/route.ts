@@ -1,6 +1,6 @@
 import { UserRole } from "@prisma/client";
 import { z } from "zod";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -118,7 +118,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
     return ok({ cohort: updated });
   } catch (error) {
-    return fail("Could not update cohort.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not update cohort.");
   }
 }
 
@@ -142,6 +142,6 @@ export async function DELETE(_request: Request, { params }: Params) {
     await prisma.cohort.delete({ where: { id: cohortId } });
     return ok({ deleted: true });
   } catch (error) {
-    return fail("Could not delete cohort.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not delete cohort.");
   }
 }

@@ -1,6 +1,6 @@
 import { UserRole } from "@prisma/client";
 import { z } from "zod";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { getPlatformAnalytics, getSchoolOverview, getUserAnalytics, trackEvent } from "@/lib/analytics";
@@ -69,7 +69,7 @@ export async function GET(request: Request) {
       ...(schoolAnalytics ? { schoolAnalytics } : {}),
     });
   } catch (error) {
-    return fail("Failed to load analytics.", 500, error instanceof Error ? error.message : String(error));
+    return serverError(error, "Failed to load analytics.");
   }
 }
 

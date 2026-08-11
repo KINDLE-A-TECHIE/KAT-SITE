@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { UserRole } from "@prisma/client";
-import { ok, fail } from "@/lib/http";
+import { ok, fail, serverError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { ensureDefaultOrganization } from "@/lib/default-organization";
 import { registerSchema } from "@/lib/validators";
@@ -82,6 +82,6 @@ export async function POST(request: Request) {
 
     return ok({ user: created }, 201);
   } catch (error) {
-    return fail("Registration failed.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Registration failed.");
   }
 }

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { publishMessageEvent } from "@/lib/messages-realtime";
@@ -61,6 +61,6 @@ export async function POST(request: Request) {
 
     return ok({ ok: true });
   } catch (error) {
-    return fail("Could not broadcast typing status.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not broadcast typing status.");
   }
 }
