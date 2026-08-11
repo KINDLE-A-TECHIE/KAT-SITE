@@ -8,11 +8,19 @@ const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const EMAIL = process.env.LOGIN_EMAIL ?? "superadmin@kindleatechie.com";
 const PASSWORD = process.env.LOGIN_PASSWORD ?? "Passw0rd!";
 const OUT = "C:/Users/user/Downloads";
+const VIEW_W = Number(process.env.VIEW_W ?? 1280);
+const VIEW_H = Number(process.env.VIEW_H ?? 900);
+const SUFFIX = process.env.SUFFIX ?? "";
 
 mkdirSync(OUT, { recursive: true });
 
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 });
+const ctx = await browser.newContext({
+  viewport: { width: VIEW_W, height: VIEW_H },
+  deviceScaleFactor: 1,
+  isMobile: VIEW_W < 500,
+  hasTouch: VIEW_W < 500,
+});
 const page = await ctx.newPage();
 
 console.log("login…");
@@ -68,9 +76,17 @@ async function waitForCharts() {
 }
 
 async function shot(name, opts = {}) {
-  const file = `${OUT}/${name}`;
+  const file = `${OUT}/${name.replace(/\.png$/, `${SUFFIX}.png`)}`;
   await page.screenshot({ path: file, ...opts });
   console.log("saved", file);
+  // Flag any horizontal overflow at the document level, the classic mobile responsiveness failure.
+  const overflow = await page.evaluate(() => ({
+    docWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  if (overflow.docWidth > overflow.clientWidth + 1) {
+    console.log(`  ! horizontal overflow: scrollWidth ${overflow.docWidth} > clientWidth ${overflow.clientWidth}`);
+  }
 }
 
 // B2C tab (default view), full page.
@@ -91,7 +107,9 @@ console.log("list endpoint probe:", JSON.stringify(probe));
 await shot("analytics-b2c.png", { fullPage: true });
 
 // Switch to the Schools (B2B) tab and capture it.
-const b2bTab = page.getByRole("tab", { name: "Schools (B2B)" });
+const b2bTab = page
+  .getByRole("tab", { name: "Schools (B2B)" })
+  .or(page.getByRole("button", { name: "Schools (B2B)" }));
 if (await b2bTab.count()) {
   await b2bTab.click();
   await page.waitForTimeout(600);
