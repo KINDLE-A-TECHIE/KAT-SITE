@@ -47,6 +47,7 @@ export default async function DashboardLayout({
         firstName: session.user.firstName,
         lastName: session.user.lastName,
         role: session.user.role,
+        permissions: session.user.permissions,
       }}
       isEnrolled={isEnrolled}
     >

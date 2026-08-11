@@ -100,10 +100,17 @@ export const adminInviteValidateSchema = z.object({
   token: z.string().trim().min(32).max(512),
 });
 
-export const adminAccountUpdateSchema = z.object({
-  adminId: z.string().cuid(),
-  action: z.enum(["hold", "activate", "enable-retakes", "disable-retakes"]),
-});
+export const adminAccountUpdateSchema = z
+  .object({
+    adminId: z.string().cuid(),
+    action: z.enum(["hold", "activate", "enable-retakes", "disable-retakes", "set-permissions"]),
+    // For action "set-permissions": the exact capability-area keys to grant (see src/lib/capabilities.ts).
+    // Unknown keys are dropped server-side; an empty array means "no areas".
+    permissions: z.array(z.string().max(64)).max(50).optional(),
+  })
+  .refine((d) => d.action !== "set-permissions" || Array.isArray(d.permissions), {
+    message: "permissions[] is required when action is set-permissions.",
+  });
 
 export const retakeGrantSchema = z.object({
   assessmentId: z.string().cuid(),

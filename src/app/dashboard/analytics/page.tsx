@@ -1,12 +1,14 @@
 import { redirect } from "next/navigation";
 import { UserRole } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
+import { guardDashboardCapability } from "@/lib/dashboard-capability";
 import { AnalyticsPanel } from "@/components/dashboard/analytics-panel";
 import { PageHeader } from "@/components/dashboard/page-header";
 
 export default async function AnalyticsPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login");
+  guardDashboardCapability(session.user, "analytics");
 
   const canViewPlatform =
     session.user.role === UserRole.SUPER_ADMIN || session.user.role === UserRole.ADMIN;

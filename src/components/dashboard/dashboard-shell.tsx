@@ -34,7 +34,30 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { hasCapability, type CapabilityKey } from "@/lib/capabilities";
 import type { UserRoleValue } from "@/lib/enums";
+
+/**
+ * Nav href -> capability area. An ADMIN/INSTRUCTOR only sees the items whose capability they hold;
+ * items absent from this map (Overview, Profile) are always shown. Other roles are never filtered.
+ */
+const NAV_CAP: Record<string, CapabilityKey> = {
+  "/dashboard/messages": "messaging",
+  "/dashboard/assessments": "assessments",
+  "/dashboard/meetings": "sessions",
+  "/dashboard/curriculum": "curriculum",
+  "/dashboard/certificates": "curriculum",
+  "/dashboard/challenges": "challenges",
+  "/dashboard/projects": "projects",
+  "/dashboard/content-review": "curriculum",
+  "/dashboard/payments": "payments",
+  "/dashboard/analytics": "analytics",
+  "/dashboard/fellows/applications": "fellowship",
+  "/dashboard/cohorts": "fellowship",
+  "/dashboard/partner-inquiries": "partner_inquiries",
+  "/dashboard/schools": "schools",
+  "/dashboard/testimonials": "testimonials",
+};
 import { SCHOOL_ROLES } from "@/lib/roles";
 import { NotificationsPopover } from "@/components/dashboard/notifications-popover";
 
@@ -44,6 +67,8 @@ type DashboardShellProps = {
     lastName: string;
     role: UserRoleValue;
     avatarUrl?: string | null;
+    /** Per-account capability areas (ADMIN/INSTRUCTOR); filters the nav to what they may view. */
+    permissions?: string[];
   };
   isEnrolled?: boolean;
   children: ReactNode;
@@ -177,7 +202,16 @@ export function DashboardShell({ user, isEnrolled = true, children }: DashboardS
   const [displayFirstName, setDisplayFirstName] = useState(user.firstName);
   const [displayLastName, setDisplayLastName] = useState(user.lastName);
   const [isDark, setIsDark] = useState(false);
-  const navItems = getNavItems(user.role, isEnrolled);
+  // For ADMIN/INSTRUCTOR, hide nav items outside their granted capability areas ("need to know").
+  // Other roles are never capability-filtered; unmapped items (Overview, Profile) always show.
+  const allNavItems = getNavItems(user.role, isEnrolled);
+  const navItems =
+    user.role === "ADMIN" || user.role === "INSTRUCTOR"
+      ? allNavItems.filter((item) => {
+          const cap = NAV_CAP[item.href];
+          return !cap || hasCapability({ role: user.role, permissions: user.permissions }, cap);
+        })
+      : allNavItems;
   const initials = getInitials(displayFirstName, displayLastName);
 
   useEffect(() => {

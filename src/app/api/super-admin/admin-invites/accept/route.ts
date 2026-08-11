@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { ALL_CAPABILITY_KEYS } from "@/lib/capabilities";
 import {
   adminInviteAcceptSchema,
   adminInviteValidateSchema,
@@ -125,6 +126,9 @@ export async function POST(request: Request) {
           passwordHash,
           role: invite.role,
           organizationId,
+          // Full-then-restrict: a new admin/instructor starts with every capability area; a super-admin
+          // narrows it afterwards in the Access panel.
+          permissions: ALL_CAPABILITY_KEYS,
           profile: { create: {} },
         },
         select: {

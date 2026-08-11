@@ -55,6 +55,10 @@ model User {
   createdAt                                                DateTime                 @default(now())
   updatedAt                                                DateTime                 @updatedAt
   canGrantRetakes                                          Boolean                  @default(true)
+  // Per-account "need to know" capability areas for ADMIN/INSTRUCTOR (keys from src/lib/capabilities.ts).
+  // A super-admin narrows an account to a subset; SUPER_ADMIN is never restricted; other roles ignore it.
+  // Empty = no areas. Existing admins were backfilled to ALL; new ones default to ALL at creation.
+  permissions                                              String[]                 @default([])
   adminInvitesCreated                                      AdminInvite[]            @relation("AdminInvitesCreated")
   adminInvitesUsed                                         AdminInvite[]            @relation("AdminInvitesUsed")
   analyticsEvents                                          AnalyticsEvent[]

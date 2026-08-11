@@ -4,6 +4,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { trackEvent } from "@/lib/analytics";
 import { adminAccountDeleteSchema, adminAccountUpdateSchema } from "@/lib/validators";
+import { isCapabilityKey } from "@/lib/capabilities";
 import { orgScope } from "@/lib/tenant";
 
 function ensureSuperAdmin(role: UserRole) {
@@ -38,6 +39,7 @@ export async function GET() {
       role: true,
       isActive: true,
       canGrantRetakes: true,
+      permissions: true,
       createdAt: true,
       updatedAt: true,
       adminInvitesUsed: {
@@ -67,6 +69,7 @@ export async function GET() {
       role: admin.role,
       isActive: admin.isActive,
       canGrantRetakes: admin.canGrantRetakes,
+      permissions: admin.permissions,
       createdAt: admin.createdAt,
       updatedAt: admin.updatedAt,
       invitedBy: admin.adminInvitesUsed[0]?.createdBy ?? null,
@@ -104,7 +107,19 @@ export async function PATCH(request: Request) {
 
     const isRetakeToggle = parsed.data.action === "enable-retakes" || parsed.data.action === "disable-retakes";
 
-    if (isRetakeToggle) {
+    if (parsed.data.action === "set-permissions") {
+      // Drop anything that is not a real capability key (a typo or a key from a stale client), and
+      // dedupe. An empty result is valid and means "no areas".
+      const cleaned = Array.from(new Set((parsed.data.permissions ?? []).filter(isCapabilityKey)));
+      await prisma.user.update({ where: { id: target.id }, data: { permissions: cleaned } });
+      await trackEvent({
+        userId: session.user.id,
+        organizationId: session.user.organizationId,
+        eventType: "auth",
+        eventName: "admin_permissions_set",
+        payload: { adminId: target.id, role: target.role, permissions: cleaned },
+      });
+    } else if (isRetakeToggle) {
       await prisma.user.update({
         where: { id: target.id },
         data: { canGrantRetakes: parsed.data.action === "enable-retakes" },

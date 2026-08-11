@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { UserRole } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
+import { guardDashboardCapability } from "@/lib/dashboard-capability";
 import { FellowApplicationsPanel } from "@/components/dashboard/fellow-applications-panel";
 import { PageHeader } from "@/components/dashboard/page-header";
 
@@ -10,6 +11,7 @@ export default async function FellowApplicationsPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login");
   if (!ALLOWED.includes(session.user.role as UserRole)) redirect("/dashboard");
+  guardDashboardCapability(session.user, "fellowship");
 
   return (
     <section className="space-y-4">
