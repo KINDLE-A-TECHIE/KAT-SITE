@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -201,19 +202,65 @@ function escapeHtml(value: string | number | null | undefined) {
     .replace(/'/g, "&#39;");
 }
 
-function TrendMiniCard<TPoint extends { label: string }>(props: TrendMiniCardProps<TPoint>) {
-  const max = useMemo(() => {
-    const values = props.points.map((point) => props.getValue(point));
-    return Math.max(1, ...values);
-  }, [props]);
+// Tracks the app's class-based dark mode so recharts (which needs concrete colors, not CSS vars) can
+// resolve the right hex. Observes the <html> class rather than reading a store, so it stays correct
+// however the theme was set.
+function useIsDark() {
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    const el = document.documentElement;
+    const update = () => setDark(el.classList.contains("dark"));
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(el, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+  return dark;
+}
 
-  const total = useMemo(
-    () => props.points.reduce((sum, point) => sum + props.getValue(point), 0),
+// A single-series chart needs one well-contrasting colour, not a categorical palette. Warm only (no
+// blue), keyed off the legacy colorClass so the call sites keep their per-measure variety.
+function chartColor(colorClass: string, isDark: boolean): string {
+  if (colorClass.includes("emerald")) return isDark ? "#5BBD96" : "#2E7D5B";
+  if (colorClass.includes("amber")) return isDark ? "#F2B705" : "#B57E05";
+  if (colorClass.includes("rose")) return isDark ? "#F26D6D" : "#BE3A2B";
+  return isDark ? "#E0673C" : "#B2401D"; // clay, the brand primary
+}
+
+function TrendTooltip({
+  active,
+  payload,
+  formatValue,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number; payload: { label: string } }>;
+  formatValue?: (value: number) => string;
+}) {
+  if (!active || !payload?.length) return null;
+  const point = payload[0];
+  return (
+    <div className="rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs shadow-md dark:border-stone-700 dark:bg-stone-900">
+      <p className="text-stone-500 dark:text-stone-400">{point.payload.label}</p>
+      <p className="font-semibold text-stone-900 dark:text-stone-100">
+        {formatValue ? formatValue(point.value) : point.value.toLocaleString()}
+      </p>
+    </div>
+  );
+}
+
+function TrendMiniCard<TPoint extends { label: string }>(props: TrendMiniCardProps<TPoint>) {
+  const isDark = useIsDark();
+  const color = chartColor(props.colorClass, isDark);
+  const gradientId = `trend-grad-${props.title.replace(/\W+/g, "")}`;
+
+  const data = useMemo(
+    () => props.points.map((point) => ({ label: point.label, value: props.getValue(point) })),
     [props],
   );
+  const total = useMemo(() => data.reduce((sum, d) => sum + d.value, 0), [data]);
 
   return (
-    <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3 shadow-sm">
+    <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{props.title}</p>
@@ -221,31 +268,51 @@ function TrendMiniCard<TPoint extends { label: string }>(props: TrendMiniCardPro
         </div>
         <div className="text-right">
           <p className="text-[11px] uppercase tracking-wide text-stone-500 dark:text-stone-400">Total</p>
-          <p className="text-xs font-semibold text-stone-900 dark:text-stone-100">
-            {props.formatValue ? props.formatValue(total) : total}
+          <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+            {props.formatValue ? props.formatValue(total) : total.toLocaleString()}
           </p>
         </div>
       </div>
-      <div className="mt-3 flex h-24 items-end gap-1.5">
-        {props.points.map((point) => {
-          const value = props.getValue(point);
-          const heightPercent = Math.round((value / max) * 100);
-          const barHeight = value === 0 ? 4 : Math.max(12, heightPercent);
-          return (
-            <div key={`${props.title}-${point.label}`} className="group relative flex flex-1 items-end">
-              <div
-                className={cn("w-full rounded-sm transition-opacity group-hover:opacity-90", props.colorClass)}
-                style={{ height: `${barHeight}%` }}
-                title={`${point.label}: ${props.formatValue ? props.formatValue(value) : value}`}
+      <div className="mt-2 h-28 w-full">
+        {data.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-xs text-stone-400 dark:text-stone-500">
+            No data in this range yet.
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data} margin={{ top: 6, right: 6, bottom: 0, left: 6 }}>
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke={isDark ? "#292524" : "#F0EDE7"} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 10, fill: isDark ? "#a8a29e" : "#78716c" }}
+                tickLine={false}
+                axisLine={false}
+                interval="preserveStartEnd"
+                minTickGap={28}
               />
-            </div>
-          );
-        })}
-      </div>
-      <div className="mt-2 flex items-center justify-between text-[11px] text-stone-500 dark:text-stone-400">
-        <span>{props.points[0]?.label ?? ""}</span>
-        <span>{props.points[Math.floor(props.points.length / 2)]?.label ?? ""}</span>
-        <span>{props.points[props.points.length - 1]?.label ?? ""}</span>
+              <YAxis hide domain={[0, "dataMax"]} />
+              <Tooltip
+                content={<TrendTooltip formatValue={props.formatValue} />}
+                cursor={{ stroke: color, strokeWidth: 1, strokeDasharray: "3 3" }}
+              />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke={color}
+                strokeWidth={2}
+                fill={`url(#${gradientId})`}
+                dot={false}
+                activeDot={{ r: 4, strokeWidth: 0, fill: color }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );
