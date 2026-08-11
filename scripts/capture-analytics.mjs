@@ -16,10 +16,12 @@ const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, d
 const page = await ctx.newPage();
 
 console.log("login…");
-// Warm the route so it is compiled; the second load hydrates fast.
-await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
-await page.waitForTimeout(2000);
-await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+// Warm the route so it is compiled; the second load hydrates fast. Use domcontentloaded + a fixed
+// pause instead of networkidle so a recompiling dev server does not blow the navigation timeout.
+page.setDefaultTimeout(60000);
+await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded", timeout: 60000 });
+await page.waitForTimeout(4000);
+await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded", timeout: 60000 });
 // Wait for React hydration before interacting, or the form does a native GET.
 await page.waitForTimeout(6000);
 await page.fill('input[type="email"]', EMAIL);
@@ -41,8 +43,28 @@ console.log("post-login url:", page.url());
 
 console.log("analytics…");
 await page.goto(`${BASE}/dashboard/analytics`, { waitUntil: "domcontentloaded" });
-await page.waitForSelector(".recharts-surface", { timeout: 30000 }).catch(() => console.log("no recharts surface found"));
-await page.waitForTimeout(2500);
+// Wait until recharts has actually PAINTED its marks (a bar with real width or an area path with a
+// real `d`), not merely mounted the <svg>. The marks animate in from zero, so screenshotting on the
+// bare surface freezes a blank frame. Then a short pause to let the entrance animation finish.
+async function waitForCharts() {
+  await page.waitForSelector(".recharts-surface", { timeout: 30000 }).catch(() => console.log("no recharts surface"));
+  await page
+    .waitForFunction(
+      () => {
+        for (const r of document.querySelectorAll(".recharts-rectangle")) {
+          if (r.getBoundingClientRect().width > 3) return true;
+        }
+        for (const a of document.querySelectorAll(".recharts-area-area, path.recharts-curve")) {
+          const d = a.getAttribute("d");
+          if (d && d.length > 40) return true;
+        }
+        return false;
+      },
+      { timeout: 15000 },
+    )
+    .catch(() => console.log("charts did not paint in time"));
+  await page.waitForTimeout(2000);
+}
 
 async function shot(name, opts = {}) {
   const file = `${OUT}/${name}`;
@@ -50,16 +72,20 @@ async function shot(name, opts = {}) {
   console.log("saved", file);
 }
 
-// Light mode, full page.
-await shot("analytics-charts-light.png", { fullPage: true });
+// B2C tab (default view), full page.
+await waitForCharts();
+await shot("analytics-b2c.png", { fullPage: true });
 
-// Dark mode: set the theme the way the app does (localStorage) and reload so the shell mounts
-// dark from the start. Toggling the class live makes the theme provider thrash and re-animate.
-await page.evaluate(() => localStorage.setItem("theme", "dark"));
-await page.goto(`${BASE}/dashboard/analytics`, { waitUntil: "domcontentloaded" });
-await page.waitForSelector(".recharts-surface", { timeout: 30000 }).catch(() => console.log("no recharts surface (dark)"));
-await page.waitForTimeout(3000);
-await shot("analytics-charts-dark.png", { fullPage: true });
+// Switch to the Schools (B2B) tab and capture it.
+const b2bTab = page.getByRole("tab", { name: "Schools (B2B)" });
+if (await b2bTab.count()) {
+  await b2bTab.click();
+  await page.waitForTimeout(600);
+  await waitForCharts();
+  await shot("analytics-b2b.png", { fullPage: true });
+} else {
+  console.log("no B2B tab found");
+}
 
 await browser.close();
 console.log("done");

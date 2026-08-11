@@ -1,5 +1,6 @@
 import {
   AttemptStatus,
+  CourseAudience,
   EnrollmentStatus,
   PaymentStatus,
   SchoolInvoiceStatus,
@@ -7,6 +8,7 @@ import {
   UserRole,
 } from "@prisma/client";
 import { prisma } from "./prisma";
+import { b2cUserScope } from "./tenant";
 
 type TrackEventInput = {
   userId?: string;
@@ -383,6 +385,16 @@ export async function getUserAnalytics(userId: string, rangeDays = 30) {
   };
 }
 
+/**
+ * B2C platform analytics for org staff.
+ *
+ * Scoped to the B2C tenant, NOT merely the organization. School-audience programmes, school pupil
+ * enrollments, and SCHOOL_STAFF/SCHOOL_STUDENT accounts share this organizationId (single-org
+ * deployment), so an organization-only filter would fold NERDC school content into the B2C
+ * leaderboards and user counts. Every people/enrollment/programme read here therefore also filters
+ * on `audience: B2C`, `schoolId: null`, or `b2cUserScope`. The B2B side is served separately by
+ * getSchoolOverview.
+ */
 export async function getPlatformAnalytics(organizationId: string, rangeDays = 30) {
   const trend = buildDateRange(rangeDays);
 
@@ -390,14 +402,14 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
   const [users, enrollments, successfulPayments, recentEvents, monitoredUsers] = await Promise.all([
     prisma.user.groupBy({
       by: ["role"],
-      where: { organizationId },
+      where: { organizationId, ...b2cUserScope },
       _count: { _all: true },
     }),
     prisma.enrollment.count({
-      where: { program: { organizationId } },
+      where: { program: { organizationId, audience: CourseAudience.B2C }, schoolId: null },
     }),
     prisma.payment.findMany({
-      where: { status: PaymentStatus.SUCCESS, user: { organizationId } },
+      where: { status: PaymentStatus.SUCCESS, user: { organizationId, ...b2cUserScope } },
       select: { amount: true, billingMonth: true },
     }),
     prisma.analyticsEvent.count({
@@ -420,13 +432,17 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
   const [enrollmentsInRange, successfulPaymentsInRange, activityEventsInRange, messagesInRange, cohorts] =
     await Promise.all([
       prisma.enrollment.findMany({
-        where: { program: { organizationId }, createdAt: { gte: trend.start } },
+        where: {
+          program: { organizationId, audience: CourseAudience.B2C },
+          schoolId: null,
+          createdAt: { gte: trend.start },
+        },
         select: { createdAt: true },
       }),
       prisma.payment.findMany({
         where: {
           status: PaymentStatus.SUCCESS,
-          user: { organizationId },
+          user: { organizationId, ...b2cUserScope },
           initializedAt: { gte: trend.start },
         },
         select: { amount: true, initializedAt: true },
@@ -438,7 +454,7 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
       prisma.message.findMany({
         where: {
           createdAt: { gte: trend.start },
-          thread: { participants: { some: { user: { organizationId } } } },
+          thread: { participants: { some: { user: { organizationId, ...b2cUserScope } } } },
         },
         select: { createdAt: true },
       }),
@@ -459,7 +475,7 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
   const [programs, cohortRevenueRows, programRevenueRows, programAssessmentRows, gradingBacklog] =
     await Promise.all([
       prisma.program.findMany({
-        where: { organizationId },
+        where: { organizationId, audience: CourseAudience.B2C },
         select: { id: true, name: true, enrollments: { select: { status: true } } },
         take: 50,
       }),
@@ -468,7 +484,7 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
         where: {
           status: PaymentStatus.SUCCESS,
           fellowApplicationId: { not: null },
-          user: { organizationId },
+          user: { organizationId, ...b2cUserScope },
         },
         select: { amount: true, fellowApplication: { select: { cohortId: true } } },
       }),
@@ -477,13 +493,13 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
         where: {
           status: PaymentStatus.SUCCESS,
           enrollmentId: { not: null },
-          user: { organizationId },
+          user: { organizationId, ...b2cUserScope },
         },
         select: { amount: true, programId: true },
       }),
-      // Assessment analytics: per-program stats
+      // Assessment analytics: per-program stats (B2C only; school exams live in getSchoolOverview)
       prisma.program.findMany({
-        where: { organizationId },
+        where: { organizationId, audience: CourseAudience.B2C },
         select: {
           id: true,
           name: true,
@@ -501,14 +517,16 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
       // Grading backlog: submitted but not yet graded
       prisma.assessmentSubmission.count({
         where: {
-          assessment: { program: { organizationId }, published: true },
+          assessment: { program: { organizationId, audience: CourseAudience.B2C }, published: true },
           status: AttemptStatus.SUBMITTED,
           gradedAt: null,
         },
       }),
     ]);
 
-  const roleBreakdown = users.reduce<Record<UserRole, number>>(
+  // Only B2C roles: the query already excludes SCHOOL_STAFF/SCHOOL_STUDENT via b2cUserScope, so they
+  // are intentionally absent from this breakdown rather than shown as permanent zeros.
+  const roleBreakdown = users.reduce<Partial<Record<UserRole, number>>>(
     (acc, row) => {
       acc[row.role] = row._count._all;
       return acc;
@@ -520,8 +538,6 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
       FELLOW: 0,
       STUDENT: 0,
       PARENT: 0,
-      SCHOOL_STAFF: 0,
-      SCHOOL_STUDENT: 0,
     },
   );
 

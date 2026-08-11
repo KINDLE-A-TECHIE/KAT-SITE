@@ -324,6 +324,7 @@ function TrendMiniCard<TPoint extends { label: string }>(props: TrendMiniCardPro
                 fill={`url(#${gradientId})`}
                 dot={false}
                 activeDot={{ r: 4, strokeWidth: 0, fill: color }}
+                isAnimationActive={false}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -431,7 +432,7 @@ function HBarChart({
             cursor={{ fill: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)" }}
             content={<HBarTooltip formatValue={formatValue} />}
           />
-          <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={barSize} fill={baseColor}>
+          <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={barSize} fill={baseColor} isAnimationActive={false}>
             {data.map((entry, index) => (
               <Cell key={`bar-${index}`} fill={entry.colorClass ? chartColor(entry.colorClass, isDark) : baseColor} />
             ))}
@@ -489,6 +490,7 @@ function RadialGauge({
             cornerRadius={compact ? 6 : 10}
             fill={color}
             background={{ fill: isDark ? "#292524" : "#EFEAE1" }}
+            isAnimationActive={false}
           />
         </RadialBarChart>
       </ResponsiveContainer>
@@ -523,6 +525,9 @@ function recommendationToneClass(tone: RecommendationTone) {
 export function AnalyticsPanel() {
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<RangeValue>("30d");
+  // Which business line the admin is viewing. B2C (platform) and B2B (schools) are kept on separate
+  // tabs so their metrics never read as one blended number.
+  const [view, setView] = useState<"b2c" | "b2b">("b2c");
   const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
   const [monthlyPayments, setMonthlyPayments] = useState<PaymentsResponse["monthly"]>({});
   const [scorecards, setScorecards] = useState<InstructorScorecard[]>([]);
@@ -623,6 +628,11 @@ export function AnalyticsPanel() {
     [analytics],
   );
   const primaryActivityLabel = analytics?.userAnalytics.activityLabel ?? "Assessments Submitted";
+  // Show the B2C/B2B tabs only when the viewer has both business lines (an org admin). Without both,
+  // whichever block exists renders on its own with no toggle.
+  const showTabs = Boolean(analytics?.platformAnalytics && analytics?.schoolAnalytics);
+  const showB2c = !showTabs || view === "b2c";
+  const showB2b = !showTabs || view === "b2b";
 
   const headlineSignals = useMemo(() => {
     if (!analytics?.platformAnalytics) {
@@ -1407,7 +1417,36 @@ export function AnalyticsPanel() {
         )}
       </section>
 
-      {analytics?.platformAnalytics ? (
+      {showTabs && (
+        <div
+          role="tablist"
+          aria-label="Analytics business line"
+          className="flex w-fit items-center gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1 dark:border-stone-800 dark:bg-stone-900/60"
+        >
+          {([
+            ["b2c", "B2C Platform"],
+            ["b2b", "Schools (B2B)"],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={view === key}
+              onClick={() => setView(key)}
+              className={cn(
+                "rounded-lg px-4 py-1.5 text-sm font-medium transition-colors max-[360px]:px-3 max-[360px]:text-xs",
+                view === key
+                  ? "bg-white text-stone-900 shadow-sm dark:bg-stone-800 dark:text-stone-100"
+                  : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {showB2c && analytics?.platformAnalytics ? (
         <>
           <section className="kat-card">
             <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">Platform Metrics</h3>
@@ -1829,7 +1868,7 @@ export function AnalyticsPanel() {
         </>
       ) : null}
 
-      {analytics?.schoolAnalytics ? (
+      {showB2b && analytics?.schoolAnalytics ? (
         <>
           <section className="kat-card">
             <div className="flex flex-wrap items-start justify-between gap-2">
@@ -1959,7 +1998,7 @@ export function AnalyticsPanel() {
         </>
       ) : null}
 
-      {analytics?.scope === "platform" && scorecards.length > 0 && (
+      {showB2c && analytics?.scope === "platform" && scorecards.length > 0 && (
         <section className="kat-card">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
@@ -2044,6 +2083,7 @@ export function AnalyticsPanel() {
         </section>
       )}
 
+      {showB2c && (
       <section className="kat-card">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100 max-[360px]:text-base">Monthly Revenue Tracking</h3>
@@ -2089,6 +2129,7 @@ export function AnalyticsPanel() {
           </table>
         </div>
       </section>
+      )}
     </div>
   );
 }
