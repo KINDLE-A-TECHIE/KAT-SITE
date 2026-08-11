@@ -2,7 +2,22 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  LabelList,
+  PolarAngleAxis,
+  RadialBar,
+  RadialBarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -336,6 +351,151 @@ function PercentageBar({ value, colorClass }: { value: number; colorClass: strin
   return (
     <div className="h-2.5 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-700">
       <div className={cn("h-full rounded-full", colorClass)} style={{ width: `${width}%` }} />
+    </div>
+  );
+}
+
+// Tooltip for the horizontal ranked bars. Shows the row label and its formatted value.
+function HBarTooltip({
+  active,
+  payload,
+  formatValue,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number; payload: { label: string; full?: string } }>;
+  formatValue?: (value: number) => string;
+}) {
+  if (!active || !payload?.length) return null;
+  const point = payload[0];
+  return (
+    <div className="max-w-[220px] rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs shadow-md dark:border-stone-700 dark:bg-stone-900">
+      <p className="truncate text-stone-500 dark:text-stone-400">{point.payload.full ?? point.payload.label}</p>
+      <p className="font-semibold text-stone-900 dark:text-stone-100">
+        {formatValue ? formatValue(point.value) : point.value.toLocaleString()}
+      </p>
+    </div>
+  );
+}
+
+type HBarDatum = { label: string; value: number; full?: string; colorClass?: string };
+
+// A ranked horizontal bar chart: one warm series, value labels at the end of each bar, a category
+// axis on the left. Used for role/programme/cohort rankings. Single-series, so no legend needed.
+function HBarChart({
+  data,
+  colorClass = "bg-clay",
+  formatValue,
+  domainMax,
+  labelWidth = 132,
+  barSize = 16,
+}: {
+  data: HBarDatum[];
+  colorClass?: string;
+  formatValue?: (value: number) => string;
+  domainMax?: number;
+  labelWidth?: number;
+  barSize?: number;
+}) {
+  const isDark = useIsDark();
+  const baseColor = chartColor(colorClass, isDark);
+  const height = Math.max(96, data.length * (barSize + 18) + 16);
+
+  if (data.length === 0) {
+    return (
+      <div className="flex h-24 items-center justify-center text-xs text-stone-400 dark:text-stone-500">
+        No data in this range yet.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ height }} className="w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ top: 4, right: 52, bottom: 4, left: 4 }}
+          barCategoryGap="28%"
+        >
+          <CartesianGrid horizontal={false} stroke={isDark ? "#292524" : "#F0EDE7"} />
+          <XAxis type="number" hide domain={[0, domainMax ?? "dataMax"]} />
+          <YAxis
+            type="category"
+            dataKey="label"
+            width={labelWidth}
+            tick={{ fontSize: 12, fill: isDark ? "#d6d3d1" : "#44403c" }}
+            tickLine={false}
+            axisLine={false}
+          />
+          <Tooltip
+            cursor={{ fill: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)" }}
+            content={<HBarTooltip formatValue={formatValue} />}
+          />
+          <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={barSize} fill={baseColor}>
+            {data.map((entry, index) => (
+              <Cell key={`bar-${index}`} fill={entry.colorClass ? chartColor(entry.colorClass, isDark) : baseColor} />
+            ))}
+            <LabelList
+              dataKey="value"
+              position="right"
+              offset={8}
+              style={{ fontSize: 11, fontWeight: 600, fill: isDark ? "#d6d3d1" : "#57534e" }}
+              formatter={(value: number) => (formatValue ? formatValue(value) : value.toLocaleString())}
+            />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// A radial gauge for a single 0-100 percentage (seat utilisation). Colour shifts by pressure:
+// pine below 70, sun 70-89, clay-deep at 90+ (nearing capacity). Value shown in the middle.
+function RadialGauge({
+  value,
+  caption,
+  height = 176,
+  compact = false,
+}: {
+  value: number;
+  caption?: string;
+  height?: number;
+  compact?: boolean;
+}) {
+  const isDark = useIsDark();
+  const pct = Math.max(0, Math.min(100, Math.round(value)));
+  const color =
+    pct >= 90
+      ? chartColor("rose", isDark)
+      : pct >= 70
+        ? chartColor("amber", isDark)
+        : chartColor("emerald", isDark);
+  const data = [{ name: "used", value: pct }];
+
+  return (
+    <div className="relative w-full" style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <RadialBarChart
+          data={data}
+          innerRadius={compact ? "66%" : "72%"}
+          outerRadius="100%"
+          startAngle={90}
+          endAngle={-270}
+        >
+          <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+          <RadialBar
+            dataKey="value"
+            angleAxisId={0}
+            cornerRadius={compact ? 6 : 10}
+            fill={color}
+            background={{ fill: isDark ? "#292524" : "#EFEAE1" }}
+          />
+        </RadialBarChart>
+      </ResponsiveContainer>
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+        <span className={cn("font-bold text-stone-900 dark:text-stone-100", compact ? "text-lg" : "text-3xl")}>{pct}%</span>
+        {caption ? <span className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{caption}</span> : null}
+      </div>
     </div>
   );
 }
@@ -1271,13 +1431,20 @@ export function AnalyticsPanel() {
                 </p>
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {Object.entries(analytics.platformAnalytics.roleBreakdown).map(([role, count]) => (
-                <div key={role} className="rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/60 p-3">
-                  <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">{role}</p>
-                  <p className="mt-1 text-lg font-semibold text-stone-900 dark:text-stone-100">{count}</p>
-                </div>
-              ))}
+            <div className="mt-4">
+              <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">Users by role</p>
+              <div className="mt-2">
+                <HBarChart
+                  data={Object.entries(analytics.platformAnalytics.roleBreakdown)
+                    .map(([role, count]) => ({
+                      label: role.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()),
+                      full: role,
+                      value: count,
+                    }))
+                    .sort((a, b) => b.value - a.value)}
+                  labelWidth={128}
+                />
+              </div>
             </div>
           </section>
 
@@ -1335,7 +1502,27 @@ export function AnalyticsPanel() {
                   </div>
                 )}
               </div>
-              <div className="mt-3 overflow-x-auto overflow-y-auto pb-1">
+              {(() => {
+                const passData = analytics.platformAnalytics.assessmentAnalytics.programStats
+                  .filter((p): p is typeof p & { passRate: number } => p.passRate !== null)
+                  .map((p) => ({
+                    label: p.programName.length > 22 ? `${p.programName.slice(0, 21)}…` : p.programName,
+                    full: p.programName,
+                    value: p.passRate,
+                    colorClass:
+                      p.passRate >= 75 ? "bg-emerald-500" : p.passRate >= 60 ? "bg-amber-500" : "bg-rose-500",
+                  }))
+                  .sort((a, b) => b.value - a.value);
+                return passData.length > 0 ? (
+                  <div className="mt-3">
+                    <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">Pass rate by programme</p>
+                    <div className="mt-2">
+                      <HBarChart data={passData} domainMax={100} labelWidth={150} formatValue={(v) => `${v}%`} />
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+              <div className="mt-4 overflow-x-auto overflow-y-auto pb-1">
                 <table className="min-w-[720px] w-full text-sm max-[360px]:text-xs">
                   <thead>
                     <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
@@ -1499,7 +1686,24 @@ export function AnalyticsPanel() {
                   Export
                 </Button>
               </div>
-              <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
+              {analytics.platformAnalytics.cohortLeaderboard.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">Completion rate by cohort</p>
+                  <div className="mt-2">
+                    <HBarChart
+                      data={analytics.platformAnalytics.cohortLeaderboard.map((cohort) => ({
+                        label: cohort.name.length > 22 ? `${cohort.name.slice(0, 21)}…` : cohort.name,
+                        full: `${cohort.name} · ${cohort.programName}`,
+                        value: cohort.completionRate,
+                      }))}
+                      domainMax={100}
+                      labelWidth={150}
+                      formatValue={(v) => `${v}%`}
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="mt-4 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
                 <table className="min-w-[760px] w-full text-sm max-[360px]:text-xs">
                   <thead>
                     <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
@@ -1565,7 +1769,24 @@ export function AnalyticsPanel() {
                 Export
               </Button>
             </div>
-            <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
+            {analytics.platformAnalytics.programLeaderboard.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">Completion rate by programme</p>
+                <div className="mt-2">
+                  <HBarChart
+                    data={analytics.platformAnalytics.programLeaderboard.map((program) => ({
+                      label: program.name.length > 22 ? `${program.name.slice(0, 21)}…` : program.name,
+                      full: program.name,
+                      value: program.completionRate,
+                    }))}
+                    domainMax={100}
+                    labelWidth={150}
+                    formatValue={(v) => `${v}%`}
+                  />
+                </div>
+              </div>
+            )}
+            <div className="mt-4 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
               <table className="min-w-[760px] w-full text-sm max-[360px]:text-xs">
                 <thead>
                   <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
@@ -1659,11 +1880,8 @@ export function AnalyticsPanel() {
                   <span className="text-base font-normal text-stone-500 dark:text-stone-400"> / {analytics.schoolAnalytics.seatLimit}</span>
                 </p>
                 {analytics.schoolAnalytics.seatUtilization !== null && (
-                  <div className="mt-2">
-                    <PercentageBar
-                      value={analytics.schoolAnalytics.seatUtilization}
-                      colorClass={analytics.schoolAnalytics.seatUtilization >= 90 ? "bg-rose-500" : analytics.schoolAnalytics.seatUtilization >= 70 ? "bg-amber-500" : "bg-emerald-500"}
-                    />
+                  <div className="mt-1">
+                    <RadialGauge value={analytics.schoolAnalytics.seatUtilization} height={92} compact caption="utilised" />
                   </div>
                 )}
               </div>
