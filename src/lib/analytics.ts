@@ -33,6 +33,8 @@ type PlatformTrendPoint = {
   revenue: number;
   activityEvents: number;
   messagesSent: number;
+  activeLearners: number;
+  completions: number;
 };
 
 type SchoolTrendPoint = {
@@ -198,6 +200,143 @@ function scoreRisk(input: {
   }
 
   return score;
+}
+
+// Default page size for leaderboards / per-school breakdown, used for the first-page preview in the
+// main analytics payload and by the paginated /api/analytics/list endpoint.
+export const ANALYTICS_PAGE_SIZE = 8;
+
+// B2C learner roles. "Active learners" and completions count these, never staff or school accounts.
+const LEARNER_ROLES = [UserRole.STUDENT, UserRole.FELLOW] as const;
+
+type ProgramLeaderboardRow = { id: string; name: string; enrollments: { status: EnrollmentStatus }[] };
+type ProgramRevenueRow = { amount: unknown; programId: string | null };
+
+// Single source of truth for the programme leaderboard shape + ordering. Returns the FULL sorted
+// list (no slice) so callers can either preview the head or page through it.
+function buildProgramLeaderboard(
+  programs: ProgramLeaderboardRow[],
+  programRevenueRows: ProgramRevenueRow[],
+): ProgramLeaderboardItem[] {
+  const revenueByProgramId = new Map<string, number>();
+  for (const row of programRevenueRows) {
+    if (!row.programId) continue;
+    revenueByProgramId.set(row.programId, (revenueByProgramId.get(row.programId) ?? 0) + Number(row.amount));
+  }
+  return programs
+    .map((program) => {
+      const enrollmentCount = program.enrollments.length;
+      const completed = program.enrollments.filter((e) => e.status === EnrollmentStatus.COMPLETED).length;
+      const completionRate = enrollmentCount === 0 ? 0 : roundToOneDecimal((completed / enrollmentCount) * 100);
+      return {
+        programId: program.id,
+        name: program.name,
+        enrollments: enrollmentCount,
+        completed,
+        completionRate,
+        revenue: Number(revenueByProgramId.get(program.id) ?? 0),
+      };
+    })
+    .sort((a, b) => b.completionRate - a.completionRate || b.revenue - a.revenue || b.enrollments - a.enrollments);
+}
+
+type CohortLeaderboardRow = {
+  id: string;
+  name: string;
+  program: { name: string } | null;
+  fellowApplications: { id: string }[];
+  meetings: { participants: { joinedAt: Date | null }[] }[];
+};
+type CohortRevenueRow = { amount: unknown; fellowApplication: { cohortId: string | null } | null };
+
+// Single source of truth for the cohort leaderboard shape + ordering. Full sorted list, no slice.
+function buildCohortLeaderboard(
+  cohorts: CohortLeaderboardRow[],
+  cohortRevenueRows: CohortRevenueRow[],
+): CohortLeaderboardItem[] {
+  const revenueByCohortId = new Map<string, number>();
+  for (const row of cohortRevenueRows) {
+    const cohortId = row.fellowApplication?.cohortId;
+    if (!cohortId) continue;
+    revenueByCohortId.set(cohortId, (revenueByCohortId.get(cohortId) ?? 0) + Number(row.amount));
+  }
+  return cohorts
+    .map((cohort) => {
+      const fellowCount = cohort.fellowApplications.length;
+      const participantTotal = cohort.meetings.reduce((sum, meeting) => sum + meeting.participants.length, 0);
+      const participantJoined = cohort.meetings.reduce(
+        (sum, meeting) => sum + meeting.participants.filter((participant) => participant.joinedAt).length,
+        0,
+      );
+      const meetingAttendanceRate =
+        participantTotal === 0 ? 0 : roundToOneDecimal((participantJoined / participantTotal) * 100);
+      return {
+        cohortId: cohort.id,
+        name: cohort.name,
+        programName: cohort.program?.name ?? ", ",
+        enrollments: fellowCount,
+        completionRate: 0,
+        meetingAttendanceRate,
+        revenue: Number(revenueByCohortId.get(cohort.id) ?? 0),
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.meetingAttendanceRate - a.meetingAttendanceRate ||
+        b.enrollments - a.enrollments ||
+        b.revenue - a.revenue,
+    );
+}
+
+type SchoolLicenseRow = { schoolId: string; status: SchoolLicenseStatus; seatLimit: number; seatsUsed: number };
+
+// Single source of truth for the per-school breakdown shape + ordering. Full sorted list, no slice.
+function buildSchoolSummaries(
+  schools: { id: string; name: string }[],
+  licenses: SchoolLicenseRow[],
+  paidInvoices: { schoolId: string; amount: unknown }[],
+  classGroups: { schoolId: string; _count: { _all: number } }[],
+  pupilGroups: { schoolId: string | null; _count: { _all: number } }[],
+): SchoolSummary[] {
+  const classCountBySchool = new Map<string, number>(classGroups.map((row) => [row.schoolId, row._count._all]));
+  const pupilCountBySchool = new Map<string, number>(
+    pupilGroups
+      .filter((row): row is typeof row & { schoolId: string } => row.schoolId !== null)
+      .map((row) => [row.schoolId, row._count._all]),
+  );
+
+  const licenseAgg = new Map<string, { active: number; seatLimit: number; seatsUsed: number }>();
+  for (const license of licenses) {
+    if (license.status !== SchoolLicenseStatus.ACTIVE) {
+      continue;
+    }
+    const entry = licenseAgg.get(license.schoolId) ?? { active: 0, seatLimit: 0, seatsUsed: 0 };
+    entry.active += 1;
+    entry.seatLimit += license.seatLimit;
+    entry.seatsUsed += license.seatsUsed;
+    licenseAgg.set(license.schoolId, entry);
+  }
+
+  const paidRevenueBySchool = new Map<string, number>();
+  for (const invoice of paidInvoices) {
+    paidRevenueBySchool.set(invoice.schoolId, (paidRevenueBySchool.get(invoice.schoolId) ?? 0) + Number(invoice.amount));
+  }
+
+  return schools
+    .map((school) => {
+      const lic = licenseAgg.get(school.id);
+      return {
+        schoolId: school.id,
+        name: school.name,
+        activeLicenses: lic?.active ?? 0,
+        seatLimit: lic?.seatLimit ?? 0,
+        seatsUsed: lic?.seatsUsed ?? 0,
+        paidRevenue: paidRevenueBySchool.get(school.id) ?? 0,
+        classCount: classCountBySchool.get(school.id) ?? 0,
+        pupilCount: pupilCountBySchool.get(school.id) ?? 0,
+      };
+    })
+    .sort((a, b) => b.paidRevenue - a.paidRevenue || b.pupilCount - a.pupilCount);
 }
 
 export async function trackEvent(input: TrackEventInput) {
@@ -524,6 +663,30 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
       }),
     ]);
 
+  // Batch 4: B2C learner engagement (active learners + completions) and pagination totals.
+  const [learnerLoginsInRange, completionsInRange, programCount, cohortCount] = await Promise.all([
+    prisma.analyticsEvent.findMany({
+      where: {
+        organizationId,
+        eventType: "auth",
+        eventName: "login",
+        occurredAt: { gte: trend.start },
+        user: { role: { in: [...LEARNER_ROLES] } },
+      },
+      select: { userId: true, occurredAt: true },
+    }),
+    prisma.enrollment.findMany({
+      where: {
+        program: { organizationId, audience: CourseAudience.B2C },
+        schoolId: null,
+        completedAt: { gte: trend.start },
+      },
+      select: { completedAt: true },
+    }),
+    prisma.program.count({ where: { organizationId, audience: CourseAudience.B2C } }),
+    prisma.cohort.count({ where: { organizationId } }),
+  ]);
+
   // Only B2C roles: the query already excludes SCHOOL_STAFF/SCHOOL_STUDENT via b2cUserScope, so they
   // are intentionally absent from this breakdown rather than shown as permanent zeros.
   const roleBreakdown = users.reduce<Partial<Record<UserRole, number>>>(
@@ -555,6 +718,8 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
         revenue: 0,
         activityEvents: 0,
         messagesSent: 0,
+        activeLearners: 0,
+        completions: 0,
       },
     ]),
   );
@@ -590,6 +755,45 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
       point.messagesSent += 1;
     }
   }
+
+  // Active learners per day = distinct B2C learners who logged in that day.
+  const learnersByDay = new Map<string, Set<string>>();
+  for (const event of learnerLoginsInRange) {
+    if (!event.userId) {
+      continue;
+    }
+    const key = keyFromDate(event.occurredAt);
+    if (!platformTrendByDate.has(key)) {
+      continue;
+    }
+    const set = learnersByDay.get(key) ?? new Set<string>();
+    set.add(event.userId);
+    learnersByDay.set(key, set);
+  }
+  for (const [key, set] of learnersByDay) {
+    const point = platformTrendByDate.get(key);
+    if (point) {
+      point.activeLearners = set.size;
+    }
+  }
+
+  for (const enrollment of completionsInRange) {
+    if (!enrollment.completedAt) {
+      continue;
+    }
+    const point = platformTrendByDate.get(keyFromDate(enrollment.completedAt));
+    if (point) {
+      point.completions += 1;
+    }
+  }
+
+  // Distinct active learners in the last 7 days, independent of the selected trend range.
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const activeLearners7d = new Set(
+    learnerLoginsInRange
+      .filter((event) => event.userId && event.occurredAt >= sevenDaysAgo)
+      .map((event) => event.userId as string),
+  ).size;
 
   const latestLoginByUserId = new Map<string, Date>();
   if (monitoredUsers.length > 0) {
@@ -716,43 +920,8 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
     .sort((a, b) => b.riskScore - a.riskScore || b.unreadMessages - a.unreadMessages)
     .slice(0, 8);
 
-  // Revenue by cohort = application fees from external applicants.
-  const revenueByCohortId = new Map<string, number>();
-  for (const row of cohortRevenueRows) {
-    const cohortId = row.fellowApplication?.cohortId;
-    if (!cohortId) continue;
-    revenueByCohortId.set(cohortId, (revenueByCohortId.get(cohortId) ?? 0) + Number(row.amount));
-  }
-
-  const cohortLeaderboard: CohortLeaderboardItem[] = cohorts
-    .map((cohort) => {
-      const fellowCount = cohort.fellowApplications.length;
-
-      const participantTotal = cohort.meetings.reduce((sum, meeting) => sum + meeting.participants.length, 0);
-      const participantJoined = cohort.meetings.reduce(
-        (sum, meeting) => sum + meeting.participants.filter((participant) => participant.joinedAt).length,
-        0,
-      );
-      const meetingAttendanceRate =
-        participantTotal === 0 ? 0 : roundToOneDecimal((participantJoined / participantTotal) * 100);
-
-      return {
-        cohortId: cohort.id,
-        name: cohort.name,
-        programName: cohort.program?.name ?? ", ",
-        enrollments: fellowCount,
-        completionRate: 0,
-        meetingAttendanceRate,
-        revenue: Number(revenueByCohortId.get(cohort.id) ?? 0),
-      };
-    })
-    .sort(
-      (a, b) =>
-        b.meetingAttendanceRate - a.meetingAttendanceRate ||
-        b.enrollments - a.enrollments ||
-        b.revenue - a.revenue,
-    )
-    .slice(0, 8);
+  // First-page preview; the full list is paged via /api/analytics/list.
+  const cohortLeaderboard = buildCohortLeaderboard(cohorts, cohortRevenueRows).slice(0, ANALYTICS_PAGE_SIZE);
 
   // Assessment analytics per program
   const assessmentProgramStats: AssessmentProgramStat[] = programAssessmentRows.map((program) => {
@@ -801,46 +970,24 @@ export async function getPlatformAnalytics(organizationId: string, rangeDays = 3
     };
   });
 
-  const revenueByProgramId = new Map<string, number>();
-  for (const row of programRevenueRows) {
-    if (!row.programId) {
-      continue;
-    }
-    revenueByProgramId.set(row.programId, (revenueByProgramId.get(row.programId) ?? 0) + Number(row.amount));
-  }
-
-  const programLeaderboard: ProgramLeaderboardItem[] = programs
-    .map((program) => {
-      const enrollmentCount = program.enrollments.length;
-      const completed = program.enrollments.filter(
-        (enrollment) => enrollment.status === EnrollmentStatus.COMPLETED,
-      ).length;
-      const completionRate =
-        enrollmentCount === 0 ? 0 : roundToOneDecimal((completed / enrollmentCount) * 100);
-      return {
-        programId: program.id,
-        name: program.name,
-        enrollments: enrollmentCount,
-        completed,
-        completionRate,
-        revenue: Number(revenueByProgramId.get(program.id) ?? 0),
-      };
-    })
-    .sort((a, b) => b.completionRate - a.completionRate || b.revenue - a.revenue || b.enrollments - a.enrollments)
-    .slice(0, 8);
+  // First-page preview; the full list is paged via /api/analytics/list.
+  const programLeaderboard = buildProgramLeaderboard(programs, programRevenueRows).slice(0, ANALYTICS_PAGE_SIZE);
 
   return {
     roleBreakdown,
     enrollmentCount: enrollments,
     totalRevenue,
     activityEvents7d: recentEvents,
+    activeLearners7d,
     trends: {
       rangeDays,
       points: trend.keys.map((key) => platformTrendByDate.get(key)!),
     },
     riskAlerts,
     cohortLeaderboard,
+    cohortLeaderboardTotal: cohortCount,
     programLeaderboard,
+    programLeaderboardTotal: programCount,
     assessmentAnalytics: {
       programStats: assessmentProgramStats,
       gradingBacklog,
@@ -890,35 +1037,6 @@ export async function getSchoolOverview(rangeDays = 30) {
       }),
     ]);
 
-  const classCountBySchool = new Map<string, number>(
-    classGroups.map((row) => [row.schoolId, row._count._all]),
-  );
-  const pupilCountBySchool = new Map<string, number>(
-    pupilGroups
-      .filter((row): row is typeof row & { schoolId: string } => row.schoolId !== null)
-      .map((row) => [row.schoolId, row._count._all]),
-  );
-
-  const licenseAgg = new Map<string, { active: number; seatLimit: number; seatsUsed: number }>();
-  for (const license of licenses) {
-    if (license.status !== SchoolLicenseStatus.ACTIVE) {
-      continue;
-    }
-    const entry = licenseAgg.get(license.schoolId) ?? { active: 0, seatLimit: 0, seatsUsed: 0 };
-    entry.active += 1;
-    entry.seatLimit += license.seatLimit;
-    entry.seatsUsed += license.seatsUsed;
-    licenseAgg.set(license.schoolId, entry);
-  }
-
-  const paidRevenueBySchool = new Map<string, number>();
-  for (const invoice of paidInvoices) {
-    paidRevenueBySchool.set(
-      invoice.schoolId,
-      (paidRevenueBySchool.get(invoice.schoolId) ?? 0) + Number(invoice.amount),
-    );
-  }
-
   const schoolTrendByDate = new Map<string, SchoolTrendPoint>(
     trend.keys.map((key) => [
       key,
@@ -938,31 +1056,17 @@ export async function getSchoolOverview(rangeDays = 30) {
     }
   }
 
-  const summaries: SchoolSummary[] = schools
-    .map((school) => {
-      const lic = licenseAgg.get(school.id);
-      return {
-        schoolId: school.id,
-        name: school.name,
-        activeLicenses: lic?.active ?? 0,
-        seatLimit: lic?.seatLimit ?? 0,
-        seatsUsed: lic?.seatsUsed ?? 0,
-        paidRevenue: paidRevenueBySchool.get(school.id) ?? 0,
-        classCount: classCountBySchool.get(school.id) ?? 0,
-        pupilCount: pupilCountBySchool.get(school.id) ?? 0,
-      };
-    })
-    .sort((a, b) => b.paidRevenue - a.paidRevenue || b.pupilCount - a.pupilCount)
-    .slice(0, 20);
+  const summariesAll = buildSchoolSummaries(schools, licenses, paidInvoices, classGroups, pupilGroups);
 
-  // Headline totals span every school, not just the top-20 shown in the table.
-  const seatLimit = Array.from(licenseAgg.values()).reduce((sum, l) => sum + l.seatLimit, 0);
-  const seatsUsed = Array.from(licenseAgg.values()).reduce((sum, l) => sum + l.seatsUsed, 0);
+  // Headline totals span every school, not just the first page shown in the table.
+  const activeLicenses = licenses.filter((license) => license.status === SchoolLicenseStatus.ACTIVE);
+  const seatLimit = activeLicenses.reduce((sum, license) => sum + license.seatLimit, 0);
+  const seatsUsed = activeLicenses.reduce((sum, license) => sum + license.seatsUsed, 0);
 
   return {
     schoolCount: schools.length,
-    activeSchoolCount: licenseAgg.size,
-    activeLicenseCount: Array.from(licenseAgg.values()).reduce((sum, l) => sum + l.active, 0),
+    activeSchoolCount: new Set(activeLicenses.map((license) => license.schoolId)).size,
+    activeLicenseCount: activeLicenses.length,
     seatLimit,
     seatsUsed,
     seatUtilization: seatLimit === 0 ? null : roundToOneDecimal((seatsUsed / seatLimit) * 100),
@@ -975,6 +1079,79 @@ export async function getSchoolOverview(rangeDays = 30) {
       rangeDays,
       points: trend.keys.map((key) => schoolTrendByDate.get(key)!),
     },
-    schools: summaries,
+    schools: summariesAll.slice(0, ANALYTICS_PAGE_SIZE),
+    schoolTotal: summariesAll.length,
   };
+}
+
+/**
+ * Paginated slices of the analytics leaderboards / per-school breakdown, backing GET
+ * /api/analytics/list. Same shapes, ordering, and B2C scoping as the previews in
+ * getPlatformAnalytics / getSchoolOverview, but returns any page rather than only the head.
+ */
+export type AnalyticsListType = "programs" | "cohorts" | "schools";
+
+export async function getAnalyticsListPage(
+  type: AnalyticsListType,
+  options: { organizationId: string | null; page: number; pageSize: number },
+) {
+  const page = Math.max(1, Math.floor(options.page));
+  const pageSize = Math.min(50, Math.max(1, Math.floor(options.pageSize)));
+  const skip = (page - 1) * pageSize;
+
+  if (type === "schools") {
+    const [schools, licenses, paidInvoices, classGroups, pupilGroups] = await Promise.all([
+      prisma.school.findMany({ select: { id: true, name: true } }),
+      prisma.schoolLicense.findMany({ select: { schoolId: true, status: true, seatLimit: true, seatsUsed: true } }),
+      prisma.schoolInvoice.findMany({
+        where: { status: SchoolInvoiceStatus.PAID },
+        select: { schoolId: true, amount: true },
+      }),
+      prisma.schoolClass.groupBy({ by: ["schoolId"], _count: { _all: true } }),
+      prisma.enrollment.groupBy({ by: ["schoolId"], where: { schoolId: { not: null } }, _count: { _all: true } }),
+    ]);
+    const all = buildSchoolSummaries(schools, licenses, paidInvoices, classGroups, pupilGroups);
+    return { items: all.slice(skip, skip + pageSize), total: all.length, page, pageSize };
+  }
+
+  // programs and cohorts are org-scoped B2C. A caller with no organization sees nothing.
+  const organizationId = options.organizationId;
+  if (!organizationId) {
+    return { items: [], total: 0, page, pageSize };
+  }
+
+  if (type === "programs") {
+    const [programs, programRevenueRows] = await Promise.all([
+      prisma.program.findMany({
+        where: { organizationId, audience: CourseAudience.B2C },
+        select: { id: true, name: true, enrollments: { select: { status: true } } },
+      }),
+      prisma.payment.findMany({
+        where: { status: PaymentStatus.SUCCESS, enrollmentId: { not: null }, user: { organizationId, ...b2cUserScope } },
+        select: { amount: true, programId: true },
+      }),
+    ]);
+    const all = buildProgramLeaderboard(programs, programRevenueRows);
+    return { items: all.slice(skip, skip + pageSize), total: all.length, page, pageSize };
+  }
+
+  // cohorts
+  const [cohorts, cohortRevenueRows] = await Promise.all([
+    prisma.cohort.findMany({
+      where: { organizationId },
+      select: {
+        id: true,
+        name: true,
+        program: { select: { name: true } },
+        fellowApplications: { where: { status: "APPROVED" }, select: { id: true } },
+        meetings: { select: { participants: { select: { joinedAt: true } } } },
+      },
+    }),
+    prisma.payment.findMany({
+      where: { status: PaymentStatus.SUCCESS, fellowApplicationId: { not: null }, user: { organizationId, ...b2cUserScope } },
+      select: { amount: true, fellowApplication: { select: { cohortId: true } } },
+    }),
+  ]);
+  const all = buildCohortLeaderboard(cohorts, cohortRevenueRows);
+  return { items: all.slice(skip, skip + pageSize), total: all.length, page, pageSize };
 }

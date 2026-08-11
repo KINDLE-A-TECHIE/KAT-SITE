@@ -18,7 +18,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Download, Printer } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,6 +41,8 @@ type PlatformTrendPoint = {
   revenue: number;
   activityEvents: number;
   messagesSent: number;
+  activeLearners: number;
+  completions: number;
 };
 
 type SchoolTrendPoint = {
@@ -68,6 +70,7 @@ type AnalyticsResponse = {
     enrollmentCount: number;
     totalRevenue: number;
     activityEvents7d: number;
+    activeLearners7d: number;
     roleBreakdown: Record<string, number>;
     trends: {
       rangeDays: number;
@@ -94,6 +97,7 @@ type AnalyticsResponse = {
       meetingAttendanceRate: number;
       revenue: number;
     }[];
+    cohortLeaderboardTotal: number;
     programLeaderboard: {
       programId: string;
       name: string;
@@ -102,6 +106,7 @@ type AnalyticsResponse = {
       completionRate: number;
       revenue: number;
     }[];
+    programLeaderboardTotal: number;
     assessmentAnalytics: {
       gradingBacklog: number;
       programStats: {
@@ -141,8 +146,13 @@ type AnalyticsResponse = {
       classCount: number;
       pupilCount: number;
     }[];
+    schoolTotal: number;
   };
 };
+
+type SchoolSummaryRow = NonNullable<AnalyticsResponse["schoolAnalytics"]>["schools"][number];
+type CohortRow = NonNullable<AnalyticsResponse["platformAnalytics"]>["cohortLeaderboard"][number];
+type ProgramRow = NonNullable<AnalyticsResponse["platformAnalytics"]>["programLeaderboard"][number];
 
 type PaymentsResponse = {
   monthly: Record<string, { total: number; successful: number; failed: number }>;
@@ -502,6 +512,109 @@ function RadialGauge({
   );
 }
 
+// Page size for the paginated leaderboards / per-school breakdown. Must match ANALYTICS_PAGE_SIZE in
+// src/lib/analytics.ts so page 1 (served inline by /api/analytics) lines up with pages 2+ from the
+// /api/analytics/list endpoint.
+const LIST_PAGE_SIZE = 8;
+
+// Paginates one analytics list. Page 1 is the preview already embedded in the main analytics payload
+// (no extra request); pages 2+ are fetched from /api/analytics/list. New base data (a range change)
+// resets to page 1.
+function usePagedList<T>(type: "programs" | "cohorts" | "schools", initial: T[], total: number) {
+  const [page, setPage] = useState(1);
+  const [items, setItems] = useState<T[]>(initial);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setPage(1);
+    setItems(initial);
+  }, [initial]);
+
+  useEffect(() => {
+    if (page === 1) {
+      setItems(initial);
+      return;
+    }
+    let cancelled = false;
+    const controller = new AbortController();
+    setLoading(true);
+    fetch(`/api/analytics/list?type=${type}&page=${page}&pageSize=${LIST_PAGE_SIZE}`, {
+      signal: controller.signal,
+      cache: "no-store",
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+      .then((data: { items: T[] }) => {
+        if (!cancelled) {
+          setItems(data.items ?? []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setItems([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [page, type, initial]);
+
+  const totalPages = Math.max(1, Math.ceil(total / LIST_PAGE_SIZE));
+  return { items, page, setPage, totalPages, loading };
+}
+
+function PaginationControls({
+  page,
+  totalPages,
+  onPage,
+  loading,
+}: {
+  page: number;
+  totalPages: number;
+  onPage: (page: number) => void;
+  loading?: boolean;
+}) {
+  if (totalPages <= 1) {
+    return null;
+  }
+  return (
+    <div className="mt-3 flex items-center justify-between gap-3 print:hidden">
+      <p className="text-xs text-stone-500 dark:text-stone-400" aria-live="polite">
+        {loading ? "Updating…" : `Page ${page} of ${totalPages}`}
+      </p>
+      <div className="flex items-center gap-1.5">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="gap-1"
+          disabled={page <= 1 || loading}
+          onClick={() => onPage(page - 1)}
+        >
+          <ChevronLeft className="size-4" />
+          Prev
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="gap-1"
+          disabled={page >= totalPages || loading}
+          onClick={() => onPage(page + 1)}
+        >
+          Next
+          <ChevronRight className="size-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function riskBadgeClass(score: number) {
   if (score >= 8) {
     return "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-400";
@@ -628,6 +741,56 @@ export function AnalyticsPanel() {
     [analytics],
   );
   const primaryActivityLabel = analytics?.userAnalytics.activityLabel ?? "Assessments Submitted";
+  // An admin/super-admin sees org-level engagement instead of their own personal activity (a personal
+  // trend on a business-oversight page is a vanity metric). Learners keep their self-tracking view.
+  const isOrgView = Boolean(analytics?.platformAnalytics);
+  const platformRangeTotals = useMemo(() => {
+    return platformTrendPoints.reduce(
+      (acc, point) => ({
+        newEnrollments: acc.newEnrollments + point.newEnrollments,
+        completions: acc.completions + point.completions,
+        messagesSent: acc.messagesSent + point.messagesSent,
+      }),
+      { newEnrollments: 0, completions: 0, messagesSent: 0 },
+    );
+  }, [platformTrendPoints]);
+  const rangeTag = range.toUpperCase();
+  const headlineCards =
+    analytics && analytics.platformAnalytics
+      ? [
+          { label: "Active Learners (7d)", value: analytics.platformAnalytics.activeLearners7d },
+          { label: `New Completions (${rangeTag})`, value: platformRangeTotals.completions },
+          { label: `New Enrollments (${rangeTag})`, value: platformRangeTotals.newEnrollments },
+          { label: `Messages Sent (${rangeTag})`, value: platformRangeTotals.messagesSent },
+        ]
+      : analytics
+        ? [
+            { label: "Logins (30d)", value: analytics.userAnalytics.loginStats30d },
+            { label: primaryActivityLabel, value: analytics.userAnalytics.assessmentsSubmitted },
+            { label: "Classes Attended", value: analytics.userAnalytics.classesAttended },
+            { label: "Upcoming Meetings", value: analytics.userAnalytics.upcomingMeetings },
+          ]
+        : [];
+  // Stable empty references so the pagination hooks below do not reset every render before data loads.
+  const emptyPrograms = useMemo<ProgramRow[]>(() => [], []);
+  const emptyCohorts = useMemo<CohortRow[]>(() => [], []);
+  const emptySchools = useMemo<SchoolSummaryRow[]>(() => [], []);
+  const programPaged = usePagedList<ProgramRow>(
+    "programs",
+    analytics?.platformAnalytics?.programLeaderboard ?? emptyPrograms,
+    analytics?.platformAnalytics?.programLeaderboardTotal ?? 0,
+  );
+  const cohortPaged = usePagedList<CohortRow>(
+    "cohorts",
+    analytics?.platformAnalytics?.cohortLeaderboard ?? emptyCohorts,
+    analytics?.platformAnalytics?.cohortLeaderboardTotal ?? 0,
+  );
+  const schoolPaged = usePagedList<SchoolSummaryRow>(
+    "schools",
+    analytics?.schoolAnalytics?.schools ?? emptySchools,
+    analytics?.schoolAnalytics?.schoolTotal ?? 0,
+  );
+
   // Show the B2C/B2B tabs only when the viewer has both business lines (an org admin). Without both,
   // whichever block exists renders on its own with no toggle.
   const showTabs = Boolean(analytics?.platformAnalytics && analytics?.schoolAnalytics);
@@ -1360,12 +1523,7 @@ export function AnalyticsPanel() {
                 <Skeleton className="h-8 w-20" />
               </div>
             ))
-          : [
-              { label: "Logins (30d)", value: analytics.userAnalytics.loginStats30d },
-              { label: primaryActivityLabel, value: analytics.userAnalytics.assessmentsSubmitted },
-              { label: "Classes Attended", value: analytics.userAnalytics.classesAttended },
-              { label: "Upcoming Meetings", value: analytics.userAnalytics.upcomingMeetings },
-            ].map((item, index) => (
+          : headlineCards.map((item, index) => (
               <motion.div
                 key={item.label}
                 className="kat-card bg-gradient-to-br from-white via-white to-stone-50 dark:from-stone-900 dark:via-stone-900 dark:to-stone-800/60"
@@ -1382,13 +1540,36 @@ export function AnalyticsPanel() {
       </section>
 
       <section className="kat-card">
-        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">My Activity Trend</h3>
-        <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">Daily movement across logins, learning activity, and class attendance.</p>
+        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">
+          {isOrgView ? "Learner Engagement" : "My Activity Trend"}
+        </h3>
+        <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">
+          {isOrgView
+            ? "Daily active learners and programme completions across the platform."
+            : "Daily movement across logins, learning activity, and class attendance."}
+        </p>
         {loading || !analytics ? (
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
               <Skeleton key={index} className="h-44 w-full" />
             ))}
+          </div>
+        ) : isOrgView ? (
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <TrendMiniCard
+              title="Active Learners"
+              subtitle="Distinct learners active per day"
+              points={platformTrendPoints}
+              colorClass="bg-clay"
+              getValue={(point) => point.activeLearners}
+            />
+            <TrendMiniCard
+              title="New Completions"
+              subtitle="Programme completions per day"
+              points={platformTrendPoints}
+              colorClass="bg-emerald-500"
+              getValue={(point) => point.completions}
+            />
           </div>
         ) : (
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -1725,12 +1906,12 @@ export function AnalyticsPanel() {
                   Export
                 </Button>
               </div>
-              {analytics.platformAnalytics.cohortLeaderboard.length > 0 && (
+              {cohortPaged.items.length > 0 && (
                 <div className="mt-3">
                   <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">Completion rate by cohort</p>
                   <div className="mt-2">
                     <HBarChart
-                      data={analytics.platformAnalytics.cohortLeaderboard.map((cohort) => ({
+                      data={cohortPaged.items.map((cohort) => ({
                         label: cohort.name.length > 22 ? `${cohort.name.slice(0, 21)}…` : cohort.name,
                         full: `${cohort.name} · ${cohort.programName}`,
                         value: cohort.completionRate,
@@ -1742,26 +1923,26 @@ export function AnalyticsPanel() {
                   </div>
                 </div>
               )}
-              <div className="mt-4 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
+              <div className="nice-scroll mt-4 max-h-[26rem] overflow-auto pb-1">
                 <table className="min-w-[760px] w-full text-sm max-[360px]:text-xs">
                   <thead>
-                    <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
-                      <th className="pb-2 max-[360px]:pb-1.5">Cohort</th>
-                      <th className="pb-2 max-[360px]:pb-1.5">Program</th>
-                      <th className="pb-2 max-[360px]:pb-1.5">Complete %</th>
-                      <th className="pb-2 max-[360px]:pb-1.5">Attendance %</th>
-                      <th className="pb-2 max-[360px]:pb-1.5">Revenue</th>
+                    <tr className="sticky top-0 z-10 border-b border-stone-200 bg-white text-left text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400">
+                      <th className="pb-2 pt-1 max-[360px]:pb-1.5">Cohort</th>
+                      <th className="pb-2 pt-1 max-[360px]:pb-1.5">Program</th>
+                      <th className="pb-2 pt-1 max-[360px]:pb-1.5">Complete %</th>
+                      <th className="pb-2 pt-1 max-[360px]:pb-1.5">Attendance %</th>
+                      <th className="pb-2 pt-1 max-[360px]:pb-1.5">Revenue</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
-                    {analytics.platformAnalytics.cohortLeaderboard.length === 0 ? (
+                    {cohortPaged.items.length === 0 ? (
                       <tr>
                         <td className="py-3 text-stone-600 dark:text-stone-400 max-[360px]:py-2" colSpan={5}>
                           No cohort analytics yet.
                         </td>
                       </tr>
                     ) : (
-                      analytics.platformAnalytics.cohortLeaderboard.map((cohort) => (
+                      cohortPaged.items.map((cohort) => (
                         <tr key={cohort.cohortId}>
                           <td className="py-3 max-[360px]:py-2">{cohort.name}</td>
                           <td className="py-3 max-[360px]:py-2">{cohort.programName}</td>
@@ -1788,6 +1969,12 @@ export function AnalyticsPanel() {
                   </tbody>
                 </table>
               </div>
+              <PaginationControls
+                page={cohortPaged.page}
+                totalPages={cohortPaged.totalPages}
+                onPage={cohortPaged.setPage}
+                loading={cohortPaged.loading}
+              />
             </div>
           </section>
 
@@ -1808,12 +1995,12 @@ export function AnalyticsPanel() {
                 Export
               </Button>
             </div>
-            {analytics.platformAnalytics.programLeaderboard.length > 0 && (
+            {programPaged.items.length > 0 && (
               <div className="mt-3">
                 <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">Completion rate by programme</p>
                 <div className="mt-2">
                   <HBarChart
-                    data={analytics.platformAnalytics.programLeaderboard.map((program) => ({
+                    data={programPaged.items.map((program) => ({
                       label: program.name.length > 22 ? `${program.name.slice(0, 21)}…` : program.name,
                       full: program.name,
                       value: program.completionRate,
@@ -1825,26 +2012,26 @@ export function AnalyticsPanel() {
                 </div>
               </div>
             )}
-            <div className="mt-4 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
+            <div className="nice-scroll mt-4 max-h-[26rem] overflow-auto pb-1">
               <table className="min-w-[760px] w-full text-sm max-[360px]:text-xs">
                 <thead>
-                  <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
-                    <th className="pb-2 max-[360px]:pb-1.5">Program</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Enrollments</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Completed</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Completion %</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Revenue</th>
+                  <tr className="sticky top-0 z-10 border-b border-stone-200 bg-white text-left text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400">
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Program</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Enrollments</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Completed</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Completion %</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Revenue</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
-                  {analytics.platformAnalytics.programLeaderboard.length === 0 ? (
+                  {programPaged.items.length === 0 ? (
                     <tr>
                       <td className="py-3 text-stone-600 dark:text-stone-400 max-[360px]:py-2" colSpan={5}>
                         No program analytics yet.
                       </td>
                     </tr>
                   ) : (
-                    analytics.platformAnalytics.programLeaderboard.map((program) => (
+                    programPaged.items.map((program) => (
                       <tr key={program.programId}>
                         <td className="py-3 max-[360px]:py-2">{program.name}</td>
                         <td className="py-3 max-[360px]:py-2">{program.enrollments}</td>
@@ -1864,6 +2051,12 @@ export function AnalyticsPanel() {
                 </tbody>
               </table>
             </div>
+            <PaginationControls
+              page={programPaged.page}
+              totalPages={programPaged.totalPages}
+              onPage={programPaged.setPage}
+              loading={programPaged.loading}
+            />
           </section>
         </>
       ) : null}
@@ -1957,27 +2150,27 @@ export function AnalyticsPanel() {
           <section className="kat-card">
             <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100 max-[360px]:text-base">Per-School Breakdown</h3>
             <p className="mt-1 text-sm text-stone-600 dark:text-stone-400 max-[360px]:text-xs">Top schools by paid licence revenue.</p>
-            <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
+            <div className="nice-scroll mt-3 max-h-[26rem] overflow-auto pb-1">
               <table className="min-w-[720px] w-full text-sm max-[360px]:text-xs">
                 <thead>
-                  <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
-                    <th className="pb-2 max-[360px]:pb-1.5">School</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Active Licences</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Seats</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Classes</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Pupils</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Paid Revenue</th>
+                  <tr className="sticky top-0 z-10 border-b border-stone-200 bg-white text-left text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400">
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">School</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Active Licences</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Seats</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Classes</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Pupils</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Paid Revenue</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
-                  {analytics.schoolAnalytics.schools.length === 0 ? (
+                  {schoolPaged.items.length === 0 ? (
                     <tr>
                       <td className="py-3 text-stone-600 dark:text-stone-400 max-[360px]:py-2" colSpan={6}>
                         No partner schools yet.
                       </td>
                     </tr>
                   ) : (
-                    analytics.schoolAnalytics.schools.map((school) => (
+                    schoolPaged.items.map((school) => (
                       <tr key={school.schoolId}>
                         <td className="py-3 font-medium text-stone-900 dark:text-stone-100 max-[360px]:py-2">{school.name}</td>
                         <td className="py-3 max-[360px]:py-2">{school.activeLicenses}</td>
@@ -1994,6 +2187,12 @@ export function AnalyticsPanel() {
                 </tbody>
               </table>
             </div>
+            <PaginationControls
+              page={schoolPaged.page}
+              totalPages={schoolPaged.totalPages}
+              onPage={schoolPaged.setPage}
+              loading={schoolPaged.loading}
+            />
           </section>
         </>
       ) : null}
