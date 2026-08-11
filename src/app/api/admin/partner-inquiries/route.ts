@@ -1,5 +1,6 @@
 import { PartnerType, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { partnerInquiryStatusUpdateSchema } from "@/lib/validators";
@@ -15,6 +16,7 @@ export async function GET(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!ADMIN_ROLES.includes(session.user.role)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "partner_inquiries")) return fail("Forbidden", 403);
 
   const typeParam = new URL(request.url).searchParams.get("type");
   const typeFilter = typeParam && VALID_TYPES.has(typeParam) ? (typeParam as PartnerType) : undefined;
@@ -38,6 +40,7 @@ export async function PATCH(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!ADMIN_ROLES.includes(session.user.role)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "partner_inquiries")) return fail("Forbidden", 403);
 
   let body: unknown;
   try {

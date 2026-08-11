@@ -1,5 +1,6 @@
 import { CourseAudience, AssessmentVerificationStatus, AttemptStatus, NotificationType, QuestionType, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { manualGradeSchema, submitAssessmentSchema } from "@/lib/validators";
@@ -49,6 +50,7 @@ export async function GET(request: Request) {
   if (!GRADER_ROLES.includes(session.user.role)) {
     return fail("Forbidden", 403);
   }
+  if (capabilityDenied(session.user, "assessments")) return fail("Forbidden", 403);
 
   const where = {
     assessmentId: assessmentId ?? undefined,
@@ -284,6 +286,7 @@ export async function PATCH(request: Request) {
   if (!GRADER_ROLES.includes(session.user.role)) {
     return fail("Forbidden", 403);
   }
+  if (capabilityDenied(session.user, "assessments")) return fail("Forbidden", 403);
 
   try {
     const body = await request.json();

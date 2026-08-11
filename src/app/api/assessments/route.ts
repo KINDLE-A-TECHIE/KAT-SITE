@@ -1,6 +1,7 @@
 import { CourseAudience, AssessmentVerificationStatus, NotificationType, UserRole } from "@prisma/client";
 import { z } from "zod";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAssessmentSchema } from "@/lib/validators";
@@ -26,6 +27,7 @@ export async function GET(request: Request) {
   const { limit, page, skip } = readPageOffset(request);
 
   if (CREATOR_ROLES.includes(role)) {
+    if (capabilityDenied(session.user, "assessments")) return fail("Forbidden", 403);
     const where = {
       // Scoped to B2C programmes. This query keys on the PROGRAM, not the student's role, so a
       // role fix alone would not stop a KAT instructor seeing a school's pupils' work.
@@ -157,6 +159,7 @@ export async function POST(request: Request) {
   if (!CREATOR_ROLES.includes(session.user.role)) {
     return fail("Forbidden", 403);
   }
+  if (capabilityDenied(session.user, "assessments")) return fail("Forbidden", 403);
 
   try {
     const body = await request.json();

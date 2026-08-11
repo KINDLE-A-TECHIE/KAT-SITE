@@ -1,6 +1,7 @@
 import { NotificationType, Prisma, ThreadType, UserRole } from "@prisma/client";
 import { z } from "zod";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -310,6 +311,8 @@ export async function POST(request: Request) {
   if (!session?.user?.id) {
     return fail("Unauthorized", 401);
   }
+
+  if (capabilityDenied(session.user, "messaging")) return fail("Forbidden", 403);
 
   if (!checkRateLimit(session.user.id)) {
     return fail("Too many messages. Slow down.", 429);

@@ -1,5 +1,6 @@
 import { ContentReviewStatus, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createLessonSchema } from "@/lib/validators";
@@ -37,6 +38,7 @@ export async function POST(request: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!CREATOR_ROLES.includes(session.user.role as UserRole)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "curriculum")) return fail("Forbidden", 403);
 
   const { moduleId } = await params;
 

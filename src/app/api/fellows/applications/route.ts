@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { z } from "zod";
 import { ApplicationStatus, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateResetToken, hashResetToken } from "@/lib/reset-token";
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
   const statusFilter = url.searchParams.get("status") as ApplicationStatus | null;
   const cohortId = url.searchParams.get("cohortId");
 
-  const isAdmin = ADMIN_ROLES.includes(session.user.role);
+  const isAdmin = ADMIN_ROLES.includes(session.user.role) && !capabilityDenied(session.user, "fellowship");
 
   const where = {
     ...(isAdmin
@@ -174,6 +175,7 @@ export async function PATCH(request: Request) {
   if (!ADMIN_ROLES.includes(session.user.role)) {
     return fail("Forbidden", 403);
   }
+  if (capabilityDenied(session.user, "fellowship")) return fail("Forbidden", 403);
 
   try {
     const body = await request.json();

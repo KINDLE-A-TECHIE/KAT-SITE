@@ -1,6 +1,7 @@
 import { UserRole } from "@prisma/client";
 import { z } from "zod";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -19,7 +20,8 @@ export async function GET() {
   const session = await getServerAuthSession();
   const role = session?.user?.role as UserRole | undefined;
   const isAdmin =
-    role === UserRole.SUPER_ADMIN || role === UserRole.ADMIN;
+    (role === UserRole.SUPER_ADMIN || role === UserRole.ADMIN) &&
+    !capabilityDenied(session?.user, "fellowship");
 
   const now = new Date();
 

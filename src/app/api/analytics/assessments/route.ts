@@ -1,5 +1,6 @@
 import { AttemptStatus, AssessmentVerificationStatus, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -17,6 +18,7 @@ export async function GET() {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!ADMIN_ROLES.includes(session.user.role as UserRole)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "analytics")) return fail("Forbidden", 403);
   if (!session.user.organizationId) return fail("No organization", 400);
 
   const assessments = await prisma.assessment.findMany({

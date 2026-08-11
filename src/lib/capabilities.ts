@@ -91,3 +91,24 @@ export function hasCapability(user: CapabilityUser | null | undefined, key: Capa
   }
   return false;
 }
+
+/**
+ * True when the caller is an ADMIN/INSTRUCTOR who has NOT been granted this area. Returns false for
+ * every other role (SUPER_ADMIN, FELLOW, STUDENT, PARENT, ...), whose access to a route is already
+ * governed by that route's role check. So capability enforcement LAYERS on top of the role guard: it
+ * only ever narrows staff, never widens or blocks anyone the role check already handled.
+ */
+export function capabilityDenied(user: CapabilityUser | null | undefined, key: CapabilityKey): boolean {
+  if (!user) return false;
+  return (user.role === "ADMIN" || user.role === "INSTRUCTOR") && !hasCapability(user, key);
+}
+
+/**
+ * Route guard: throw "Forbidden" (caught by the handler's try/catch like `ensureRole`) when an
+ * ADMIN/INSTRUCTOR lacks the area. Call it AFTER the existing role check. No-op for other roles.
+ */
+export function ensureCapability(user: CapabilityUser | null | undefined, key: CapabilityKey): void {
+  if (capabilityDenied(user, key)) {
+    throw new Error("Forbidden");
+  }
+}

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkChallengeProgram, notifyEligibleStudents } from "@/lib/challenges";
@@ -23,6 +24,7 @@ export async function PATCH(request: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!MANAGER_ROLES.includes(session.user.role as UserRole)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "challenges")) return fail("Forbidden", 403);
 
   const { challengeId } = await params;
   const challenge = await prisma.challenge.findUnique({
@@ -83,6 +85,7 @@ export async function DELETE(_req: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!MANAGER_ROLES.includes(session.user.role as UserRole)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "challenges")) return fail("Forbidden", 403);
 
   const { challengeId } = await params;
   const challenge = await prisma.challenge.findUnique({

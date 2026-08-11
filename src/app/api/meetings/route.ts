@@ -1,5 +1,6 @@
 import { MeetingRecordingMode, MeetingRecordingStatus, MeetingStatus, NotificationType, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createMeetingSchema } from "@/lib/validators";
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!HOST_ROLES.includes(session.user.role)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "sessions")) return fail("Forbidden", 403);
   if (!isJitsiConfigured()) return fail("Meetings are not configured on this server.", 503);
 
   const body = await request.json() as unknown;
@@ -185,6 +187,7 @@ export async function DELETE(request: Request) {
   const isAdminOrInstructor = session.user.role === UserRole.ADMIN || session.user.role === UserRole.INSTRUCTOR;
 
   if (!isSuperAdmin && !(isHost && isAdminOrInstructor)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "sessions")) return fail("Forbidden", 403);
   if (meeting.status !== MeetingStatus.ENDED && meeting.status !== MeetingStatus.CANCELLED) {
     return fail("Only ended or cancelled meetings can be removed.", 400);
   }
@@ -206,6 +209,7 @@ export async function PATCH(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!HOST_ROLES.includes(session.user.role)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "sessions")) return fail("Forbidden", 403);
 
   const body = (await request.json()) as {
     meetingId?: string;

@@ -1,6 +1,7 @@
 import { UserRole } from "@prisma/client";
 import { z } from "zod";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { getPlatformAnalytics, getSchoolOverview, getUserAnalytics, trackEvent } from "@/lib/analytics";
 import { prisma } from "@/lib/prisma";
@@ -33,7 +34,11 @@ export async function GET(request: Request) {
   const range = rangeParsed.data;
   const rangeDays = RANGE_TO_DAYS[range];
 
-  const isAdmin = session.user.role === UserRole.SUPER_ADMIN || session.user.role === UserRole.ADMIN;
+  // A capability-restricted ADMIN (no "analytics" area) is treated as a normal user here: they get
+  // user-scoped analytics, never the platform/school overview.
+  const isAdmin =
+    (session.user.role === UserRole.SUPER_ADMIN || session.user.role === UserRole.ADMIN) &&
+    !capabilityDenied(session.user, "analytics");
 
   try {
     // Resolve organizationId, session JWT may be stale for admin users

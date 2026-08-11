@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
+import { guardDashboardCapability } from "@/lib/dashboard-capability";
 import { ChallengesPanel } from "@/components/dashboard/challenges-panel";
 import { PageHeader } from "@/components/dashboard/page-header";
 
 export default async function ChallengesPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login");
+  guardDashboardCapability(session.user, "challenges");
 
   const role = session.user.role;
 
