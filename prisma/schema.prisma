@@ -1577,6 +1577,10 @@ model SchoolInvoice {
   discountPercent Decimal          @default(0) @db.Decimal(5, 2)
   discountReason  String?
   status       SchoolInvoiceStatus @default(PENDING)
+  // How it was settled + a short human note (bank reference, or who confirmed the transfer). Set when
+  // the invoice is marked PAID; PAYSTACK by default so historical rows read correctly.
+  paymentMethod SchoolInvoicePaymentMethod @default(PAYSTACK)
+  paymentNote   String?
   paystackRef  String              @unique
   createdAt    DateTime            @default(now())
   updatedAt    DateTime @updatedAt
@@ -1945,6 +1949,15 @@ enum SchoolInvoiceStatus {
   PENDING
   PAID
   VOID
+}
+
+// How a PAID invoice was settled. PAYSTACK = online card/transfer via the gateway; BANK_TRANSFER =
+// a manual/offline payment into KAT's bank account, confirmed by a super-admin; SPONSORED = a 100%
+// concession that nets zero and activates with no payment.
+enum SchoolInvoicePaymentMethod {
+  PAYSTACK
+  BANK_TRANSFER
+  SPONSORED
 }
 
 enum SchoolLicenseStatus {

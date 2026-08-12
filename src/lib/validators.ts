@@ -541,6 +541,26 @@ export const schoolInvoiceVerifySchema = z.object({
   reference: z.string().trim().min(1).max(120),
 });
 
+/**
+ * Super-admin confirming a MANUAL (bank-transfer) payment. `note` is a short human record: the bank
+ * reference, or who confirmed the money landed. No amount, marking paid activates the invoice's own
+ * amount; the super-admin sets price/discount first if it needs to change.
+ */
+export const schoolInvoiceMarkPaidSchema = z.object({
+  note: z.string().trim().max(200).optional(),
+});
+
+/**
+ * Super-admin raising AND settling an invoice in one step, for a school that paid by bank transfer
+ * before any invoice existed. Amount is still computed server-side (seats x price x concession),
+ * never taken from the request.
+ */
+export const schoolInvoiceManualCreateSchema = z.object({
+  term: z.string().trim().min(1).max(40),
+  seatCount: z.coerce.number().int().min(1).max(100_000),
+  note: z.string().trim().max(200).optional(),
+});
+
 export const teacherInviteSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(200),
   firstName: z.string().trim().min(1).max(80),

@@ -10,6 +10,7 @@ import { generateInvoiceReference } from "@/lib/payments/receipt";
 import { SCHOOL_HOST, isSchoolHost } from "@/lib/school-host";
 import { trackEvent } from "@/lib/analytics";
 import { captureError } from "@/lib/sentry";
+import { SchoolInvoicePaymentMethod } from "@prisma/client";
 import { computeInvoiceAmount, markInvoicePaidAndActivate } from "@/lib/school-billing";
 
 /**
@@ -199,7 +200,7 @@ export async function POST(request: Request) {
     // Mark it PAID and activate the term's licence immediately, reusing the exact same activation the
     // webhook uses (idempotent). The school gets access with no payment step.
     if (amount <= 0) {
-      await markInvoicePaidAndActivate(paystackRef);
+      await markInvoicePaidAndActivate(paystackRef, { method: SchoolInvoicePaymentMethod.SPONSORED });
       await trackEvent({
         userId: session?.user?.id,
         eventType: "admin",

@@ -1,5 +1,5 @@
 import "server-only";
-import { SchoolInvoiceStatus, SchoolLicenseStatus } from "@prisma/client";
+import { SchoolInvoicePaymentMethod, SchoolInvoiceStatus, SchoolLicenseStatus } from "@prisma/client";
 import { prisma } from "./prisma";
 
 /**
@@ -42,8 +42,14 @@ export function computeInvoiceAmount(
  * must not double-activate, double-count seats, or reset a term's usage.
  *
  * Returns true if this call performed the activation, false if it was already done.
+ *
+ * `options.method` records HOW it was settled (defaults to PAYSTACK for the webhook/verify paths);
+ * `options.note` is a short human note (bank reference, or who confirmed a transfer).
  */
-export async function markInvoicePaidAndActivate(paystackRef: string): Promise<boolean> {
+export async function markInvoicePaidAndActivate(
+  paystackRef: string,
+  options?: { method?: SchoolInvoicePaymentMethod; note?: string | null },
+): Promise<boolean> {
   const invoice = await prisma.schoolInvoice.findUnique({
     where: { paystackRef },
     select: {
@@ -65,7 +71,11 @@ export async function markInvoicePaidAndActivate(paystackRef: string): Promise<b
   await prisma.$transaction(async (tx) => {
     await tx.schoolInvoice.update({
       where: { id: invoice.id },
-      data: { status: SchoolInvoiceStatus.PAID },
+      data: {
+        status: SchoolInvoiceStatus.PAID,
+        paymentMethod: options?.method ?? SchoolInvoicePaymentMethod.PAYSTACK,
+        ...(options?.note !== undefined ? { paymentNote: options.note } : {}),
+      },
     });
 
     // @@unique([schoolId, sessionLabel, termNumber]), one licence per term, so this upsert is the

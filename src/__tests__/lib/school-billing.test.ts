@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { SchoolInvoiceStatus, SchoolLicenseStatus } from "@prisma/client";
+import { SchoolInvoicePaymentMethod, SchoolInvoiceStatus, SchoolLicenseStatus } from "@prisma/client";
 
 /**
  * markInvoicePaidAndActivate must be IDEMPOTENT. Paystack retries its webhook, and the
@@ -112,5 +112,40 @@ describe("markInvoicePaidAndActivate", () => {
     expect(args.update.status).toBe(SchoolLicenseStatus.ACTIVE);
     expect(args.update.seatsUsed).toBeUndefined();
     expect(args.create.seatsUsed).toBe(0);
+  });
+
+  it("defaults the payment method to PAYSTACK (webhook/verify path)", async () => {
+    let updateArgs: unknown;
+    mockPrisma.schoolInvoice.findUnique.mockResolvedValue(invoice(SchoolInvoiceStatus.PENDING));
+    mockPrisma.$transaction.mockImplementation(async (cb: (tx: unknown) => unknown) =>
+      cb({
+        schoolInvoice: { update: vi.fn((a: unknown) => (updateArgs = a)) },
+        schoolLicense: { upsert: vi.fn() },
+      }),
+    );
+
+    await markInvoicePaidAndActivate("KAT-SCH-1");
+    const data = (updateArgs as { data: { paymentMethod: string; paymentNote?: string } }).data;
+    expect(data.paymentMethod).toBe(SchoolInvoicePaymentMethod.PAYSTACK);
+    expect(data.paymentNote).toBeUndefined();
+  });
+
+  it("records a manual BANK_TRANSFER payment with its note", async () => {
+    let updateArgs: unknown;
+    mockPrisma.schoolInvoice.findUnique.mockResolvedValue(invoice(SchoolInvoiceStatus.PENDING));
+    mockPrisma.$transaction.mockImplementation(async (cb: (tx: unknown) => unknown) =>
+      cb({
+        schoolInvoice: { update: vi.fn((a: unknown) => (updateArgs = a)) },
+        schoolLicense: { upsert: vi.fn() },
+      }),
+    );
+
+    await markInvoicePaidAndActivate("KAT-SCH-1", {
+      method: SchoolInvoicePaymentMethod.BANK_TRANSFER,
+      note: "GTB transfer ref 12345",
+    });
+    const data = (updateArgs as { data: { paymentMethod: string; paymentNote?: string } }).data;
+    expect(data.paymentMethod).toBe(SchoolInvoicePaymentMethod.BANK_TRANSFER);
+    expect(data.paymentNote).toBe("GTB transfer ref 12345");
   });
 });

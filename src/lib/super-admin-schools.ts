@@ -127,6 +127,8 @@ export type SchoolInvoiceRow = {
   amount: number;
   discountPercent: number;
   status: string;
+  paymentMethod: string;
+  paymentNote: string | null;
   createdAt: string;
 };
 
@@ -176,6 +178,8 @@ export async function getSchoolDetail(schoolId: string): Promise<SchoolDetail | 
         amount: true,
         discountPercent: true,
         status: true,
+        paymentMethod: true,
+        paymentNote: true,
         createdAt: true,
       },
     }),
@@ -210,6 +214,8 @@ export async function getSchoolDetail(schoolId: string): Promise<SchoolDetail | 
       amount: Number(i.amount),
       discountPercent: Number(i.discountPercent),
       status: i.status,
+      paymentMethod: i.paymentMethod,
+      paymentNote: i.paymentNote,
       createdAt: i.createdAt.toISOString(),
     })),
   };

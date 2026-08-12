@@ -1,0 +1,14 @@
+Schools: manual (bank-transfer) licensing + payment-method audit
+
+Add SchoolInvoicePaymentMethod (PAYSTACK/BANK_TRANSFER/SPONSORED) and
+paymentMethod/paymentNote on SchoolInvoice; markInvoicePaidAndActivate now
+records how each invoice was settled (webhook defaults to PAYSTACK, the
+net-zero path labels SPONSORED).
+
+Two super-admin-only endpoints reuse that idempotent activation for offline
+payments: mark an existing PENDING invoice paid, and raise-and-activate in one
+step for a school that paid before any invoice existed (amount computed
+server-side from the school price/concession, never from the request). Wire
+both into the Manage Schools drill-down with a Mark-paid button and a Record-a-
+bank-payment form, and show each invoice payment method + note.
+

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import {
+  Banknote,
   Building2,
   Check,
   ChevronDown,
@@ -60,7 +61,10 @@ type InvoiceRow = {
   termNumber: number;
   seatCount: number;
   amount: number;
+  discountPercent: number;
   status: string;
+  paymentMethod: string;
+  paymentNote: string | null;
   createdAt: string;
 };
 type SchoolDetail = {
@@ -85,6 +89,12 @@ const STATUS_CHIP: Record<string, string> = {
   DRAFT: "bg-stone-100 text-stone-500 dark:bg-stone-700 dark:text-stone-400",
   EXPIRED: "bg-stone-100 text-stone-500 dark:bg-stone-700 dark:text-stone-400",
   CANCELLED: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400",
+};
+
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  PAYSTACK: "Paystack",
+  BANK_TRANSFER: "Bank transfer",
+  SPONSORED: "Sponsored",
 };
 
 function StatusChip({ status }: { status: string }) {
@@ -120,6 +130,13 @@ export function ManageSchoolsPanel() {
   const [suspendingId, setSuspendingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [detailById, setDetailById] = useState<Record<string, DetailState>>({});
+
+  // Manual licensing (bank transfer): mark an existing invoice paid, or record a new payment.
+  const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
+  const [recordingId, setRecordingId] = useState<string | null>(null);
+  const [recordTerm, setRecordTerm] = useState("");
+  const [recordSeats, setRecordSeats] = useState("");
+  const [recordNote, setRecordNote] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -235,26 +252,83 @@ export function ManageSchoolsPanel() {
     toast.success(next ? `${school.name}: billing suspended.` : `${school.name}: billing resumed.`);
   };
 
+  const loadDetail = async (schoolId: string) => {
+    setDetailById((prev) => ({ ...prev, [schoolId]: prev[schoolId] ?? { status: "loading" } }));
+    const res = await fetch(`/api/super-admin/schools/${schoolId}`);
+    const payload = await res.json();
+    if (!res.ok) {
+      setDetailById((prev) => ({ ...prev, [schoolId]: { status: "error" } }));
+      toast.error(payload?.error ?? "Could not load the school's details.");
+      return;
+    }
+    setDetailById((prev) => ({
+      ...prev,
+      [schoolId]: { status: "ready", data: { licenses: payload.detail.licenses ?? [], invoices: payload.detail.invoices ?? [] } },
+    }));
+  };
+
   const toggleDetails = async (school: ManagedSchool) => {
     if (expandedId === school.id) {
       setExpandedId(null);
       return;
     }
     setExpandedId(school.id);
-    if (!detailById[school.id]) {
-      setDetailById((prev) => ({ ...prev, [school.id]: { status: "loading" } }));
-      const res = await fetch(`/api/super-admin/schools/${school.id}`);
-      const payload = await res.json();
-      if (!res.ok) {
-        setDetailById((prev) => ({ ...prev, [school.id]: { status: "error" } }));
-        toast.error(payload?.error ?? "Could not load the school's details.");
-        return;
-      }
-      setDetailById((prev) => ({
-        ...prev,
-        [school.id]: { status: "ready", data: { licenses: payload.detail.licenses ?? [], invoices: payload.detail.invoices ?? [] } },
-      }));
+    if (!detailById[school.id]) await loadDetail(school.id);
+  };
+
+  // MANUAL LICENSING: confirm a bank transfer against an existing PENDING invoice, then activate.
+  const markInvoicePaid = async (school: ManagedSchool, invoice: InvoiceRow) => {
+    const note = window.prompt(
+      `Confirm a bank transfer of ${naira(invoice.amount)} for ${school.name} (${invoice.sessionLabel} Term ${invoice.termNumber})?\nThis marks the invoice paid and activates the term.\n\nOptional reference / who confirmed:`,
+      "",
+    );
+    if (note === null) return; // cancelled
+    setMarkingPaidId(invoice.id);
+    const res = await fetch(`/api/super-admin/schools/${school.id}/invoices/${invoice.id}/mark-paid`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ note }),
+    });
+    const payload = await res.json();
+    setMarkingPaidId(null);
+    if (!res.ok) {
+      toast.error(payload?.error ?? "Could not mark the invoice paid.");
+      return;
     }
+    toast.success(`${school.name}: payment recorded, term activated.`);
+    await loadDetail(school.id);
+    await load();
+  };
+
+  // MANUAL LICENSING: raise AND settle in one step (school paid before any invoice existed).
+  const recordBankPayment = async (school: ManagedSchool) => {
+    const seats = Number(recordSeats);
+    if (!recordTerm.trim()) {
+      toast.error("Enter the term, e.g. 2025/2026 Term 1.");
+      return;
+    }
+    if (!Number.isFinite(seats) || seats < 1) {
+      toast.error("Enter a seat count of 1 or more.");
+      return;
+    }
+    setRecordingId(school.id);
+    const res = await fetch(`/api/super-admin/schools/${school.id}/invoices`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ term: recordTerm, seatCount: seats, note: recordNote }),
+    });
+    const payload = await res.json();
+    setRecordingId(null);
+    if (!res.ok) {
+      toast.error(payload?.error ?? "Could not record the payment.");
+      return;
+    }
+    toast.success(`${school.name}: ${recordTerm} licensed (bank transfer).`);
+    setRecordTerm("");
+    setRecordSeats("");
+    setRecordNote("");
+    await loadDetail(school.id);
+    await load();
   };
 
   return (
@@ -581,18 +655,86 @@ export function ManageSchoolsPanel() {
                                         <p className="truncate font-medium text-stone-800 dark:text-stone-200">
                                           {naira(i.amount)}{" "}
                                           <span className="font-normal text-stone-500 dark:text-stone-400">
-                                            · {i.seatCount} seats
+                                            · {i.seatCount} seats{i.discountPercent > 0 ? ` · ${i.discountPercent}% off` : ""}
                                           </span>
                                         </p>
-                                        <p className="text-xs text-stone-500 dark:text-stone-400">
+                                        <p className="truncate text-xs text-stone-500 dark:text-stone-400">
                                           {i.sessionLabel} · Term {i.termNumber} · {shortDate(i.createdAt)}
+                                          {i.status === "PAID" ? ` · ${PAYMENT_METHOD_LABEL[i.paymentMethod] ?? i.paymentMethod}` : ""}
+                                          {i.paymentNote ? ` · ${i.paymentNote}` : ""}
                                         </p>
                                       </div>
-                                      <StatusChip status={i.status} />
+                                      <div className="flex shrink-0 items-center gap-2">
+                                        {i.status === "PENDING" ? (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-7 px-2 text-xs"
+                                            disabled={markingPaidId === i.id}
+                                            onClick={() => void markInvoicePaid(school, i)}
+                                          >
+                                            {markingPaidId === i.id ? (
+                                              <Loader2 className="size-3.5 animate-spin" />
+                                            ) : (
+                                              <>
+                                                <Banknote className="mr-1 size-3.5" />
+                                                Mark paid
+                                              </>
+                                            )}
+                                          </Button>
+                                        ) : null}
+                                        <StatusChip status={i.status} />
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
                               )}
+
+                              {/* Record a bank transfer that arrived before any invoice existed. */}
+                              <div className="mt-3 rounded-lg border border-dashed border-stone-200 p-3 dark:border-stone-700">
+                                <p className="text-xs font-semibold text-stone-600 dark:text-stone-300">
+                                  Record a bank payment
+                                </p>
+                                <p className="mt-0.5 text-[11px] text-stone-400 dark:text-stone-500">
+                                  Licence a term for a school that paid into your account directly. Amount is computed from
+                                  the school&apos;s price and concession.
+                                </p>
+                                <div className="mt-2 flex flex-wrap items-end gap-2">
+                                  <Input
+                                    className="h-8 w-40 text-xs"
+                                    placeholder="2025/2026 Term 1"
+                                    value={recordTerm}
+                                    onChange={(e) => setRecordTerm(e.target.value)}
+                                  />
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    className="h-8 w-24 text-xs"
+                                    placeholder="Seats"
+                                    value={recordSeats}
+                                    onChange={(e) => setRecordSeats(e.target.value)}
+                                  />
+                                  <Input
+                                    className="h-8 min-w-[7rem] flex-1 text-xs"
+                                    placeholder="Bank ref / note (optional)"
+                                    value={recordNote}
+                                    onChange={(e) => setRecordNote(e.target.value)}
+                                  />
+                                  <Button
+                                    size="sm"
+                                    className="h-8 text-xs"
+                                    disabled={recordingId === school.id}
+                                    onClick={() => void recordBankPayment(school)}
+                                  >
+                                    {recordingId === school.id ? (
+                                      <Loader2 className="mr-1 size-3.5 animate-spin" />
+                                    ) : (
+                                      <Banknote className="mr-1 size-3.5" />
+                                    )}
+                                    Record &amp; activate
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         )}
