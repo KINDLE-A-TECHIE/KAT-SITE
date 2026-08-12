@@ -24,6 +24,7 @@ type Invoice = {
   term: string;
   seatCount: number;
   amount: number;
+  discountPercent: number;
   status: "DRAFT" | "PENDING" | "PAID" | "VOID";
   paystackRef: string;
   createdAt: string;
@@ -37,7 +38,7 @@ type License = {
 };
 
 type Billing = {
-  school: { name: string; pricePerSeat: number };
+  school: { name: string; pricePerSeat: number; discountPercent: number; discountReason: string | null };
   invoices: Invoice[];
   licenses: License[];
 };
@@ -106,10 +107,11 @@ export function BillingPanel() {
   }, [returnedRef, load]);
 
   const seatCount = Number(seats);
-  const preview =
-    data && Number.isFinite(seatCount) && seatCount > 0
-      ? seatCount * data.school.pricePerSeat
-      : 0;
+  const discountPercent = data ? data.school.discountPercent : 0;
+  const previewList =
+    data && Number.isFinite(seatCount) && seatCount > 0 ? seatCount * data.school.pricePerSeat : 0;
+  // What the school actually pays after its concession.
+  const preview = Number((previewList * (1 - Math.min(100, Math.max(0, discountPercent)) / 100)).toFixed(2));
 
   const createInvoice = async () => {
     setBusy(true);
@@ -127,6 +129,13 @@ export function BillingPanel() {
       return;
     }
     setOpen(false);
+    // Sponsored / fully-discounted term: nets zero, so the server already marked it paid and
+    // activated the licence. No Paystack step.
+    if (payload.invoice?.paid) {
+      toast.success("Term activated. This is a sponsored term, no payment needed.");
+      await load();
+      return;
+    }
     if (payload.authorizationUrl) {
       window.location.assign(payload.authorizationUrl); // straight to Paystack
       return;
@@ -147,7 +156,10 @@ export function BillingPanel() {
   if (loading) return <Skeleton className="h-72 w-full rounded-lg" />;
   if (!data) return null;
 
-  const noPrice = data.school.pricePerSeat <= 0;
+  // A fully-sponsored school may have no list price yet and still raise free, auto-activated terms,
+  // so it is NOT treated as "no price".
+  const sponsored = discountPercent >= 100;
+  const noPrice = data.school.pricePerSeat <= 0 && !sponsored;
 
   return (
     <div className="space-y-6">
@@ -160,8 +172,15 @@ export function BillingPanel() {
           <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
             {noPrice
               ? "No seat price agreed yet. Contact KAT."
-              : `${naira(data.school.pricePerSeat)} per seat, per term.`}
+              : sponsored
+                ? "Sponsored by KAT: your terms activate free."
+                : discountPercent > 0
+                  ? `${naira(data.school.pricePerSeat)} per seat, ${discountPercent}% concession applied.`
+                  : `${naira(data.school.pricePerSeat)} per seat, per term.`}
           </p>
+          {discountPercent > 0 && data.school.discountReason ? (
+            <p className="mt-0.5 text-xs text-emerald-700 dark:text-emerald-400">{data.school.discountReason}</p>
+          ) : null}
         </div>
         <Button
           onClick={() => setOpen(true)}
@@ -294,14 +313,24 @@ export function BillingPanel() {
               />
             </div>
 
-            <div className="rounded-lg bg-stone-50 p-3 text-sm dark:bg-stone-800/50">
-              <div className="flex items-center justify-between">
+            <div className="space-y-1 rounded-lg bg-stone-50 p-3 text-sm dark:bg-stone-800/50">
+              {discountPercent > 0 ? (
+                <>
+                  <div className="flex items-center justify-between text-stone-500 dark:text-stone-400">
+                    <span>{seatCount > 0 ? `${seatCount} × ${naira(data.school.pricePerSeat)}` : "List"}</span>
+                    <span>{naira(previewList)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400">
+                    <span>Concession ({discountPercent}%)</span>
+                    <span>- {naira(previewList - preview)}</span>
+                  </div>
+                </>
+              ) : null}
+              <div className="flex items-center justify-between border-t border-stone-200 pt-1 dark:border-stone-700">
                 <span className="text-stone-500 dark:text-stone-400">
-                  {seatCount > 0 ? `${seatCount} × ${naira(data.school.pricePerSeat)}` : "Amount"}
+                  {sponsored ? "Sponsored" : discountPercent > 0 ? "You pay" : seatCount > 0 ? `${seatCount} × ${naira(data.school.pricePerSeat)}` : "Amount"}
                 </span>
-                <span className="text-lg font-bold text-stone-900 dark:text-stone-100">
-                  {naira(preview)}
-                </span>
+                <span className="text-lg font-bold text-stone-900 dark:text-stone-100">{naira(preview)}</span>
               </div>
             </div>
           </div>
@@ -316,7 +345,7 @@ export function BillingPanel() {
               className="bg-orange-700 text-white hover:bg-orange-800"
             >
               {busy ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : null}
-              {busy ? "Creating…" : "Raise invoice & pay"}
+              {busy ? "Creating…" : preview <= 0 ? "Activate free term" : "Raise invoice & pay"}
             </Button>
           </DialogFooter>
         </DialogContent>

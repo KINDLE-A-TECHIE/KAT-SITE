@@ -3,6 +3,30 @@ import { SchoolInvoiceStatus, SchoolLicenseStatus } from "@prisma/client";
 import { prisma } from "./prisma";
 
 /**
+ * Net invoice amount after the school's concession. Pure and rounded to two decimals (kobo).
+ *
+ *   list = seatCount x pricePerSeat
+ *   net  = list x (1 - discountPercent/100), floored at 0
+ *
+ * discountPercent is clamped to 0..100 defensively. A 100% concession nets 0, which the billing
+ * route treats as a sponsored/free term (no Paystack; the licence is activated directly).
+ */
+export function computeInvoiceAmount(
+  seatCount: number,
+  pricePerSeat: number,
+  discountPercent: number,
+): { list: number; discountPercent: number; amount: number } {
+  const pct = Math.min(100, Math.max(0, discountPercent));
+  const list = seatCount * pricePerSeat;
+  const net = Math.max(0, list * (1 - pct / 100));
+  return {
+    list: Number(list.toFixed(2)),
+    discountPercent: pct,
+    amount: Number(net.toFixed(2)),
+  };
+}
+
+/**
  * School billing, invoice-based, per seat, per term. NOT the B2C monthly subscription.
  *
  * The activation below is shared by BOTH the Paystack webhook and the verify-on-return

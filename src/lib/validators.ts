@@ -738,8 +738,17 @@ export const schoolProvisionSchema = z
 export const schoolAdminUpdateSchema = z
   .object({
     pricePerSeat: z.coerce.number().min(0).max(1_000_000).optional(),
+    // Negotiated concession, 0..100. 100 = a sponsored/free term. Super-admin only.
+    discountPercent: z.coerce.number().min(0).max(100).optional(),
+    // Cleared by sending an empty string; capped so it stays a short audit note.
+    discountReason: z.string().trim().max(200).optional(),
     suspended: z.boolean().optional(),
   })
-  .refine((d) => d.pricePerSeat !== undefined || d.suspended !== undefined, {
-    message: "Provide a price and/or a suspension state to update.",
-  });
+  .refine(
+    (d) =>
+      d.pricePerSeat !== undefined ||
+      d.discountPercent !== undefined ||
+      d.discountReason !== undefined ||
+      d.suspended !== undefined,
+    { message: "Provide a price, discount, reason and/or a suspension state to update." },
+  );

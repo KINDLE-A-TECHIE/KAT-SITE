@@ -17,7 +17,7 @@ const mockPrisma = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 
-import { markInvoicePaidAndActivate } from "@/lib/school-billing";
+import { computeInvoiceAmount, markInvoicePaidAndActivate } from "@/lib/school-billing";
 
 const invoice = (status: SchoolInvoiceStatus) => ({
   id: "inv_1",
@@ -39,6 +39,34 @@ beforeEach(() => {
       schoolLicense: { upsert: vi.fn() },
     }),
   );
+});
+
+describe("computeInvoiceAmount", () => {
+  it("charges list price with no concession", () => {
+    expect(computeInvoiceAmount(40, 2500, 0)).toEqual({ list: 100000, discountPercent: 0, amount: 100000 });
+  });
+
+  it("applies a partial concession to the net amount", () => {
+    expect(computeInvoiceAmount(10, 2500, 20)).toEqual({ list: 25000, discountPercent: 20, amount: 20000 });
+  });
+
+  it("nets zero for a 100% (sponsored) concession", () => {
+    expect(computeInvoiceAmount(40, 2500, 100).amount).toBe(0);
+  });
+
+  it("a fully-sponsored school with no list price still nets zero", () => {
+    expect(computeInvoiceAmount(30, 0, 100).amount).toBe(0);
+  });
+
+  it("clamps an out-of-range discount to 0..100", () => {
+    expect(computeInvoiceAmount(10, 2500, 150).amount).toBe(0); // clamped to 100
+    expect(computeInvoiceAmount(10, 2500, -10).amount).toBe(25000); // clamped to 0
+  });
+
+  it("rounds to two decimals (kobo)", () => {
+    // 3 seats x 999.99 = 2999.97; 33% off -> 2009.9799 -> 2009.98
+    expect(computeInvoiceAmount(3, 999.99, 33).amount).toBe(2009.98);
+  });
 });
 
 describe("markInvoicePaidAndActivate", () => {

@@ -10,6 +10,7 @@ import { generateInvoiceReference } from "@/lib/payments/receipt";
 import { SCHOOL_HOST, isSchoolHost } from "@/lib/school-host";
 import { trackEvent } from "@/lib/analytics";
 import { captureError } from "@/lib/sentry";
+import { computeInvoiceAmount, markInvoicePaidAndActivate } from "@/lib/school-billing";
 
 /**
  * School billing, invoice per term, per seat. SCHOOL_ADMIN only.
@@ -38,7 +39,7 @@ export async function GET() {
     const [school, invoices, licenses] = await Promise.all([
       prisma.school.findUnique({
         where: { id: schoolId },
-        select: { name: true, pricePerSeat: true },
+        select: { name: true, pricePerSeat: true, discountPercent: true, discountReason: true },
       }),
       prisma.schoolInvoice.findMany({
         where: { schoolId },
@@ -50,6 +51,8 @@ export async function GET() {
           termNumber: true,
           seatCount: true,
           amount: true,
+          discountPercent: true,
+          discountReason: true,
           status: true,
           paystackRef: true,
           createdAt: true,
@@ -63,9 +66,19 @@ export async function GET() {
     ]);
 
     return ok({
-      school: { name: school?.name ?? "", pricePerSeat: Number(school?.pricePerSeat ?? 0) },
+      school: {
+        name: school?.name ?? "",
+        pricePerSeat: Number(school?.pricePerSeat ?? 0),
+        discountPercent: Number(school?.discountPercent ?? 0),
+        discountReason: school?.discountReason ?? null,
+      },
       // Compose a `term` label at the boundary so the billing UI keeps reading one field.
-      invoices: invoices.map((i) => ({ ...i, term: formatTerm(i.sessionLabel, i.termNumber), amount: Number(i.amount) })),
+      invoices: invoices.map((i) => ({
+        ...i,
+        term: formatTerm(i.sessionLabel, i.termNumber),
+        amount: Number(i.amount),
+        discountPercent: Number(i.discountPercent),
+      })),
       licenses: licenses.map((l) => ({ ...l, term: formatTerm(l.sessionLabel, l.termNumber) })),
     });
   } catch (error) {
@@ -105,7 +118,7 @@ export async function POST(request: Request) {
   try {
     const school = await prisma.school.findUnique({
       where: { id: schoolId },
-      select: { name: true, pricePerSeat: true, suspendedAt: true },
+      select: { name: true, pricePerSeat: true, discountPercent: true, discountReason: true, suspendedAt: true },
     });
     if (!school) return fail("School not found.", 404);
 
@@ -116,7 +129,10 @@ export async function POST(request: Request) {
     }
 
     const pricePerSeat = Number(school.pricePerSeat);
-    if (pricePerSeat <= 0) {
+    const discountPercent = Number(school.discountPercent);
+    // A price is required UNLESS the concession is a full (100%) sponsorship: a fully-sponsored pilot
+    // may have no agreed list price yet and still gets a free, activated licence below.
+    if (pricePerSeat <= 0 && discountPercent < 100) {
       return fail(
         "No seat price has been set for your school. Contact KAT to agree your pricing.",
         422,
@@ -149,8 +165,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // THE AMOUNT IS COMPUTED HERE, never taken from the request.
-    const amount = Number((seatCount * pricePerSeat).toFixed(2));
+    // THE AMOUNT IS COMPUTED HERE, never taken from the request. The concession also comes off the
+    // SCHOOL record (super-admin-set), never the request, so a school cannot discount itself.
+    const { amount } = computeInvoiceAmount(seatCount, pricePerSeat, discountPercent);
     const paystackRef = generateInvoiceReference();
 
     const invoice = await prisma.schoolInvoice.create({
@@ -160,11 +177,43 @@ export async function POST(request: Request) {
         termNumber,
         seatCount,
         amount,
+        discountPercent,
+        discountReason: school.discountReason,
         status: SchoolInvoiceStatus.PENDING,
         paystackRef,
       },
-      select: { id: true, sessionLabel: true, termNumber: true, seatCount: true, amount: true, status: true, paystackRef: true },
+      select: {
+        id: true,
+        sessionLabel: true,
+        termNumber: true,
+        seatCount: true,
+        amount: true,
+        discountPercent: true,
+        discountReason: true,
+        status: true,
+        paystackRef: true,
+      },
     });
+
+    // FREE / SPONSORED TERM: a net-zero invoice cannot go through Paystack (you cannot charge NGN 0).
+    // Mark it PAID and activate the term's licence immediately, reusing the exact same activation the
+    // webhook uses (idempotent). The school gets access with no payment step.
+    if (amount <= 0) {
+      await markInvoicePaidAndActivate(paystackRef);
+      await trackEvent({
+        userId: session?.user?.id,
+        eventType: "admin",
+        eventName: "school_invoice_sponsored",
+        payload: { schoolId, sessionLabel, termNumber, seatCount, discountPercent },
+      });
+      return ok(
+        {
+          invoice: { ...invoice, term: termLabel, amount: Number(invoice.amount), discountPercent: Number(invoice.discountPercent), paid: true },
+          authorizationUrl: null,
+        },
+        201,
+      );
+    }
 
     // Return the admin to the SCHOOL host they paid from, NOT the B2C apex (NEXTAUTH_URL).
     // Their school session cookie lives on the school host, so landing on the apex /admin
@@ -205,7 +254,12 @@ export async function POST(request: Request) {
 
     return ok(
       {
-        invoice: { ...invoice, term: termLabel, amount: Number(invoice.amount) },
+        invoice: {
+          ...invoice,
+          term: termLabel,
+          amount: Number(invoice.amount),
+          discountPercent: Number(invoice.discountPercent),
+        },
         authorizationUrl,
       },
       201,

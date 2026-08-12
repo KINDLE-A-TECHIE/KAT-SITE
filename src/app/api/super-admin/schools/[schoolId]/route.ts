@@ -76,7 +76,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ sc
   if (!parsed.success) {
     return fail("Invalid update payload.", 400, parsed.error.flatten());
   }
-  const { pricePerSeat, suspended } = parsed.data;
+  const { pricePerSeat, discountPercent, discountReason, suspended } = parsed.data;
 
   try {
     const school = await prisma.school.findUnique({ where: { id: schoolId }, select: { id: true } });
@@ -86,16 +86,24 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ sc
       where: { id: schoolId },
       data: {
         ...(pricePerSeat !== undefined ? { pricePerSeat } : {}),
+        ...(discountPercent !== undefined ? { discountPercent } : {}),
+        // An empty reason clears the note.
+        ...(discountReason !== undefined ? { discountReason: discountReason === "" ? null : discountReason } : {}),
         ...(suspended !== undefined ? { suspendedAt: suspended ? new Date() : null } : {}),
       },
-      select: { id: true, name: true, pricePerSeat: true, suspendedAt: true },
+      select: { id: true, name: true, pricePerSeat: true, discountPercent: true, discountReason: true, suspendedAt: true },
     });
 
     await trackEvent({
       userId: session.user.id,
       eventType: "admin",
       eventName: "school_updated",
-      payload: { schoolId, ...(pricePerSeat !== undefined ? { pricePerSeat } : {}), ...(suspended !== undefined ? { suspended } : {}) },
+      payload: {
+        schoolId,
+        ...(pricePerSeat !== undefined ? { pricePerSeat } : {}),
+        ...(discountPercent !== undefined ? { discountPercent } : {}),
+        ...(suspended !== undefined ? { suspended } : {}),
+      },
     });
 
     return ok({
@@ -103,6 +111,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ sc
         id: updated.id,
         name: updated.name,
         pricePerSeat: Number(updated.pricePerSeat),
+        discountPercent: Number(updated.discountPercent),
+        discountReason: updated.discountReason,
         suspendedAt: updated.suspendedAt ? updated.suspendedAt.toISOString() : null,
       },
     });

@@ -30,6 +30,8 @@ type ManagedSchool = {
   name: string;
   slug: string;
   pricePerSeat: number;
+  discountPercent: number;
+  discountReason: string | null;
   suspendedAt: string | null;
   createdAt: string;
   adminCount: number;
@@ -107,9 +109,11 @@ export function ManageSchoolsPanel() {
   const [schools, setSchools] = useState<ManagedSchool[]>([]);
   const [query, setQuery] = useState("");
 
-  // Inline per-seat price editing.
+  // Inline per-seat price + concession editing.
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftPrice, setDraftPrice] = useState("");
+  const [draftDiscount, setDraftDiscount] = useState("");
+  const [draftReason, setDraftReason] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
 
   // Suspension + drill-down.
@@ -154,10 +158,14 @@ export function ManageSchoolsPanel() {
   const startEdit = (school: ManagedSchool) => {
     setEditingId(school.id);
     setDraftPrice(school.pricePerSeat > 0 ? String(school.pricePerSeat) : "");
+    setDraftDiscount(school.discountPercent > 0 ? String(school.discountPercent) : "");
+    setDraftReason(school.discountReason ?? "");
   };
   const cancelEdit = () => {
     setEditingId(null);
     setDraftPrice("");
+    setDraftDiscount("");
+    setDraftReason("");
   };
 
   const savePrice = async (school: ManagedSchool) => {
@@ -166,22 +174,39 @@ export function ManageSchoolsPanel() {
       toast.error("Enter a valid price (0 or more).");
       return;
     }
+    const discount = draftDiscount.trim() === "" ? 0 : Number(draftDiscount);
+    if (!Number.isFinite(discount) || discount < 0 || discount > 100) {
+      toast.error("Concession must be between 0 and 100%.");
+      return;
+    }
     setSavingId(school.id);
     const res = await fetch(`/api/super-admin/schools/${school.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pricePerSeat: value }),
+      body: JSON.stringify({ pricePerSeat: value, discountPercent: discount, discountReason: draftReason.trim() }),
     });
     const payload = await res.json();
     setSavingId(null);
     if (!res.ok) {
-      toast.error(payload?.error ?? "Could not update the seat price.");
+      toast.error(payload?.error ?? "Could not update the school.");
       return;
     }
     const newPrice = Number(payload.school?.pricePerSeat ?? value);
-    setSchools((prev) => prev.map((s) => (s.id === school.id ? { ...s, pricePerSeat: newPrice } : s)));
+    const newDiscount = Number(payload.school?.discountPercent ?? discount);
+    const newReason = (payload.school?.discountReason ?? null) as string | null;
+    setSchools((prev) =>
+      prev.map((s) =>
+        s.id === school.id ? { ...s, pricePerSeat: newPrice, discountPercent: newDiscount, discountReason: newReason } : s,
+      ),
+    );
     toast.success(
-      newPrice > 0 ? `${school.name}: ${naira(newPrice)} per seat.` : `${school.name}: invoicing suspended (price 0).`,
+      newDiscount >= 100
+        ? `${school.name}: sponsored (free terms).`
+        : newDiscount > 0
+          ? `${school.name}: ${naira(newPrice)}/seat, ${newDiscount}% off.`
+          : newPrice > 0
+            ? `${school.name}: ${naira(newPrice)} per seat.`
+            : `${school.name}: invoicing suspended (price 0).`,
     );
     cancelEdit();
   };
@@ -340,32 +365,74 @@ export function ManageSchoolsPanel() {
                   {/* Per-seat price + inline edit */}
                   <div className="shrink-0">
                     {editing ? (
-                      <div className="flex items-center gap-1.5">
-                        <div className="relative">
-                          <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-stone-400">
-                            ₦
-                          </span>
-                          <Input
-                            type="number"
-                            min={0}
-                            max={1_000_000}
-                            autoFocus
-                            className="h-9 w-32 pl-6"
-                            value={draftPrice}
-                            onChange={(e) => setDraftPrice(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") void savePrice(school);
-                              if (e.key === "Escape") cancelEdit();
-                            }}
-                            placeholder="0"
-                          />
+                      <div className="flex w-64 flex-col gap-2">
+                        <div>
+                          <label className="text-[11px] uppercase tracking-wide text-stone-400 dark:text-stone-500">
+                            Price / seat
+                          </label>
+                          <div className="relative mt-1">
+                            <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-stone-400">
+                              ₦
+                            </span>
+                            <Input
+                              type="number"
+                              min={0}
+                              max={1_000_000}
+                              autoFocus
+                              className="h-9 w-full pl-6"
+                              value={draftPrice}
+                              onChange={(e) => setDraftPrice(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") void savePrice(school);
+                                if (e.key === "Escape") cancelEdit();
+                              }}
+                              placeholder="0"
+                            />
+                          </div>
                         </div>
-                        <Button size="sm" className="h-9 px-2.5" disabled={saving} onClick={() => void savePrice(school)}>
-                          {saving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-                        </Button>
-                        <Button size="sm" variant="outline" className="h-9 px-2.5" disabled={saving} onClick={cancelEdit}>
-                          <X className="size-4" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <div className="w-20">
+                            <label className="text-[11px] uppercase tracking-wide text-stone-400 dark:text-stone-500">
+                              Off %
+                            </label>
+                            <Input
+                              type="number"
+                              min={0}
+                              max={100}
+                              className="mt-1 h-9 w-full"
+                              value={draftDiscount}
+                              onChange={(e) => setDraftDiscount(e.target.value)}
+                              placeholder="0"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <label className="text-[11px] uppercase tracking-wide text-stone-400 dark:text-stone-500">
+                              Reason
+                            </label>
+                            <Input
+                              type="text"
+                              maxLength={200}
+                              className="mt-1 h-9 w-full"
+                              value={draftReason}
+                              onChange={(e) => setDraftReason(e.target.value)}
+                              placeholder="pilot term"
+                            />
+                          </div>
+                        </div>
+                        {Number(draftDiscount) >= 100 ? (
+                          <p className="text-[11px] text-pine dark:text-emerald-400">
+                            100% = sponsored: terms activate free, no payment step.
+                          </p>
+                        ) : null}
+                        <div className="flex gap-1.5">
+                          <Button size="sm" className="h-8 flex-1" disabled={saving} onClick={() => void savePrice(school)}>
+                            {saving ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Check className="mr-1 size-4" />}
+                            Save
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-8" disabled={saving} onClick={cancelEdit}>
+                            <X className="size-4" />
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
@@ -382,6 +449,14 @@ export function ManageSchoolsPanel() {
                           <p className="text-[11px] uppercase tracking-wide text-stone-400 dark:text-stone-500">
                             per seat / term
                           </p>
+                          {school.discountPercent > 0 ? (
+                            <span
+                              className="mt-1 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                              title={school.discountReason ?? undefined}
+                            >
+                              {school.discountPercent >= 100 ? "Sponsored (free)" : `${school.discountPercent}% off`}
+                            </span>
+                          ) : null}
                         </div>
                         <Button size="sm" variant="outline" className="h-8 px-2.5" onClick={() => startEdit(school)}>
                           <Pencil className="mr-1 size-3.5" />

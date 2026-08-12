@@ -1378,6 +1378,13 @@ model School {
   createdAt           DateTime              @default(now())
   updatedAt           DateTime @updatedAt
   pricePerSeat        Decimal               @default(0) @db.Decimal(10, 2)
+  // Super-admin negotiated concession, 0..100. Applied to EVERY invoice the school raises (net =
+  // list x (1 - discountPercent/100)), and snapshotted onto the invoice for the record. 100 = a
+  // sponsored/free term: the invoice nets zero, skips Paystack, and activates the licence directly.
+  // A school can never set this (only the super-admin), same authority rule as pricePerSeat.
+  discountPercent     Decimal               @default(0) @db.Decimal(5, 2)
+  // Why the concession exists (e.g. "pilot term", "district deal"). Audit + shows on the invoice.
+  discountReason      String?
   // Super-admin billing suspension. When set, the school cannot raise NEW invoices/buy seats. It is a
   // COMMERCIAL pause, not a mid-term access cut: pupils already inside a paid, in-window licence keep
   // access until that window expires (the "don't strand pupils" rule). Reversible: clear to resume.
@@ -1563,7 +1570,12 @@ model SchoolInvoice {
   // the billing UI captures it (A4); the gate treats a null window as no time limit.
   startsAt     DateTime?
   seatCount    Int
+  // `amount` is the NET (what the school actually pays). The list price is seatCount x pricePerSeat;
+  // `discountPercent` is snapshotted from the school at creation so the concession is auditable per
+  // invoice even after the school's standing rate changes.
   amount       Decimal             @db.Decimal(10, 2)
+  discountPercent Decimal          @default(0) @db.Decimal(5, 2)
+  discountReason  String?
   status       SchoolInvoiceStatus @default(PENDING)
   paystackRef  String              @unique
   createdAt    DateTime            @default(now())

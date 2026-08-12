@@ -15,6 +15,8 @@ export type ManagedSchool = {
   name: string;
   slug: string;
   pricePerSeat: number;
+  discountPercent: number;
+  discountReason: string | null;
   suspendedAt: string | null;
   createdAt: string;
   adminCount: number;
@@ -31,7 +33,7 @@ export async function listManagedSchools(): Promise<ManagedSchool[]> {
   const [schools, adminGroups, activeLicenses, paidGroups, pendingGroups, pupilGroups] =
     await Promise.all([
       prisma.school.findMany({
-        select: { id: true, name: true, slug: true, pricePerSeat: true, suspendedAt: true, createdAt: true },
+        select: { id: true, name: true, slug: true, pricePerSeat: true, discountPercent: true, discountReason: true, suspendedAt: true, createdAt: true },
         orderBy: { createdAt: "desc" },
       }),
       prisma.schoolMembership.groupBy({
@@ -89,6 +91,8 @@ export async function listManagedSchools(): Promise<ManagedSchool[]> {
       name: school.name,
       slug: school.slug,
       pricePerSeat: Number(school.pricePerSeat),
+      discountPercent: Number(school.discountPercent),
+      discountReason: school.discountReason,
       suspendedAt: school.suspendedAt ? school.suspendedAt.toISOString() : null,
       createdAt: school.createdAt.toISOString(),
       adminCount: adminCount.get(school.id) ?? 0,
@@ -121,6 +125,7 @@ export type SchoolInvoiceRow = {
   termNumber: number;
   seatCount: number;
   amount: number;
+  discountPercent: number;
   status: string;
   createdAt: string;
 };
@@ -130,6 +135,8 @@ export type SchoolDetail = {
   name: string;
   slug: string;
   pricePerSeat: number;
+  discountPercent: number;
+  discountReason: string | null;
   suspendedAt: string | null;
   licenses: SchoolLicenseRow[];
   invoices: SchoolInvoiceRow[];
@@ -139,7 +146,7 @@ export type SchoolDetail = {
 export async function getSchoolDetail(schoolId: string): Promise<SchoolDetail | null> {
   const school = await prisma.school.findUnique({
     where: { id: schoolId },
-    select: { id: true, name: true, slug: true, pricePerSeat: true, suspendedAt: true },
+    select: { id: true, name: true, slug: true, pricePerSeat: true, discountPercent: true, discountReason: true, suspendedAt: true },
   });
   if (!school) return null;
 
@@ -167,6 +174,7 @@ export async function getSchoolDetail(schoolId: string): Promise<SchoolDetail | 
         termNumber: true,
         seatCount: true,
         amount: true,
+        discountPercent: true,
         status: true,
         createdAt: true,
       },
@@ -178,6 +186,8 @@ export async function getSchoolDetail(schoolId: string): Promise<SchoolDetail | 
     name: school.name,
     slug: school.slug,
     pricePerSeat: Number(school.pricePerSeat),
+    discountPercent: Number(school.discountPercent),
+    discountReason: school.discountReason,
     suspendedAt: school.suspendedAt ? school.suspendedAt.toISOString() : null,
     licenses: licenses.map((l) => {
       const end = termEndsAt(l.startsAt);
@@ -198,6 +208,7 @@ export async function getSchoolDetail(schoolId: string): Promise<SchoolDetail | 
       termNumber: i.termNumber,
       seatCount: i.seatCount,
       amount: Number(i.amount),
+      discountPercent: Number(i.discountPercent),
       status: i.status,
       createdAt: i.createdAt.toISOString(),
     })),
