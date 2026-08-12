@@ -24,6 +24,7 @@ type Invoice = {
   term: string;
   seatCount: number;
   amount: number;
+  discountPercent: number;
   status: "DRAFT" | "PENDING" | "PAID" | "VOID";
   paystackRef: string;
   createdAt: string;
@@ -34,10 +35,13 @@ type License = {
   status: "PENDING" | "ACTIVE" | "EXPIRED" | "CANCELLED";
   seatLimit: number;
   seatsUsed: number;
+  lifecycle: "UNLIMITED" | "NOT_STARTED" | "ACTIVE" | "GRACE" | "EXPIRED";
+  daysUntilEnd: number | null;
+  endsAt: string | null;
 };
 
 type Billing = {
-  school: { name: string; pricePerSeat: number };
+  school: { name: string; pricePerSeat: number; discountPercent: number; discountReason: string | null };
   invoices: Invoice[];
   licenses: License[];
 };
@@ -68,6 +72,7 @@ export function BillingPanel() {
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState("");
   const [seats, setSeats] = useState("");
+  const [startDate, setStartDate] = useState("");
 
   const load = useCallback(async () => {
     const res = await fetch("/api/school/billing/invoices");
@@ -106,10 +111,11 @@ export function BillingPanel() {
   }, [returnedRef, load]);
 
   const seatCount = Number(seats);
-  const preview =
-    data && Number.isFinite(seatCount) && seatCount > 0
-      ? seatCount * data.school.pricePerSeat
-      : 0;
+  const discountPercent = data ? data.school.discountPercent : 0;
+  const previewList =
+    data && Number.isFinite(seatCount) && seatCount > 0 ? seatCount * data.school.pricePerSeat : 0;
+  // What the school actually pays after its concession.
+  const preview = Number((previewList * (1 - Math.min(100, Math.max(0, discountPercent)) / 100)).toFixed(2));
 
   const createInvoice = async () => {
     setBusy(true);
@@ -117,7 +123,7 @@ export function BillingPanel() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       // NOTE: no amount is sent, the server computes it from the school's agreed price.
-      body: JSON.stringify({ term, seatCount }),
+      body: JSON.stringify({ term, seatCount, startsAt: startDate || undefined }),
     });
     const payload = await res.json().catch(() => ({}));
     setBusy(false);
@@ -127,6 +133,13 @@ export function BillingPanel() {
       return;
     }
     setOpen(false);
+    // Sponsored / fully-discounted term: nets zero, so the server already marked it paid and
+    // activated the licence. No Paystack step.
+    if (payload.invoice?.paid) {
+      toast.success("Term activated. This is a sponsored term, no payment needed.");
+      await load();
+      return;
+    }
     if (payload.authorizationUrl) {
       window.location.assign(payload.authorizationUrl); // straight to Paystack
       return;
@@ -147,7 +160,22 @@ export function BillingPanel() {
   if (loading) return <Skeleton className="h-72 w-full rounded-lg" />;
   if (!data) return null;
 
-  const noPrice = data.school.pricePerSeat <= 0;
+  // A fully-sponsored school may have no list price yet and still raise free, auto-activated terms,
+  // so it is NOT treated as "no price".
+  const sponsored = discountPercent >= 100;
+  const noPrice = data.school.pricePerSeat <= 0 && !sponsored;
+
+  // The most-urgent live licence that needs renewing: one in its grace period, or expiring within 14
+  // days. Drives the banner so an admin who never opens their email still sees it.
+  const renewalAlert =
+    data.licenses
+      .filter(
+        (l) =>
+          l.status === "ACTIVE" &&
+          (l.lifecycle === "GRACE" ||
+            (l.lifecycle === "ACTIVE" && l.daysUntilEnd !== null && l.daysUntilEnd <= 14)),
+      )
+      .sort((a, b) => (a.daysUntilEnd ?? 0) - (b.daysUntilEnd ?? 0))[0] ?? null;
 
   return (
     <div className="space-y-6">
@@ -160,8 +188,15 @@ export function BillingPanel() {
           <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
             {noPrice
               ? "No seat price agreed yet. Contact KAT."
-              : `${naira(data.school.pricePerSeat)} per seat, per term.`}
+              : sponsored
+                ? "Sponsored by KAT: your terms activate free."
+                : discountPercent > 0
+                  ? `${naira(data.school.pricePerSeat)} per seat, ${discountPercent}% concession applied.`
+                  : `${naira(data.school.pricePerSeat)} per seat, per term.`}
           </p>
+          {discountPercent > 0 && data.school.discountReason ? (
+            <p className="mt-0.5 text-xs text-emerald-700 dark:text-emerald-400">{data.school.discountReason}</p>
+          ) : null}
         </div>
         <Button
           onClick={() => setOpen(true)}
@@ -172,6 +207,20 @@ export function BillingPanel() {
           Confirm seats for a term
         </Button>
       </header>
+
+      {renewalAlert ? (
+        <div
+          className={
+            renewalAlert.lifecycle === "GRACE"
+              ? "rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-900/20 dark:text-rose-300"
+              : "rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-300"
+          }
+        >
+          {renewalAlert.lifecycle === "GRACE"
+            ? `Your ${renewalAlert.term} access has ended and is in its grace period. Confirm seats for the next term to keep your class moving.`
+            : `Your ${renewalAlert.term} access ends in ${renewalAlert.daysUntilEnd} day${renewalAlert.daysUntilEnd === 1 ? "" : "s"}. Confirm seats for the next term to avoid interruption.`}
+        </div>
+      ) : null}
 
       {/* Licences */}
       <Card>
@@ -194,6 +243,12 @@ export function BillingPanel() {
                     <p className="font-medium text-stone-900 dark:text-stone-100">{l.term}</p>
                     <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
                       {l.seatsUsed} of {l.seatLimit} seats used
+                      {l.lifecycle === "ACTIVE" && l.daysUntilEnd !== null
+                        ? ` · expires in ${l.daysUntilEnd} day${l.daysUntilEnd === 1 ? "" : "s"}`
+                        : ""}
+                      {l.lifecycle === "GRACE" ? " · ended, in grace" : ""}
+                      {l.lifecycle === "EXPIRED" ? " · expired" : ""}
+                      {l.lifecycle === "NOT_STARTED" ? " · not started yet" : ""}
                     </p>
                   </div>
                   <Badge className={LICENSE_BADGE[l.status]}>{l.status}</Badge>
@@ -293,15 +348,37 @@ export function BillingPanel() {
                 onChange={(e) => setSeats(e.target.value)}
               />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="startDate">Term start date (optional)</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+              <p className="text-[11px] text-stone-400 dark:text-stone-500">
+                The 15-week access window runs from here. Leave blank to start it from the day you pay.
+              </p>
+            </div>
 
-            <div className="rounded-lg bg-stone-50 p-3 text-sm dark:bg-stone-800/50">
-              <div className="flex items-center justify-between">
+            <div className="space-y-1 rounded-lg bg-stone-50 p-3 text-sm dark:bg-stone-800/50">
+              {discountPercent > 0 ? (
+                <>
+                  <div className="flex items-center justify-between text-stone-500 dark:text-stone-400">
+                    <span>{seatCount > 0 ? `${seatCount} × ${naira(data.school.pricePerSeat)}` : "List"}</span>
+                    <span>{naira(previewList)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400">
+                    <span>Concession ({discountPercent}%)</span>
+                    <span>- {naira(previewList - preview)}</span>
+                  </div>
+                </>
+              ) : null}
+              <div className="flex items-center justify-between border-t border-stone-200 pt-1 dark:border-stone-700">
                 <span className="text-stone-500 dark:text-stone-400">
-                  {seatCount > 0 ? `${seatCount} × ${naira(data.school.pricePerSeat)}` : "Amount"}
+                  {sponsored ? "Sponsored" : discountPercent > 0 ? "You pay" : seatCount > 0 ? `${seatCount} × ${naira(data.school.pricePerSeat)}` : "Amount"}
                 </span>
-                <span className="text-lg font-bold text-stone-900 dark:text-stone-100">
-                  {naira(preview)}
-                </span>
+                <span className="text-lg font-bold text-stone-900 dark:text-stone-100">{naira(preview)}</span>
               </div>
             </div>
           </div>
@@ -316,7 +393,7 @@ export function BillingPanel() {
               className="bg-orange-700 text-white hover:bg-orange-800"
             >
               {busy ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : null}
-              {busy ? "Creating…" : "Raise invoice & pay"}
+              {busy ? "Creating…" : preview <= 0 ? "Activate free term" : "Raise invoice & pay"}
             </Button>
           </DialogFooter>
         </DialogContent>

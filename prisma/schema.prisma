@@ -55,6 +55,10 @@ model User {
   createdAt                                                DateTime                 @default(now())
   updatedAt                                                DateTime                 @updatedAt
   canGrantRetakes                                          Boolean                  @default(true)
+  // Per-account "need to know" capability areas for ADMIN/INSTRUCTOR (keys from src/lib/capabilities.ts).
+  // A super-admin narrows an account to a subset; SUPER_ADMIN is never restricted; other roles ignore it.
+  // Empty = no areas. Existing admins were backfilled to ALL; new ones default to ALL at creation.
+  permissions                                              String[]                 @default([])
   adminInvitesCreated                                      AdminInvite[]            @relation("AdminInvitesCreated")
   adminInvitesUsed                                         AdminInvite[]            @relation("AdminInvitesUsed")
   analyticsEvents                                          AnalyticsEvent[]
@@ -1374,6 +1378,17 @@ model School {
   createdAt           DateTime              @default(now())
   updatedAt           DateTime @updatedAt
   pricePerSeat        Decimal               @default(0) @db.Decimal(10, 2)
+  // Super-admin negotiated concession, 0..100. Applied to EVERY invoice the school raises (net =
+  // list x (1 - discountPercent/100)), and snapshotted onto the invoice for the record. 100 = a
+  // sponsored/free term: the invoice nets zero, skips Paystack, and activates the licence directly.
+  // A school can never set this (only the super-admin), same authority rule as pricePerSeat.
+  discountPercent     Decimal               @default(0) @db.Decimal(5, 2)
+  // Why the concession exists (e.g. "pilot term", "district deal"). Audit + shows on the invoice.
+  discountReason      String?
+  // Super-admin billing suspension. When set, the school cannot raise NEW invoices/buy seats. It is a
+  // COMMERCIAL pause, not a mid-term access cut: pupils already inside a paid, in-window licence keep
+  // access until that window expires (the "don't strand pupils" rule). Reversible: clear to resume.
+  suspendedAt         DateTime?
   enrollments          Enrollment[]
   inquiries      PartnerInquiry[]
   origins SchoolAllowedOrigin[]
@@ -1555,8 +1570,17 @@ model SchoolInvoice {
   // the billing UI captures it (A4); the gate treats a null window as no time limit.
   startsAt     DateTime?
   seatCount    Int
+  // `amount` is the NET (what the school actually pays). The list price is seatCount x pricePerSeat;
+  // `discountPercent` is snapshotted from the school at creation so the concession is auditable per
+  // invoice even after the school's standing rate changes.
   amount       Decimal             @db.Decimal(10, 2)
+  discountPercent Decimal          @default(0) @db.Decimal(5, 2)
+  discountReason  String?
   status       SchoolInvoiceStatus @default(PENDING)
+  // How it was settled + a short human note (bank reference, or who confirmed the transfer). Set when
+  // the invoice is marked PAID; PAYSTACK by default so historical rows read correctly.
+  paymentMethod SchoolInvoicePaymentMethod @default(PAYSTACK)
+  paymentNote   String?
   paystackRef  String              @unique
   createdAt    DateTime            @default(now())
   updatedAt    DateTime @updatedAt
@@ -1576,6 +1600,11 @@ model SchoolLicense {
   seatsUsed    Int                 @default(0)
   status       SchoolLicenseStatus @default(PENDING)
   pricePerSeat Decimal             @db.Decimal(10, 2)
+  // Which term-ending notice has been sent, so the daily cron does not re-email every day: 0 = none,
+  // 1 = "term ending soon" sent, 2 = "in grace / ended" sent. Reset to 0 whenever the term is
+  // (re)activated, so a re-activated term earns a fresh round of notices. (Each term is its own
+  // purchase; this is not a subscription renewal.)
+  expiryNoticeStage Int             @default(0)
   createdAt    DateTime            @default(now())
   updatedAt    DateTime @updatedAt
   school       School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
@@ -1925,6 +1954,15 @@ enum SchoolInvoiceStatus {
   PENDING
   PAID
   VOID
+}
+
+// How a PAID invoice was settled. PAYSTACK = online card/transfer via the gateway; BANK_TRANSFER =
+// a manual/offline payment into KAT's bank account, confirmed by a super-admin; SPONSORED = a 100%
+// concession that nets zero and activates with no payment.
+enum SchoolInvoicePaymentMethod {
+  PAYSTACK
+  BANK_TRANSFER
+  SPONSORED
 }
 
 enum SchoolLicenseStatus {

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { NotificationType, UserRole } from "@prisma/client";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { tryCompleteInstructorGate } from "@/lib/mastery";
@@ -15,6 +16,7 @@ export async function POST(request: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!REVIEWER_ROLES.includes(session.user.role as UserRole)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "curriculum")) return fail("Forbidden", 403);
 
   const { moduleId } = await params;
 
@@ -64,7 +66,13 @@ export async function POST(request: Request, { params }: Params) {
   if (!enrollment) return fail("Student is not enrolled in this program.", 400);
 
   const result = await tryCompleteInstructorGate(session.user.id, studentId, moduleId);
-  if (!result) return fail("Could not complete sign-off. Check that the module is valid.", 500);
+  if (!result) {
+    return serverError(
+      new Error("tryCompleteInstructorGate returned no result"),
+      "Could not complete sign-off. Check that the module is valid.",
+      { moduleId, studentId, actorId: session.user.id },
+    );
+  }
 
   // Notify the student
   await prisma.notification.create({

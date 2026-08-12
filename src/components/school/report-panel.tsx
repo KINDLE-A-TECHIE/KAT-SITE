@@ -217,7 +217,7 @@ export function ReportPanel({ sessions, classes }: { sessions: string[]; classes
           </Select>
         </div>
 
-        <div className="ml-auto flex gap-2">
+        <div className="flex flex-wrap gap-2 sm:ml-auto">
           <Button variant="outline" onClick={exportStudents} disabled={!data} className="gap-1.5">
             <Download className="size-4" />
             Students CSV

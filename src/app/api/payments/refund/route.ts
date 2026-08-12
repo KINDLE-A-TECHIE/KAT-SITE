@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { type Prisma, PaymentStatus, UserRole } from "@prisma/client";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -97,6 +97,6 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    return fail("Could not process refund.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not process refund.");
   }
 }

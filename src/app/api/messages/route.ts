@@ -1,6 +1,7 @@
 import { NotificationType, Prisma, ThreadType, UserRole } from "@prisma/client";
 import { z } from "zod";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -311,6 +312,8 @@ export async function POST(request: Request) {
     return fail("Unauthorized", 401);
   }
 
+  if (capabilityDenied(session.user, "messaging")) return fail("Forbidden", 403);
+
   if (!checkRateLimit(session.user.id)) {
     return fail("Too many messages. Slow down.", 429);
   }
@@ -547,7 +550,10 @@ export async function POST(request: Request) {
     }
 
     if (!threadId) {
-      return fail("Could not resolve target thread.", 500);
+      return serverError(
+        new Error("threadId unresolved after recipient resolution"),
+        "Could not resolve target thread.",
+      );
     }
 
     const resolvedThreadId = threadId;
@@ -638,7 +644,7 @@ export async function POST(request: Request) {
     return ok({ threadId: resolvedThreadId, message }, 201);
   } catch (error) {
     console.error("[POST /api/messages] Error:", error);
-    return fail("Could not send message.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not send message.");
   }
 }
 
@@ -697,7 +703,7 @@ export async function PUT(request: Request) {
 
     return ok({ messageId: message.id, editedAt: now });
   } catch (error) {
-    return fail("Could not edit message.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not edit message.");
   }
 }
 
@@ -763,7 +769,7 @@ export async function DELETE(request: Request) {
 
     return ok({ messageId: message.id, deletedAt: now });
   } catch (error) {
-    return fail("Could not delete message.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not delete message.");
   }
 }
 
@@ -993,6 +999,6 @@ export async function PATCH(request: Request) {
     if (error instanceof Error) {
       return fail(error.message, 400);
     }
-    return fail("Could not manage group thread.", 500, error);
+    return serverError(error, "Could not manage group thread.");
   }
 }

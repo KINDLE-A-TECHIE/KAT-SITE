@@ -1,5 +1,6 @@
 import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_ROLES, SCHOOL_ROLES } from "@/lib/roles";
@@ -74,6 +75,7 @@ export async function GET(request: Request) {
   if (!session?.user?.id) {
     return fail("Unauthorized", 401);
   }
+  if (capabilityDenied(session.user, "messaging")) return fail("Forbidden", 403);
 
   const url = new URL(request.url);
   const skillQuery = url.searchParams.get("skill")?.trim().toLowerCase() ?? "";

@@ -1,4 +1,4 @@
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { profileSchema } from "@/lib/validators";
@@ -162,6 +162,6 @@ export async function PUT(request: Request) {
 
     return ok({ user: updated });
   } catch (error) {
-    return fail("Could not update profile.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not update profile.");
   }
 }

@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { enrollmentChatLimiter, getClientIp, rateLimitResponse } from "@/lib/ratelimit";
+import { captureError } from "@/lib/sentry";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "";
 const WHATSAPP_LINK = WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}` : null;
@@ -179,6 +180,8 @@ export async function POST(request: Request) {
       return Response.json({ error: "Chat model unavailable. Please try again later." }, { status: 503 });
     }
 
+    // Unexpected failure (not a known config/quota case above): report it.
+    captureError(err);
     return Response.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

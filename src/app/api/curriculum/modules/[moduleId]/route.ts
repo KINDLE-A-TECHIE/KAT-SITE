@@ -1,5 +1,6 @@
 import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteNoteImagesInBodies } from "@/lib/note-images";
@@ -14,6 +15,7 @@ export async function PATCH(request: Request, { params }: Params) {
   const role = session.user.role as UserRole;
   const canEdit = ([UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR] as UserRole[]).includes(role);
   if (!canEdit) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "curriculum")) return fail("Forbidden", 403);
 
   const { moduleId } = await params;
 
@@ -39,6 +41,7 @@ export async function DELETE(_req: Request, { params }: Params) {
 
   const role = session.user.role as UserRole;
   if (!([UserRole.SUPER_ADMIN, UserRole.ADMIN] as UserRole[]).includes(role)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "curriculum")) return fail("Forbidden", 403);
 
   const { moduleId } = await params;
 

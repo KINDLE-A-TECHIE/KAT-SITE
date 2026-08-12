@@ -1,5 +1,6 @@
 import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { retakeGrantSchema } from "@/lib/validators";
@@ -11,6 +12,7 @@ export async function POST(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!GRANTER_ROLES.includes(session.user.role as UserRole)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "assessments")) return fail("Forbidden", 403);
 
   const body = await request.json();
   const parsed = retakeGrantSchema.safeParse(body);
@@ -82,6 +84,7 @@ export async function GET(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!GRANTER_ROLES.includes(session.user.role as UserRole)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "assessments")) return fail("Forbidden", 403);
 
   const url = new URL(request.url);
   const assessmentId = url.searchParams.get("assessmentId");
@@ -109,6 +112,7 @@ export async function DELETE(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!GRANTER_ROLES.includes(session.user.role as UserRole)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "assessments")) return fail("Forbidden", 403);
 
   const url = new URL(request.url);
   const grantId = url.searchParams.get("grantId");

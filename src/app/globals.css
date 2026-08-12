@@ -391,3 +391,35 @@
     page-break-after: avoid;
   }
 }
+
+/* Befitting scroll for dense analytics tables: a thin, unobtrusive, theme-aware scrollbar. Pair with
+   a max-height container and a sticky <thead> so headers stay put while rows scroll. */
+.nice-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 113, 108, 0.4) transparent;
+}
+.nice-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.nice-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nice-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(120, 113, 108, 0.35);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.nice-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(120, 113, 108, 0.55);
+}
+.dark .nice-scroll {
+  scrollbar-color: rgba(214, 211, 209, 0.3) transparent;
+}
+.dark .nice-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(214, 211, 209, 0.25);
+}
+.dark .nice-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(214, 211, 209, 0.45);
+}

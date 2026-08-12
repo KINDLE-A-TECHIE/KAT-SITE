@@ -1,5 +1,5 @@
 import { UserRole } from "@prisma/client";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { trackEvent } from "@/lib/analytics";
@@ -130,7 +130,7 @@ export async function POST(request: Request) {
       201,
     );
   } catch (error) {
-    return fail("Could not create invite.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not create invite.");
   }
 }
 
@@ -180,6 +180,6 @@ export async function PATCH(request: Request) {
 
     return ok({ success: true });
   } catch (error) {
-    return fail("Could not update invite.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not update invite.");
   }
 }

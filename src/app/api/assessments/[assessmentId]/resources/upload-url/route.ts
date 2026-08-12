@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generatePresignedUploadUrl, r2PublicUrl } from "@/lib/r2";
@@ -22,6 +23,7 @@ export async function POST(request: Request, { params }: Params) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!UPLOADER_ROLES.includes(session.user.role as UserRole)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "assessments")) return fail("Forbidden", 403);
 
   const { assessmentId } = await params;
   const assessment = await prisma.assessment.findUnique({

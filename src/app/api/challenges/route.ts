@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkChallengeProgram, notifyEligibleStudents } from "@/lib/challenges";
@@ -73,6 +74,7 @@ export async function GET() {
   }
 
   if (MANAGER_ROLES.includes(role as UserRole)) {
+    if (capabilityDenied(session.user, "challenges")) return fail("Forbidden", 403);
     // Managers: see all challenges in their org
     const challenges = await prisma.challenge.findMany({
       where: organizationId ? { organizationId } : {},
@@ -95,6 +97,7 @@ export async function POST(request: Request) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return fail("Unauthorized", 401);
   if (!MANAGER_ROLES.includes(session.user.role as UserRole)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "challenges")) return fail("Forbidden", 403);
 
   const body = await request.json() as unknown;
   const parsed = createChallengeSchema.safeParse(body);

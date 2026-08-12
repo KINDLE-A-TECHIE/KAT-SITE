@@ -45,6 +45,13 @@ const getSchoolMemberships = cache(async (userId: string) =>
   }),
 );
 
+// Per-account ADMIN/INSTRUCTOR capability areas, re-read every request (like memberships), so a
+// super-admin narrowing an account takes effect immediately rather than after the JWT expires.
+const getUserPermissions = cache(async (userId: string): Promise<string[]> => {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { permissions: true } });
+  return user?.permissions ?? [];
+});
+
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   pages: {
@@ -241,6 +248,7 @@ export const authOptions: NextAuthOptions = {
         const memberships = await getSchoolMemberships(token.sub);
         session.user.schoolMemberships = memberships;
         session.user.activeSchoolId = memberships[0]?.schoolId ?? null;
+        session.user.permissions = await getUserPermissions(token.sub);
         session.user.sessionToken = token.sessionId;
       }
       return session;
