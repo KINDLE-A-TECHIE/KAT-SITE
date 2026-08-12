@@ -4,10 +4,16 @@ import {
   formatTerm,
   normalizeSession,
   termEndsAt,
+  termGraceEndsAt,
   isWithinTermWindow,
+  termLifecycle,
+  daysUntilTermEnds,
   termNumberForModule,
   TERM_LENGTH_WEEKS,
+  TERM_GRACE_WEEKS,
 } from "@/lib/school-term";
+
+const WEEK = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * parseTerm mirrors the A2 migration backfill. If it ever disagreed with the SQL that populated
@@ -70,18 +76,48 @@ describe("term window", () => {
     expect(isWithinTermWindow(null, new Date())).toBe(true);
   });
 
-  it("is inside the window on the start day and outside after 15 weeks", () => {
+  it("allows access from the start day through the grace period, and refuses after", () => {
     const start = new Date("2025-01-06T00:00:00.000Z");
     expect(isWithinTermWindow(start, start)).toBe(true);
-    const midway = new Date(start.getTime() + 7 * 7 * 24 * 60 * 60 * 1000); // week 7
-    expect(isWithinTermWindow(start, midway)).toBe(true);
-    const afterEnd = new Date(start.getTime() + 16 * 7 * 24 * 60 * 60 * 1000); // week 16
-    expect(isWithinTermWindow(start, afterEnd)).toBe(false);
+    expect(isWithinTermWindow(start, new Date(start.getTime() + 7 * WEEK))).toBe(true); // week 7, active
+    // Week 16 is past the 15-week end but INSIDE the 2-week grace, so access continues.
+    expect(isWithinTermWindow(start, new Date(start.getTime() + 16 * WEEK))).toBe(true);
+    // Past 15 + 2 = 17 weeks, access is refused.
+    expect(isWithinTermWindow(start, new Date(start.getTime() + 18 * WEEK))).toBe(false);
   });
 
   it("is not yet open before the start", () => {
     const start = new Date("2025-01-06T00:00:00.000Z");
     const before = new Date(start.getTime() - 24 * 60 * 60 * 1000);
     expect(isWithinTermWindow(start, before)).toBe(false);
+  });
+});
+
+describe("term lifecycle", () => {
+  const start = new Date("2025-01-06T00:00:00.000Z");
+
+  it("grace ends 15 + 2 weeks after the start", () => {
+    expect(termGraceEndsAt(start)!.getTime()).toBe(
+      start.getTime() + (TERM_LENGTH_WEEKS + TERM_GRACE_WEEKS) * WEEK,
+    );
+    expect(termGraceEndsAt(null)).toBeNull();
+  });
+
+  it("classifies each phase of the lifecycle", () => {
+    expect(termLifecycle(null, start)).toBe("UNLIMITED");
+    expect(termLifecycle(start, new Date(start.getTime() - WEEK))).toBe("NOT_STARTED");
+    expect(termLifecycle(start, new Date(start.getTime() + 7 * WEEK))).toBe("ACTIVE");
+    expect(termLifecycle(start, new Date(start.getTime() + 16 * WEEK))).toBe("GRACE"); // in grace
+    expect(termLifecycle(start, new Date(start.getTime() + 18 * WEEK))).toBe("EXPIRED"); // past grace
+  });
+
+  it("counts whole days until the nominal end (negative once past it)", () => {
+    expect(daysUntilTermEnds(null)).toBeNull();
+    // 14 days before the 15-week end.
+    const twoWeeksBeforeEnd = new Date(termEndsAt(start)!.getTime() - 14 * 24 * 60 * 60 * 1000);
+    expect(daysUntilTermEnds(start, twoWeeksBeforeEnd)).toBe(14);
+    // A week past the nominal end -> negative.
+    const weekAfterEnd = new Date(termEndsAt(start)!.getTime() + 7 * 24 * 60 * 60 * 1000);
+    expect(daysUntilTermEnds(start, weekAfterEnd)).toBe(-7);
   });
 });

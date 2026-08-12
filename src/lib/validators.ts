@@ -535,6 +535,8 @@ export const schoolRolloverSchema = z.object({
 export const schoolInvoiceCreateSchema = z.object({
   term: z.string().trim().min(1).max(40),
   seatCount: z.coerce.number().int().min(1).max(100_000),
+  // Optional academic term start. Omitted -> the term's 15-week clock starts from the activation date.
+  startsAt: z.coerce.date().optional(),
 });
 
 export const schoolInvoiceVerifySchema = z.object({
@@ -559,6 +561,8 @@ export const schoolInvoiceManualCreateSchema = z.object({
   term: z.string().trim().min(1).max(40),
   seatCount: z.coerce.number().int().min(1).max(100_000),
   note: z.string().trim().max(200).optional(),
+  // Optional academic term start; omitted -> the 15-week clock starts from activation.
+  startsAt: z.coerce.date().optional(),
 });
 
 export const teacherInviteSchema = z.object({

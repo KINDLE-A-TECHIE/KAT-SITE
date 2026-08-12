@@ -1600,6 +1600,11 @@ model SchoolLicense {
   seatsUsed    Int                 @default(0)
   status       SchoolLicenseStatus @default(PENDING)
   pricePerSeat Decimal             @db.Decimal(10, 2)
+  // Which term-ending notice has been sent, so the daily cron does not re-email every day: 0 = none,
+  // 1 = "term ending soon" sent, 2 = "in grace / ended" sent. Reset to 0 whenever the term is
+  // (re)activated, so a re-activated term earns a fresh round of notices. (Each term is its own
+  // purchase; this is not a subscription renewal.)
+  expiryNoticeStage Int             @default(0)
   createdAt    DateTime            @default(now())
   updatedAt    DateTime @updatedAt
   school       School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)

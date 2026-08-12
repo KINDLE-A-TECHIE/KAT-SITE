@@ -525,6 +525,60 @@ export function buildPaymentReminderEmail(opts: {
   return { html, subject: cfg.subject };
 }
 
+// ── School term-licence expiry ────────────────────────────────────────────────
+
+/**
+ * Proactive renewal nudge for a school term licence. `kind: "expiring"` fires while the term is still
+ * active (daysLeft = days to the nominal end); `kind: "grace"` fires once it has lapsed into the grace
+ * period (daysLeft = grace days remaining before access stops).
+ */
+export function buildSchoolLicenseExpiryEmail(opts: {
+  schoolName: string;
+  term: string;
+  kind: "expiring" | "grace";
+  daysLeft: number;
+  billingUrl: string;
+}) {
+  const plural = opts.daysLeft === 1 ? "" : "s";
+  const cfg =
+    opts.kind === "expiring"
+      ? {
+          subject: `${opts.term} access ends in ${opts.daysLeft} day${plural}`,
+          badgeText: "TERM ENDING",
+          badgeBg: "#fffbeb;color:#b45309;border:1px solid #fde68a;",
+          headline: `Your ${opts.term} access is ending`,
+          body: `<strong style="color:#0f172a;">${opts.schoolName}</strong>&apos;s access to <strong style="color:#0f172a;">${opts.term}</strong> ends in <strong>${opts.daysLeft} day${plural}</strong>. Confirm seats for the next term in billing to keep your class moving without interruption.`,
+          accent: "#D97706",
+        }
+      : {
+          subject: `${opts.term} access has ended, ${opts.daysLeft} grace day${plural} left`,
+          badgeText: "GRACE PERIOD",
+          badgeBg: "#fef2f2;color:#dc2626;border:1px solid #fecaca;",
+          headline: `Your ${opts.term} access has ended`,
+          body: `<strong style="color:#0f172a;">${opts.schoolName}</strong>&apos;s <strong style="color:#0f172a;">${opts.term}</strong> has passed its end date. Your pupils keep access for a short grace period of <strong>${opts.daysLeft} more day${plural}</strong>. Confirm seats for the next term in billing to continue.`,
+          accent: "#DC2626",
+        };
+
+  const html = emailWrapper(`
+    <div style="margin:0 0 20px;">${badge(cfg.badgeText, cfg.badgeBg)}</div>
+    <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.02em;">${cfg.headline}</h2>
+    <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.7;">${cfg.body}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px;">
+      <tbody>
+        ${infoRow("School", opts.schoolName)}
+        ${infoRow("Term", opts.term)}
+      </tbody>
+    </table>
+    <table cellpadding="0" cellspacing="0" style="margin:24px 0 0;">
+      <tr><td style="border-radius:10px;background:${cfg.accent};">
+        <a href="${opts.billingUrl}" style="display:inline-block;padding:13px 36px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:10px;">Open billing →</a>
+      </td></tr>
+    </table>
+  `);
+
+  return { html, subject: cfg.subject };
+}
+
 // ── External Fellow Application Confirmation ──────────────────────────────────
 
 export function buildExternalFellowApplicationEmail(opts: {

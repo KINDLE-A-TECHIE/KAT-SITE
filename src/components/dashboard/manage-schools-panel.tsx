@@ -54,6 +54,15 @@ type LicenseRow = {
   pricePerSeat: number;
   startsAt: string | null;
   endsAt: string | null;
+  lifecycle: "UNLIMITED" | "NOT_STARTED" | "ACTIVE" | "GRACE" | "EXPIRED";
+};
+
+const LIFECYCLE_LABEL: Record<LicenseRow["lifecycle"], string | null> = {
+  UNLIMITED: "No end date",
+  NOT_STARTED: "Not started",
+  ACTIVE: null,
+  GRACE: "In grace",
+  EXPIRED: "Expired",
 };
 type InvoiceRow = {
   id: string;
@@ -137,6 +146,7 @@ export function ManageSchoolsPanel() {
   const [recordTerm, setRecordTerm] = useState("");
   const [recordSeats, setRecordSeats] = useState("");
   const [recordNote, setRecordNote] = useState("");
+  const [recordStart, setRecordStart] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -315,7 +325,12 @@ export function ManageSchoolsPanel() {
     const res = await fetch(`/api/super-admin/schools/${school.id}/invoices`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ term: recordTerm, seatCount: seats, note: recordNote }),
+      body: JSON.stringify({
+        term: recordTerm,
+        seatCount: seats,
+        note: recordNote,
+        startsAt: recordStart || undefined,
+      }),
     });
     const payload = await res.json();
     setRecordingId(null);
@@ -327,6 +342,7 @@ export function ManageSchoolsPanel() {
     setRecordTerm("");
     setRecordSeats("");
     setRecordNote("");
+    setRecordStart("");
     await loadDetail(school.id);
     await load();
   };
@@ -630,7 +646,22 @@ export function ManageSchoolsPanel() {
                                           {l.seatsUsed}/{l.seatLimit} seats · {shortDate(l.startsAt)} to {shortDate(l.endsAt)}
                                         </p>
                                       </div>
-                                      <StatusChip status={l.status} />
+                                      <div className="flex shrink-0 items-center gap-2">
+                                        {LIFECYCLE_LABEL[l.lifecycle] ? (
+                                          <span
+                                            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                              l.lifecycle === "GRACE"
+                                                ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                                                : l.lifecycle === "EXPIRED"
+                                                  ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400"
+                                                  : "bg-stone-100 text-stone-500 dark:bg-stone-700 dark:text-stone-400"
+                                            }`}
+                                          >
+                                            {LIFECYCLE_LABEL[l.lifecycle]}
+                                          </span>
+                                        ) : null}
+                                        <StatusChip status={l.status} />
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
@@ -709,10 +740,17 @@ export function ManageSchoolsPanel() {
                                   <Input
                                     type="number"
                                     min={1}
-                                    className="h-8 w-24 text-xs"
+                                    className="h-8 w-20 text-xs"
                                     placeholder="Seats"
                                     value={recordSeats}
                                     onChange={(e) => setRecordSeats(e.target.value)}
+                                  />
+                                  <Input
+                                    type="date"
+                                    title="Term start date (optional)"
+                                    className="h-8 w-36 text-xs"
+                                    value={recordStart}
+                                    onChange={(e) => setRecordStart(e.target.value)}
                                   />
                                   <Input
                                     className="h-8 min-w-[7rem] flex-1 text-xs"

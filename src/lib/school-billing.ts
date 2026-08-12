@@ -79,9 +79,13 @@ export async function markInvoicePaidAndActivate(
     });
 
     // @@unique([schoolId, sessionLabel, termNumber]), one licence per term, so this upsert is the
-    // "renew or create" path. seatsUsed is NOT touched on update: a renewal or a seat top-up must
-    // not wipe the students already occupying seats this term. startsAt carries the admin-entered
-    // start so the term's 15-week window is anchored (null until the billing UI captures it).
+    // "re-activate or create" path (each term is its own one-off purchase; the update path is a
+    // seat top-up or re-issue of the SAME term, not a renewal). seatsUsed is NOT touched on update, a
+    // top-up must not wipe the students already occupying seats this term. The 15-week window is
+    // anchored to `startsAt`; when the admin did not supply one we default it to the ACTIVATION date
+    // on create, so the term always has a clock (previously null -> "no time limit", never ending).
+    // expiryNoticeStage resets to 0 on every activation so a re-activated term earns fresh notices.
+    const startsAt = invoice.startsAt ?? new Date();
     await tx.schoolLicense.upsert({
       where: {
         schoolId_sessionLabel_termNumber: {
@@ -94,13 +98,16 @@ export async function markInvoicePaidAndActivate(
         seatLimit: invoice.seatCount,
         pricePerSeat: invoice.school.pricePerSeat,
         status: SchoolLicenseStatus.ACTIVE,
+        expiryNoticeStage: 0,
+        // Only move the anchor when the admin explicitly set a start; a seat top-up must not restart
+        // the clock.
         ...(invoice.startsAt ? { startsAt: invoice.startsAt } : {}),
       },
       create: {
         schoolId: invoice.schoolId,
         sessionLabel: invoice.sessionLabel,
         termNumber: invoice.termNumber,
-        startsAt: invoice.startsAt,
+        startsAt,
         seatLimit: invoice.seatCount,
         seatsUsed: 0,
         pricePerSeat: invoice.school.pricePerSeat,

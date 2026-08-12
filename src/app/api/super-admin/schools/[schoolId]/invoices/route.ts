@@ -35,7 +35,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ sch
   const parsed = schoolInvoiceManualCreateSchema.safeParse(body);
   if (!parsed.success) return fail("Invalid payload.", 400, parsed.error.flatten());
 
-  const { term: termInput, seatCount, note } = parsed.data;
+  const { term: termInput, seatCount, note, startsAt } = parsed.data;
   const { sessionLabel, termNumber } = parseTerm(termInput);
   const termLabel = formatTerm(sessionLabel, termNumber);
 
@@ -84,6 +84,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ sch
         schoolId,
         sessionLabel,
         termNumber,
+        startsAt: startsAt ?? null,
         seatCount,
         amount,
         discountPercent,

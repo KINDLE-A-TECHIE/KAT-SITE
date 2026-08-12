@@ -1,7 +1,7 @@
 import "server-only";
 import { SchoolInvoiceStatus, SchoolLicenseStatus, SchoolRole } from "@prisma/client";
 import { prisma } from "./prisma";
-import { termEndsAt } from "./school-term";
+import { termEndsAt, termLifecycle, type TermLifecycle } from "./school-term";
 
 /**
  * The super-admin "Manage schools" list. ALL schools (not the top-20 the analytics overview shows),
@@ -117,6 +117,8 @@ export type SchoolLicenseRow = {
   startsAt: string | null;
   /** Derived window end = startsAt + 15 weeks; null when startsAt is unset (no time limit). */
   endsAt: string | null;
+  /** Where the term sits in its lifecycle right now (drives the drill-down label). */
+  lifecycle: TermLifecycle;
 };
 
 export type SchoolInvoiceRow = {
@@ -204,6 +206,7 @@ export async function getSchoolDetail(schoolId: string): Promise<SchoolDetail | 
         pricePerSeat: Number(l.pricePerSeat),
         startsAt: l.startsAt ? l.startsAt.toISOString() : null,
         endsAt: end ? end.toISOString() : null,
+        lifecycle: termLifecycle(l.startsAt),
       };
     }),
     invoices: invoices.map((i) => ({

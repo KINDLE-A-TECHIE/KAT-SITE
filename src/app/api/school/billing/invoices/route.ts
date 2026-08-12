@@ -4,7 +4,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requireActiveSchool } from "@/lib/school";
 import { schoolInvoiceCreateSchema } from "@/lib/validators";
-import { parseTerm, formatTerm } from "@/lib/school-term";
+import { parseTerm, formatTerm, termLifecycle, daysUntilTermEnds, termEndsAt } from "@/lib/school-term";
 import { getPaymentGateway } from "@/lib/payments/provider";
 import { generateInvoiceReference } from "@/lib/payments/receipt";
 import { SCHOOL_HOST, isSchoolHost } from "@/lib/school-host";
@@ -80,7 +80,16 @@ export async function GET() {
         amount: Number(i.amount),
         discountPercent: Number(i.discountPercent),
       })),
-      licenses: licenses.map((l) => ({ ...l, term: formatTerm(l.sessionLabel, l.termNumber) })),
+      licenses: licenses.map((l) => {
+        const end = termEndsAt(l.startsAt);
+        return {
+          ...l,
+          term: formatTerm(l.sessionLabel, l.termNumber),
+          lifecycle: termLifecycle(l.startsAt),
+          daysUntilEnd: daysUntilTermEnds(l.startsAt),
+          endsAt: end ? end.toISOString() : null,
+        };
+      }),
     });
   } catch (error) {
     captureError(error);
@@ -110,7 +119,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return fail("Invalid invoice payload.", 400, parsed.error.flatten());
   }
-  const { term: termInput, seatCount } = parsed.data;
+  const { term: termInput, seatCount, startsAt } = parsed.data;
   // A term is entered as free text ("2025/2026 Term 1") and stored structured. `termLabel` is the
   // canonical display form used in messages and the response.
   const { sessionLabel, termNumber } = parseTerm(termInput);
@@ -176,6 +185,7 @@ export async function POST(request: Request) {
         schoolId,
         sessionLabel,
         termNumber,
+        startsAt: startsAt ?? null,
         seatCount,
         amount,
         discountPercent,

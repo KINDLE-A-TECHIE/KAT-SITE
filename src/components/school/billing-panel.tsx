@@ -35,6 +35,9 @@ type License = {
   status: "PENDING" | "ACTIVE" | "EXPIRED" | "CANCELLED";
   seatLimit: number;
   seatsUsed: number;
+  lifecycle: "UNLIMITED" | "NOT_STARTED" | "ACTIVE" | "GRACE" | "EXPIRED";
+  daysUntilEnd: number | null;
+  endsAt: string | null;
 };
 
 type Billing = {
@@ -69,6 +72,7 @@ export function BillingPanel() {
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState("");
   const [seats, setSeats] = useState("");
+  const [startDate, setStartDate] = useState("");
 
   const load = useCallback(async () => {
     const res = await fetch("/api/school/billing/invoices");
@@ -119,7 +123,7 @@ export function BillingPanel() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       // NOTE: no amount is sent, the server computes it from the school's agreed price.
-      body: JSON.stringify({ term, seatCount }),
+      body: JSON.stringify({ term, seatCount, startsAt: startDate || undefined }),
     });
     const payload = await res.json().catch(() => ({}));
     setBusy(false);
@@ -161,6 +165,18 @@ export function BillingPanel() {
   const sponsored = discountPercent >= 100;
   const noPrice = data.school.pricePerSeat <= 0 && !sponsored;
 
+  // The most-urgent live licence that needs renewing: one in its grace period, or expiring within 14
+  // days. Drives the banner so an admin who never opens their email still sees it.
+  const renewalAlert =
+    data.licenses
+      .filter(
+        (l) =>
+          l.status === "ACTIVE" &&
+          (l.lifecycle === "GRACE" ||
+            (l.lifecycle === "ACTIVE" && l.daysUntilEnd !== null && l.daysUntilEnd <= 14)),
+      )
+      .sort((a, b) => (a.daysUntilEnd ?? 0) - (b.daysUntilEnd ?? 0))[0] ?? null;
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
@@ -192,6 +208,20 @@ export function BillingPanel() {
         </Button>
       </header>
 
+      {renewalAlert ? (
+        <div
+          className={
+            renewalAlert.lifecycle === "GRACE"
+              ? "rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-900/20 dark:text-rose-300"
+              : "rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-300"
+          }
+        >
+          {renewalAlert.lifecycle === "GRACE"
+            ? `Your ${renewalAlert.term} access has ended and is in its grace period. Confirm seats for the next term to keep your class moving.`
+            : `Your ${renewalAlert.term} access ends in ${renewalAlert.daysUntilEnd} day${renewalAlert.daysUntilEnd === 1 ? "" : "s"}. Confirm seats for the next term to avoid interruption.`}
+        </div>
+      ) : null}
+
       {/* Licences */}
       <Card>
         <CardHeader>
@@ -213,6 +243,12 @@ export function BillingPanel() {
                     <p className="font-medium text-stone-900 dark:text-stone-100">{l.term}</p>
                     <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
                       {l.seatsUsed} of {l.seatLimit} seats used
+                      {l.lifecycle === "ACTIVE" && l.daysUntilEnd !== null
+                        ? ` · expires in ${l.daysUntilEnd} day${l.daysUntilEnd === 1 ? "" : "s"}`
+                        : ""}
+                      {l.lifecycle === "GRACE" ? " · ended, in grace" : ""}
+                      {l.lifecycle === "EXPIRED" ? " · expired" : ""}
+                      {l.lifecycle === "NOT_STARTED" ? " · not started yet" : ""}
                     </p>
                   </div>
                   <Badge className={LICENSE_BADGE[l.status]}>{l.status}</Badge>
@@ -311,6 +347,18 @@ export function BillingPanel() {
                 value={seats}
                 onChange={(e) => setSeats(e.target.value)}
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="startDate">Term start date (optional)</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+              <p className="text-[11px] text-stone-400 dark:text-stone-500">
+                The 15-week access window runs from here. Leave blank to start it from the day you pay.
+              </p>
             </div>
 
             <div className="space-y-1 rounded-lg bg-stone-50 p-3 text-sm dark:bg-stone-800/50">
