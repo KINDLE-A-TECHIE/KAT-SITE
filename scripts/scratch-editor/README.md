@@ -79,7 +79,9 @@ Optionally drop the `window.onbeforeunload = () => true` line in that file so th
 (fetch a `.sb3` and `vm.loadProject`) and `SAVE` (`vm.saveProjectSb3()` then `PUT` the bytes straight to
 the presigned R2 URL the KAT page hands it), and reports `READY`/`DIRTY`/`SAVED`/`SAVE_FAILED` back up. It
 also exposes `window.__katBridge.save() / .open()` and sends `REQUEST_SAVE` / `REQUEST_LOAD` up (the File
-menu calls these; see 2b). The message strings mirror `src/lib/scratch.ts` exactly, keep them in sync.
+menu calls these; see 2b), plus `window.__katBridge.saveVideo(blob, durationMs)` (2c) and
+`window.__katBridge.snapshot()` (2d). The message strings mirror `src/lib/scratch.ts` exactly, keep them
+in sync.
 
 **Branding.** scratch-gui is BSD-licensed, but the Scratch name and cat logo are trademarks with usage
 guidelines (https://scratch.mit.edu/trademark). Follow them for anything a pupil sees.
@@ -187,6 +189,35 @@ pupil's **Recordings** page (`/dashboard/recordings`) and under the Scratch bloc
 
 Gate the button on `window.__katBridge.saveVideo` so the standalone editor (opened outside a KAT iframe,
 no parent) still just downloads. Keep **Download** too: it is the offline / no-account path.
+
+## 2d. Stage snapshot (download a PNG still)
+
+Pupils can grab a **still image** of the stage (a screenshot of the project as it looks right now) and
+download it. Purely local: `bridge.js` builds the PNG in the editor frame and downloads it, so unlike a
+recording it touches no parent, no presigned URL, and no R2, it works even in the standalone editor.
+
+`bridge.js` already exposes `window.__katBridge.snapshot()`; you only add a trigger. Mount a compact
+button in the STAGE CONTROLS row next to the recorder (same file as 2c,
+`src/components/controls/controls.jsx`):
+
+```jsx
+// A tiny camera button, shown only when the bridge is present (so it no-ops nowhere useful).
+{typeof window !== 'undefined' && window.__katBridge && window.__katBridge.snapshot && (
+    <button
+        aria-label="Download a picture of the stage"
+        title="Download a picture of the stage"
+        onClick={() => window.__katBridge.snapshot()}
+    >
+        {/* your camera icon */}
+    </button>
+)}
+```
+
+Under the hood the bridge calls `vm.renderer.requestSnapshot(dataUri => …)` (scratch-render's own stage
+capture; it forces a fresh draw+read, so it avoids the blank-frame WebGL quirk a raw
+`canvas.toDataURL()` can hit) and downloads it as `scratch-stage-<timestamp>.png`. No size cap or rate
+limit is needed because nothing is uploaded. If you would rather it live in the File menu than the stage
+controls, wire the same `window.__katBridge.snapshot()` call from a `menu-bar.jsx` `<MenuItem>` (as in 2b).
 
 ## 3. Connect the fork to Cloudflare Pages (it builds for you)
 

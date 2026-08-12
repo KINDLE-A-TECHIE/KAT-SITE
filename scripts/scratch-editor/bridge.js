@@ -7,7 +7,8 @@
  * `window.__katBridge.save() / .open()` so the editor's own File menu (menu-bar.jsx) drives save/open:
  * those REQUEST a presigned URL from the KAT page, which replies with SAVE / LOAD. And it exposes
  * `window.__katBridge.saveVideo(blob, durationMs)` so the stage recorder (kat-recorder.jsx) can upload a
- * .webm recording to R2 the same way (REQUEST_VIDEO_UPLOAD -> VIDEO_UPLOAD_URL -> PUT -> VIDEO_SAVED).
+ * .webm recording to R2 the same way (REQUEST_VIDEO_UPLOAD -> VIDEO_UPLOAD_URL -> PUT -> VIDEO_SAVED), and
+ * `window.__katBridge.snapshot()` to download a PNG still of the stage (purely local, no parent/R2).
  *
  * WIRING: in scratch-gui the VM is NOT a global, it lives in the Redux store (`state.scratchGui.vm`).
  * Expose it with the tiny `KatVmExposer` connected component from the README, which sets `window.__katVM`,
@@ -155,7 +156,48 @@
     }
   }
 
-  window.__katBridge = { save: requestSave, open: requestOpen, saveVideo: saveVideo };
+  // Download a PNG STILL of the stage to the pupil's device. Editor-side only: the image is built and
+  // downloaded in this frame, so it needs no parent, no presigned URL, and no R2, and it works the same
+  // in the standalone editor (opened with no KAT parent). requestSnapshot forces a fresh draw+read, so
+  // it avoids the blank-frame WebGL quirk a raw canvas.toDataURL can hit.
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function stamp() {
+    var d = new Date();
+    return (
+      d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) +
+      "-" + pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds())
+    );
+  }
+  function downloadDataUri(dataUri) {
+    var a = document.createElement("a");
+    a.href = dataUri;
+    a.download = "scratch-stage-" + stamp() + ".png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  function snapshot() {
+    var vm = getVM();
+    var renderer = vm && vm.renderer;
+    if (!renderer || typeof renderer.requestSnapshot !== "function") {
+      toast("Snapshot is not ready yet.", true);
+      return;
+    }
+    try {
+      renderer.requestSnapshot(function (dataUri) {
+        try {
+          downloadDataUri(dataUri);
+          toast("Snapshot downloaded");
+        } catch (e) {
+          toast("Could not download the snapshot.", true);
+        }
+      });
+    } catch (err) {
+      toast("Could not take a snapshot.", true);
+    }
+  }
+
+  window.__katBridge = { save: requestSave, open: requestOpen, saveVideo: saveVideo, snapshot: snapshot };
 
   window.addEventListener("message", function (event) {
     if (event.origin !== PARENT_ORIGIN) return; // only obey the KAT page that framed us
