@@ -1,5 +1,6 @@
 import { UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteR2Object } from "@/lib/r2";
@@ -32,6 +33,7 @@ export async function DELETE(_req: Request, { params }: Params) {
     resource.assessment.program.organizationId === session.user.organizationId;
 
   if (!isSuperAdmin && !isOwner && !isOrgAdmin) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "assessments")) return fail("Forbidden", 403);
 
   await deleteR2Object(resource.storageKey).catch(() => {});
   await prisma.assessmentResource.delete({ where: { id: resourceId } });

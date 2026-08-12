@@ -1,0 +1,14 @@
+Schools: engage the term-licence lifecycle (window + grace + expiry notices)
+
+The 15-week term window existed in the gate but was dormant: startsAt was never
+captured, so every licence read as unlimited. Anchor it now, markInvoicePaidAndActivate
+defaults startsAt to the activation date (an explicit term start is optional in both
+billing forms), so each paid term is genuinely time-boxed.
+
+Add a 2-week grace period (access continues so a class is not cut off mid-lesson),
+termLifecycle/daysUntilTermEnds helpers, and a daily cron that emails a school's
+admins before a term ends and once it enters grace (idempotent via
+SchoolLicense.expiryNoticeStage; reconciles status to EXPIRED past grace). Surface
+it in the school billing banner/rows and the super-admin drill-down. Each term is a
+separate purchase, not a subscription renewal; copy reflects that.
+

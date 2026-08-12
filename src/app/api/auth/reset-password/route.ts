@@ -1,6 +1,6 @@
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { hashResetToken } from "@/lib/reset-token";
 
@@ -55,6 +55,6 @@ export async function POST(request: Request) {
 
     return ok({ message: "Password reset successfully. You can now sign in." });
   } catch (error) {
-    return fail("Could not reset password.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not reset password.");
   }
 }

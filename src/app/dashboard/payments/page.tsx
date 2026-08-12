@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { UserRole } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
+import { guardDashboardCapability } from "@/lib/dashboard-capability";
 import { PaymentsPanel } from "@/components/dashboard/payments-panel";
 import { PageHeader } from "@/components/dashboard/page-header";
 
@@ -15,6 +16,7 @@ export default async function PaymentsPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login");
   if (!ALLOWED.includes(session.user.role as UserRole)) redirect("/dashboard");
+  guardDashboardCapability(session.user, "payments");
 
   const role = session.user.role as UserRole;
   const isAdmin = role === UserRole.SUPER_ADMIN || role === UserRole.ADMIN;

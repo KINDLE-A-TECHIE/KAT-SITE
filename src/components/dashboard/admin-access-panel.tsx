@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Copy, RefreshCcw, RotateCcw, Search, ShieldCheck, ShieldPlus, UserCheck, UserMinus, UserX } from "lucide-react";
-import { motion } from "framer-motion";
+import { Check, Copy, RefreshCcw, RotateCcw, Search, ShieldCheck, ShieldPlus, SlidersHorizontal, UserCheck, UserMinus, UserX } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CAPABILITIES_BY_DEPARTMENT, CAPABILITY_KEYS, DEPARTMENT_LABEL, type Department } from "@/lib/capabilities";
+
+const DEPARTMENT_ORDER: Department[] = ["B2C", "B2B", "CROSS"];
 
 type InviteStatus = "valid" | "used" | "revoked" | "expired";
 
@@ -32,6 +35,7 @@ type AdminAccountRecord = {
   role: "ADMIN" | "INSTRUCTOR";
   isActive: boolean;
   canGrantRetakes: boolean;
+  permissions: string[];
   createdAt: string;
   invitedBy: { id: string; firstName: string; lastName: string; email: string } | null;
   invitedAt: string | null;
@@ -70,6 +74,40 @@ export function AdminAccessPanel() {
   const [foundUser, setFoundUser] = useState<FoundUser | null>(null);
   const [searchingUser, setSearchingUser] = useState(false);
   const [promoting, setPromoting] = useState(false);
+
+  // Per-account "need to know" capability editor.
+  const [permOpenId, setPermOpenId] = useState<string | null>(null);
+  const [permDraft, setPermDraft] = useState<Set<string>>(new Set());
+  const [permSaving, setPermSaving] = useState(false);
+
+  const openPermissions = (admin: AdminAccountRecord) => {
+    setPermOpenId((current) => (current === admin.id ? null : admin.id));
+    setPermDraft(new Set(admin.permissions));
+  };
+  const togglePerm = (key: string) =>
+    setPermDraft((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  const savePermissions = async (adminId: string) => {
+    setPermSaving(true);
+    const res = await fetch("/api/super-admin/admin-accounts", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ adminId, action: "set-permissions", permissions: Array.from(permDraft) }),
+    });
+    const payload = await res.json();
+    setPermSaving(false);
+    if (!res.ok) {
+      toast.error(payload?.error ?? "Could not update access.");
+      return;
+    }
+    toast.success("Access areas updated.");
+    setPermOpenId(null);
+    await loadAdmins();
+  };
 
   const activeInviteCount = useMemo(() => invites.filter((i) => i.status === "valid").length, [invites]);
   const activeAccountCount = useMemo(() => admins.filter((a) => a.isActive).length, [admins]);
@@ -435,6 +473,20 @@ export function AdminAccessPanel() {
                     <span className={`rounded-full px-2 py-1 text-xs font-medium ${admin.canGrantRetakes ? "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400" : "bg-stone-100 text-stone-500 dark:bg-stone-700 dark:text-stone-400"}`}>
                       {admin.canGrantRetakes ? "Retakes ON" : "Retakes OFF"}
                     </span>
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs font-medium ${
+                        admin.permissions.length === CAPABILITY_KEYS.length
+                          ? "bg-stone-100 text-stone-500 dark:bg-stone-700 dark:text-stone-400"
+                          : admin.permissions.length === 0
+                            ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400"
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+                      }`}
+                      title="Capability areas this account can view"
+                    >
+                      {admin.permissions.length === CAPABILITY_KEYS.length
+                        ? "Full access"
+                        : `${admin.permissions.length}/${CAPABILITY_KEYS.length} areas`}
+                    </span>
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -451,10 +503,99 @@ export function AdminAccessPanel() {
                     <RotateCcw className="mr-1.5 size-3.5" />
                     {admin.canGrantRetakes ? "Disable Retakes" : "Enable Retakes"}
                   </Button>
+                  <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => openPermissions(admin)}>
+                    <SlidersHorizontal className="mr-1.5 size-3.5" />
+                    {permOpenId === admin.id ? "Close access" : "Manage access"}
+                  </Button>
                   <Button size="sm" variant="outline" className="w-full border-rose-200 text-rose-600 hover:bg-rose-50 sm:w-auto dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-900/20" disabled={busy} onClick={() => void removeAdmin(admin.id, `${admin.firstName} ${admin.lastName}`)}>
                     <UserMinus className="mr-1.5 size-3.5" /> Remove
                   </Button>
                 </div>
+
+                {/* Per-account "need to know" capability editor */}
+                <AnimatePresence>
+                  {permOpenId === admin.id ? (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-800/50">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                            What this {admin.role.toLowerCase()} can view
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              className="text-xs font-medium text-orange-600 hover:underline dark:text-orange-400"
+                              onClick={() => setPermDraft(new Set(CAPABILITY_KEYS))}
+                            >
+                              Select all
+                            </button>
+                            <button
+                              type="button"
+                              className="text-xs font-medium text-stone-500 hover:underline dark:text-stone-400"
+                              onClick={() => setPermDraft(new Set())}
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 space-y-3">
+                          {DEPARTMENT_ORDER.map((dept) => (
+                            <div key={dept}>
+                              <p className="mb-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                                {DEPARTMENT_LABEL[dept]}
+                              </p>
+                              <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                                {CAPABILITIES_BY_DEPARTMENT[dept].map((cap) => {
+                                  const on = permDraft.has(cap.key);
+                                  return (
+                                    <label
+                                      key={cap.key}
+                                      className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2 text-sm transition-colors ${
+                                        on
+                                          ? "border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-900/20"
+                                          : "border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900"
+                                      }`}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={on}
+                                        onChange={() => togglePerm(cap.key)}
+                                        className="mt-0.5 size-4 shrink-0 accent-orange-500"
+                                      />
+                                      <span className="min-w-0">
+                                        <span className="block font-medium text-stone-800 dark:text-stone-200">{cap.label}</span>
+                                        <span className="block text-[11px] leading-snug text-stone-500 dark:text-stone-400">{cap.description}</span>
+                                      </span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <Button size="sm" disabled={permSaving} onClick={() => void savePermissions(admin.id)}>
+                            {permSaving ? <RefreshCcw className="mr-1.5 size-3.5 animate-spin" /> : <Check className="mr-1.5 size-3.5" />}
+                            Save access
+                          </Button>
+                          <Button size="sm" variant="outline" disabled={permSaving} onClick={() => setPermOpenId(null)}>
+                            Cancel
+                          </Button>
+                          <span className="text-xs text-stone-500 dark:text-stone-400">
+                            {permDraft.size} of {CAPABILITY_KEYS.length} areas selected
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
               </motion.div>
             ))
           )}

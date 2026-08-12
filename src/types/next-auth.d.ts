@@ -19,6 +19,12 @@ declare module "next-auth" {
        */
       schoolMemberships?: Array<{ schoolId: string; role: SchoolRole }>;
       activeSchoolId?: string | null;
+      /**
+       * Per-account capability areas for ADMIN/INSTRUCTOR (keys from src/lib/capabilities.ts).
+       * Re-read from the DB every request like schoolMemberships, NOT from the JWT, so a super-admin
+       * narrowing an account takes effect on the next request rather than after a 30-day token expiry.
+       */
+      permissions?: string[];
     } & DefaultSession["user"];
   }
 

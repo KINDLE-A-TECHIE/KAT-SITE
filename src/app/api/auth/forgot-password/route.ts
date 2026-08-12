@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, buildPasswordResetEmail } from "@/lib/email";
 import { generateResetToken, hashResetToken } from "@/lib/reset-token";
@@ -61,6 +61,6 @@ export async function POST(request: Request) {
 
     return ok({ message: "If that email exists, a reset link has been sent." });
   } catch (error) {
-    return fail("Could not process request.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not process request.");
   }
 }

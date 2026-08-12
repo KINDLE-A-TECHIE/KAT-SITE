@@ -1,5 +1,6 @@
 import { ContentReviewStatus, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { updateLessonContentSchema } from "@/lib/validators";
@@ -15,6 +16,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const role = session.user.role as UserRole;
   if (!CREATOR_ROLES.includes(role)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "curriculum")) return fail("Forbidden", 403);
 
   const { contentId } = await params;
 
@@ -66,6 +68,7 @@ export async function DELETE(_req: Request, { params }: Params) {
 
   const role = session.user.role as UserRole;
   if (!CREATOR_ROLES.includes(role)) return fail("Forbidden", 403);
+  if (capabilityDenied(session.user, "curriculum")) return fail("Forbidden", 403);
 
   const { contentId } = await params;
 

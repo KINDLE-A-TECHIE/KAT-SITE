@@ -1,5 +1,5 @@
 import { PaymentStatus, UserRole } from "@prisma/client";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { initializePaymentSchema } from "@/lib/validators";
@@ -286,6 +286,6 @@ export async function POST(request: Request) {
       201,
     );
   } catch (error) {
-    return fail("Could not initialize payment.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not initialize payment.");
   }
 }

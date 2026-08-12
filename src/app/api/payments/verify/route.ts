@@ -1,5 +1,5 @@
 import { EnrollmentPeriodReason, PaymentStatus, UserRole } from "@prisma/client";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { verifyPaymentSchema } from "@/lib/validators";
@@ -193,6 +193,6 @@ export async function POST(request: Request) {
       verification,
     });
   } catch (error) {
-    return fail("Could not verify payment.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not verify payment.");
   }
 }

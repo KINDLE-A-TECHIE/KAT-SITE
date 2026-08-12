@@ -79,7 +79,9 @@ Optionally drop the `window.onbeforeunload = () => true` line in that file so th
 (fetch a `.sb3` and `vm.loadProject`) and `SAVE` (`vm.saveProjectSb3()` then `PUT` the bytes straight to
 the presigned R2 URL the KAT page hands it), and reports `READY`/`DIRTY`/`SAVED`/`SAVE_FAILED` back up. It
 also exposes `window.__katBridge.save() / .open()` and sends `REQUEST_SAVE` / `REQUEST_LOAD` up (the File
-menu calls these; see 2b). The message strings mirror `src/lib/scratch.ts` exactly, keep them in sync.
+menu calls these; see 2b) plus `window.__katBridge.saveVideo(blob, durationMs)` (2c). The message strings
+mirror `src/lib/scratch.ts` exactly, keep them in sync. (The stage snapshot in 2d is purely local and does
+NOT go through the bridge.)
 
 **Branding.** scratch-gui is BSD-licensed, but the Scratch name and cat logo are trademarks with usage
 guidelines (https://scratch.mit.edu/trademark). Follow them for anything a pupil sees.
@@ -187,6 +189,29 @@ pupil's **Recordings** page (`/dashboard/recordings`) and under the Scratch bloc
 
 Gate the button on `window.__katBridge.saveVideo` so the standalone editor (opened outside a KAT iframe,
 no parent) still just downloads. Keep **Download** too: it is the offline / no-account path.
+
+## 2d. Stage snapshot (download a PNG still)
+
+Pupils can grab a **still image** of the stage (a screenshot of the project as it looks right now) and
+download it. Purely local, like the recorder's own Download: nothing is uploaded, so unlike a recording it
+needs no parent, no presigned URL, and no R2, and it works even in the standalone editor. Because it is
+all-local it is a self-contained component (NOT a `bridge.js` function), mirroring `kat-recorder.jsx`.
+
+**Add `src/playground/kat-snapshot.jsx`** (a connected component that reads the VM from the store), then
+mount its button in the STAGE CONTROLS row next to the recorder, in `src/components/controls/controls.jsx`:
+
+```jsx
+import KatSnapshot from '../../playground/kat-snapshot.jsx';
+// ... in the controls container, right after <KatRecorder />:
+<KatSnapshot />
+```
+
+The component renders a compact camera button (hidden until a VM with a renderer exists, so it never shows
+a dead button) that calls `vm.renderer.requestSnapshot(dataUri => …)`, scratch-render's own stage capture,
+which forces a fresh draw+read so it avoids the blank-frame WebGL quirk a raw `canvas.toDataURL()` can hit,
+then downloads `scratch-stage-<timestamp>.png`. No size cap or rate limit is needed because nothing leaves
+the browser. Keeping it in the component (not the bridge) is deliberate: the recorder does the same, local
+work such as record/download lives in the component, and only the R2 upload goes through the bridge.
 
 ## 3. Connect the fork to Cloudflare Pages (it builds for you)
 

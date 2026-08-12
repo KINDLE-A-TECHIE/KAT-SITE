@@ -100,10 +100,17 @@ export const adminInviteValidateSchema = z.object({
   token: z.string().trim().min(32).max(512),
 });
 
-export const adminAccountUpdateSchema = z.object({
-  adminId: z.string().cuid(),
-  action: z.enum(["hold", "activate", "enable-retakes", "disable-retakes"]),
-});
+export const adminAccountUpdateSchema = z
+  .object({
+    adminId: z.string().cuid(),
+    action: z.enum(["hold", "activate", "enable-retakes", "disable-retakes", "set-permissions"]),
+    // For action "set-permissions": the exact capability-area keys to grant (see src/lib/capabilities.ts).
+    // Unknown keys are dropped server-side; an empty array means "no areas".
+    permissions: z.array(z.string().max(64)).max(50).optional(),
+  })
+  .refine((d) => d.action !== "set-permissions" || Array.isArray(d.permissions), {
+    message: "permissions[] is required when action is set-permissions.",
+  });
 
 export const retakeGrantSchema = z.object({
   assessmentId: z.string().cuid(),
@@ -528,10 +535,34 @@ export const schoolRolloverSchema = z.object({
 export const schoolInvoiceCreateSchema = z.object({
   term: z.string().trim().min(1).max(40),
   seatCount: z.coerce.number().int().min(1).max(100_000),
+  // Optional academic term start. Omitted -> the term's 15-week clock starts from the activation date.
+  startsAt: z.coerce.date().optional(),
 });
 
 export const schoolInvoiceVerifySchema = z.object({
   reference: z.string().trim().min(1).max(120),
+});
+
+/**
+ * Super-admin confirming a MANUAL (bank-transfer) payment. `note` is a short human record: the bank
+ * reference, or who confirmed the money landed. No amount, marking paid activates the invoice's own
+ * amount; the super-admin sets price/discount first if it needs to change.
+ */
+export const schoolInvoiceMarkPaidSchema = z.object({
+  note: z.string().trim().max(200).optional(),
+});
+
+/**
+ * Super-admin raising AND settling an invoice in one step, for a school that paid by bank transfer
+ * before any invoice existed. Amount is still computed server-side (seats x price x concession),
+ * never taken from the request.
+ */
+export const schoolInvoiceManualCreateSchema = z.object({
+  term: z.string().trim().min(1).max(40),
+  seatCount: z.coerce.number().int().min(1).max(100_000),
+  note: z.string().trim().max(200).optional(),
+  // Optional academic term start; omitted -> the 15-week clock starts from activation.
+  startsAt: z.coerce.date().optional(),
 });
 
 export const teacherInviteSchema = z.object({
@@ -720,4 +751,28 @@ export const schoolProvisionSchema = z
   .refine(
     (d) => d.adminMode !== "create" || (d.adminFirstName && d.adminLastName),
     { message: "First and last name are required when creating the account." },
+  );
+
+/**
+ * Super-admin updates a school after provisioning: its negotiated per-seat price and/or its billing
+ * suspension. Both optional; at least one must be present. Price bounds match
+ * `schoolProvisionSchema.pricePerSeat`. `suspended: true` pauses NEW invoicing (a commercial pause,
+ * not a mid-term access cut); false resumes. Setting price to 0 also blocks invoicing until repriced.
+ */
+export const schoolAdminUpdateSchema = z
+  .object({
+    pricePerSeat: z.coerce.number().min(0).max(1_000_000).optional(),
+    // Negotiated concession, 0..100. 100 = a sponsored/free term. Super-admin only.
+    discountPercent: z.coerce.number().min(0).max(100).optional(),
+    // Cleared by sending an empty string; capped so it stays a short audit note.
+    discountReason: z.string().trim().max(200).optional(),
+    suspended: z.boolean().optional(),
+  })
+  .refine(
+    (d) =>
+      d.pricePerSeat !== undefined ||
+      d.discountPercent !== undefined ||
+      d.discountReason !== undefined ||
+      d.suspended !== undefined,
+    { message: "Provide a price, discount, reason and/or a suspension state to update." },
   );

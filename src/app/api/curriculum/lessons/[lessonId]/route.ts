@@ -1,5 +1,6 @@
 import { ContentReviewStatus, UserRole } from "@prisma/client";
 import { fail, ok } from "@/lib/http";
+import { capabilityDenied } from "@/lib/capabilities";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkModuleLicenseForEnrollment } from "@/lib/school-license";
@@ -117,6 +118,7 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!([UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.INSTRUCTOR] as UserRole[]).includes(role)) {
     return fail("Forbidden", 403);
   }
+  if (capabilityDenied(session.user, "curriculum")) return fail("Forbidden", 403);
 
   const { lessonId } = await params;
   const body = await request.json();
@@ -144,6 +146,7 @@ export async function DELETE(_req: Request, { params }: Params) {
   if (!([UserRole.SUPER_ADMIN, UserRole.ADMIN] as UserRole[]).includes(session.user.role as UserRole)) {
     return fail("Forbidden", 403);
   }
+  if (capabilityDenied(session.user, "curriculum")) return fail("Forbidden", 403);
 
   const { lessonId } = await params;
 

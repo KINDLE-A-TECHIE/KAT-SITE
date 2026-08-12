@@ -12,7 +12,17 @@
 /** Fixed term length. Change here if the academic term length ever changes. */
 export const TERM_LENGTH_WEEKS = 15;
 
-const TERM_LENGTH_MS = TERM_LENGTH_WEEKS * 7 * 24 * 60 * 60 * 1000;
+/**
+ * Grace period after a term's nominal end. Access CONTINUES through grace (a late renewal must not
+ * strand pupils mid-work), but the licence is flagged as lapsing and the admin is nagged to renew.
+ * Access stops only once grace is over.
+ */
+export const TERM_GRACE_WEEKS = 2;
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const TERM_LENGTH_MS = TERM_LENGTH_WEEKS * WEEK_MS;
+const TERM_GRACE_MS = TERM_GRACE_WEEKS * WEEK_MS;
 
 export type ParsedTerm = { sessionLabel: string; termNumber: number };
 
@@ -64,17 +74,48 @@ export function normalizeSession(sessionLabel: string): string {
   return sessionLabel.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-/** A term's end = start + 15 weeks. Null start means no known window. */
+/** A term's NOMINAL end = start + 15 weeks. Null start means no known window. */
 export function termEndsAt(startsAt: Date | null | undefined): Date | null {
   return startsAt ? new Date(startsAt.getTime() + TERM_LENGTH_MS) : null;
 }
 
+/** The hard access cutoff = nominal end + grace. After this, access is refused. */
+export function termGraceEndsAt(startsAt: Date | null | undefined): Date | null {
+  return startsAt ? new Date(startsAt.getTime() + TERM_LENGTH_MS + TERM_GRACE_MS) : null;
+}
+
 /**
- * Is `now` inside a term's window? A null start means the term has no date yet (legacy or not-yet
- * scheduled), which we treat as "no time limit" so access does not depend on data we never captured.
+ * Is `now` inside a term's ACCESS window? Access runs from the start until the END OF GRACE, so a
+ * school in its grace period keeps working while the admin renews. A null start means the term has no
+ * date yet (legacy or not-yet-scheduled), treated as "no time limit" so access does not depend on
+ * data we never captured.
  */
 export function isWithinTermWindow(startsAt: Date | null | undefined, now: Date = new Date()): boolean {
   if (!startsAt) return true;
-  const end = termEndsAt(startsAt)!;
-  return now >= startsAt && now < end;
+  const graceEnd = termGraceEndsAt(startsAt)!;
+  return now >= startsAt && now < graceEnd;
+}
+
+export type TermLifecycle = "UNLIMITED" | "NOT_STARTED" | "ACTIVE" | "GRACE" | "EXPIRED";
+
+/**
+ * Where a term sits in its lifecycle right now. UNLIMITED = no start captured; NOT_STARTED = starts
+ * in the future; ACTIVE = inside the 15 weeks; GRACE = past the end but still inside grace; EXPIRED =
+ * past grace. Used for banners, the expiry cron, and status reconciliation.
+ */
+export function termLifecycle(startsAt: Date | null | undefined, now: Date = new Date()): TermLifecycle {
+  if (!startsAt) return "UNLIMITED";
+  if (now < startsAt) return "NOT_STARTED";
+  if (now < termEndsAt(startsAt)!) return "ACTIVE";
+  if (now < termGraceEndsAt(startsAt)!) return "GRACE";
+  return "EXPIRED";
+}
+
+/**
+ * Whole days from `now` until the term's NOMINAL end (positive = days left; negative = days into
+ * grace/expiry). Null when there is no start date. Drives the "expires in N days" copy.
+ */
+export function daysUntilTermEnds(startsAt: Date | null | undefined, now: Date = new Date()): number | null {
+  if (!startsAt) return null;
+  return Math.ceil((termEndsAt(startsAt)!.getTime() - now.getTime()) / DAY_MS);
 }

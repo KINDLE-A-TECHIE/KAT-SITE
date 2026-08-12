@@ -1,6 +1,6 @@
 import { EnrollmentPeriodReason, EnrollmentStatus, UserRole } from "@prisma/client";
 import { z } from "zod";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { trackEvent } from "@/lib/analytics";
@@ -187,7 +187,7 @@ export async function POST(request: Request) {
 
     return ok({ enrollment }, 201);
   } catch (error) {
-    return fail("Could not create enrollment.", 500, error instanceof Error ? error.message : error);
+    return serverError(error, "Could not create enrollment.");
   }
 }
 

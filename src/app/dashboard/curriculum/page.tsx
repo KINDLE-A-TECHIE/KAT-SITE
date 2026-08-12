@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
+import { guardDashboardCapability } from "@/lib/dashboard-capability";
 import { CurriculumPanel } from "@/components/dashboard/curriculum-panel";
 import { PageHeader } from "@/components/dashboard/page-header";
 
 export default async function CurriculumPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login");
+  guardDashboardCapability(session.user, "curriculum");
 
   const isLearner = ["STUDENT", "FELLOW"].includes(session.user.role);
 

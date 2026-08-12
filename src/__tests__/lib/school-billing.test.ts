@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { SchoolInvoiceStatus, SchoolLicenseStatus } from "@prisma/client";
+import { SchoolInvoicePaymentMethod, SchoolInvoiceStatus, SchoolLicenseStatus } from "@prisma/client";
 
 /**
  * markInvoicePaidAndActivate must be IDEMPOTENT. Paystack retries its webhook, and the
@@ -17,7 +17,7 @@ const mockPrisma = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 
-import { markInvoicePaidAndActivate } from "@/lib/school-billing";
+import { computeInvoiceAmount, markInvoicePaidAndActivate } from "@/lib/school-billing";
 
 const invoice = (status: SchoolInvoiceStatus) => ({
   id: "inv_1",
@@ -39,6 +39,34 @@ beforeEach(() => {
       schoolLicense: { upsert: vi.fn() },
     }),
   );
+});
+
+describe("computeInvoiceAmount", () => {
+  it("charges list price with no concession", () => {
+    expect(computeInvoiceAmount(40, 2500, 0)).toEqual({ list: 100000, discountPercent: 0, amount: 100000 });
+  });
+
+  it("applies a partial concession to the net amount", () => {
+    expect(computeInvoiceAmount(10, 2500, 20)).toEqual({ list: 25000, discountPercent: 20, amount: 20000 });
+  });
+
+  it("nets zero for a 100% (sponsored) concession", () => {
+    expect(computeInvoiceAmount(40, 2500, 100).amount).toBe(0);
+  });
+
+  it("a fully-sponsored school with no list price still nets zero", () => {
+    expect(computeInvoiceAmount(30, 0, 100).amount).toBe(0);
+  });
+
+  it("clamps an out-of-range discount to 0..100", () => {
+    expect(computeInvoiceAmount(10, 2500, 150).amount).toBe(0); // clamped to 100
+    expect(computeInvoiceAmount(10, 2500, -10).amount).toBe(25000); // clamped to 0
+  });
+
+  it("rounds to two decimals (kobo)", () => {
+    // 3 seats x 999.99 = 2999.97; 33% off -> 2009.9799 -> 2009.98
+    expect(computeInvoiceAmount(3, 999.99, 33).amount).toBe(2009.98);
+  });
 });
 
 describe("markInvoicePaidAndActivate", () => {
@@ -84,5 +112,40 @@ describe("markInvoicePaidAndActivate", () => {
     expect(args.update.status).toBe(SchoolLicenseStatus.ACTIVE);
     expect(args.update.seatsUsed).toBeUndefined();
     expect(args.create.seatsUsed).toBe(0);
+  });
+
+  it("defaults the payment method to PAYSTACK (webhook/verify path)", async () => {
+    let updateArgs: unknown;
+    mockPrisma.schoolInvoice.findUnique.mockResolvedValue(invoice(SchoolInvoiceStatus.PENDING));
+    mockPrisma.$transaction.mockImplementation(async (cb: (tx: unknown) => unknown) =>
+      cb({
+        schoolInvoice: { update: vi.fn((a: unknown) => (updateArgs = a)) },
+        schoolLicense: { upsert: vi.fn() },
+      }),
+    );
+
+    await markInvoicePaidAndActivate("KAT-SCH-1");
+    const data = (updateArgs as { data: { paymentMethod: string; paymentNote?: string } }).data;
+    expect(data.paymentMethod).toBe(SchoolInvoicePaymentMethod.PAYSTACK);
+    expect(data.paymentNote).toBeUndefined();
+  });
+
+  it("records a manual BANK_TRANSFER payment with its note", async () => {
+    let updateArgs: unknown;
+    mockPrisma.schoolInvoice.findUnique.mockResolvedValue(invoice(SchoolInvoiceStatus.PENDING));
+    mockPrisma.$transaction.mockImplementation(async (cb: (tx: unknown) => unknown) =>
+      cb({
+        schoolInvoice: { update: vi.fn((a: unknown) => (updateArgs = a)) },
+        schoolLicense: { upsert: vi.fn() },
+      }),
+    );
+
+    await markInvoicePaidAndActivate("KAT-SCH-1", {
+      method: SchoolInvoicePaymentMethod.BANK_TRANSFER,
+      note: "GTB transfer ref 12345",
+    });
+    const data = (updateArgs as { data: { paymentMethod: string; paymentNote?: string } }).data;
+    expect(data.paymentMethod).toBe(SchoolInvoicePaymentMethod.BANK_TRANSFER);
+    expect(data.paymentNote).toBe("GTB transfer ref 12345");
   });
 });

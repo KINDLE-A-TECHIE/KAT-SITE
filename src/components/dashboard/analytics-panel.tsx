@@ -2,7 +2,23 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Download, Printer } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  LabelList,
+  PolarAngleAxis,
+  RadialBar,
+  RadialBarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { ChevronLeft, ChevronRight, Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +41,8 @@ type PlatformTrendPoint = {
   revenue: number;
   activityEvents: number;
   messagesSent: number;
+  activeLearners: number;
+  completions: number;
 };
 
 type SchoolTrendPoint = {
@@ -52,6 +70,7 @@ type AnalyticsResponse = {
     enrollmentCount: number;
     totalRevenue: number;
     activityEvents7d: number;
+    activeLearners7d: number;
     roleBreakdown: Record<string, number>;
     trends: {
       rangeDays: number;
@@ -78,6 +97,7 @@ type AnalyticsResponse = {
       meetingAttendanceRate: number;
       revenue: number;
     }[];
+    cohortLeaderboardTotal: number;
     programLeaderboard: {
       programId: string;
       name: string;
@@ -86,6 +106,7 @@ type AnalyticsResponse = {
       completionRate: number;
       revenue: number;
     }[];
+    programLeaderboardTotal: number;
     assessmentAnalytics: {
       gradingBacklog: number;
       programStats: {
@@ -125,8 +146,13 @@ type AnalyticsResponse = {
       classCount: number;
       pupilCount: number;
     }[];
+    schoolTotal: number;
   };
 };
+
+type SchoolSummaryRow = NonNullable<AnalyticsResponse["schoolAnalytics"]>["schools"][number];
+type CohortRow = NonNullable<AnalyticsResponse["platformAnalytics"]>["cohortLeaderboard"][number];
+type ProgramRow = NonNullable<AnalyticsResponse["platformAnalytics"]>["programLeaderboard"][number];
 
 type PaymentsResponse = {
   monthly: Record<string, { total: number; successful: number; failed: number }>;
@@ -201,19 +227,65 @@ function escapeHtml(value: string | number | null | undefined) {
     .replace(/'/g, "&#39;");
 }
 
-function TrendMiniCard<TPoint extends { label: string }>(props: TrendMiniCardProps<TPoint>) {
-  const max = useMemo(() => {
-    const values = props.points.map((point) => props.getValue(point));
-    return Math.max(1, ...values);
-  }, [props]);
+// Tracks the app's class-based dark mode so recharts (which needs concrete colors, not CSS vars) can
+// resolve the right hex. Observes the <html> class rather than reading a store, so it stays correct
+// however the theme was set.
+function useIsDark() {
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    const el = document.documentElement;
+    const update = () => setDark(el.classList.contains("dark"));
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(el, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+  return dark;
+}
 
-  const total = useMemo(
-    () => props.points.reduce((sum, point) => sum + props.getValue(point), 0),
+// A single-series chart needs one well-contrasting colour, not a categorical palette. Warm only (no
+// blue), keyed off the legacy colorClass so the call sites keep their per-measure variety.
+function chartColor(colorClass: string, isDark: boolean): string {
+  if (colorClass.includes("emerald")) return isDark ? "#5BBD96" : "#2E7D5B";
+  if (colorClass.includes("amber")) return isDark ? "#F2B705" : "#B57E05";
+  if (colorClass.includes("rose")) return isDark ? "#F26D6D" : "#BE3A2B";
+  return isDark ? "#E0673C" : "#B2401D"; // clay, the brand primary
+}
+
+function TrendTooltip({
+  active,
+  payload,
+  formatValue,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number; payload: { label: string } }>;
+  formatValue?: (value: number) => string;
+}) {
+  if (!active || !payload?.length) return null;
+  const point = payload[0];
+  return (
+    <div className="rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs shadow-md dark:border-stone-700 dark:bg-stone-900">
+      <p className="text-stone-500 dark:text-stone-400">{point.payload.label}</p>
+      <p className="font-semibold text-stone-900 dark:text-stone-100">
+        {formatValue ? formatValue(point.value) : point.value.toLocaleString()}
+      </p>
+    </div>
+  );
+}
+
+function TrendMiniCard<TPoint extends { label: string }>(props: TrendMiniCardProps<TPoint>) {
+  const isDark = useIsDark();
+  const color = chartColor(props.colorClass, isDark);
+  const gradientId = `trend-grad-${props.title.replace(/\W+/g, "")}`;
+
+  const data = useMemo(
+    () => props.points.map((point) => ({ label: point.label, value: props.getValue(point) })),
     [props],
   );
+  const total = useMemo(() => data.reduce((sum, d) => sum + d.value, 0), [data]);
 
   return (
-    <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3 shadow-sm">
+    <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-3 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{props.title}</p>
@@ -221,31 +293,52 @@ function TrendMiniCard<TPoint extends { label: string }>(props: TrendMiniCardPro
         </div>
         <div className="text-right">
           <p className="text-[11px] uppercase tracking-wide text-stone-500 dark:text-stone-400">Total</p>
-          <p className="text-xs font-semibold text-stone-900 dark:text-stone-100">
-            {props.formatValue ? props.formatValue(total) : total}
+          <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+            {props.formatValue ? props.formatValue(total) : total.toLocaleString()}
           </p>
         </div>
       </div>
-      <div className="mt-3 flex h-24 items-end gap-1.5">
-        {props.points.map((point) => {
-          const value = props.getValue(point);
-          const heightPercent = Math.round((value / max) * 100);
-          const barHeight = value === 0 ? 4 : Math.max(12, heightPercent);
-          return (
-            <div key={`${props.title}-${point.label}`} className="group relative flex flex-1 items-end">
-              <div
-                className={cn("w-full rounded-sm transition-opacity group-hover:opacity-90", props.colorClass)}
-                style={{ height: `${barHeight}%` }}
-                title={`${point.label}: ${props.formatValue ? props.formatValue(value) : value}`}
+      <div className="mt-2 h-28 w-full">
+        {data.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-xs text-stone-400 dark:text-stone-500">
+            No data in this range yet.
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data} margin={{ top: 6, right: 6, bottom: 0, left: 6 }}>
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke={isDark ? "#292524" : "#F0EDE7"} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 10, fill: isDark ? "#a8a29e" : "#78716c" }}
+                tickLine={false}
+                axisLine={false}
+                interval="preserveStartEnd"
+                minTickGap={28}
               />
-            </div>
-          );
-        })}
-      </div>
-      <div className="mt-2 flex items-center justify-between text-[11px] text-stone-500 dark:text-stone-400">
-        <span>{props.points[0]?.label ?? ""}</span>
-        <span>{props.points[Math.floor(props.points.length / 2)]?.label ?? ""}</span>
-        <span>{props.points[props.points.length - 1]?.label ?? ""}</span>
+              <YAxis hide domain={[0, "dataMax"]} />
+              <Tooltip
+                content={<TrendTooltip formatValue={props.formatValue} />}
+                cursor={{ stroke: color, strokeWidth: 1, strokeDasharray: "3 3" }}
+              />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke={color}
+                strokeWidth={2}
+                fill={`url(#${gradientId})`}
+                dot={false}
+                activeDot={{ r: 4, strokeWidth: 0, fill: color }}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );
@@ -273,6 +366,255 @@ function PercentageBar({ value, colorClass }: { value: number; colorClass: strin
   );
 }
 
+// Tooltip for the horizontal ranked bars. Shows the row label and its formatted value.
+function HBarTooltip({
+  active,
+  payload,
+  formatValue,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number; payload: { label: string; full?: string } }>;
+  formatValue?: (value: number) => string;
+}) {
+  if (!active || !payload?.length) return null;
+  const point = payload[0];
+  return (
+    <div className="max-w-[220px] rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs shadow-md dark:border-stone-700 dark:bg-stone-900">
+      <p className="truncate text-stone-500 dark:text-stone-400">{point.payload.full ?? point.payload.label}</p>
+      <p className="font-semibold text-stone-900 dark:text-stone-100">
+        {formatValue ? formatValue(point.value) : point.value.toLocaleString()}
+      </p>
+    </div>
+  );
+}
+
+type HBarDatum = { label: string; value: number; full?: string; colorClass?: string };
+
+// A ranked horizontal bar chart: one warm series, value labels at the end of each bar, a category
+// axis on the left. Used for role/programme/cohort rankings. Single-series, so no legend needed.
+function HBarChart({
+  data,
+  colorClass = "bg-clay",
+  formatValue,
+  domainMax,
+  labelWidth = 132,
+  barSize = 16,
+}: {
+  data: HBarDatum[];
+  colorClass?: string;
+  formatValue?: (value: number) => string;
+  domainMax?: number;
+  labelWidth?: number;
+  barSize?: number;
+}) {
+  const isDark = useIsDark();
+  const baseColor = chartColor(colorClass, isDark);
+  const height = Math.max(96, data.length * (barSize + 18) + 16);
+
+  if (data.length === 0) {
+    return (
+      <div className="flex h-24 items-center justify-center text-xs text-stone-400 dark:text-stone-500">
+        No data in this range yet.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ height }} className="w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ top: 4, right: 52, bottom: 4, left: 4 }}
+          barCategoryGap="28%"
+        >
+          <CartesianGrid horizontal={false} stroke={isDark ? "#292524" : "#F0EDE7"} />
+          <XAxis type="number" hide domain={[0, domainMax ?? "dataMax"]} />
+          <YAxis
+            type="category"
+            dataKey="label"
+            width={labelWidth}
+            tick={{ fontSize: 12, fill: isDark ? "#d6d3d1" : "#44403c" }}
+            tickLine={false}
+            axisLine={false}
+          />
+          <Tooltip
+            cursor={{ fill: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)" }}
+            content={<HBarTooltip formatValue={formatValue} />}
+          />
+          <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={barSize} fill={baseColor} isAnimationActive={false}>
+            {data.map((entry, index) => (
+              <Cell key={`bar-${index}`} fill={entry.colorClass ? chartColor(entry.colorClass, isDark) : baseColor} />
+            ))}
+            <LabelList
+              dataKey="value"
+              position="right"
+              offset={8}
+              style={{ fontSize: 11, fontWeight: 600, fill: isDark ? "#d6d3d1" : "#57534e" }}
+              formatter={(value: number) => (formatValue ? formatValue(value) : value.toLocaleString())}
+            />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// A radial gauge for a single 0-100 percentage (seat utilisation). Colour shifts by pressure:
+// pine below 70, sun 70-89, clay-deep at 90+ (nearing capacity). Value shown in the middle.
+function RadialGauge({
+  value,
+  caption,
+  height = 176,
+  compact = false,
+}: {
+  value: number;
+  caption?: string;
+  height?: number;
+  compact?: boolean;
+}) {
+  const isDark = useIsDark();
+  const pct = Math.max(0, Math.min(100, Math.round(value)));
+  const color =
+    pct >= 90
+      ? chartColor("rose", isDark)
+      : pct >= 70
+        ? chartColor("amber", isDark)
+        : chartColor("emerald", isDark);
+  const data = [{ name: "used", value: pct }];
+
+  return (
+    <div className="relative w-full" style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <RadialBarChart
+          data={data}
+          innerRadius={compact ? "66%" : "72%"}
+          outerRadius="100%"
+          startAngle={90}
+          endAngle={-270}
+        >
+          <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+          <RadialBar
+            dataKey="value"
+            angleAxisId={0}
+            cornerRadius={compact ? 6 : 10}
+            fill={color}
+            background={{ fill: isDark ? "#292524" : "#EFEAE1" }}
+            isAnimationActive={false}
+          />
+        </RadialBarChart>
+      </ResponsiveContainer>
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+        <span className={cn("font-bold text-stone-900 dark:text-stone-100", compact ? "text-lg" : "text-3xl")}>{pct}%</span>
+        {caption ? <span className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{caption}</span> : null}
+      </div>
+    </div>
+  );
+}
+
+// Page size for the paginated leaderboards / per-school breakdown. Must match ANALYTICS_PAGE_SIZE in
+// src/lib/analytics.ts so page 1 (served inline by /api/analytics) lines up with pages 2+ from the
+// /api/analytics/list endpoint.
+const LIST_PAGE_SIZE = 8;
+
+// Paginates one analytics list. Page 1 is the preview already embedded in the main analytics payload
+// (no extra request); pages 2+ are fetched from /api/analytics/list. New base data (a range change)
+// resets to page 1.
+function usePagedList<T>(type: "programs" | "cohorts" | "schools", initial: T[], total: number) {
+  const [page, setPage] = useState(1);
+  const [items, setItems] = useState<T[]>(initial);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setPage(1);
+    setItems(initial);
+  }, [initial]);
+
+  useEffect(() => {
+    if (page === 1) {
+      setItems(initial);
+      return;
+    }
+    let cancelled = false;
+    const controller = new AbortController();
+    setLoading(true);
+    fetch(`/api/analytics/list?type=${type}&page=${page}&pageSize=${LIST_PAGE_SIZE}`, {
+      signal: controller.signal,
+      cache: "no-store",
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+      .then((data: { items: T[] }) => {
+        if (!cancelled) {
+          setItems(data.items ?? []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setItems([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [page, type, initial]);
+
+  const totalPages = Math.max(1, Math.ceil(total / LIST_PAGE_SIZE));
+  return { items, page, setPage, totalPages, loading };
+}
+
+function PaginationControls({
+  page,
+  totalPages,
+  onPage,
+  loading,
+}: {
+  page: number;
+  totalPages: number;
+  onPage: (page: number) => void;
+  loading?: boolean;
+}) {
+  if (totalPages <= 1) {
+    return null;
+  }
+  return (
+    <div className="mt-3 flex items-center justify-between gap-3 print:hidden">
+      <p className="text-xs text-stone-500 dark:text-stone-400" aria-live="polite">
+        {loading ? "Updating…" : `Page ${page} of ${totalPages}`}
+      </p>
+      <div className="flex items-center gap-1.5">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="gap-1"
+          disabled={page <= 1 || loading}
+          onClick={() => onPage(page - 1)}
+        >
+          <ChevronLeft className="size-4" />
+          Prev
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="gap-1"
+          disabled={page >= totalPages || loading}
+          onClick={() => onPage(page + 1)}
+        >
+          Next
+          <ChevronRight className="size-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function riskBadgeClass(score: number) {
   if (score >= 8) {
     return "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-400";
@@ -296,6 +638,9 @@ function recommendationToneClass(tone: RecommendationTone) {
 export function AnalyticsPanel() {
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<RangeValue>("30d");
+  // Which business line the admin is viewing. B2C (platform) and B2B (schools) are kept on separate
+  // tabs so their metrics never read as one blended number.
+  const [view, setView] = useState<"b2c" | "b2b">("b2c");
   const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
   const [monthlyPayments, setMonthlyPayments] = useState<PaymentsResponse["monthly"]>({});
   const [scorecards, setScorecards] = useState<InstructorScorecard[]>([]);
@@ -396,6 +741,61 @@ export function AnalyticsPanel() {
     [analytics],
   );
   const primaryActivityLabel = analytics?.userAnalytics.activityLabel ?? "Assessments Submitted";
+  // An admin/super-admin sees org-level engagement instead of their own personal activity (a personal
+  // trend on a business-oversight page is a vanity metric). Learners keep their self-tracking view.
+  const isOrgView = Boolean(analytics?.platformAnalytics);
+  const platformRangeTotals = useMemo(() => {
+    return platformTrendPoints.reduce(
+      (acc, point) => ({
+        newEnrollments: acc.newEnrollments + point.newEnrollments,
+        completions: acc.completions + point.completions,
+        messagesSent: acc.messagesSent + point.messagesSent,
+      }),
+      { newEnrollments: 0, completions: 0, messagesSent: 0 },
+    );
+  }, [platformTrendPoints]);
+  const rangeTag = range.toUpperCase();
+  const headlineCards =
+    analytics && analytics.platformAnalytics
+      ? [
+          { label: "Active Learners (7d)", value: analytics.platformAnalytics.activeLearners7d },
+          { label: `New Completions (${rangeTag})`, value: platformRangeTotals.completions },
+          { label: `New Enrollments (${rangeTag})`, value: platformRangeTotals.newEnrollments },
+          { label: `Messages Sent (${rangeTag})`, value: platformRangeTotals.messagesSent },
+        ]
+      : analytics
+        ? [
+            { label: "Logins (30d)", value: analytics.userAnalytics.loginStats30d },
+            { label: primaryActivityLabel, value: analytics.userAnalytics.assessmentsSubmitted },
+            { label: "Classes Attended", value: analytics.userAnalytics.classesAttended },
+            { label: "Upcoming Meetings", value: analytics.userAnalytics.upcomingMeetings },
+          ]
+        : [];
+  // Stable empty references so the pagination hooks below do not reset every render before data loads.
+  const emptyPrograms = useMemo<ProgramRow[]>(() => [], []);
+  const emptyCohorts = useMemo<CohortRow[]>(() => [], []);
+  const emptySchools = useMemo<SchoolSummaryRow[]>(() => [], []);
+  const programPaged = usePagedList<ProgramRow>(
+    "programs",
+    analytics?.platformAnalytics?.programLeaderboard ?? emptyPrograms,
+    analytics?.platformAnalytics?.programLeaderboardTotal ?? 0,
+  );
+  const cohortPaged = usePagedList<CohortRow>(
+    "cohorts",
+    analytics?.platformAnalytics?.cohortLeaderboard ?? emptyCohorts,
+    analytics?.platformAnalytics?.cohortLeaderboardTotal ?? 0,
+  );
+  const schoolPaged = usePagedList<SchoolSummaryRow>(
+    "schools",
+    analytics?.schoolAnalytics?.schools ?? emptySchools,
+    analytics?.schoolAnalytics?.schoolTotal ?? 0,
+  );
+
+  // Show the B2C/B2B tabs only when the viewer has both business lines (an org admin). Without both,
+  // whichever block exists renders on its own with no toggle.
+  const showTabs = Boolean(analytics?.platformAnalytics && analytics?.schoolAnalytics);
+  const showB2c = !showTabs || view === "b2c";
+  const showB2b = !showTabs || view === "b2b";
 
   const headlineSignals = useMemo(() => {
     if (!analytics?.platformAnalytics) {
@@ -1123,12 +1523,7 @@ export function AnalyticsPanel() {
                 <Skeleton className="h-8 w-20" />
               </div>
             ))
-          : [
-              { label: "Logins (30d)", value: analytics.userAnalytics.loginStats30d },
-              { label: primaryActivityLabel, value: analytics.userAnalytics.assessmentsSubmitted },
-              { label: "Classes Attended", value: analytics.userAnalytics.classesAttended },
-              { label: "Upcoming Meetings", value: analytics.userAnalytics.upcomingMeetings },
-            ].map((item, index) => (
+          : headlineCards.map((item, index) => (
               <motion.div
                 key={item.label}
                 className="kat-card bg-gradient-to-br from-white via-white to-stone-50 dark:from-stone-900 dark:via-stone-900 dark:to-stone-800/60"
@@ -1145,13 +1540,36 @@ export function AnalyticsPanel() {
       </section>
 
       <section className="kat-card">
-        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">My Activity Trend</h3>
-        <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">Daily movement across logins, learning activity, and class attendance.</p>
+        <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">
+          {isOrgView ? "Learner Engagement" : "My Activity Trend"}
+        </h3>
+        <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">
+          {isOrgView
+            ? "Daily active learners and programme completions across the platform."
+            : "Daily movement across logins, learning activity, and class attendance."}
+        </p>
         {loading || !analytics ? (
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
               <Skeleton key={index} className="h-44 w-full" />
             ))}
+          </div>
+        ) : isOrgView ? (
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <TrendMiniCard
+              title="Active Learners"
+              subtitle="Distinct learners active per day"
+              points={platformTrendPoints}
+              colorClass="bg-clay"
+              getValue={(point) => point.activeLearners}
+            />
+            <TrendMiniCard
+              title="New Completions"
+              subtitle="Programme completions per day"
+              points={platformTrendPoints}
+              colorClass="bg-emerald-500"
+              getValue={(point) => point.completions}
+            />
           </div>
         ) : (
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -1180,7 +1598,36 @@ export function AnalyticsPanel() {
         )}
       </section>
 
-      {analytics?.platformAnalytics ? (
+      {showTabs && (
+        <div
+          role="tablist"
+          aria-label="Analytics business line"
+          className="flex w-fit items-center gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1 dark:border-stone-800 dark:bg-stone-900/60"
+        >
+          {([
+            ["b2c", "B2C Platform"],
+            ["b2b", "Schools (B2B)"],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={view === key}
+              onClick={() => setView(key)}
+              className={cn(
+                "rounded-lg px-4 py-1.5 text-sm font-medium transition-colors max-[360px]:px-3 max-[360px]:text-xs",
+                view === key
+                  ? "bg-white text-stone-900 shadow-sm dark:bg-stone-800 dark:text-stone-100"
+                  : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {showB2c && analytics?.platformAnalytics ? (
         <>
           <section className="kat-card">
             <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100">Platform Metrics</h3>
@@ -1204,13 +1651,20 @@ export function AnalyticsPanel() {
                 </p>
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {Object.entries(analytics.platformAnalytics.roleBreakdown).map(([role, count]) => (
-                <div key={role} className="rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/60 p-3">
-                  <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">{role}</p>
-                  <p className="mt-1 text-lg font-semibold text-stone-900 dark:text-stone-100">{count}</p>
-                </div>
-              ))}
+            <div className="mt-4">
+              <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">Users by role</p>
+              <div className="mt-2">
+                <HBarChart
+                  data={Object.entries(analytics.platformAnalytics.roleBreakdown)
+                    .map(([role, count]) => ({
+                      label: role.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()),
+                      full: role,
+                      value: count,
+                    }))
+                    .sort((a, b) => b.value - a.value)}
+                  labelWidth={128}
+                />
+              </div>
             </div>
           </section>
 
@@ -1268,7 +1722,27 @@ export function AnalyticsPanel() {
                   </div>
                 )}
               </div>
-              <div className="mt-3 overflow-x-auto overflow-y-auto pb-1">
+              {(() => {
+                const passData = analytics.platformAnalytics.assessmentAnalytics.programStats
+                  .filter((p): p is typeof p & { passRate: number } => p.passRate !== null)
+                  .map((p) => ({
+                    label: p.programName.length > 22 ? `${p.programName.slice(0, 21)}…` : p.programName,
+                    full: p.programName,
+                    value: p.passRate,
+                    colorClass:
+                      p.passRate >= 75 ? "bg-emerald-500" : p.passRate >= 60 ? "bg-amber-500" : "bg-rose-500",
+                  }))
+                  .sort((a, b) => b.value - a.value);
+                return passData.length > 0 ? (
+                  <div className="mt-3">
+                    <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">Pass rate by programme</p>
+                    <div className="mt-2">
+                      <HBarChart data={passData} domainMax={100} labelWidth={150} formatValue={(v) => `${v}%`} />
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+              <div className="mt-4 overflow-x-auto overflow-y-auto pb-1">
                 <table className="min-w-[720px] w-full text-sm max-[360px]:text-xs">
                   <thead>
                     <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
@@ -1432,26 +1906,43 @@ export function AnalyticsPanel() {
                   Export
                 </Button>
               </div>
-              <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
+              {cohortPaged.items.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">Completion rate by cohort</p>
+                  <div className="mt-2">
+                    <HBarChart
+                      data={cohortPaged.items.map((cohort) => ({
+                        label: cohort.name.length > 22 ? `${cohort.name.slice(0, 21)}…` : cohort.name,
+                        full: `${cohort.name} · ${cohort.programName}`,
+                        value: cohort.completionRate,
+                      }))}
+                      domainMax={100}
+                      labelWidth={150}
+                      formatValue={(v) => `${v}%`}
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="nice-scroll mt-4 max-h-[26rem] overflow-auto pb-1">
                 <table className="min-w-[760px] w-full text-sm max-[360px]:text-xs">
                   <thead>
-                    <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
-                      <th className="pb-2 max-[360px]:pb-1.5">Cohort</th>
-                      <th className="pb-2 max-[360px]:pb-1.5">Program</th>
-                      <th className="pb-2 max-[360px]:pb-1.5">Complete %</th>
-                      <th className="pb-2 max-[360px]:pb-1.5">Attendance %</th>
-                      <th className="pb-2 max-[360px]:pb-1.5">Revenue</th>
+                    <tr className="sticky top-0 z-10 border-b border-stone-200 bg-white text-left text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400">
+                      <th className="pb-2 pt-1 max-[360px]:pb-1.5">Cohort</th>
+                      <th className="pb-2 pt-1 max-[360px]:pb-1.5">Program</th>
+                      <th className="pb-2 pt-1 max-[360px]:pb-1.5">Complete %</th>
+                      <th className="pb-2 pt-1 max-[360px]:pb-1.5">Attendance %</th>
+                      <th className="pb-2 pt-1 max-[360px]:pb-1.5">Revenue</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
-                    {analytics.platformAnalytics.cohortLeaderboard.length === 0 ? (
+                    {cohortPaged.items.length === 0 ? (
                       <tr>
                         <td className="py-3 text-stone-600 dark:text-stone-400 max-[360px]:py-2" colSpan={5}>
                           No cohort analytics yet.
                         </td>
                       </tr>
                     ) : (
-                      analytics.platformAnalytics.cohortLeaderboard.map((cohort) => (
+                      cohortPaged.items.map((cohort) => (
                         <tr key={cohort.cohortId}>
                           <td className="py-3 max-[360px]:py-2">{cohort.name}</td>
                           <td className="py-3 max-[360px]:py-2">{cohort.programName}</td>
@@ -1478,6 +1969,12 @@ export function AnalyticsPanel() {
                   </tbody>
                 </table>
               </div>
+              <PaginationControls
+                page={cohortPaged.page}
+                totalPages={cohortPaged.totalPages}
+                onPage={cohortPaged.setPage}
+                loading={cohortPaged.loading}
+              />
             </div>
           </section>
 
@@ -1498,26 +1995,43 @@ export function AnalyticsPanel() {
                 Export
               </Button>
             </div>
-            <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
+            {programPaged.items.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">Completion rate by programme</p>
+                <div className="mt-2">
+                  <HBarChart
+                    data={programPaged.items.map((program) => ({
+                      label: program.name.length > 22 ? `${program.name.slice(0, 21)}…` : program.name,
+                      full: program.name,
+                      value: program.completionRate,
+                    }))}
+                    domainMax={100}
+                    labelWidth={150}
+                    formatValue={(v) => `${v}%`}
+                  />
+                </div>
+              </div>
+            )}
+            <div className="nice-scroll mt-4 max-h-[26rem] overflow-auto pb-1">
               <table className="min-w-[760px] w-full text-sm max-[360px]:text-xs">
                 <thead>
-                  <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
-                    <th className="pb-2 max-[360px]:pb-1.5">Program</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Enrollments</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Completed</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Completion %</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Revenue</th>
+                  <tr className="sticky top-0 z-10 border-b border-stone-200 bg-white text-left text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400">
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Program</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Enrollments</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Completed</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Completion %</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Revenue</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
-                  {analytics.platformAnalytics.programLeaderboard.length === 0 ? (
+                  {programPaged.items.length === 0 ? (
                     <tr>
                       <td className="py-3 text-stone-600 dark:text-stone-400 max-[360px]:py-2" colSpan={5}>
                         No program analytics yet.
                       </td>
                     </tr>
                   ) : (
-                    analytics.platformAnalytics.programLeaderboard.map((program) => (
+                    programPaged.items.map((program) => (
                       <tr key={program.programId}>
                         <td className="py-3 max-[360px]:py-2">{program.name}</td>
                         <td className="py-3 max-[360px]:py-2">{program.enrollments}</td>
@@ -1537,11 +2051,17 @@ export function AnalyticsPanel() {
                 </tbody>
               </table>
             </div>
+            <PaginationControls
+              page={programPaged.page}
+              totalPages={programPaged.totalPages}
+              onPage={programPaged.setPage}
+              loading={programPaged.loading}
+            />
           </section>
         </>
       ) : null}
 
-      {analytics?.schoolAnalytics ? (
+      {showB2b && analytics?.schoolAnalytics ? (
         <>
           <section className="kat-card">
             <div className="flex flex-wrap items-start justify-between gap-2">
@@ -1592,11 +2112,8 @@ export function AnalyticsPanel() {
                   <span className="text-base font-normal text-stone-500 dark:text-stone-400"> / {analytics.schoolAnalytics.seatLimit}</span>
                 </p>
                 {analytics.schoolAnalytics.seatUtilization !== null && (
-                  <div className="mt-2">
-                    <PercentageBar
-                      value={analytics.schoolAnalytics.seatUtilization}
-                      colorClass={analytics.schoolAnalytics.seatUtilization >= 90 ? "bg-rose-500" : analytics.schoolAnalytics.seatUtilization >= 70 ? "bg-amber-500" : "bg-emerald-500"}
-                    />
+                  <div className="mt-1">
+                    <RadialGauge value={analytics.schoolAnalytics.seatUtilization} height={92} compact caption="utilised" />
                   </div>
                 )}
               </div>
@@ -1633,27 +2150,27 @@ export function AnalyticsPanel() {
           <section className="kat-card">
             <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100 max-[360px]:text-base">Per-School Breakdown</h3>
             <p className="mt-1 text-sm text-stone-600 dark:text-stone-400 max-[360px]:text-xs">Top schools by paid licence revenue.</p>
-            <div className="mt-3 overflow-x-auto overflow-y-auto pb-1 max-[360px]:max-h-[38dvh]">
+            <div className="nice-scroll mt-3 max-h-[26rem] overflow-auto pb-1">
               <table className="min-w-[720px] w-full text-sm max-[360px]:text-xs">
                 <thead>
-                  <tr className="border-b border-stone-200 dark:border-stone-800 text-left text-xs uppercase tracking-wide text-stone-500 dark:text-stone-400">
-                    <th className="pb-2 max-[360px]:pb-1.5">School</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Active Licences</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Seats</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Classes</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Pupils</th>
-                    <th className="pb-2 max-[360px]:pb-1.5">Paid Revenue</th>
+                  <tr className="sticky top-0 z-10 border-b border-stone-200 bg-white text-left text-xs uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400">
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">School</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Active Licences</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Seats</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Classes</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Pupils</th>
+                    <th className="pb-2 pt-1 max-[360px]:pb-1.5">Paid Revenue</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
-                  {analytics.schoolAnalytics.schools.length === 0 ? (
+                  {schoolPaged.items.length === 0 ? (
                     <tr>
                       <td className="py-3 text-stone-600 dark:text-stone-400 max-[360px]:py-2" colSpan={6}>
                         No partner schools yet.
                       </td>
                     </tr>
                   ) : (
-                    analytics.schoolAnalytics.schools.map((school) => (
+                    schoolPaged.items.map((school) => (
                       <tr key={school.schoolId}>
                         <td className="py-3 font-medium text-stone-900 dark:text-stone-100 max-[360px]:py-2">{school.name}</td>
                         <td className="py-3 max-[360px]:py-2">{school.activeLicenses}</td>
@@ -1670,11 +2187,17 @@ export function AnalyticsPanel() {
                 </tbody>
               </table>
             </div>
+            <PaginationControls
+              page={schoolPaged.page}
+              totalPages={schoolPaged.totalPages}
+              onPage={schoolPaged.setPage}
+              loading={schoolPaged.loading}
+            />
           </section>
         </>
       ) : null}
 
-      {analytics?.scope === "platform" && scorecards.length > 0 && (
+      {showB2c && analytics?.scope === "platform" && scorecards.length > 0 && (
         <section className="kat-card">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
@@ -1759,6 +2282,7 @@ export function AnalyticsPanel() {
         </section>
       )}
 
+      {showB2c && (
       <section className="kat-card">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h3 className="[font-family:var(--font-space-grotesk)] text-lg font-semibold text-stone-900 dark:text-stone-100 max-[360px]:text-base">Monthly Revenue Tracking</h3>
@@ -1804,6 +2328,7 @@ export function AnalyticsPanel() {
           </table>
         </div>
       </section>
+      )}
     </div>
   );
 }

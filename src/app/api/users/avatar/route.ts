@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
-import { fail, ok } from "@/lib/http";
+import { fail, ok, serverError } from "@/lib/http";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ALLOWED_IMAGE_TYPES, compressImageToWebp } from "@/lib/image";
@@ -91,8 +91,7 @@ export async function POST(request: Request) {
 
     return ok({ avatarUrl });
   } catch (err) {
-    console.error("[avatar POST]", err);
-    return fail("Could not process image. Please try a different file.", 500);
+    return serverError(err, "Could not process image. Please try a different file.");
   }
 }
 

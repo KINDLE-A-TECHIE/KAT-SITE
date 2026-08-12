@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { UserRole } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
+import { guardDashboardCapability } from "@/lib/dashboard-capability";
 import { PartnerInquiriesPanel } from "@/components/dashboard/partner-inquiries-panel";
 import { PageHeader } from "@/components/dashboard/page-header";
 
@@ -10,6 +11,7 @@ export default async function PartnerInquiriesPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login");
   if (!ADMIN_ROLES.includes(session.user.role)) redirect("/dashboard");
+  guardDashboardCapability(session.user, "partner_inquiries");
 
   return (
     <section className="space-y-4">
